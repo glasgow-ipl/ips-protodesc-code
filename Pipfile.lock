@@ -1,0 +1,29 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "38a6d530115eea33ba2524a73bba6a21881e6e60dc50c3645bdda14c82461ec5"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.6"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "parsley": {
+            "hashes": [
+                "sha256:9444278d47161d5f2be76a767809a3cbe6db4db822f46a4fd7481d4057208d41",
+                "sha256:c3bc417b8c7e3a96c87c0f2f751bfd784ed5156ffccebe2f84330df5685f8dc3"
+            ],
+            "index": "pypi",
+            "version": "==1.3"
+        }
+    },
+    "develop": {}
+}

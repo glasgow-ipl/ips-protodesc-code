@@ -27,33 +27,35 @@ def fitted_name(field, width):
 			formatted_name = name.title() + " " + width_str
 	return formatted_name.center(width*2-1)
 	
-def print_field(f):
+def print_field(f, output):
 	if f.type.width == "undefined":
 		n = fitted_name(f, -1)
-		print(n, end='...')
+		output.append(n + "...")
 		return 32
 	else:
 		n = fitted_name(f, f.type.width)
-		print(n, end='|')
+		output.append(n + "|")
 		return f.type.width
 		   
-def print_struct(s):
+def print_struct(s, output):
 	tally = 0
 	running_tally = 0
 	for field in s.fields:
 		if type(field.type) is intermediate.base_types.Structure or field.type.width == "undefined" or field.type.width+running_tally >= 32:
-			print()
-			print(FULL_LINE, end='')
-			print("|", end='')
+			output.append("\n")
+			output.append(FULL_LINE)
+			output.append("|")
 			running_tally = 0
-		field_width = print_field(field)
+		field_width = print_field(field, output)
 		tally += field_width
 		running_tally += field_width
 	return tally
 
-def print_proto(p):
+def protostr(p):
+	output = []
 	for struct in p.structs:
-		print(HEADER, end='')
-		print_struct(struct)
-		print()
-		print(FULL_LINE)
+		output.append(HEADER)
+		print_struct(struct, output)
+		output.append("\n")
+		output.append(FULL_LINE + "\n")
+	return "".join(output)

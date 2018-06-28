@@ -72,8 +72,9 @@ class Structure:
 	A class for modelling C-style structs
 	"""
 	
-	def __init__(self):
+	def __init__(self, name):
 		self.fields = []
+		self.name = name
 		self.width = 0
 		
 	def add_field(self, field):

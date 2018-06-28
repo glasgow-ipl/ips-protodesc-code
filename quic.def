@@ -1,0 +1,54 @@
+packet_type := bit[7];
+version := bit[32];
+cid_len := bit[4];
+frame_type := bit[8];
+
+var_enc := {
+	length : bit[2];
+	value  : bit[];
+};
+
+packet_num := {
+	length : bit[1];
+	pnum   : bit[];
+};
+
+long_hdr := {
+	header_type   : bit;
+	type		  : packet_type;
+	ver			  : version;
+	dcid_len	  : cid_len;
+	scid_len	  : cid_len;
+	dcid		  : bit[];
+	scid		  : bit[];
+	payload_len   : var_enc;
+	packet_number : packet_num;
+	payload		  : bit[];	
+};
+
+short_hdr := {
+	header_type	      : bit;
+	key_phase         : bit;
+	third_bit         : bit;
+	forth_bit         : bit;
+	google_demux      : bit;
+	reserved          : bit[3];
+	dcid              : bit[];
+	packet_number     : packet_num;
+	protected_payload : bit[];
+};
+
+version_negotiation := {
+	header_type        : bit;
+	unused			   : bit[7];
+	ver				   : version;
+	dcid_len		   : cid_len;
+	scid_len		   : cid_len;
+	dcid			   : bit[];
+	scid			   : bit[];
+	supported_versions : version[];
+};
+
+padding_frame := {
+	type 	: frame_type;
+};
