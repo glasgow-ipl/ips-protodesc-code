@@ -2,10 +2,10 @@ import argparse
 import importlib
 
 def load_input_parser(name):
-	return importlib.import_module("." + name, "input_parsers")
+	return importlib.import_module("input_parsers." + name)
 
 def load_output_formatter(name):
-	return importlib.import_module("." + name, "formatters")
+	return importlib.import_module("formatters." + name)
 
 def main():
 	parser = argparse.ArgumentParser(description='Parse a packet description into a specified output format')
