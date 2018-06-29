@@ -9,10 +9,10 @@ def load_output_formatter(name):
 
 def main():
 	parser = argparse.ArgumentParser(description='Parse a packet description into a specified output format')
-	parser.add_argument('--input-format', type=str, help='Input format name')
-	parser.add_argument('--input-file', type=str, help='Input filename')
-	parser.add_argument('--output-format', type=str, help='Output format name')
-	parser.add_argument('--output-file', type=str, help='Output filename')
+	parser.add_argument('--input-format', type=str, required=True, help='Input format name')
+	parser.add_argument('--input-file', type=str, required=True, help='Input filename')
+	parser.add_argument('--output-format', type=str, required=True, help='Output format name')
+	parser.add_argument('--output-file', type=str, required=True, help='Output filename')
 	args = parser.parse_args()
 
 	try:
