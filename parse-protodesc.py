@@ -1,5 +1,7 @@
 import argparse
 import importlib
+import input_parsers
+import formatters
 
 def load_input_parser(name):
 	return importlib.import_module("." + name, "input_parsers")
