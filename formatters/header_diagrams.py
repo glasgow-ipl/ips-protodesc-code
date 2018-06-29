@@ -11,7 +11,7 @@ HEADER = (" 0                   1                   2                   3  \n"
 
 def fitted_name(field, width):
 	if hasattr(field, "value"):
-		name = str(field.value)
+		name = field.value[2:]
 	else:
 		name = field.name
 	if width == -1:

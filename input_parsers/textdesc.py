@@ -18,10 +18,14 @@ def new_typedef(name, type, width):
 		typedefs[name] = bt.Typedef(name, bt.Array(bt.Bit(), width))
 		return typedefs[name]
 
-def new_struct(name, fields):
+def new_struct(name, fields, where):
 	s = bt.Structure(name)
 	for field in fields:
 		s.add_field(field)
+	if where is not None:
+		for constraint in where:
+			name, value = constraint
+			s.add_constraint(name, bin(value))
 	typedefs[name] = s
 	return s
 	
@@ -36,7 +40,7 @@ def new_field(name, type):
 	else:
 		t = typedefs[type]
 	return bt.Field(name,t)
-
+	
 def parse_file(filename):
 	grammar = r"""
 				letter = anything:x ?(x in ascii_letters)
@@ -47,7 +51,9 @@ def parse_file(filename):
 				typedef = name:n ':=' type:t '[' number:width '];' -> new_typedef(n, t, width)
 				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
 				field = name:n ':' type:t ';' -> new_field(n,t)
-				struct = name:n ':={' (field|field_array)+:f '};' -> new_struct(n, f)
+				constraint = name:n '=' number:v ';' -> (n, v)
+				where_block = '}where{' (constraint)+:c -> c
+				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
 				protodef = (typedef|struct)+:elements -> new_proto(elements)
 				"""
 	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
@@ -59,3 +65,6 @@ def parse_file(filename):
 	with open(filename, "r+") as defFile:
 		defStr = defFile.read().replace(" ", "").replace("\n", "").replace("\t", "")
 	return parser(defStr).protodef()
+	
+if __name__ == "__main__":
+	print(parse_file(sys.argv[1]))

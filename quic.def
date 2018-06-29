@@ -16,7 +16,7 @@ packet_num := {
 long_hdr := {
 	header_type   : bit;
 	type		  : packet_type;
-	ver			  : version;
+	version		  : version;
 	dcid_len	  : cid_len;
 	scid_len	  : cid_len;
 	dcid		  : bit[];
@@ -24,6 +24,8 @@ long_hdr := {
 	payload_len   : var_enc;
 	packet_number : packet_num;
 	payload		  : bit[];	
+} where { 
+	header_type = 1;
 };
 
 short_hdr := {

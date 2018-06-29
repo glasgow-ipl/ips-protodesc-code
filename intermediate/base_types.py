@@ -84,4 +84,8 @@ class Structure:
 				self.width = "undefined"
 			else:
 				self.width += field.type.width
-			
+	
+	def add_constraint(self, field_name, value):
+		for field in self.fields:
+			if field.name == field_name:
+				field.add_constraint("=", value)
