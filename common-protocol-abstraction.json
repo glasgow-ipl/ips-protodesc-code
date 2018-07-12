@@ -1,0 +1,146 @@
+{
+  "$id": "common-protocol-abstraction.json",
+  "type": "object",
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "properties": {
+    "name": {
+      "$id": "/properties/name",
+      "type": "string",
+      "title": "The Name Schema ",
+      "default": "",
+      "examples": [
+        "quic"
+      ]
+    },
+    "version": {
+      "$id": "/properties/version",
+      "type": "null",
+      "title": "The Version Schema ",
+      "default": null,
+      "examples": [
+        null
+      ]
+    },
+    "typedefs": {
+      "$id": "/properties/typedefs",
+      "type": "array",
+      "items": {
+        "$id": "/properties/typedefs/items",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$id": "/properties/typedefs/items/properties/kind",
+            "type": "string",
+            "title": "The Kind Schema ",
+            "default": "",
+            "examples": [
+              "typedef"
+            ]
+          },
+          "alias": {
+            "$id": "/properties/typedefs/items/properties/alias",
+            "type": "string",
+            "title": "The Alias Schema ",
+            "default": "",
+            "examples": [
+              "packet_type"
+            ]
+          },
+          "type": {
+            "$id": "/properties/typedefs/items/properties/type",
+            "type": "string",
+            "title": "The Type Schema ",
+            "default": "",
+            "examples": [
+              "bit"
+            ]
+          },
+          "width": {
+            "$id": "/properties/typedefs/items/properties/width",
+            "type": "integer",
+            "title": "The Width Schema ",
+            "default": 0,
+            "examples": [
+              7
+            ]
+          }
+        }
+      }
+    },
+    "structs": {
+      "$id": "/properties/structs",
+      "type": "array",
+      "items": {
+        "$id": "/properties/structs/items",
+        "type": "object",
+        "properties": {
+          "kind": {
+            "$id": "/properties/structs/items/properties/kind",
+            "type": "string",
+            "title": "The Kind Schema ",
+            "default": "",
+            "examples": [
+              "struct"
+            ]
+          },
+          "name": {
+            "$id": "/properties/structs/items/properties/name",
+            "type": "string",
+            "title": "The Name Schema ",
+            "default": "",
+            "examples": [
+              "var_enc"
+            ]
+          },
+          "fields": {
+            "$id": "/properties/structs/items/properties/fields",
+            "type": "array",
+            "items": {
+              "$id": "/properties/structs/items/properties/fields/items",
+              "type": "object",
+              "properties": {
+                "kind": {
+                  "$id": "/properties/structs/items/properties/fields/items/properties/kind",
+                  "type": "string",
+                  "title": "The Kind Schema ",
+                  "default": "",
+                  "examples": [
+                    "array"
+                  ]
+                },
+                "name": {
+                  "$id": "/properties/structs/items/properties/fields/items/properties/name",
+                  "type": "string",
+                  "title": "The Name Schema ",
+                  "default": "",
+                  "examples": [
+                    "length"
+                  ]
+                },
+                "type": {
+                  "$id": "/properties/structs/items/properties/fields/items/properties/type",
+                  "type": "string",
+                  "title": "The Type Schema ",
+                  "default": "",
+                  "examples": [
+                    "bit"
+                  ]
+                },
+                "width": {
+                  "$id": "/properties/structs/items/properties/fields/items/properties/width",
+                  "type": "integer",
+                  "title": "The Width Schema ",
+                  "default": 0,
+                  "examples": [
+                    2
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
