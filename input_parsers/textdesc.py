@@ -2,11 +2,12 @@ import parsley
 import string
 import sys
 import json
+import itertools
 
 typedefs = {}
 
-def new_proto(elements):
-	protocol = {"name": "quic", "version": 1, "typedefs": [], "structs": []}
+def new_proto(protocol, version, elements):
+	protocol = {"name": protocol, "version": version, "typedefs": [], "structs": []}
 	for element in elements:
 		if type(element) is dict and "kind" in element and element["kind"] == "struct":
 			protocol["structs"].append(element)
@@ -33,6 +34,8 @@ def new_field(name, type):
 	return {"kind": "field", "name": name, "type": type}
 
 def parse_file(filename):
+	filename_head = filename.split(".")[0]
+	protocol, version = [x[1] for x in itertools.zip_longest([0,1], filename_head.split("-"))]
 	grammar = r"""
 				letter = anything:x ?(x in ascii_letters)
 				name = <letter+>:letters -> "".join(letters)
@@ -45,14 +48,16 @@ def parse_file(filename):
 				constraint = name:n '=' number:v ';' -> (n, v)
 				where_block = '}where{' (constraint)+:c -> c
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
-				protodef = (typedef|struct)+:elements -> new_proto(elements)
+				protodef = (typedef|struct)+:elements -> new_proto(protocol, version, elements)
 				"""
 	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
 								      "new_typedef": new_typedef,
 								      "new_field": new_field,
 								      "new_field_array": new_field_array,
 								      "new_struct": new_struct,
-								      "new_proto": new_proto})
+								      "new_proto": new_proto,
+								      "protocol": protocol,
+								      "version": version})
 	with open(filename, "r+") as defFile:
 		defStr = defFile.read().replace(" ", "").replace("\n", "").replace("\t", "")
 	return parser(defStr).protodef()
