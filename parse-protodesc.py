@@ -2,6 +2,7 @@ import argparse
 import importlib
 import input_parsers
 import formatters
+import json
 
 def load_input_parser(name):
 	return importlib.import_module("." + name, "input_parsers")
@@ -15,6 +16,7 @@ def main():
 	parser.add_argument('--input-file', type=str, required=True, help='Input filename')
 	parser.add_argument('--output-format', type=str, required=True, help='Output format name')
 	parser.add_argument('--output-file', type=str, required=True, help='Output filename')
+	parser.add_argument('--json-output-file', type=str, required=False, help="Intermediate JSON representation output filename")
 	args = parser.parse_args()
 
 	try:
@@ -26,6 +28,13 @@ def main():
 		proto = input_parser.parse_file(args.input_file)
 	except:
 		print("Could not parse input file (%s) with specified parser (%s)" % (args.input_file, args.input_format))
+
+	if args.json_output_file is not None:
+		try:
+			with open(args.json_output_file, "w+") as jsonOutputFile:
+				jsonOutputFile.write(json.dumps(proto, indent=4))
+		except:
+			print("Could not write intermediate JSON representation output to file (%s)" % args.json_output_file)
 
 	try:
 		output_formatter = load_output_formatter(args.output_format)
