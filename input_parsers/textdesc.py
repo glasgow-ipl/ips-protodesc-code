@@ -1,46 +1,37 @@
 import parsley
 import string
 import sys
-sys.path.append('../')
-import intermediate.base_types as bt
+import json
 
 typedefs = {}
 
 def new_proto(elements):
-	p = bt.Protocol()
+	protocol = {"name": "quic", "version": 1, "typedefs": [], "structs": []}
 	for element in elements:
-		if type(element) is bt.Structure:
-			p.add_struct(element.name, element)
-	return p
+		if type(element) is dict and "kind" in element and element["kind"] == "struct":
+			protocol["structs"].append(element)
+		if type(element) is dict and "kind" in element and element["kind"] == "typedef":
+			protocol["typedefs"].append(element)
+	return protocol
 	
 def new_typedef(name, type, width):
 	if type == "bit":
-		typedefs[name] = bt.Typedef(name, bt.Array(bt.Bit(), width))
-		return typedefs[name]
+		return {"kind": "typedef", "alias": name, "type": type, "width": width}
 
 def new_struct(name, fields, where):
-	s = bt.Structure(name)
+	s = {"kind": "struct", "name": name, "fields": []}
 	for field in fields:
-		s.add_field(field)
-	if where is not None:
-		for constraint in where:
-			name, value = constraint
-			s.add_constraint(name, bin(value))
-	typedefs[name] = s
+		s["fields"].append(field)
 	return s
 	
 def new_field_array(name, type, width):
 	if width is None:
 		width = "undefined"
-	return bt.Field(name, bt.Array(bt.Bit(), width))
+	return {"kind": "array", "name": name, "type": type, "width": width}
 
 def new_field(name, type):
-	if type == "bit":
-		t = bt.Bit()
-	else:
-		t = typedefs[type]
-	return bt.Field(name,t)
-	
+	return {"kind": "field", "name": name, "type": type}
+
 def parse_file(filename):
 	grammar = r"""
 				letter = anything:x ?(x in ascii_letters)
@@ -67,4 +58,4 @@ def parse_file(filename):
 	return parser(defStr).protodef()
 	
 if __name__ == "__main__":
-	print(parse_file(sys.argv[1]))
+	print(json.dumps(parse_file(sys.argv[1])))

@@ -38,6 +38,11 @@ short_hdr := {
 	dcid              : bit[];
 	packet_number     : packet_num;
 	protected_payload : bit[];
+} where { 
+	header_type = 0;
+	third_bit = 1;
+	forth_bit = 1;
+	google_demux = 0;
 };
 
 version_negotiation := {
@@ -49,6 +54,8 @@ version_negotiation := {
 	dcid			   : bit[];
 	scid			   : bit[];
 	supported_versions : version[];
+} where { 
+	header_type = 1;
 };
 
 padding_frame := {
