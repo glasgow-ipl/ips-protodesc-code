@@ -23,6 +23,10 @@ def new_struct(name, fields, where):
 	s = {"kind": "struct", "name": name, "fields": []}
 	for field in fields:
 		s["fields"].append(field)
+		if where is not None: # this is, uh, inefficient
+			for constraint in where:
+				if constraint[0] == field["name"]:
+					field["constraints"] = field.get("constraints", []) + [(constraint[1], constraint[2])]
 	return s
 	
 def new_field_array(name, type, width):
@@ -41,11 +45,12 @@ def parse_file(filename):
 				name = <letter+>:letters -> "".join(letters)
 				digit = anything:x ?(x in '0123456789')
 				number = <digit+>:ds -> int(ds)
+				expression = anything:x -> "".join(x)
 				type = name
 				typedef = name:n ':=' type:t '[' number:width '];' -> new_typedef(n, t, width)
 				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
 				field = name:n ':' type:t ';' -> new_field(n,t)
-				constraint = name:n '=' number:v ';' -> (n, v)
+				constraint = name:n '=' expression:e ';' -> (n, '=', e)
 				where_block = '}where{' (constraint)+:c -> c
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
 				protodef = (typedef|struct)+:elements -> new_proto(protocol, version, elements)

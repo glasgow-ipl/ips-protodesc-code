@@ -8,17 +8,21 @@ HEADER = (" 0                   1                   2                   3  \n"
 		  "|")
 
 def fitted_name(field, width):
+	if "constraints" in field:
+		display = field["constraints"][0][1]
+	else:
+		display = field["name"]
 	if width == -1:
-		formatted_name = formatted_name = field["name"].title() + " (?)"
+		formatted_name = formatted_name = display.title() + " (?)"
 		width = 31
 	elif width < 5:
-		formatted_name = field["name"].upper()[0]
+		formatted_name = display.upper()[0]
 	else:
 		width_str = "(%d)" % (width)
 		if (len(field["name"]) + len(width_str) + 3) >= 2*width:
-			formatted_name = field["name"].upper()[1]
+			formatted_name = display.upper()[1]
 		else:
-			formatted_name = field["name"].title() + " " + width_str
+			formatted_name = display.title() + " " + width_str
 	return formatted_name.center(width*2-1)
 	
 def print_field(f, output):
