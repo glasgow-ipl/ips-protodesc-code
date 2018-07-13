@@ -9,8 +9,8 @@ var_enc := {
 };
 
 packet_num := {
-	length : bit[1];
-	pnum   : bit[];
+	"0"           : bit;
+	packet_number : bit[7];
 };
 
 long_hdr := {
@@ -58,6 +58,10 @@ version_negotiation := {
 	header_type = 1;
 };
 
+quic_pdu := long_hdr | short_hdr | version_negotiation;
+
 padding_frame := {
 	type 	: frame_type;
+} where {
+	type = 0;
 };

@@ -7,12 +7,14 @@ import itertools
 typedefs = {}
 
 def new_proto(protocol, version, elements):
-	protocol = {"name": protocol, "version": version, "typedefs": [], "structs": []}
+	protocol = {"name": protocol, "version": version, "typedefs": [], "structs": [], "enums": []}
 	for element in elements:
 		if type(element) is dict and "kind" in element and element["kind"] == "struct":
 			protocol["structs"].append(element)
 		if type(element) is dict and "kind" in element and element["kind"] == "typedef":
 			protocol["typedefs"].append(element)
+		if type(element) is dict and "kind" in element and element["kind"] == "enum":
+			protocol["enums"].append(element)
 	return protocol
 	
 def new_typedef(name, type, width):
@@ -33,7 +35,13 @@ def new_field_array(name, type, width):
 	return {"kind": "array", "name": name, "type": type, "width": width}
 
 def new_field(name, type):
-	return {"kind": "field", "name": name, "type": type}
+	if name[0] == "0" or name[0] == "1":
+		return {"kind": "anonfield", "value": name, "type": type}
+	else:
+		return {"kind": "field", "name": name, "type": type}
+
+def new_enum(n, n1, n2):
+	return {"kind": "enum", "name": n, "alternatives": [n1] + n2}
 
 def parse_file(filename):
 	filename_head = filename.split(".")[0]
@@ -44,14 +52,17 @@ def parse_file(filename):
 				digit = anything:x ?(x in '0123456789')
 				number = <digit+>:ds -> int(ds)
 				expression = anything:x -> "".join(x)
+				bindigit = anything:x ?(x in '01')
 				type = name
+				bitstring = '"'  <bindigit+>:bds '"' -> "".join(bds)
+				enum = name:n ':=' name:n1 ('|' name)+:n2 ';' -> new_enum(n, n1, n2)
 				typedef = name:n ':=' type:t '[' number:width '];' -> new_typedef(n, t, width)
 				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
-				field = name:n ':' type:t ';' -> new_field(n,t)
+				field = (name|bitstring):n ':' type:t ';' -> new_field(n,t)
 				constraint = name:n '=' expression:e ';' -> (n, '=', e)
 				where_block = '}where{' (constraint)+:c -> c
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
-				protodef = (typedef|struct)+:elements -> new_proto(protocol, version, elements)
+				protodef = (typedef|struct|enum)+:elements -> new_proto(protocol, version, elements)
 				"""
 	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
 								      "new_typedef": new_typedef,
@@ -59,6 +70,7 @@ def parse_file(filename):
 								      "new_field_array": new_field_array,
 								      "new_struct": new_struct,
 								      "new_proto": new_proto,
+								      "new_enum": new_enum,
 								      "protocol": protocol,
 								      "version": version})
 	with open(filename, "r+") as defFile:
