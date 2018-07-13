@@ -30,7 +30,7 @@ def print_field(f, output):
 		width = f["width"]
 	else:
 		width = 1
-	if width == "undefined":
+	if width is None:
 		n = fitted_name(f, -1)
 		output.append(n + "...")
 		return 32
@@ -47,7 +47,7 @@ def print_struct(s, output):
 			width = field["width"]
 		else:
 			width = 1
-		if width == "undefined" or width+running_tally >= 32:
+		if width is None or width+running_tally >= 32:
 			output.append("\n")
 			output.append(FULL_LINE)
 			output.append("|")

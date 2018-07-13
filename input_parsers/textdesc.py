@@ -30,8 +30,6 @@ def new_struct(name, fields, where):
 	return s
 	
 def new_field_array(name, type, width):
-	if width is None:
-		width = "undefined"
 	return {"kind": "array", "name": name, "type": type, "width": width}
 
 def new_field(name, type):
