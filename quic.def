@@ -8,7 +8,7 @@ var_enc := {
 	length : bit[2];
 	value  : bit[];
 } where {
-	value.width = (2^length * 8) - 2;
+	value == (2^length * 8) - 2;
 };
 
 packet_num := {
@@ -31,8 +31,8 @@ long_hdr := {
 	packet_number : packet_num;
 	payload		  : bit[];	
 } where { 
-	header_type = 1;
-	payload.width = 2^payload_len;
+	header_type == 1;
+	payload == 2^payload_len;
 };
 
 short_hdr := {
@@ -46,10 +46,10 @@ short_hdr := {
 	packet_number     : packet_num;
 	protected_payload : bit[];
 } where { 
-	header_type = 0;
-	third_bit = 1;
-	forth_bit = 1;
-	google_demux = 0;
+	header_type == 0;
+	third_bit == 1;
+	forth_bit == 1;
+	google_demux == 0;
 };
 
 version_negotiation := {
@@ -62,8 +62,8 @@ version_negotiation := {
 	scid			   : bit[];
 	supported_versions : version[];
 } where { 
-	header_type = 1;
-	ver = 0;
+	header_type == 1;
+	ver == 0;
 };
 
 quic_pdu := {long_hdr | short_hdr | version_negotiation};
@@ -71,5 +71,5 @@ quic_pdu := {long_hdr | short_hdr | version_negotiation};
 padding_frame := {
 	type 	: frame_type;
 } where {
-	type = 0;
+	type == 0;
 };
