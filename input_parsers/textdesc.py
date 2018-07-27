@@ -71,10 +71,6 @@ def build_expr_tree(start, pairs):
 	for pair in pairs:
 		start = {"irobject": "constraint_binary", "value": pair[0], "left": start, "right": pair[1]}
 	return start
-	
-def new_cb_node(value, left, right):
-	print("hello!")
-	return {"irobject": "constraint_binary", "value": value, "left": left, "right": right}
 
 def parse_file(filename):
 	filename_head = filename.split(".")[0]
@@ -128,7 +124,6 @@ def parse_file(filename):
 								      "new_prototype": new_prototype,
 								      "build_expr_tree": build_expr_tree,
 								      "width_check":width_check,
-								      "new_cb_node": new_cb_node,
 								      "protocol": protocol,
 								      "version": version})
 	with open(filename, "r+") as defFile:
