@@ -41,13 +41,6 @@ def add_node(stack, value):
 	right_node = stack.pop()
 	left_node = stack.pop()
 	stack.append({"irobject": "constraint_ast_node", "left": left_node, "value": value, "right": right_node})
-	
-def new_constraint(name, expr, prop, op):
-	if prop is None:
-		prop = "value"
-	else:
-		prop = prop[1:]
-	return {"irobject": "constraint_boolean", "field": name, "property": prop, "relational_op": op, "ast": expr}
 
 def new_anonstruct(bitstring, field):
 	return {"irobject": "anonstruct", "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
@@ -70,6 +63,11 @@ def width_check(width):
 def build_expr_tree(start, pairs):
 	for pair in pairs:
 		start = {"irobject": "constraint_binary", "value": pair[0], "left": start, "right": pair[1]}
+	return start
+
+def build_rel_tree(start, pairs):
+	for pair in pairs:
+		start = {"irobject": "constraint_relational", "value": pair[0], "left": start, "right": pair[1]}
 	return start
 
 def parse_file(filename):
@@ -95,6 +93,15 @@ def parse_file(filename):
 				expr2 = expr3:left (mul | div)*:right -> build_expr_tree(left, right)
 				expr3 = value:left pow*:right -> build_expr_tree(left, right)
 				
+				# Relational expressions
+				eq = '==' expr:n -> ('==', n)
+				neq = '!=' expr:n -> ('!=', n)
+				lt = '<' expr:n -> ('<', n)
+				gt = '>' expr:n -> ('>', n)
+				lte = '<=' expr:n -> ('<=', n)
+				gte = '>=' expr:n -> ('>=', n)
+				cr_expr = expr:left (eq|neq|lt|gt|lte|gte)*:right -> build_rel_tree(left, right)
+
 				bindigit = anything:x ?(x in '01')
 				type = name
 				bitstring = '"'  <bindigit+>:bds '"' -> "".join(bds)
@@ -105,7 +112,7 @@ def parse_file(filename):
 				field = (name|bitstring):n ':' type:t ';' -> new_field(n,t)
 				anonstruct = bitstring:b 'followedby' (field|field_array):f -> new_anonstruct(b, f)
 				enum = name:n ':={' (anonstruct|name):n1 ('|' (anonstruct|name))+:n2 '};' -> new_enum(n, n1, n2)
-				constraint = name:n ('.width'|'.value')?:prop ('='):op expr:e ';' -> new_constraint(n, e, prop, op)
+				constraint = cr_expr:c ';' -> c
 				where_block = '}where{' (constraint)+:c -> c
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
 				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
@@ -119,10 +126,10 @@ def parse_file(filename):
 								      "new_struct": new_struct,
 								      "new_proto": new_proto,
 								      "new_enum": new_enum,
-								      "new_constraint": new_constraint,
 								      "new_anonstruct": new_anonstruct,
 								      "new_prototype": new_prototype,
 								      "build_expr_tree": build_expr_tree,
+								      "build_rel_tree": build_rel_tree,
 								      "width_check":width_check,
 								      "protocol": protocol,
 								      "version": version})
