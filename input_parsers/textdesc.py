@@ -11,9 +11,8 @@ def new_proto(protocol, version, elements):
 	protocol["types"] = elements
 	return protocol
 	
-def new_typedef(name, type, width):
-	if type == "bit":
-		return {"irobject": "typedef", "name": name, "type": type, "width": width}
+def new_array(name, type, length):
+        return {"irobject": "array", "name": name, "type": type, "length": length}
 
 def new_struct(name, fields, where):
 	s = {"irobject": "struct", "name": name, "fields": []}
@@ -115,7 +114,7 @@ def parse_file(filename):
 				bindigit = anything:x ?(x in '01')
 				type = name
 				bitstring = '"'  <bindigit+>:bds '"' -> "".join(bds)
-				typedef = name:n ':=' type:t '[' number:width '];' -> new_typedef(n, t, width)
+				array = name:n ':=' type:t '[' number:width '];' -> new_array(n, t, width)
 				field_array_s = name:n ':' type:t '[' (number)?:width ']' -> new_field_array(n,t,width)
 				field_s = (name|bitstring):n ':' type:t -> new_field(n,t)
 				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
@@ -127,10 +126,10 @@ def parse_file(filename):
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
 				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
 				prototype = name:n '::(' (field_s|field_array_s):f (',' (field_s|field_array_s))*:fs ')->' type_array:ta ';' -> new_prototype(n, f, fs, ta)
-				protodef = (typedef|struct|enum|prototype)+:elements -> new_proto(protocol, version, elements)
+				protodef = (array|struct|enum|prototype)+:elements -> new_proto(protocol, version, elements)
 				"""
 	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
-								      "new_typedef": new_typedef,
+								      "new_array": new_array,
 								      "new_field": new_field,
 								      "new_field_array": new_field_array,
 								      "new_struct": new_struct,
