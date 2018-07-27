@@ -7,16 +7,16 @@ import itertools
 typedefs = {}
 
 def new_proto(protocol, version, elements):
-	protocol = {"kind": "protocol", "name": protocol, "version": version, "types": elements}
+	protocol = {"irobject": "protocol", "name": protocol, "version": version, "types": elements}
 	protocol["types"] = elements
 	return protocol
 	
 def new_typedef(name, type, width):
 	if type == "bit":
-		return {"kind": "typedef", "name": name, "type": type, "width": width}
+		return {"irobject": "typedef", "name": name, "type": type, "width": width}
 
 def new_struct(name, fields, where):
-	s = {"kind": "struct", "name": name, "fields": []}
+	s = {"irobject": "struct", "name": name, "fields": []}
 	for field in fields:
 		s["fields"].append(field)
 	if where is not None:
@@ -25,23 +25,23 @@ def new_struct(name, fields, where):
 	
 def new_field_array(name, type, width):
 	if name[0] == "0" or name[0] == "1":
-		return {"kind": "anonarray", "value": name, "type": type, "width": width}
+		return {"irobject": "anonarray", "value": name, "type": type, "width": width}
 	else:
-		return {"kind": "array", "name": name, "type": type, "width": width}
+		return {"irobject": "array", "name": name, "type": type, "width": width}
 
 def new_field(name, type):
 	if name[0] == "0" or name[0] == "1":
-		return {"kind": "anonfield", "value": name, "type": type}
+		return {"irobject": "anonfield", "value": name, "type": type}
 	else:
-		return {"kind": "field", "name": name, "type": type}
+		return {"irobject": "field", "name": name, "type": type}
 
 def new_enum(n, n1, n2):
-	return {"kind": "enum", "name": n, "alternatives": [n1] + n2}
+	return {"irobject": "enum", "name": n, "alternatives": [n1] + n2}
 
 def add_node(stack, value):
 	right_node = stack.pop()
 	left_node = stack.pop()
-	stack.append({"kind": "constraint_ast_node", "left": left_node, "value": value, "right": right_node})
+	stack.append({"irobject": "constraint_ast_node", "left": left_node, "value": value, "right": right_node})
 	
 def new_constraint(name, expr, prop, op):
 	if prop is None:
@@ -57,7 +57,7 @@ def new_constraint(name, expr, prop, op):
 			var_buf += c
 			continue
 		elif var_buf != "":
-			operands.append({"kind": "constraint_ast_node", "left": None, "value": var_buf, "right": None})
+			operands.append({"irobject": "constraint_ast_node", "left": None, "value": var_buf, "right": None})
 			var_buf = ""
 			
 		if c == '(':
@@ -80,13 +80,13 @@ def new_constraint(name, expr, prop, op):
 					break
 			operators.append(c)
 		else:
-			operands.append({"kind": "constraint_ast_node", "left": None, "value": c, "right": None})
+			operands.append({"irobject": "constraint_ast_node", "left": None, "value": c, "right": None})
 	while (len(operators) > 0):
 		add_node(operands, operators.pop())
-	return {"kind": "constraint", "field": name, "property": prop, "relational_op": op, "ast": operands[0]}
+	return {"irobject": "constraint", "field": name, "property": prop, "relational_op": op, "ast": operands[0]}
 
 def new_anonstruct(bitstring, field):
-	return {"kind": "anonstruct", "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
+	return {"irobject": "anonstruct", "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
 
 def new_prototype(name, field, fields, return_type):
 	if return_type[1] == -1:
@@ -94,8 +94,8 @@ def new_prototype(name, field, fields, return_type):
 	elif return_type[1] is not None:
 		return_width = return_type[1]
 	else:
-		return {"kind": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0]}
-	return {"kind": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0], "return_width": return_width}
+		return {"irobject": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0]}
+	return {"irobject": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0], "return_width": return_width}
 
 def width_check(width):
 	if width is None:

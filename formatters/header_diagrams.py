@@ -17,7 +17,7 @@ def fitted_name(field, width, struct):
 					found = True
 		if not found:
 			display = field["name"]
-	elif field["kind"] == "anonfield":
+	elif field["irobject"] == "anonfield":
 		display = field["value"]
 	else:
 		display = field["name"]
@@ -69,7 +69,7 @@ def print_struct(s, output):
 def protostr(p):
 	output = []
 	for type in p["types"]:
-		if type["kind"] == "struct":
+		if type["irobject"] == "struct":
 			output.append(HEADER)
 			print_struct(type, output)
 			output.append("\n")
