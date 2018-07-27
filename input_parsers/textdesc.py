@@ -12,7 +12,7 @@ def new_proto(protocol, version, elements):
 	return protocol
 	
 def new_array(name, type, length):
-        return {"irobject": "array", "name": name, "type": type, "length": length}
+        return {"irobject": "array", "name": name, "elementType": type, "length": length}
 
 def new_struct(name, fields, where):
 	s = {"irobject": "struct", "name": name, "fields": []}
