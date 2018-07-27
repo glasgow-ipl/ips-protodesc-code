@@ -7,9 +7,16 @@ HEADER = (" 0                   1                   2                   3  \n"
 		  "+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+\n"
 		  "|")
 
-def fitted_name(field, width):
-	if "constraints" in field:
-		display = field["constraints"][0][1]
+def fitted_name(field, width, struct):
+	if "constraints" in struct:
+		found = False
+		for constraint in struct["constraints"]:
+			if constraint["field"] == field["name"]:
+				if(constraint["property"] == "value" and constraint["relational_op"] == '=' and constraint["ast"]["left"] is None and constraint["ast"]["right"] is None):
+					display = constraint["ast"]["value"]
+					found = True
+		if not found:
+			display = field["name"]
 	elif field["kind"] == "anonfield":
 		display = field["value"]
 	else:
@@ -27,17 +34,17 @@ def fitted_name(field, width):
 			formatted_name = display.title() + " " + width_str
 	return formatted_name.center(width*2-1)
 	
-def print_field(f, output):
+def print_field(f, output, s):
 	if "width" in f:
 		width = f["width"]
 	else:
 		width = 1
 	if width is None:
-		n = fitted_name(f, -1)
+		n = fitted_name(f, -1, s)
 		output.append(n + "...")
 		return 32
 	else:
-		n = fitted_name(f, width)
+		n = fitted_name(f, width, s)
 		output.append(n + "|")
 		return width
 		   
@@ -54,18 +61,19 @@ def print_struct(s, output):
 			output.append(FULL_LINE)
 			output.append("|")
 			running_tally = 0
-		field_width = print_field(field, output)
+		field_width = print_field(field, output, s)
 		tally += field_width
 		running_tally += field_width
 	return tally
 
 def protostr(p):
 	output = []
-	for struct in p["structs"]:
-		output.append(HEADER)
-		print_struct(struct, output)
-		output.append("\n")
-		output.append(FULL_LINE + "\n")
+	for type in p["types"]:
+		if type["kind"] == "struct":
+			output.append(HEADER)
+			print_struct(type, output)
+			output.append("\n")
+			output.append(FULL_LINE + "\n")
 	return "".join(output)
 	
 if __name__ == "__main__":

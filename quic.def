@@ -1,17 +1,23 @@
 packet_type := bit[7];
 version := bit[32];
 cid_len := bit[4];
+full_packet_num := bit[62];
 frame_type := bit[8];
 
 var_enc := {
 	length : bit[2];
 	value  : bit[];
+} where {
+	value.width = (2^length * 8) - 2;
 };
 
 packet_num := {
-	"0"           : bit;
-	packet_number : bit[7];
+           "0" followed by packet_number : bit[7]; 
+         | "01" followed by packet_number : bit[14];
+         | "11" followed by packet_number : bit[30];
 };
+
+decrypt :: (enc_payload : cryptobits, pn : full_packet_num) -> bit[];
 
 long_hdr := {
 	header_type   : bit;
@@ -26,6 +32,7 @@ long_hdr := {
 	payload		  : bit[];	
 } where { 
 	header_type = 1;
+	payload.width = 2^payload_len;
 };
 
 short_hdr := {
@@ -56,9 +63,10 @@ version_negotiation := {
 	supported_versions : version[];
 } where { 
 	header_type = 1;
+	ver = 0;
 };
 
-quic_pdu := long_hdr | short_hdr | version_negotiation;
+quic_pdu := {long_hdr | short_hdr | version_negotiation};
 
 padding_frame := {
 	type 	: frame_type;

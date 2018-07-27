@@ -7,32 +7,27 @@ import itertools
 typedefs = {}
 
 def new_proto(protocol, version, elements):
-	protocol = {"name": protocol, "version": version, "typedefs": [], "structs": [], "enums": []}
-	for element in elements:
-		if type(element) is dict and "kind" in element and element["kind"] == "struct":
-			protocol["structs"].append(element)
-		if type(element) is dict and "kind" in element and element["kind"] == "typedef":
-			protocol["typedefs"].append(element)
-		if type(element) is dict and "kind" in element and element["kind"] == "enum":
-			protocol["enums"].append(element)
+	protocol = {"kind": "protocol", "name": protocol, "version": version, "types": elements}
+	protocol["types"] = elements
 	return protocol
 	
 def new_typedef(name, type, width):
 	if type == "bit":
-		return {"kind": "typedef", "alias": name, "type": type, "width": width}
+		return {"kind": "typedef", "name": name, "type": type, "width": width}
 
 def new_struct(name, fields, where):
 	s = {"kind": "struct", "name": name, "fields": []}
 	for field in fields:
 		s["fields"].append(field)
-		if where is not None: # this is, uh, inefficient
-			for constraint in where:
-				if constraint[0] == field["name"]:
-					field["constraints"] = field.get("constraints", []) + [(constraint[1], constraint[2])]
+	if where is not None:
+		s["constraints"] = where
 	return s
 	
 def new_field_array(name, type, width):
-	return {"kind": "array", "name": name, "type": type, "width": width}
+	if name[0] == "0" or name[0] == "1":
+		return {"kind": "anonarray", "value": name, "type": type, "width": width}
+	else:
+		return {"kind": "array", "name": name, "type": type, "width": width}
 
 def new_field(name, type):
 	if name[0] == "0" or name[0] == "1":
@@ -43,6 +38,71 @@ def new_field(name, type):
 def new_enum(n, n1, n2):
 	return {"kind": "enum", "name": n, "alternatives": [n1] + n2}
 
+def add_node(stack, value):
+	right_node = stack.pop()
+	left_node = stack.pop()
+	stack.append({"kind": "constraint_ast_node", "left": left_node, "value": value, "right": right_node})
+	
+def new_constraint(name, expr, prop, op):
+	if prop is None:
+		prop = "value"
+	else:
+		prop = prop[1:]
+	operators = []
+	operands = []
+	precedence = {"+": 2, "-": 2, "*": 3, "/": 3, "^": 4}
+	var_buf = ""
+	for c in expr:
+		if c in string.ascii_letters:
+			var_buf += c
+			continue
+		elif var_buf != "":
+			operands.append({"kind": "constraint_ast_node", "left": None, "value": var_buf, "right": None})
+			var_buf = ""
+			
+		if c == '(':
+			operators.append(c)
+			continue
+		elif c == ')':
+			while (len(operators) > 0):
+				popped = operators.pop()
+				if popped == ')':
+					break
+				if (popped != '('):
+					add_node(operands, popped)
+			if popped == ')':
+				continue
+		elif c in precedence.keys():
+			while (len(operators) > 0 and operators[-1] in precedence.keys()):
+				if ((c != '^' and precedence[c] == precedence[operators[-1]]) or precedence[c] < precedence[operators[-1]]):
+					add_node(operands, operators.pop())
+				else:
+					break
+			operators.append(c)
+		else:
+			operands.append({"kind": "constraint_ast_node", "left": None, "value": c, "right": None})
+	while (len(operators) > 0):
+		add_node(operands, operators.pop())
+	return {"kind": "constraint", "field": name, "property": prop, "relational_op": op, "ast": operands[0]}
+
+def new_anonstruct(bitstring, field):
+	return {"kind": "anonstruct", "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
+
+def new_prototype(name, field, fields, return_type):
+	if return_type[1] == -1:
+		return_width = None
+	elif return_type[1] is not None:
+		return_width = return_type[1]
+	else:
+		return {"kind": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0]}
+	return {"kind": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0], "return_width": return_width}
+
+def width_check(width):
+	if width is None:
+		return -1
+	else:
+		return width
+
 def parse_file(filename):
 	filename_head = filename.split(".")[0]
 	protocol, version = [x[1] for x in itertools.zip_longest([0,1], filename_head.split("-"))]
@@ -51,18 +111,23 @@ def parse_file(filename):
 				name = <letter+>:letters -> "".join(letters)
 				digit = anything:x ?(x in '0123456789')
 				number = <digit+>:ds -> int(ds)
-				expression = anything:x -> "".join(x)
+				expr = <(name|digit|'*'|'('|')'|'+'|'-'|'^')+>:x -> "".join(x)
 				bindigit = anything:x ?(x in '01')
 				type = name
 				bitstring = '"'  <bindigit+>:bds '"' -> "".join(bds)
-				enum = name:n ':=' name:n1 ('|' name)+:n2 ';' -> new_enum(n, n1, n2)
 				typedef = name:n ':=' type:t '[' number:width '];' -> new_typedef(n, t, width)
+				field_array_s = name:n ':' type:t '[' (number)?:width ']' -> new_field_array(n,t,width)
+				field_s = (name|bitstring):n ':' type:t -> new_field(n,t)
 				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
 				field = (name|bitstring):n ':' type:t ';' -> new_field(n,t)
-				constraint = name:n '=' expression:e ';' -> (n, '=', e)
+				anonstruct = bitstring:b 'followedby' (field|field_array):f -> new_anonstruct(b, f)
+				enum = name:n ':={' (anonstruct|name):n1 ('|' (anonstruct|name))+:n2 '};' -> new_enum(n, n1, n2)
+				constraint = name:n ('.width'|'.value')?:prop ('='):op expr:e ';' -> new_constraint(n, e, prop, op)
 				where_block = '}where{' (constraint)+:c -> c
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
-				protodef = (typedef|struct|enum)+:elements -> new_proto(protocol, version, elements)
+				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
+				prototype = name:n '::(' (field_s|field_array_s):f (',' (field_s|field_array_s))*:fs ')->' type_array:ta ';' -> new_prototype(n, f, fs, ta)
+				protodef = (typedef|struct|enum|prototype)+:elements -> new_proto(protocol, version, elements)
 				"""
 	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
 								      "new_typedef": new_typedef,
@@ -71,6 +136,10 @@ def parse_file(filename):
 								      "new_struct": new_struct,
 								      "new_proto": new_proto,
 								      "new_enum": new_enum,
+								      "new_constraint": new_constraint,
+								      "new_anonstruct": new_anonstruct,
+								      "new_prototype": new_prototype,
+								      "width_check":width_check,
 								      "protocol": protocol,
 								      "version": version})
 	with open(filename, "r+") as defFile:
