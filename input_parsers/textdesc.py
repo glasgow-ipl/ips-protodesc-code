@@ -35,7 +35,7 @@ def new_field(name, type):
 		return {"irobject": "field", "name": name, "type": type}
 
 def new_enum(n, n1, n2):
-	return {"irobject": "enum", "name": n, "alternatives": [n1] + n2}
+	return {"irobject": "enum", "name": n, "variants": [n1] + n2}
 
 def add_node(stack, value):
 	right_node = stack.pop()
