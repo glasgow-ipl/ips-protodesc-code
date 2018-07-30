@@ -134,7 +134,8 @@ class IR:
     def __init__(self, rawIR):
         # Create the type store and populate with the primitive Bit type:
         self.types = {}
-        self.types["Bit"] = {"irobject" : "bit"}
+        self.types["Bit"] = {"irobject" : "bit", 
+                             "name"     : "Bit"}
 
         # Load the IR:
         parsedIR = json.loads(rawIR)
