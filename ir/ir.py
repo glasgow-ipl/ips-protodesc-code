@@ -123,7 +123,7 @@ class IR:
                 raise IRParseError("duplicate variant")
             variant_types[variant["type"]] = True
 
-        # Record the structure type in the type store:
+        # Record the enum type in the type store:
         if not name in self.types:
             self.types[name] = item
         else:
@@ -131,8 +131,42 @@ class IR:
 
 
 
+    def _parse_func(self, item):
+        # Extract the required fields:
+        name        = item["name"]
+        parameters  = item["parameters"]
+        returnType  = item["returnType"]
+
+        # Check that the function name doesn't alias a type name:
+        if name in self.types:
+            raise IRParseError("function names cannot alias type names")
+
+        # Check that the parameter types exist, and that the parameter
+        # names are distinct:
+        param_names  = {}
+        for param in parameters:
+            if not param["type"] in self.types:
+                raise IRParseError("unknown parameter type")
+            if param["name"] in param_names:
+                raise IRParseError("duplicate parameter name");
+            param_names[param["name"]] = True
+
+        # Check that the return type exists:
+        if not returnType in self.types:
+            raise IRParseError("unknown returnType")
+
+        # Record the function definition:
+        if not name in self.funcs:
+            self.funcs[name] = item
+        else:
+            raise IRParseError("function already exists")
+
+
+
     def __init__(self, rawIR):
-        # Create the type store and populate with the primitive Bit type:
+        # Create the function and type stores, and populate the type store
+        # with the primitive Bit type:
+        self.funcs = {}
         self.types = {}
         self.types["Bit"] = {"irobject" : "bit", 
                              "name"     : "Bit"}
@@ -154,6 +188,8 @@ class IR:
                 self._parse_struct(item)
             elif item["irobject"] == "enum":
                 self._parse_enum(item)
+            elif item["irobject"] == "function":
+                self._parse_func(item)
             else:
                 raise IRParseError("unknown irobject")
 
