@@ -109,6 +109,28 @@ class IR:
 
 
 
+    def _parse_enum(self, item):
+        # Extract the required fields:
+        name        = item["name"]
+        variants    = item["variants"]
+
+        # Check the variants exist and are distinct:
+        variant_types = {}
+        for variant in variants:
+            if not variant["type"] in self.types:
+                raise IRParseError("variant type unknown")
+            if variant["type"] in variant_types:
+                raise IRParseError("duplicate variant")
+            variant_types[variant["type"]] = True
+
+        # Record the structure type in the type store:
+        if not name in self.types:
+            self.types[name] = item
+        else:
+            raise IRParseError("type already exists")
+
+
+
     def __init__(self, rawIR):
         # Create the type store and populate with the primitive Bit type:
         self.types = {}
@@ -129,6 +151,8 @@ class IR:
                 self._parse_array(item)
             elif item["irobject"] == "struct":
                 self._parse_struct(item)
+            elif item["irobject"] == "enum":
+                self._parse_enum(item)
             else:
                 raise IRParseError("unknown irobject")
 
