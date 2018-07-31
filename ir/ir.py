@@ -163,7 +163,7 @@ class IR:
 
 
 
-    def __init__(self, rawIR):
+    def __init__(self, ir):
         # Create the function and type stores, and populate the type store
         # with the primitive Bit type:
         self.funcs = {}
@@ -171,13 +171,17 @@ class IR:
         self.types["Bit"] = {"irobject" : "bit", 
                              "name"     : "Bit"}
 
-        # Load the IR:
-        parsedIR = json.loads(rawIR)
-        if not isinstance(parsedIR, list):
-            raise IRParseError("Must be a JSON array")
+        # Check that we have been given a dictionary containing a protocol
+        # object:
+        if ir["irobject"] != "protocol":
+            raise IRParseError("not a protocol")
 
-        # Parse the IR:
-        for item in parsedIR:
+        # Check that the protocol has a name:
+        if not "name" in ir:
+            raise IRParseError("protocol has no name")
+
+        # Load the definitions:
+        for item in ir["definitions"]:
             if   item["irobject"] == "bit":
                 raise IRParseError("cannot redefine bit")
             elif item["irobject"] == "newtype":
@@ -191,7 +195,14 @@ class IR:
             elif item["irobject"] == "function":
                 self._parse_func(item)
             else:
-                raise IRParseError("unknown irobject")
+                raise IRParseError("protocol definitions contain unknown irobject")
+
+        # Check the PDU types:
+        if ir["pdus"] == []:
+            raise IRParseError("protocol has empty PDU array")
+        for pdu in ir["pdus"]:
+            if not pdu in self.types:
+                raise IRParseError("protocol has unkown PDU type")
 
 # =============================================================================
 # Unit tests:
@@ -199,79 +210,13 @@ class IR:
 import unittest
 
 class TestIR(unittest.TestCase):
-    def test_array(self):
-        rawIR = """
-                [
-                    {
-                      "irobject"    : "array",
-                      "name"        : "SeqNum",
-                      "elementType" : "Bit",
-                      "length"      : 16
-                    }
-                ]
-                """
-        ir = IR(rawIR)
-        #self.assertEqual(ir['irobject'],    'array')
-        #self.assertEqual(ir['name'],        'SeqNum')
-        #self.assertEqual(ir['elementType'], 'Bit')
-        #self.assertEqual(ir['length'],      16)
-
-    # Test the failure case, where the elementType is equal to the array type
-    def test_array_elementType_equals_type(self):
-        rawIR = """
-                [
-                    {
-                      "irobject"    : "array",
-                      "name"        : "SeqNum",
-                      "elementType" : "SeqNum",
-                      "length"      : 16
-                    }
-                ]
-                """
-        self.assertRaises(IRParseError, IR, rawIR)
-
-    # Test the failure case, where the array length is negative
-    def test_array_negative_length(self):
-        rawIR = """
-                [
-                    {
-                      "irobject"    : "array",
-                      "name"        : "SeqNum",
-                      "elementType" : "Bit",
-                      "length"      : -1
-                    }
-                ]
-                """
-        self.assertRaises(IRParseError, IR, rawIR)
-
-    def test_compound(self):
-        rawIR = """
-                [
-                    {
-                     "irobject"    : "array",
-                     "name"        : "PacketNumber",
-                     "elementType" : "Bit",
-                     "length"      : 7
-                    },
-                    {
-                     "irobject"    : "struct",
-                     "name"        : "test",
-                     "fields"      : [
-                       {
-                         "name" : "length",
-                         "type" : "PacketNumber"
-                       },
-                       {
-                         "name" : "length",
-                         "type" : "Bit"
-                       }
-                     ],
-                     "constraints" : [
-                     ]
-                    }
-                ]
-                """
-        ir = IR(rawIR)
+    def test_empty(self):
+        ir = IR({
+                  "irobject"    : "protocol",
+                  "name"        : "Test",
+                  "definitions" : [],
+                  "pdus"        : ["Bit"]
+                })
 
 # =============================================================================
 if __name__ == "__main__":
