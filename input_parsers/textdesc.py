@@ -8,7 +8,7 @@ typedefs_lookup = {}
 typedefs_order = []
 
 def new_proto(protocol, elements):
-	return {"irobject": "protocol", "name": protocol, "definitions": [typedefs_lookup[name] for name in typedefs_order], "pdus": []}
+	return {"irobject": "protocol", "name": protocol, "definitions": [typedefs_lookup[name] for name in typedefs_order], "pdus": [{"irobject": "pdu", "type": "pdus"}]}
 	
 def new_array(name, type, length):
 	if type == "bit":
