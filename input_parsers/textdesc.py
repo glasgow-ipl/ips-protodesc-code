@@ -47,10 +47,7 @@ def new_field_array(name, type, width):
 def new_field(name, type):
 	if type == "bit":
 		type = "Bit"
-	if name[0] == "0" or name[0] == "1":
-		return {"irobject": "anonfield", "value": name, "type": type}
-	else:
-		return {"irobject": "field", "name": name, "type": type}
+	return {"irobject": "field", "name": name, "type": type}
 
 def new_enum(name, n1, n2):
 	variants = []
