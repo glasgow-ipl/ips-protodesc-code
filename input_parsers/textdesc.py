@@ -32,11 +32,15 @@ def new_field_array(name, type, width):
 	if type == "bit":
 		type = "Bit"
 	if name[0] == "0" or name[0] == "1":
-		return {"irobject": "anonarray", "value": name, "type": type, "width": width}
+		generated_name = "$" + type + str(width)
+		if generated_name not in typedefs_order:
+			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": type, "length": width}
+			typedefs_order.append(generated_name)
+		return {"irobject": "field", "name": None, "value": name, "type": generated_name}
 	else:
 		generated_name = "$" + type + str(width)
 		if generated_name not in typedefs_order:
-			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": "Bit", "length": width}
+			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": type, "length": width}
 			typedefs_order.append(generated_name)
 		return {"irobject": "field", "name": name, "type": generated_name}
 
@@ -49,18 +53,39 @@ def new_field(name, type):
 		return {"irobject": "field", "name": name, "type": type}
 
 def new_enum(name, n1, n2):
-	enum = {"irobject": "enum", "name": name, "variants": [n1] + n2}
+	variants = []
+	count = 0
+	for variant in [n1] + n2:
+		if type(variant) is dict and variant["irobject"] == "struct":
+			generated_name = "$" + name + "#" + str(count)
+			variant["name"] = generated_name
+			typedefs_lookup[generated_name] = variant
+			typedefs_order.append(generated_name)
+			field_count = 0
+			constraints = []
+			for field in variant["fields"]:
+				if "value" in field:
+					field["name"] = generated_name + "#" + str(field_count)
+					field_count += 1
+					constraints.append((field["name"], field["value"]))
+					field.pop('value', None)
+			variant["constraints"] = []
+			for constraint in constraints:
+				var = {"irobject": "constraint_binary", "value": constraint[0], "left": None, "right": None}
+				val = {"irobject": "constraint_binary", "value": constraint[1], "left": None, "right": None}
+				new_constraint = {"irobject": "constraint_relational", "value": "==", "left": var, "right": val}
+				variant["constraints"].append(new_constraint)
+			count += 1
+		else:
+			generated_name = variant
+		variants.append({"irobject": "variant", "type": generated_name})
+	enum = {"irobject": "enum", "name": name, "variants": variants}
 	typedefs_lookup[name] = enum
 	typedefs_order.append(name)
 	return enum
-	
-def add_node(stack, value):
-	right_node = stack.pop()
-	left_node = stack.pop()
-	stack.append({"irobject": "constraint_ast_node", "left": left_node, "value": value, "right": right_node})
 
 def new_anonstruct(bitstring, field):
-	return {"irobject": "anonstruct", "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
+	return {"irobject": "struct", "name": None, "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
 
 def new_prototype(name, field, fields, return_type):
 	if return_type[1] == -1:
