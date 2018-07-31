@@ -85,13 +85,20 @@ def new_anonstruct(bitstring, field):
 	return {"irobject": "struct", "name": None, "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
 
 def new_prototype(name, field, fields, return_type):
-	if return_type[1] == -1:
-		return_width = None
-	elif return_type[1] is not None:
-		return_width = return_type[1]
+	parameters = [field] + fields
+	for parameter in parameters:
+		parameter["irobject"] = "parameter"
+	print(name, field, fields, return_type)
+	if return_type[1] is None:
+		ret = return_type[0]
 	else:
-		return {"irobject": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0]}
-	return {"irobject": "prototype", "name": name, "parameters": [field] + fields, "return_type": return_type[0], "return_width": return_width}
+		ret_width = return_type[1]
+		if ret_width == -1:
+			ret_width = None
+			ret = new_field_array("return", return_type[0], ret_width)["type"]
+	function = {"irobject": "function", "name": name, "parameters": parameters, "returnType": ret}
+	typedefs_lookup[name] = function
+	typedefs_order.append(name)
 
 def width_check(width):
 	if width is None:
