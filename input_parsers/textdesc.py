@@ -6,10 +6,8 @@ import itertools
 
 typedefs = {}
 
-def new_proto(protocol, version, elements):
-	protocol = {"irobject": "protocol", "name": protocol, "version": version, "types": elements}
-	protocol["types"] = elements
-	return protocol
+def new_proto(protocol, elements):
+	return {"irobject": "protocol", "name": protocol, "definitions": elements, "pdus": []}
 	
 def new_array(name, type, length):
         return {"irobject": "array", "name": name, "elementType": type, "length": length}
@@ -71,8 +69,7 @@ def build_rel_tree(start, pairs):
 	return start
 
 def parse_file(filename):
-	filename_head = filename.split(".")[0]
-	protocol, version = [x[1] for x in itertools.zip_longest([0,1], filename_head.split("-"))]
+	protocol = filename.split(".")[0]
 	grammar = r"""
 				letter = anything:x ?(x in ascii_letters)
 				name = <letter+>:letters -> "".join(letters)
@@ -117,7 +114,7 @@ def parse_file(filename):
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
 				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
 				prototype = name:n '::(' (field_s|field_array_s):f (',' (field_s|field_array_s))*:fs ')->' type_array:ta ';' -> new_prototype(n, f, fs, ta)
-				protodef = (array|struct|enum|prototype)+:elements -> new_proto(protocol, version, elements)
+				protodef = (array|struct|enum|prototype)+:elements -> new_proto(protocol, elements)
 				"""
 	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
 								      "new_array": new_array,
@@ -131,8 +128,7 @@ def parse_file(filename):
 								      "build_expr_tree": build_expr_tree,
 								      "build_rel_tree": build_rel_tree,
 								      "width_check":width_check,
-								      "protocol": protocol,
-								      "version": version})
+								      "protocol": protocol})
 	with open(filename, "r+") as defFile:
 		defStr = defFile.read().replace(" ", "").replace("\n", "").replace("\t", "")
 	return parser(defStr).protodef()
