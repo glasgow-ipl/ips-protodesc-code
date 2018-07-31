@@ -4,13 +4,19 @@ import sys
 import json
 import itertools
 
-typedefs = {}
+typedefs_lookup = {}
+typedefs_order = []
 
 def new_proto(protocol, elements):
-	return {"irobject": "protocol", "name": protocol, "definitions": elements, "pdus": []}
+	return {"irobject": "protocol", "name": protocol, "definitions": [typedefs_lookup[name] for name in typedefs_order], "pdus": []}
 	
 def new_array(name, type, length):
-        return {"irobject": "array", "name": name, "elementType": type, "length": length}
+	if type == "bit":
+		type = "Bit"
+	array = {"irobject": "array", "name": name, "elementType": type, "length": length}
+	typedefs_lookup[name] = array
+	typedefs_order.append(name)
+	return array
 
 def new_struct(name, fields, where):
 	s = {"irobject": "struct", "name": name, "fields": []}
@@ -18,23 +24,36 @@ def new_struct(name, fields, where):
 		s["fields"].append(field)
 	if where is not None:
 		s["constraints"] = where
+	typedefs_lookup[name] = s
+	typedefs_order.append(name)
 	return s
 	
 def new_field_array(name, type, width):
+	if type == "bit":
+		type = "Bit"
 	if name[0] == "0" or name[0] == "1":
 		return {"irobject": "anonarray", "value": name, "type": type, "width": width}
 	else:
-		return {"irobject": "array", "name": name, "type": type, "width": width}
+		generated_name = "$" + type + str(width)
+		if generated_name not in typedefs_order:
+			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": "Bit", "length": width}
+			typedefs_order.append(generated_name)
+		return {"irobject": "field", "name": name, "type": generated_name}
 
 def new_field(name, type):
+	if type == "bit":
+		type = "Bit"
 	if name[0] == "0" or name[0] == "1":
 		return {"irobject": "anonfield", "value": name, "type": type}
 	else:
 		return {"irobject": "field", "name": name, "type": type}
 
-def new_enum(n, n1, n2):
-	return {"irobject": "enum", "name": n, "variants": [n1] + n2}
-
+def new_enum(name, n1, n2):
+	enum = {"irobject": "enum", "name": name, "variants": [n1] + n2}
+	typedefs_lookup[name] = enum
+	typedefs_order.append(name)
+	return enum
+	
 def add_node(stack, value):
 	right_node = stack.pop()
 	left_node = stack.pop()
