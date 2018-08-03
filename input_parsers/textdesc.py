@@ -135,7 +135,7 @@ def parse_file(filename):
 				
 				# expression grammar
 				primary_expr = number:n -> {"constraint": "constant", "value": n}
-				             | name:n ('.' ('length' | 'value'):p -> p)?:prop -> {"constraint": "field_name", "property": prop if prop else "value", "value": n}
+				             | name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "field_name", "property": prop if prop else "value", "value": n}
 							 | '(' cond_expr:expr ')' -> expr
 				multiplicative_expr = primary_expr:left (('*' | '/' | '%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
 				additive_expr = multiplicative_expr:left (('+' | '-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
