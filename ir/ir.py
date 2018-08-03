@@ -163,7 +163,7 @@ class IR:
 
 
 
-    def __init__(self, ir):
+    def __init__(self, protocol):
         # Create and type store, and populate with the primitive Bit type:
         self.types = {}
         self.types["Bit"] = {"irobject" : "bit", 
@@ -171,14 +171,14 @@ class IR:
 
         # Check that we have been given a dictionary containing a protocol
         # object:
-        if ir["irobject"] != "protocol":
+        if protocol["irobject"] != "protocol":
             raise IRError("not a protocol")
 
         # Record the protocol name:
-        self.name = ir["name"]
+        self.name = protocol["name"]
 
         # Load the definitions:
-        for item in ir["definitions"]:
+        for item in protocol["definitions"]:
             if   item["irobject"] == "bit":
                 raise IRError("cannot redefine bit")
             elif item["irobject"] == "newtype":
@@ -195,9 +195,9 @@ class IR:
                 raise IRError("protocol definitions contain unknown irobject")
 
         # Check the PDU types:
-        if ir["pdus"] == []:
+        if protocol["pdus"] == []:
             raise IRError("protocol has empty PDU array")
-        for pdu in ir["pdus"]:
+        for pdu in protocol["pdus"]:
             if not pdu in self.types:
                 raise IRError("protocol has unkown PDU type")
 
