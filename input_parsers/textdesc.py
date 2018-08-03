@@ -24,9 +24,17 @@ def new_array(name, type, length):
 
 def new_struct(name, fields, where):
 	s = {"irobject": "struct", "name": name, "fields": []}
+	fields_lookup = {}
 	for field in fields:
+		fields_lookup[field["name"]] = field
 		s["fields"].append(field)
 	if where is not None:
+		for expression in where.copy():
+			if expression["constraint"] == "assignment":
+				field_name = expression["left"]["value"]
+				constraint = expression["right"]
+				fields_lookup[field_name]["isPresent"] = expression["right"]
+				where.remove(expression)
 		s["constraints"] = where
 	typedefs_lookup[name] = s
 	typedefs_order.append(name)
@@ -40,13 +48,13 @@ def new_field_array(name, type, width):
 		if generated_name not in typedefs_order:
 			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": type, "length": width}
 			typedefs_order.append(generated_name)
-		return {"irobject": "field", "name": None, "value": name, "type": generated_name}
+		return {"irobject": "field", "name": None, "value": name, "type": generated_name, "isPresent": {"constraint": "constant", "value": 1}}
 	else:
 		generated_name = "$" + type + str(width)
 		if generated_name not in typedefs_order:
 			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": type, "length": width}
 			typedefs_order.append(generated_name)
-		return {"irobject": "field", "name": name, "type": generated_name}
+		return {"irobject": "field", "name": name, "type": generated_name, "isPresent": {"constraint": "constant", "value": 1}}
 
 def new_field(name, type):
 	if type == "bit":
