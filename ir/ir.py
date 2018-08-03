@@ -26,6 +26,11 @@
 # =============================================================================
 
 import json
+import re
+
+# Type names begin with an upper case letter, function names do not:
+TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$]+$"
+FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$]+$"
 
 class IRError(Exception):
     def __init__(self, reason):
@@ -45,6 +50,8 @@ class IR:
             raise IRError("derivedFrom unknown type")
 
         # Record the new type in the type store:
+        if re.search(TYPE_NAME_REGEX, name) == None:
+            raise IRError("invalid name")
         if not name in self.types:
             self.types[name] = item
         else:
@@ -71,6 +78,8 @@ class IR:
             raise IRError("elementType unknown")
 
         # Record the array type in the type store:
+        if re.search(TYPE_NAME_REGEX, name) == None:
+            raise IRError("invalid name")
         if not name in self.types:
             self.types[name] = item
         else:
@@ -102,6 +111,8 @@ class IR:
         # FIXME
 
         # Record the structure type in the type store:
+        if re.search(TYPE_NAME_REGEX, name) == None:
+            raise IRError("invalid name")
         if not name in self.types:
             self.types[name] = item
         else:
@@ -124,6 +135,8 @@ class IR:
             variant_types[variant["type"]] = True
 
         # Record the enum type in the type store:
+        if re.search(TYPE_NAME_REGEX, name) == None:
+            raise IRError("invalid name")
         if not name in self.types:
             self.types[name] = item
         else:
@@ -156,6 +169,8 @@ class IR:
             raise IRError("unknown returnType")
 
         # Record the function definition:
+        if re.search(FUNC_NAME_REGEX, name) == None:
+            raise IRError("invalid name")
         if not name in self.types:
             self.types[name] = item
         else:
