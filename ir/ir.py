@@ -137,9 +137,9 @@ class IR:
         parameters  = item["parameters"]
         returnType  = item["returnType"]
 
-        # Check that the function name doesn't alias a type name:
+        # Check that the function name doesn't exist:
         if name in self.types:
-            raise IRError("function names cannot alias type names")
+            raise IRError("function name redefined")
 
         # Check that the parameter types exist, and that the parameter
         # names are distinct:
@@ -156,17 +156,15 @@ class IR:
             raise IRError("unknown returnType")
 
         # Record the function definition:
-        if not name in self.funcs:
-            self.funcs[name] = item
+        if not name in self.types:
+            self.types[name] = item
         else:
             raise IRError("function already exists")
 
 
 
     def __init__(self, ir):
-        # Create the function and type stores, and populate the type store
-        # with the primitive Bit type:
-        self.funcs = {}
+        # Create and type store, and populate with the primitive Bit type:
         self.types = {}
         self.types["Bit"] = {"irobject" : "bit", 
                              "name"     : "Bit"}
