@@ -68,14 +68,14 @@ def new_enum(name, n1, n2):
 					field.pop('value', None)
 			variant["constraints"] = []
 			for constraint in constraints:
-				var = {"irobject": "constraint_binary", "value": constraint[0], "left": None, "right": None}
-				val = {"irobject": "constraint_binary", "value": constraint[1], "left": None, "right": None}
-				new_constraint = {"irobject": "constraint_relational", "value": "==", "left": var, "right": val}
+				var = {"constraint": "field_name", "property": "value", "value": constraint[0]}
+				val = {"constraint": "constant", "value": constraint[1]}
+				new_constraint = {"constraint": "binary", "value": "==", "left": var, "right": val}
 				variant["constraints"].append(new_constraint)
 			count += 1
 		else:
 			generated_name = variant
-		variants.append({"irobject": "variant", "type": generated_name})
+		variants.append({"type": generated_name})
 	enum = {"irobject": "enum", "name": name, "variants": variants}
 	typedefs_lookup[name] = enum
 	typedefs_order.append(name)
@@ -87,7 +87,7 @@ def new_anonstruct(bitstring, field):
 def new_prototype(name, field, fields, return_type):
 	parameters = [field] + fields
 	for parameter in parameters:
-		parameter["irobject"] = "parameter"
+		parameter.pop("irobject", None)
 	if return_type[1] is None:
 		ret = return_type[0]
 	else:
