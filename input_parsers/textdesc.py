@@ -8,7 +8,11 @@ typedefs_lookup = {}
 typedefs_order = []
 
 def new_proto(protocol, elements):
-	return {"irobject": "protocol", "name": protocol, "definitions": [typedefs_lookup[name] for name in typedefs_order], "pdus": [{"irobject": "pdu", "type": "pdus"}]}
+	if "pdus" not in typedefs_lookup or typedefs_lookup["pdus"]["irobject"] != "enum":
+		raise Exception("`pdus` enum must be defined")
+	else:
+		typedefs_order.remove("pdus")
+	return {"irobject": "protocol", "name": protocol, "definitions": [typedefs_lookup[name] for name in typedefs_order], "pdus": typedefs_lookup["pdus"]["variants"]}
 	
 def new_array(name, type, length):
 	if type == "bit":
@@ -136,6 +140,7 @@ def parse_file(filename):
 				land_expr = or_expr:left ('&&':operator or_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
 				lor_expr = land_expr:left ('||':operator land_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
 				cond_expr = lor_expr:left ('?' cond_expr:operand1 ':' lor_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights)
+				assignment_expr = (name:n '.is_present' -> {"constraint": "field_name", "property": "is_present", "value": n}):left '=' primary_expr:c -> {"constraint": "assignment", "left": left, "right": c}
 
 				bindigit = anything:x ?(x in '01')
 				type = name
@@ -146,8 +151,8 @@ def parse_file(filename):
 				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
 				field = (name|bitstring):n ':' type:t ';' -> new_field(n,t)
 				anonstruct = bitstring:b 'followedby' (field|field_array):f -> new_anonstruct(b, f)
-				enum = name:n ':={' (anonstruct|name):n1 ('|' (anonstruct|name))+:n2 '};' -> new_enum(n, n1, n2)
-				constraint = cond_expr:c ';' -> c
+				enum = name:n ':={' (anonstruct|name):n1 ('|' (anonstruct|name))*:n2 '};' -> new_enum(n, n1, n2)
+				constraint = (assignment_expr|cond_expr):c ';' -> c
 				where_block = '}where{' (constraint)+:c -> c
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
 				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
