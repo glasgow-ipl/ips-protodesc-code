@@ -26,6 +26,7 @@
 # =============================================================================
 
 import json
+import re
 
 class IRError(Exception):
     def __init__(self, reason):
@@ -175,6 +176,8 @@ class IR:
             raise IRError("not a protocol")
 
         # Record the protocol name:
+        if re.search("^[A-Z][A-Za-z0-9$]+$", protocol["name"]) == None:
+            raise IRError("invalid name")
         self.name = protocol["name"]
 
         # Load the definitions:
