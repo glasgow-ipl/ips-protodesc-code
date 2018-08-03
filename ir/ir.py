@@ -27,7 +27,7 @@
 
 import json
 
-class IRParseError(Exception):
+class IRError(Exception):
     def __init__(self, reason):
         self.reason = reason
 
@@ -40,15 +40,15 @@ class IR:
         # Check that the new type is derived from an existing type, and
         # not from itself:
         if derivedFrom == name:
-            raise IRParseError("cannot deriveFrom self")
+            raise IRError("cannot deriveFrom self")
         if not derivedFrom in self.types:
-            raise IRParseError("derivedFrom unknown type")
+            raise IRError("derivedFrom unknown type")
 
         # Record the new type in the type store:
         if not name in self.types:
             self.types[name] = item
         else:
-            raise IRParseError("type already exists")
+            raise IRError("type already exists")
 
 
 
@@ -61,20 +61,20 @@ class IR:
         # Check that the length is valid:
         if length is not None:
             if length < 0:
-                raise IRParseError("negative array length")
+                raise IRError("negative array length")
 
         # Check that the element type has been defined and is distinct
         # from the array type being defined:
         if elementType == name:
-            raise IRParseError("elementType equals array type")
+            raise IRError("elementType equals array type")
         if not elementType in self.types:
-            raise IRParseError("elementType unknown")
+            raise IRError("elementType unknown")
 
         # Record the array type in the type store:
         if not name in self.types:
             self.types[name] = item
         else:
-            raise IRParseError("type already exists")
+            raise IRError("type already exists")
 
 
 
@@ -90,11 +90,11 @@ class IR:
         field_names  = {}
         for field in fields:
             if not field["type"] in self.types:
-                raise IRParseError("field type unknwon")
+                raise IRError("field type unknwon")
             if field["type"] in field_types:
-                raise IRParseError("duplicate field type")
+                raise IRError("duplicate field type")
             if field["name"] in field_names:
-                raise IRParseError("duplicate field name");
+                raise IRError("duplicate field name");
             field_types[field["type"]] = True
             field_names[field["name"]] = True
 
@@ -105,7 +105,7 @@ class IR:
         if not name in self.types:
             self.types[name] = item
         else:
-            raise IRParseError("type already exists")
+            raise IRError("type already exists")
 
 
 
@@ -118,16 +118,16 @@ class IR:
         variant_types = {}
         for variant in variants:
             if not variant["type"] in self.types:
-                raise IRParseError("variant type unknown")
+                raise IRError("variant type unknown")
             if variant["type"] in variant_types:
-                raise IRParseError("duplicate variant")
+                raise IRError("duplicate variant")
             variant_types[variant["type"]] = True
 
         # Record the enum type in the type store:
         if not name in self.types:
             self.types[name] = item
         else:
-            raise IRParseError("type already exists")
+            raise IRError("type already exists")
 
 
 
@@ -139,27 +139,27 @@ class IR:
 
         # Check that the function name doesn't alias a type name:
         if name in self.types:
-            raise IRParseError("function names cannot alias type names")
+            raise IRError("function names cannot alias type names")
 
         # Check that the parameter types exist, and that the parameter
         # names are distinct:
         param_names  = {}
         for param in parameters:
             if not param["type"] in self.types:
-                raise IRParseError("unknown parameter type")
+                raise IRError("unknown parameter type")
             if param["name"] in param_names:
-                raise IRParseError("duplicate parameter name");
+                raise IRError("duplicate parameter name");
             param_names[param["name"]] = True
 
         # Check that the return type exists:
         if not returnType in self.types:
-            raise IRParseError("unknown returnType")
+            raise IRError("unknown returnType")
 
         # Record the function definition:
         if not name in self.funcs:
             self.funcs[name] = item
         else:
-            raise IRParseError("function already exists")
+            raise IRError("function already exists")
 
 
 
@@ -174,16 +174,16 @@ class IR:
         # Check that we have been given a dictionary containing a protocol
         # object:
         if ir["irobject"] != "protocol":
-            raise IRParseError("not a protocol")
+            raise IRError("not a protocol")
 
         # Check that the protocol has a name:
         if not "name" in ir:
-            raise IRParseError("protocol has no name")
+            raise IRError("protocol has no name")
 
         # Load the definitions:
         for item in ir["definitions"]:
             if   item["irobject"] == "bit":
-                raise IRParseError("cannot redefine bit")
+                raise IRError("cannot redefine bit")
             elif item["irobject"] == "newtype":
                 self._parse_newtype(item)
             elif item["irobject"] == "array":
@@ -195,14 +195,14 @@ class IR:
             elif item["irobject"] == "function":
                 self._parse_func(item)
             else:
-                raise IRParseError("protocol definitions contain unknown irobject")
+                raise IRError("protocol definitions contain unknown irobject")
 
         # Check the PDU types:
         if ir["pdus"] == []:
-            raise IRParseError("protocol has empty PDU array")
+            raise IRError("protocol has empty PDU array")
         for pdu in ir["pdus"]:
             if not pdu in self.types:
-                raise IRParseError("protocol has unkown PDU type")
+                raise IRError("protocol has unkown PDU type")
 
 # =============================================================================
 # Unit tests:
