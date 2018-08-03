@@ -174,9 +174,8 @@ class IR:
         if ir["irobject"] != "protocol":
             raise IRError("not a protocol")
 
-        # Check that the protocol has a name:
-        if not "name" in ir:
-            raise IRError("protocol has no name")
+        # Record the protocol name:
+        self.name = ir["name"]
 
         # Load the definitions:
         for item in ir["definitions"]:
