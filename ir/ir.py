@@ -200,6 +200,46 @@ class IR:
         for pdu in protocol["pdus"]:
             if not pdu in self.types:
                 raise IRError("protocol has unkown PDU type")
+        self.pdus = protocol["pdus"]
+
+
+
+    def _dump_recursive(self, visited, name):
+        if name in visited:
+            return
+        visited[name] = True
+
+        item = self.types[name]
+        if   item["irobject"] == "bit":
+            print("Bit")
+        elif item["irobject"] == "newtype":
+            self._dump_recursive(visited, item["derivedFrom"])
+            print("Newtype {} <- {}".format(item["name"], item["derivedFrom"]))
+        elif item["irobject"] == "array":
+            self._dump_recursive(visited, item["elementType"])
+            print("Array {}".format(item["name"]))
+        elif item["irobject"] == "struct":
+            for f in item["fields"]:
+                self._dump_recursive(visited, f["type"])
+            print("Struct {}".format(item["name"]))
+        elif item["irobject"] == "enum":
+            for v in item["variants"]:
+                self._dump_recursive(visited, v["type"])
+            print("Enum {}".format(item["name"]))
+        elif item["irobject"] == "function":
+            for p in item["parameters"]:
+                self._dump_recursive(visited, p["type"])
+            self._dump_recursive(visited, item["returnType"])
+            print("Function {}".format(item["name"]))
+        else:
+            raise IRError("protocol definitions contain unknown irobject")
+        print("")
+
+
+    def dump(self):
+        for pdu in self.pdus:
+            self._dump_recursive({}, pdu)
+            print("PDU {}".format(pdu))
 
 # =============================================================================
 # Unit tests:
@@ -207,13 +247,41 @@ class IR:
 import unittest
 
 class TestIR(unittest.TestCase):
-    def test_empty(self):
+    def test_basic(self):
         ir = IR({
                   "irobject"    : "protocol",
                   "name"        : "Test",
-                  "definitions" : [],
-                  "pdus"        : ["Bit"]
+                  "definitions" : [
+                      {
+                          "irobject"    : "newtype",
+                          "name"        : "SpinBit",
+                          "derivedFrom" : "Bit"
+                      },
+                      {
+                          "irobject"    : "array",
+                          "name"        : "SeqNum",
+                          "elementType" : "Bit",
+                          "length"      : 16
+                      },
+                      {
+                          "irobject"    : "struct",
+                          "name"        : "TestPacket",
+                          "fields"      : [
+                              {
+                                  "name" : "spin_bit",
+                                  "type" : "SpinBit"
+                              },
+                              {
+                                  "name" : "seq_num",
+                                  "type" : "SeqNum"
+                              }
+                          ],
+                          "constraints" : []
+                      }
+                  ],
+                  "pdus" : ["TestPacket"]
                 })
+        ir.dump()
 
 # =============================================================================
 if __name__ == "__main__":
