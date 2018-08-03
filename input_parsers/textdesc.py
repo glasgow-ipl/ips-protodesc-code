@@ -88,7 +88,6 @@ def new_prototype(name, field, fields, return_type):
 	parameters = [field] + fields
 	for parameter in parameters:
 		parameter["irobject"] = "parameter"
-	print(name, field, fields, return_type)
 	if return_type[1] is None:
 		ret = return_type[0]
 	else:
@@ -106,14 +105,12 @@ def width_check(width):
 	else:
 		return width
 
-def build_expr_tree(start, pairs):
+def build_tree(start, pairs):
 	for pair in pairs:
-		start = {"irobject": "constraint_binary", "value": pair[0], "left": start, "right": pair[1]}
-	return start
-
-def build_rel_tree(start, pairs):
-	for pair in pairs:
-		start = {"irobject": "constraint_relational", "value": pair[0], "left": start, "right": pair[1]}
+		if len(pair) == 2:
+			start = {"constraint": "binary", "value": pair[0], "left": start, "right": pair[1]}
+		elif len(pair) == 3:
+			start = {"constraint": "ternary", "value": pair[0], "cond": start, "true": pair[1], "else": pair[2]}
 	return start
 
 def parse_file(filename):
@@ -124,28 +121,21 @@ def parse_file(filename):
 				digit = anything:x ?(x in '0123456789')
 				number = <digit+>:ds -> int(ds)
 				
-				# Binary expressions
-				cb_number = <digit+>:ds -> {"irobject": "constraint_binary", "value": int(ds), "left": None, "right": None}
-				cb_name = <letter+>:letters -> {"irobject": "constraint_binary", "value": "".join(letters), "left": None, "right": None}
-				parens = '(' expr:e ')' -> e
-				value = cb_name | cb_number | parens
-				add = '+' expr2:n -> ('+', n)
-				sub = '-' expr2:n -> ('-', n)
-				mul = '*' expr3:n -> ('*', n)
-				div = '/' expr3:n -> ('/', n)
-				pow = '^' value:n -> ('^', n)
-				expr = expr2:left (add | sub)*:right -> build_expr_tree(left, right)
-				expr2 = expr3:left (mul | div)*:right -> build_expr_tree(left, right)
-				expr3 = value:left pow*:right -> build_expr_tree(left, right)
-				
-				# Relational expressions
-				eq = '==' expr:n -> ('==', n)
-				neq = '!=' expr:n -> ('!=', n)
-				lt = '<' expr:n -> ('<', n)
-				gt = '>' expr:n -> ('>', n)
-				lte = '<=' expr:n -> ('<=', n)
-				gte = '>=' expr:n -> ('>=', n)
-				cr_expr = expr:left (eq|neq|lt|gt|lte|gte)*:right -> build_rel_tree(left, right)
+				# expression grammar
+				primary_expr = number:n -> {"constraint": "constant", "value": n}
+				             | name:n ('.' ('length' | 'value'):p -> p)?:prop -> {"constraint": "field_name", "property": prop if prop else "value", "value": n}
+							 | '(' cond_expr:expr ')' -> expr
+				multiplicative_expr = primary_expr:left (('*' | '/' | '%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				additive_expr = multiplicative_expr:left (('+' | '-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				shift_expr = additive_expr:left (('<<' | '>>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				relational_expr = shift_expr:left (('<=' | '>=' | '<' | '>'):operator shift_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				equality_expr = relational_expr:left (('==' | '!='):operator relational_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				and_expr = equality_expr:left ('&':operator equality_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				xor_expr = and_expr:left ('^':operator and_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				or_expr = xor_expr:left ('|':operator xor_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				land_expr = or_expr:left ('&&':operator or_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				lor_expr = land_expr:left ('||':operator land_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
+				cond_expr = lor_expr:left ('?' cond_expr:operand1 ':' lor_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights)
 
 				bindigit = anything:x ?(x in '01')
 				type = name
@@ -157,7 +147,7 @@ def parse_file(filename):
 				field = (name|bitstring):n ':' type:t ';' -> new_field(n,t)
 				anonstruct = bitstring:b 'followedby' (field|field_array):f -> new_anonstruct(b, f)
 				enum = name:n ':={' (anonstruct|name):n1 ('|' (anonstruct|name))+:n2 '};' -> new_enum(n, n1, n2)
-				constraint = cr_expr:c ';' -> c
+				constraint = cond_expr:c ';' -> c
 				where_block = '}where{' (constraint)+:c -> c
 				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
 				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
@@ -173,8 +163,7 @@ def parse_file(filename):
 								      "new_enum": new_enum,
 								      "new_anonstruct": new_anonstruct,
 								      "new_prototype": new_prototype,
-								      "build_expr_tree": build_expr_tree,
-								      "build_rel_tree": build_rel_tree,
+								      "build_tree": build_tree,
 								      "width_check":width_check,
 								      "protocol": protocol})
 	with open(filename, "r+") as defFile:
