@@ -3,6 +3,7 @@ version := bit[32];
 cid_len := bit[4];
 full_packet_num := bit[62];
 frame_type := bit[8];
+cryptobit := bit;
 
 var_enc := {
 	length : bit[2];
@@ -17,7 +18,7 @@ packet_num := {
          | "11" followed by packet_number : bit[30];
 };
 
-decrypt :: (enc_payload : cryptobits, pn : full_packet_num) -> bit[];
+decrypt :: (enc_payload : cryptobit[], pn : full_packet_num) -> bit[];
 
 long_hdr := {
 	header_type   : bit;
@@ -46,12 +47,14 @@ short_hdr := {
 	reserved          : bit[3];
 	dcid              : bit[];
 	packet_number     : packet_num;
-	protected_payload : bit[];
+	protected_payload : cryptobit[] -> payload : bit[];
 } where { 
 	header_type == 0;
 	third_bit == 1;
 	forth_bit == 1;
 	google_demux == 0;
+} onparse {
+	payload = decrypt(protected_payload, packet_number);
 };
 
 version_negotiation := {

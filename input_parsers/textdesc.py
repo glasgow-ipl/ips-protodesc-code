@@ -25,12 +25,17 @@ def new_array(name, type, length):
 	typedefs_order.append(name)
 	return new_def
 
-def new_struct(name, fields, where):
+def new_struct(name, fields, where, onparse):
 	s = {"irobject": "struct", "name": name, "fields": []}
 	fields_lookup = {}
+	masked_fields_lookup = {}
 	for field in fields:
-		fields_lookup[field["name"]] = field
-		s["fields"].append(field)
+		if field["irobject"] == "field":
+			fields_lookup[field["name"]] = field
+			s["fields"].append(field)
+		elif field["irobject"] == "masked_field":
+			masked_fields_lookup[field["after_field"]["name"]] = field
+			s["fields"].append(field)
 	if where is not None:
 		for expression in where.copy():
 			if expression["constraint"] == "assignment":
@@ -39,11 +44,22 @@ def new_struct(name, fields, where):
 				fields_lookup[field_name]["isPresent"] = expression["right"]
 				where.remove(expression)
 		s["constraints"] = where
+	if onparse is not None:
+		for assignment in onparse:
+			if assignment[0] in masked_fields_lookup:
+				func_name = assignment[1][0]
+				args = [assignment[1][1]] + assignment[1][2]
+				masked_fields_lookup[assignment[0]]["function"] = func_name
+				masked_fields_lookup[assignment[0]]["arguments"] = [{"value": x} for x in args]
 	typedefs_lookup[name] = s
 	typedefs_order.append(name)
 	return s
 	
 def new_field_array(name, type, width):
+	if width is None:
+		return new_field(name, type)
+	elif width == -1:
+		width = None
 	if type == "bit":
 		type = "Bit"
 	if name[0] == "0" or name[0] == "1":
@@ -128,6 +144,9 @@ def build_tree(start, pairs):
 			start = {"constraint": "ternary", "value": pair[0], "cond": start, "true": pair[1], "else": pair[2]}
 	return start
 
+def new_masked_field(before, after):
+	return {"irobject": "masked_field", "before_field": before, "after_field": after, "function": None, "arguments": []}
+
 def parse_file(filename):
 	protocol = filename.split(".")[0]
 	grammar = r"""
@@ -152,22 +171,27 @@ def parse_file(filename):
 				lor_expr = land_expr:left ('||':operator land_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
 				cond_expr = lor_expr:left ('?' cond_expr:operand1 ':' lor_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights)
 				assignment_expr = (name:n '.is_present' -> {"constraint": "field_name", "property": "is_present", "value": n}):left '=' primary_expr:c -> {"constraint": "assignment", "left": left, "right": c}
-
+				
+				func_call = name:n '(' (name)?:arg1 (',' name:ns -> ns)*:args ')' -> (n, arg1, args)
+				field_assignment_expr = name:n '=' func_call:f ';' -> (n, f)
+								
 				bindigit = anything:x ?(x in '01')
 				type = name
 				bitstring = '"'  <bindigit+>:bds '"' -> "".join(bds)
 				array = name:n ':=' type:t ('[' number:w ']' -> w)?:width ';' -> new_array(n, t, width)
-				field_array_s = name:n ':' type:t '[' (number)?:width ']' -> new_field_array(n,t,width)
-				field_s = (name|bitstring):n ':' type:t -> new_field(n,t)
-				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
-				field = (name|bitstring):n ':' type:t ';' -> new_field(n,t)
-				anonstruct = bitstring:b 'followedby' (field|field_array):f -> new_anonstruct(b, f)
+				
+				field = name:n ':' type:t ('[' number?:w ']' -> w if w else -1)?:width -> new_field_array(n, t, width)
+				bitstring_field = bitstring:n ':' type:t -> new_field(n, t)
+								
+				masked_field = field:before '->' field:after -> new_masked_field(before, after)
+				anonstruct = bitstring:b 'followedby' (field):f ';' -> new_anonstruct(b, f)
 				enum = name:n ':={' (anonstruct|name):n1 ('|' (anonstruct|name))*:n2 '};' -> new_enum(n, n1, n2)
 				constraint = (assignment_expr|cond_expr):c ';' -> c
 				where_block = '}where{' (constraint)+:c -> c
-				struct = name:n ':={' (field|field_array)+:f (where_block)?:where '};' -> new_struct(n, f, where)
+				onparse_block = '}onparse{' (field_assignment_expr)+:assignments -> assignments
+				struct = name:n ':={' ((masked_field|field|bitstring_field):f ';' -> f)+:fields (where_block)?:where (onparse_block)?:onparse '};' -> new_struct(n, fields, where, onparse)
 				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
-				prototype = name:n '::(' (field_s|field_array_s):f (',' (field_s|field_array_s))*:fs ')->' type_array:ta ';' -> new_prototype(n, f, fs, ta)
+				prototype = name:n '::(' (field|bitstring_field):f (',' (field|bitstring_field))*:fs ')->' type_array:ta ';' -> new_prototype(n, f, fs, ta)
 				protodef = (array|struct|enum|prototype)+:elements -> new_proto(protocol, elements)
 				"""
 	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
@@ -181,6 +205,7 @@ def parse_file(filename):
 								      "new_prototype": new_prototype,
 								      "build_tree": build_tree,
 								      "width_check":width_check,
+								      "new_masked_field": new_masked_field,
 								      "protocol": protocol})
 	with open(filename, "r+") as defFile:
 		defStr = defFile.read().replace(" ", "").replace("\n", "").replace("\t", "")
