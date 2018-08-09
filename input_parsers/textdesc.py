@@ -17,10 +17,13 @@ def new_proto(protocol, elements):
 def new_array(name, type, length):
 	if type == "bit":
 		type = "Bit"
-	array = {"irobject": "array", "name": name, "elementType": type, "length": length}
-	typedefs_lookup[name] = array
+	if length is None:
+		new_def = {"irobject": "newtype", "name": name, "derivedFrom": type}
+	else:
+		new_def = {"irobject": "array", "name": name, "elementType": type, "length": length}
+	typedefs_lookup[name] = new_def
 	typedefs_order.append(name)
-	return array
+	return new_def
 
 def new_struct(name, fields, where):
 	s = {"irobject": "struct", "name": name, "fields": []}
@@ -153,7 +156,7 @@ def parse_file(filename):
 				bindigit = anything:x ?(x in '01')
 				type = name
 				bitstring = '"'  <bindigit+>:bds '"' -> "".join(bds)
-				array = name:n ':=' type:t '[' number:width '];' -> new_array(n, t, width)
+				array = name:n ':=' type:t ('[' number:w ']' -> w)?:width ';' -> new_array(n, t, width)
 				field_array_s = name:n ':' type:t '[' (number)?:width ']' -> new_field_array(n,t,width)
 				field_s = (name|bitstring):n ':' type:t -> new_field(n,t)
 				field_array = name:n ':' type:t '[' (number)?:width '];' -> new_field_array(n,t,width)
