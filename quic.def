@@ -18,6 +18,14 @@ packet_num := {
          | "11" followed by packet_number : bit[30];
 };
 
+padding_frame := {
+	type 	: frame_type;
+} where {
+	type == 0;
+};
+
+frame := {padding_frame};
+
 decrypt :: (enc_payload : cryptobit[], pn : full_packet_num) -> bit[];
 
 long_hdr := {
@@ -47,7 +55,7 @@ short_hdr := {
 	reserved          : bit[3];
 	dcid              : bit[];
 	packet_number     : packet_num;
-	protected_payload : cryptobit[] -> payload : bit[];
+	protected_payload : cryptobit[] -> payload : frame[];
 } where { 
 	header_type == 0;
 	third_bit == 1;
@@ -71,12 +79,6 @@ version_negotiation := {
 	ver == 0;
 	dcid.length == ((dcid_len == 0) ? 0 : (dcid_len+3) * 8);
 	scid.length == ((scid_len == 0) ? 0 : (scid_len+3) * 8);
-};
-
-padding_frame := {
-	type 	: frame_type;
-} where {
-	type == 0;
 };
 
 pdus := {long_hdr | short_hdr | version_negotiation};

@@ -119,6 +119,7 @@ def new_prototype(name, field, fields, return_type):
 	parameters = [field] + fields
 	for parameter in parameters:
 		parameter.pop("irobject", None)
+		parameter.pop("isPresent", None)
 	if return_type[1] is None:
 		ret = return_type[0]
 	else:
