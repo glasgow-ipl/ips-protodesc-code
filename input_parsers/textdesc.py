@@ -59,7 +59,7 @@ def new_field_array(name, type, width):
 def new_field(name, type):
 	if type == "bit":
 		type = "Bit"
-	return {"irobject": "field", "name": name, "type": type}
+	return {"irobject": "field", "name": name, "type": type, "isPresent": {"constraint": "constant", "value": 1}}
 
 def new_enum(name, n1, n2):
 	variants = []
