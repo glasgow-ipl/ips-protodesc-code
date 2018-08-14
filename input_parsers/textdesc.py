@@ -2,215 +2,177 @@ import parsley
 import string
 import sys
 import json
-import itertools
 
-typedefs_lookup = {}
-typedefs_order = []
+def new_protocol(protocol_name, type_namespace):
+	return {"construct": "Protocol", "name": protocol_name, "definitions": [element for element in type_namespace.values()]}
 
-def new_proto(protocol, elements):
-	if "pdus" not in typedefs_lookup or typedefs_lookup["pdus"]["irobject"] != "enum":
-		raise Exception("`pdus` enum must be defined")
-	else:
-		typedefs_order.remove("pdus")
-	return {"irobject": "protocol", "name": protocol, "definitions": [typedefs_lookup[name] for name in typedefs_order], "pdus": typedefs_lookup["pdus"]["variants"]}
-	
-def new_array(name, type, length):
-	if type == "bit":
-		type = "Bit"
-	if length is None:
-		new_def = {"irobject": "newtype", "name": name, "derivedFrom": type}
-	else:
-		new_def = {"irobject": "array", "name": name, "elementType": type, "length": length}
-	typedefs_lookup[name] = new_def
-	typedefs_order.append(name)
-	return new_def
+def check_typename(name, type_namespace, should_be_defined):
+	if name in type_namespace and not should_be_defined:
+		raise Exception("Name '%s' has already been defined" % name)
+	elif name not in type_namespace and should_be_defined:
+		raise Exception("Name '%s' has not been defined" % name)
+	return True
 
-def new_struct(name, fields, where, onparse):
-	s = {"irobject": "struct", "name": name, "fields": []}
-	fields_lookup = {}
-	masked_fields_lookup = {}
-	for field in fields:
-		if field["irobject"] == "field":
-			fields_lookup[field["name"]] = field
-			s["fields"].append(field)
-		elif field["irobject"] == "masked_field":
-			masked_fields_lookup[field["after_field"]["name"]] = field
-			s["fields"].append(field)
-	if where is not None:
-		for expression in where.copy():
-			if expression["constraint"] == "assignment":
-				field_name = expression["left"]["value"]
-				constraint = expression["right"]
-				fields_lookup[field_name]["isPresent"] = expression["right"]
-				where.remove(expression)
-		s["constraints"] = where
-	if onparse is not None:
-		for assignment in onparse:
-			if assignment[0] in masked_fields_lookup:
-				func_name = assignment[1][0]
-				args = [assignment[1][1]] + assignment[1][2]
-				masked_fields_lookup[assignment[0]]["function"] = func_name
-				masked_fields_lookup[assignment[0]]["arguments"] = [{"value": x} for x in args]
-	typedefs_lookup[name] = s
-	typedefs_order.append(name)
-	return s
-	
-def new_field_array(name, type, width):
-	if width is None:
-		return new_field(name, type)
-	elif width == -1:
-		width = None
-	if type == "bit":
-		type = "Bit"
-	if name[0] == "0" or name[0] == "1":
-		generated_name = "$" + type + str(width)
-		if generated_name not in typedefs_order:
-			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": type, "length": width}
-			typedefs_order.append(generated_name)
-		return {"irobject": "field", "name": None, "value": name, "type": generated_name, "isPresent": {"constraint": "constant", "value": 1}}
-	else:
-		generated_name = "$" + type + str(width)
-		if generated_name not in typedefs_order:
-			typedefs_lookup[generated_name] = {"irobject": "array", "name": generated_name, "elementType": type, "length": width}
-			typedefs_order.append(generated_name)
-		return {"irobject": "field", "name": name, "type": generated_name, "isPresent": {"constraint": "constant", "value": 1}}
-
-def new_field(name, type):
-	if type == "bit":
-		type = "Bit"
-	return {"irobject": "field", "name": name, "type": type, "isPresent": {"constraint": "constant", "value": 1}}
-
-def new_enum(name, n1, n2):
-	variants = []
-	count = 0
-	for variant in [n1] + n2:
-		if type(variant) is dict and variant["irobject"] == "struct":
-			generated_name = "$" + name + "#" + str(count)
-			variant["name"] = generated_name
-			typedefs_lookup[generated_name] = variant
-			typedefs_order.append(generated_name)
-			field_count = 0
-			constraints = []
-			for field in variant["fields"]:
-				if "value" in field:
-					field["name"] = generated_name + "#" + str(field_count)
-					field_count += 1
-					constraints.append((field["name"], field["value"]))
-					field.pop('value', None)
-			variant["constraints"] = []
-			for constraint in constraints:
-				var = {"constraint": "field_name", "property": "value", "value": constraint[0]}
-				val = {"constraint": "constant", "value": constraint[1]}
-				new_constraint = {"constraint": "binary", "value": "==", "left": var, "right": val}
-				variant["constraints"].append(new_constraint)
-			count += 1
+def new_bitstring(name, type_name, type_namespace):
+	# if name is None, we'll generate one: don't want to check
+	if name is not None:
+		check_typename(name, type_namespace, False)
+		
+	# need to determine the width
+	if type(type_name) is tuple:
+		if type_name[1] is not None:
+			width = type_name[1]
 		else:
-			generated_name = variant
-		variants.append({"type": generated_name})
-	enum = {"irobject": "enum", "name": name, "variants": variants}
-	typedefs_lookup[name] = enum
-	typedefs_order.append(name)
-	return enum
-
-def new_anonstruct(bitstring, field):
-	return {"irobject": "struct", "name": None, "fields": [new_field_array(bitstring, "bit", len(bitstring)), field]}
-
-def new_prototype(name, field, fields, return_type):
-	parameters = [field] + fields
-	for parameter in parameters:
-		parameter.pop("irobject", None)
-		parameter.pop("isPresent", None)
-	if return_type[1] is None:
-		ret = return_type[0]
+			width = 1
 	else:
-		ret_width = return_type[1]
-		if ret_width == -1:
-			ret_width = None
-			ret = new_field_array("return", return_type[0], ret_width)["type"]
-	function = {"irobject": "function", "name": name, "parameters": parameters, "returnType": ret}
-	typedefs_lookup[name] = function
-	typedefs_order.append(name)
+		width = None
+		
+	# generate a name if necessary
+	if name is None:
+		name = "BitString$" + str(width)
+		
+	# construct BitString
+	bitstring = {"construct": "BitString", "name": name, "width": width}
+	type_namespace[name] = bitstring
+	return name
 
-def width_check(width):
-	if width is None:
-		return -1
+def new_array(name, type_name, type_namespace):
+	length = type_name[1]
+	type_name = type_name[0]
+	
+	# if name is None, we'll generate one: don't want to check
+	if name is not None:
+		check_typename(name, type_namespace, False)
+		
+	# check if built-in type, and create if needed
+	if type(type_name) is tuple or type_name == "Bits":
+		type_name = new_bitstring(None, type_name, type_namespace)
+	
+	# check if type has been defined
+	check_typename(type_name, type_namespace, True)
+	
+	# generate a name if necessary
+	if name is None:
+		name = type_name + "$" + str(length)
+	
+	if length == -1:
+		length = None
+		# construct Array
+		array = {"construct": "Array", "name": name, "element_type": type_name, "length": length}
+		type_namespace[name] = array
 	else:
-		return width
+		derived_type = {"construct": "NewType", "name": name, "derived_from": type_name, "implements": []}
+		type_namespace[name] = derived_type
+	return name
 
-def build_tree(start, pairs):
-	for pair in pairs:
-		if len(pair) == 2:
-			start = {"constraint": "binary", "value": pair[0], "left": start, "right": pair[1]}
-		elif len(pair) == 3:
-			start = {"constraint": "ternary", "value": pair[0], "cond": start, "true": pair[1], "else": pair[2]}
-	return start
+def new_field(name, type_name, type_namespace):
+	length = type_name[1]
+	type_name = type_name[0]
 
-def new_masked_field(before, after):
-	return {"irobject": "masked_field", "before_field": before, "after_field": after, "function": None, "arguments": []}
+	check_typename(name, type_namespace, False)
+	if type(type_name) is tuple or type_name == "Bits":
+		type_name = new_bitstring(None, type_name, type_namespace)
+	if length is not None:
+		if length == -1:
+			length = None
+		type_name = new_array(None, (type_name, length), type_namespace)
+	
+	# check if type has been defined
+	check_typename(type_name, type_namespace, True)
+	
+	field = {"name": name, "type": type_name, "is_present": True}
+	return field
+	
+def new_struct(name, fields, type_namespace):
+	check_typename(name, type_namespace, False)
+	
+	# construct Struct
+	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": []}
+	type_namespace[name] = struct
+	return name
+	
+def new_enum(name, variants, type_namespace):
+	check_typename(name, type_namespace, False)
+	
+	checked_variants = []
+	
+	for variant in variants:
+		type_name = variant[0]
+		length = variant[1]
+		if type(type_name) is tuple or type_name == "Bits":
+			type_name = new_bitstring(None, type_name, type_namespace)
+		if length is not None:
+			if length == -1:
+				length = None
+			type_name = new_array(None, (type_name, length), type_namespace)
+		if check_typename(type_name, type_namespace, True):
+			checked_variants.append(type_name)
+	
+	# construct Enum
+	enum = {"construct": "Enum", "name": name, "variants": checked_variants}
+	type_namespace[name] = enum
+	return name
+
+def new_func(name, params, ret_type, type_namespace):
+	if len(params) > 1 and params[0] is None:
+		raise Exception("Syntax error")
+	check_typename(name, type_namespace, False)
+	
+	ret_type_name = ret_type[0]
+	ret_length = ret_type[1]
+	if type(ret_type_name) is tuple or ret_type_name == "Bits":
+		ret_type_name = new_bitstring(None, ret_type_name, type_namespace)
+	if ret_length is not None:
+		if ret_length == -1:
+			ret_length = None
+		ret_type_name = new_array(None, (ret_type_name, ret_length), type_namespace)
+
+	# construct Function
+	function = {"construct": "Function", "name": name, "parameters": [param for param in params if param.pop('is_present', None)], "return_type": ret_type_name}
+	type_namespace[name] = function
+	return name
 
 def parse_file(filename):
-	protocol = filename.split(".")[0]
+	protocol_name = filename.split(".")[0]
 	grammar = r"""
 				letter = anything:x ?(x in ascii_letters)
-				name = <letter+>:letters -> "".join(letters)
+				uppercase_letter = anything:x ?(x in ascii_uppercase)
+				lowercase_letter = anything:x ?(x in ascii_lowercase)
 				digit = anything:x ?(x in '0123456789')
 				number = <digit+>:ds -> int(ds)
+
+				comment = '#' (anything:x ?(x != '#'))* '#'
+
+				type_name = <uppercase_letter>:x <letter+>:xs -> x + "".join(xs)
+				field_name = <lowercase_letter>:x <(letter|'_')+>:xs -> x + "".join(xs)
 				
-				# expression grammar
-				primary_expr = number:n -> {"constraint": "constant", "value": n}
-				             | name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "field_name", "property": prop if prop else "value", "value": n}
-							 | '(' cond_expr:expr ')' -> expr
-				multiplicative_expr = primary_expr:left (('*' | '/' | '%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				additive_expr = multiplicative_expr:left (('+' | '-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				shift_expr = additive_expr:left (('<<' | '>>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				relational_expr = shift_expr:left (('<=' | '>=' | '<' | '>'):operator shift_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				equality_expr = relational_expr:left (('==' | '!='):operator relational_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				and_expr = equality_expr:left ('&':operator equality_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				xor_expr = and_expr:left ('^':operator and_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				or_expr = xor_expr:left ('|':operator xor_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				land_expr = or_expr:left ('&&':operator or_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				lor_expr = land_expr:left ('||':operator land_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights)
-				cond_expr = lor_expr:left ('?' cond_expr:operand1 ':' lor_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights)
-				assignment_expr = (name:n '.is_present' -> {"constraint": "field_name", "property": "is_present", "value": n}):left '=' primary_expr:c -> {"constraint": "assignment", "left": left, "right": c}
+				type_def = (('Bits':t -> t)|('Bit':t number?:n -> (t, n))|type_name:t -> t):type (('[' number?:length ']') -> length if length is not None else -1)?:length -> (type, length)
 				
-				func_call = name:n '(' (name)?:arg1 (',' name:ns -> ns)*:args ')' -> (n, arg1, args)
-				field_assignment_expr = name:n '=' func_call:f ';' -> (n, f)
-								
-				bindigit = anything:x ?(x in '01')
-				type = name
-				bitstring = '"'  <bindigit+>:bds '"' -> "".join(bds)
-				array = name:n ':=' type:t ('[' number:w ']' -> w)?:width ';' -> new_array(n, t, width)
+				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
 				
-				field = name:n ':' type:t ('[' number?:w ']' -> w if w else -1)?:width -> new_field_array(n, t, width)
-				bitstring_field = bitstring:n ':' type:t -> new_field(n, t)
-								
-				masked_field = field:before '->' field:after -> new_masked_field(before, after)
-				anonstruct = bitstring:b 'followedby' (field):f ';' -> new_anonstruct(b, f)
-				enum = name:n ':={' (anonstruct|name):n1 ('|' (anonstruct|name))*:n2 '};' -> new_enum(n, n1, n2)
-				constraint = (assignment_expr|cond_expr):c ';' -> c
-				where_block = '}where{' (constraint)+:c -> c
-				onparse_block = '}onparse{' (field_assignment_expr)+:assignments -> assignments
-				struct = name:n ':={' ((masked_field|field|bitstring_field):f ';' -> f)+:fields (where_block)?:where (onparse_block)?:onparse '};' -> new_struct(n, fields, where, onparse)
-				type_array = type:t (('[' (number)?:n ']')->width_check(n))?:width -> (t, width)
-				prototype = name:n '::(' (field|bitstring_field):f (',' (field|bitstring_field))*:fs ')->' type_array:ta ';' -> new_prototype(n, f, fs, ta)
-				protodef = (array|struct|enum|prototype)+:elements -> new_proto(protocol, elements)
+				bitstring_def = type_name:name ':=' (('Bits':t -> t)|('Bit':t number?:n -> (t, n))):type ';' -> new_bitstring(name, type, type_namespace)
+				array_def = type_name:name ':=' type_def:type ';' -> new_array(name, type, type_namespace)
+				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields '};' -> new_struct(name, fields, type_namespace)
+				enum_def = type_name:name ':={' type_def:t ('|' type_def:n -> n)*:ts '};' -> new_enum(name, [t] + ts, type_namespace)
+				func_def = field_name:name '::(' (field_def:f -> f)?:param (',' field_def:f -> f)*:params ')->' type_def:ret_type ';' -> new_func(name, [param] + params, ret_type, type_namespace)
+				protocol = (bitstring_def|array_def|struct_def|enum_def|func_def|comment)+:elements -> new_protocol(protocol_name, type_namespace)
 				"""
-	parser = parsley.makeGrammar(grammar, {"ascii_letters": string.ascii_letters + "_",
-								      "new_array": new_array,
-								      "new_field": new_field,
-								      "new_field_array": new_field_array,
-								      "new_struct": new_struct,
-								      "new_proto": new_proto,
-								      "new_enum": new_enum,
-								      "new_anonstruct": new_anonstruct,
-								      "new_prototype": new_prototype,
-								      "build_tree": build_tree,
-								      "width_check":width_check,
-								      "new_masked_field": new_masked_field,
-								      "protocol": protocol})
+	parser = parsley.makeGrammar(grammar, {"protocol_name": protocol_name,
+	                                       "ascii_letters": string.ascii_letters,
+									       "ascii_uppercase": string.ascii_uppercase,
+									       "ascii_lowercase": string.ascii_lowercase,
+									       "type_namespace": {},
+									       "new_bitstring": new_bitstring,
+									       "new_array": new_array,
+									       "new_field": new_field,
+									       "new_struct": new_struct,
+									       "new_enum": new_enum,
+									       "new_func": new_func,
+									       "new_protocol": new_protocol,
+									      })
 	with open(filename, "r+") as defFile:
 		defStr = defFile.read().replace(" ", "").replace("\n", "").replace("\t", "")
-	return parser(defStr).protodef()
-	
+	return parser(defStr).protocol()
+
 if __name__ == "__main__":
 	print(json.dumps(parse_file(sys.argv[1])))

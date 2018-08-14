@@ -1,0 +1,50 @@
+# Description language example #
+
+# Bit is a built-in type #
+# This constructs a BitString named 'SingleBit' with width 1 #
+SingleBit := Bit;
+
+# Bit can be followed by an integer #
+# This constructs a BitString named 'SevenBits' with width 7 #
+SevenBits := Bit7;
+
+# Bits is also a built-in type #
+# This constructs a BitString named 'ManyBits' with unspecified width #
+ManyBits := Bits;
+
+# Can create arrays of built-in types #
+SevenSingleBits := Bit[7]; # constructs two IR objects:
+								- a BitString with width 1, and a generated name
+								- an Array named 'SevenSingleBits', of the generated type,
+								  with length 7 #
+UndefTwoBits := Bit2[];    # constructs two IR objects:
+						        - a BitString with width 2, and a generated name 
+						        - an Array named 'UndefTwoBits', of the generated type,
+						          with unspecified length #
+ThreeManyBits := Bits[3];  # constructs two IR objects:
+						        - a BitString with unspecified width, and a generated name 
+						        - an Array named 'ThreeManyBits', of the generated type,
+						          with length 3 #
+						          
+# Can create arrays of defined types #
+AltThreeManyBits := ManyBits[3]; # constructs one IR object: an Array named 'AltThreeManyBits'
+                                   with element_type 'ManyBits' and length 3 #
+                                   
+# Structures #
+# fields can be (arrays of) built-in types (Bit and Bits) or defined types (e.g., ManyBits) #
+NewStructure := {
+	field_one    :   Bit;
+	field_two    :   Bit[];
+	field_three  :   ManyBits;
+	field_four   :   ManyBits[];
+};
+
+# Enums #
+# variants can be (arrays of) built-in types (Bit and Bits) or defined types (e.g., ManyBits) #
+Enum := { NewStructure[2] | UndefTwoBits | Bit[3]};
+
+# Derived Types #
+ManyManyBits := ManyBits; # no support for traits yet #
+
+# Function Prototypes #
+my_function :: (param_two : Bit) -> Bits;
