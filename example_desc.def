@@ -37,6 +37,8 @@ NewStructure := {
 	field_two    :   Bit[];
 	field_three  :   ManyBits;
 	field_four   :   ManyBits[];
+} where {
+	field_one == 3+1;
 };
 
 # Enums #

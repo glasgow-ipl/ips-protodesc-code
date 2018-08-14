@@ -83,11 +83,18 @@ def new_field(name, type_name, type_namespace):
 	field = {"name": name, "type": type_name, "is_present": True}
 	return field
 	
-def new_struct(name, fields, type_namespace):
+def new_struct(name, fields, where_block, type_namespace):
 	check_typename(name, type_namespace, False)
 	
+	# constraint processing
+	for constraint in where_block:
+		assert constraint["constraint"] == "Ordinal" \
+		       or constraint["constraint"] == "Boolean" \
+		       or constraint["constraint"] == "BooleanConst" \
+		       or constraint["constraint"] == "Equality"
+		       
 	# construct Struct
-	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": []}
+	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": where_block}
 	type_namespace[name] = struct
 	return name
 	
@@ -132,6 +139,42 @@ def new_func(name, params, ret_type, type_namespace):
 	type_namespace[name] = function
 	return name
 
+def build_tree(start, pairs, constraint_type):
+	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
+	       ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
+	       "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"),
+	       "==": ("eq", "equality"), "!=": ("ne", "equality")}
+	ret_type = {"IntegerConst": "Integer", "Arithmetic": "Integer", 
+				"BooleanConst": "Boolean", "Ordinal": "Boolean", "Equality": "Boolean",
+				"Fieldvalue": "Integer", "Fieldis_present": "Boolean", "Fieldwidth": "Integer"}
+	for pair in pairs:
+		if constraint_type == "Ordinal":
+			assert (start["constraint"] == "Arithmetic" \
+			       or start["constraint"] == "IntegerConst" \
+			       or (start["constraint"] == "Field" and (start["property"] == "value" or start["property"] == "width")))
+			assert (pair[1]["constraint"] == "Arithmetic" \
+			       or pair[1]["constraint"] == "IntegerConst" \
+			       or (pair[1]["constraint"] == "Field" and (pair[1]["property"] == "value" or pair[1]["property"] == "width")))
+		if constraint_type == "Arithmetic":
+			assert (start["constraint"] == "Arithmetic" \
+			       or start["constraint"] == "IntegerConst" \
+			       or (start["constraint"] == "Field" and (start["property"] == "value" or start["property"] == "width")))
+			assert (pair[1]["constraint"] == "Arithmetic" \
+			       or pair[1]["constraint"] == "IntegerConst" \
+			       or (pair[1]["constraint"] == "Field" and (pair[1]["property"] == "value" or pair[1]["property"] == "width")))
+		if constraint_type == "Equality":
+			if start["constraint"] == "Field":
+				left_type = "Field" + start["property"]
+			else:
+				left_type = start["constraint"]
+			if pair[1]["constraint"] == "Field":
+				right_type = "Field" + pair[1]["property"]
+			else:
+				right_type = pair[1]["constraint"]			
+			assert (ret_type[left_type] == ret_type[right_type])
+		start = {"constraint": constraint_type, "method": ops[pair[0]][0], "left": start, "right": pair[1]}
+	return start
+
 def parse_file(filename):
 	protocol_name = filename.split(".")[0]
 	grammar = r"""
@@ -149,13 +192,27 @@ def parse_file(filename):
 				type_def = (('Bits':t -> t)|('Bit':t number?:n -> (t, n))|type_name:t -> t):type (('[' number?:length ']') -> length if length is not None else -1)?:length -> (type, length)
 				
 				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
-				
+	
+				# constraint grammar
+				primary_expr = number:n -> {"constraint": "IntegerConst", "value": n}
+							 | ('True'|'False'):bool -> {"constraint": "BooleanConst", "value": bool}
+				             | field_name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "Field", "property": prop if prop else "value", "value": n}
+							 | '(' equality_expr:expr ')' -> expr
+				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
+				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
+			
+				ordinal_expr = additive_expr:left (('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Ordinal")
+				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Boolean")
+				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Equality")
+
+				where_block = '}where{' (equality_expr:constraint ';' -> constraint)+:constraints -> constraints
 				bitstring_def = type_name:name ':=' (('Bits':t -> t)|('Bit':t number?:n -> (t, n))):type ';' -> new_bitstring(name, type, type_namespace)
 				array_def = type_name:name ':=' type_def:type ';' -> new_array(name, type, type_namespace)
-				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields '};' -> new_struct(name, fields, type_namespace)
+				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields where_block?:where '};' -> new_struct(name, fields, where, type_namespace)
 				enum_def = type_name:name ':={' type_def:t ('|' type_def:n -> n)*:ts '};' -> new_enum(name, [t] + ts, type_namespace)
 				func_def = field_name:name '::(' (field_def:f -> f)?:param (',' field_def:f -> f)*:params ')->' type_def:ret_type ';' -> new_func(name, [param] + params, ret_type, type_namespace)
 				protocol = (bitstring_def|array_def|struct_def|enum_def|func_def|comment)+:elements -> new_protocol(protocol_name, type_namespace)
+				
 				"""
 	parser = parsley.makeGrammar(grammar, {"protocol_name": protocol_name,
 	                                       "ascii_letters": string.ascii_letters,
@@ -169,10 +226,11 @@ def parse_file(filename):
 									       "new_enum": new_enum,
 									       "new_func": new_func,
 									       "new_protocol": new_protocol,
+									       "build_tree": build_tree,
 									      })
 	with open(filename, "r+") as defFile:
 		defStr = defFile.read().replace(" ", "").replace("\n", "").replace("\t", "")
 	return parser(defStr).protocol()
 
 if __name__ == "__main__":
-	print(json.dumps(parse_file(sys.argv[1])))
+	print(json.dumps(parse_file(sys.argv[1]), indent=4))
