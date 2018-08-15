@@ -4,7 +4,9 @@ import sys
 import json
 
 def new_protocol(protocol_name, type_namespace):
-	return {"construct": "Protocol", "name": protocol_name, "definitions": [element for element in type_namespace.values()]}
+	return {"construct": "Protocol", 
+	        "name": protocol_name, 
+	        "definitions": [element for element in type_namespace.values()]}
 
 def check_typename(name, type_namespace, should_be_defined):
 	if name in type_namespace and not should_be_defined:
@@ -83,7 +85,7 @@ def new_field(name, type_name, type_namespace):
 	field = {"name": name, "type": type_name, "is_present": True}
 	return field
 	
-def new_struct(name, fields, where_block, type_namespace):
+def new_struct(name, fields, where_block, type_namespace, context):
 	check_typename(name, type_namespace, False)
 	
 	field_names = []
@@ -91,8 +93,18 @@ def new_struct(name, fields, where_block, type_namespace):
 	# field processing
 	for field in fields:
 		assert field["name"] not in field_names
+		assert field["name"] not in context
 		field_names.append(field["name"])
 	
+	if name == "Context":
+		assert where_block is None
+		for field in fields:
+			field.pop("is_present", None)
+		context = {"construct": "Context", "fields": fields}
+		type_namespace[name] = context
+		return name
+
+
 	# constraint processing
 	if where_block is not None:
 		for constraint in where_block:
@@ -216,7 +228,7 @@ def parse_file(filename):
 				where_block = '}where{' (equality_expr:constraint ';' -> constraint)+:constraints -> constraints
 				bitstring_def = type_name:name ':=' (('Bits':t -> t)|('Bit':t number?:n -> (t, n))):type ';' -> new_bitstring(name, type, type_namespace)
 				array_def = type_name:name ':=' type_def:type ';' -> new_array(name, type, type_namespace)
-				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields where_block?:where '};' -> new_struct(name, fields, where, type_namespace)
+				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields where_block?:where '};' -> new_struct(name, fields, where, type_namespace, context)
 				enum_def = type_name:name ':={' type_def:t ('|' type_def:n -> n)*:ts '};' -> new_enum(name, [t] + ts, type_namespace)
 				func_def = field_name:name '::(' (field_def:f -> f)?:param (',' field_def:f -> f)*:params ')->' type_def:ret_type ';' -> new_func(name, [param] + params, ret_type, type_namespace)
 				protocol = (bitstring_def|array_def|struct_def|enum_def|func_def|comment)+:elements -> new_protocol(protocol_name, type_namespace)
@@ -235,6 +247,7 @@ def parse_file(filename):
 									       "new_func": new_func,
 									       "new_protocol": new_protocol,
 									       "build_tree": build_tree,
+									       "context": {},
 									      })
 	with open(filename, "r+") as defFile:
 		defStr = defFile.read().replace(" ", "").replace("\n", "").replace("\t", "")
