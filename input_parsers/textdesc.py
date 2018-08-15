@@ -94,11 +94,12 @@ def new_struct(name, fields, where_block, type_namespace):
 		field_names.append(field["name"])
 	
 	# constraint processing
-	for constraint in where_block:
-		assert constraint["constraint"] == "Ordinal" \
-		       or constraint["constraint"] == "Boolean" \
-		       or constraint["constraint"] == "BooleanConst" \
-		       or constraint["constraint"] == "Equality"
+	if where_block is not None:
+		for constraint in where_block:
+			assert constraint["constraint"] == "Ordinal" \
+		       	or constraint["constraint"] == "Boolean" \
+		       	or constraint["constraint"] == "BooleanConst" \
+		       	or constraint["constraint"] == "Equality"
 		       
 	# construct Struct
 	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": where_block}
