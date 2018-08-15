@@ -86,6 +86,13 @@ def new_field(name, type_name, type_namespace):
 def new_struct(name, fields, where_block, type_namespace):
 	check_typename(name, type_namespace, False)
 	
+	field_names = []
+	
+	# field processing
+	for field in fields:
+		assert field["name"] not in field_names
+		field_names.append(field["name"])
+	
 	# constraint processing
 	for constraint in where_block:
 		assert constraint["constraint"] == "Ordinal" \
@@ -196,7 +203,7 @@ def parse_file(filename):
 				# constraint grammar
 				primary_expr = number:n -> {"constraint": "IntegerConst", "value": n}
 							 | ('True'|'False'):bool -> {"constraint": "BooleanConst", "value": bool}
-				             | field_name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "Field", "property": prop if prop else "value", "value": n}
+				             | field_name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "Field", "name": n, "property": prop if prop else "value"}
 							 | '(' equality_expr:expr ')' -> expr
 				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
 				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
