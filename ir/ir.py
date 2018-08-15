@@ -37,187 +37,88 @@ class IRError(Exception):
         self.reason = reason
 
 class IR:
-    def _parse_newtype(self, item):
-        # Extract the required fields:
-        name        = item["name"]
-        derivedFrom = item["derivedFrom"]
-
-        # Check that the new type is derived from an existing type, and
-        # not from itself:
-        if derivedFrom == name:
-            raise IRError("cannot deriveFrom self")
-        if not derivedFrom in self.types:
-            raise IRError("derivedFrom unknown type")
-
-        # Record the new type in the type store:
+    def _define_type(self, kind, name, attributes):
         if re.search(TYPE_NAME_REGEX, name) == None:
-            raise IRError("invalid name")
-        if not name in self.types:
-            self.types[name] = item
-        else:
-            raise IRError("type already exists")
-
-
-
-    def _parse_array(self, item):
-        # Extract the required fields:
-        name        = item["name"]
-        elementType = item["elementType"]
-        length      = item["length"]
-
-        # Check that the length is valid:
-        if length is not None:
-            if length < 0:
-                raise IRError("negative array length")
-
-        # Check that the element type has been defined and is distinct
-        # from the array type being defined:
-        if elementType == name:
-            raise IRError("elementType equals array type")
-        if not elementType in self.types:
-            raise IRError("elementType unknown")
-
-        # Record the array type in the type store:
-        if re.search(TYPE_NAME_REGEX, name) == None:
-            raise IRError("invalid name")
-        if not name in self.types:
-            self.types[name] = item
-        else:
-            raise IRError("type already exists")
-
-
-
-    def _parse_struct(self, item):
-        # Extract the required fields:
-        name        = item["name"]
-        fields      = item["fields"]
-        constraints = item["constraints"]
-
-        # Check the field types have been defined, and that fields names and
-        # types are distinct within this struct:
-        field_types = {}
-        field_names  = {}
-        for field in fields:
-            if not field["type"] in self.types:
-                raise IRError("field type unknwon")
-            if field["type"] in field_types:
-                raise IRError("duplicate field type")
-            if field["name"] in field_names:
-                raise IRError("duplicate field name");
-            field_types[field["type"]] = True
-            field_names[field["name"]] = True
-
-        # Check the constraints:
-        # FIXME
-
-        # Record the structure type in the type store:
-        if re.search(TYPE_NAME_REGEX, name) == None:
-            raise IRError("invalid name")
-        if not name in self.types:
-            self.types[name] = item
-        else:
-            raise IRError("type already exists")
-
-
-
-    def _parse_enum(self, item):
-        # Extract the required fields:
-        name        = item["name"]
-        variants    = item["variants"]
-
-        # Check the variants exist and are distinct:
-        variant_types = {}
-        for variant in variants:
-            if not variant["type"] in self.types:
-                raise IRError("variant type unknown")
-            if variant["type"] in variant_types:
-                raise IRError("duplicate variant")
-            variant_types[variant["type"]] = True
-
-        # Record the enum type in the type store:
-        if re.search(TYPE_NAME_REGEX, name) == None:
-            raise IRError("invalid name")
-        if not name in self.types:
-            self.types[name] = item
-        else:
-            raise IRError("type already exists")
-
-
-
-    def _parse_func(self, item):
-        # Extract the required fields:
-        name        = item["name"]
-        parameters  = item["parameters"]
-        returnType  = item["returnType"]
-
-        # Check that the function name doesn't exist:
+            raise IRError("Invalid type name: " + name)
         if name in self.types:
-            raise IRError("function name redefined")
+            raise IRError("Redefinition of type " + name)
+        self.types[name] = {
+                "kind" : kind,
+                "name" : name,
+                "attributes" : attributes,
+                "implements" : []
+            }
 
-        # Check that the parameter types exist, and that the parameter
-        # names are distinct:
-        param_names  = {}
-        for param in parameters:
-            if not param["type"] in self.types:
-                raise IRError("unknown parameter type")
-            if param["name"] in param_names:
-                raise IRError("duplicate parameter name");
-            param_names[param["name"]] = True
+    def _define_trait(self, name, methods):
+        if re.search(TYPE_NAME_REGEX, name) == None:
+            raise IRError("Invalid trait name: " + name)
+        if name in self.traits:
+            raise IRError("Redefinition of trait " + name)
+        self.traits[name] = {
+                "name"    : name,
+                "methods" : {}
+            }
+        for method in methods:
+            (m_name, m_params, m_returns) = method
+            # Check validity of the method name:
+            if re.search(FUNC_NAME_REGEX, m_name) == None:
+                raise IRError("Invalid method name: " + m_name)
+            # Check validity of the method parameters:
+            if m_params[0] != ("self", None):
+                raise IRError("Method " + m_name + " does not have valid self parameter")
+            for (p_name, p_type) in m_params:
+                if re.search(FUNC_NAME_REGEX, p_name) == None:
+                    raise IRError("Invalid parameter name: " + p_name)
+                if p_type != None and not p_type in self.types:
+                    raise IRError("Method " + m_name + " in trait " + name + "references undefined type " + p_type)
+            # Check validity of the method return type:
+            if m_returns != None and not m_returns in self.types:
+                raise IRError("Unknown method return type " + m_returns + " in method " + m_name + " of trait " + name)
+            # Record the method:
+            self.traits[name]["methods"][m_name] = {}
+            self.traits[name]["methods"][m_name]["name"]        = m_name
+            self.traits[name]["methods"][m_name]["params"]      = m_params
+            self.traits[name]["methods"][m_name]["return_type"] = m_returns
 
-        # Check that the return type exists:
-        if not returnType in self.types:
-            raise IRError("unknown returnType")
+    def _implements(self, type_, traits):
+        if not type_ in self.types:
+            raise IRError("Undefined type " + type_)
+        for trait in traits:
+            if not trait in self.traits:
+                raise IRError("Undefined trait " + trait)
+            if trait in self.types[type_]["implements"]:
+                raise IRError("Reimplementation of trait " + trait + " for type " + type_)
+            self.types[type_]["implements"].append(trait)
+            self.types[type_]["implements"].sort()
 
-        # Record the function definition:
-        if re.search(FUNC_NAME_REGEX, name) == None:
-            raise IRError("invalid name")
-        if not name in self.types:
-            self.types[name] = item
-        else:
-            raise IRError("function already exists")
+    def __init__(self):
+        # Create the type and trait stores:
+        self.types  = {}
+        self.traits = {}
 
+        # Define the internal types and standard traits:
+        self._define_type("Nothing", "Nothing", [])
+        self._define_type("Boolean", "Boolean", [])
+        self._define_type("Size",    "Size",    [])
 
+        self._define_trait("Value",       [("get", [("self", None)], None),
+                                           ("set", [("self", None), ("value", None)], "Nothing")])
+        self._define_trait("Equality",    [("eq",  [("self", None), ("other", None)], "Boolean"),
+                                           ("ne",  [("self", None), ("other", None)], "Boolean")])
+        self._define_trait("Boolean",     [("and", [("self", None), ("other", None)], "Boolean"),
+                                           ("or",  [("self", None), ("other", None)], "Boolean"),
+                                           ("not", [("self", None)                 ], "Boolean")])
+        self._define_trait("Ordinal",     [("lt",  [("self", None), ("other", None)], "Boolean"),
+                                           ("le",  [("self", None), ("other", None)], "Boolean"),
+                                           ("gt",  [("self", None), ("other", None)], "Boolean"),
+                                           ("ge",  [("self", None), ("other", None)], "Boolean")])
+        self._define_trait("Arithmetic", [("plus", [("self", None), ("other", None)], None),
+                                         ("minus", [("self", None), ("other", None)], None),
+                                      ("multiply", [("self", None), ("other", None)], None),
+                                        ("divide", [("self", None), ("other", None)], None)])
 
-    def __init__(self, protocol):
-        # Create and type store, and populate with the primitive Bit type:
-        self.types = {}
-        self.types["Bit"] = {"irobject" : "bit", 
-                             "name"     : "Bit"}
-
-        # Check that we have been given a dictionary containing a protocol
-        # object:
-        if protocol["irobject"] != "protocol":
-            raise IRError("not a protocol")
-
-        # Record the protocol name:
-        self.name = protocol["name"]
-
-        # Load the definitions:
-        for item in protocol["definitions"]:
-            if   item["irobject"] == "bit":
-                raise IRError("cannot redefine bit")
-            elif item["irobject"] == "newtype":
-                self._parse_newtype(item)
-            elif item["irobject"] == "array":
-                self._parse_array(item)
-            elif item["irobject"] == "struct":
-                self._parse_struct(item)
-            elif item["irobject"] == "enum":
-                self._parse_enum(item)
-            elif item["irobject"] == "function":
-                self._parse_func(item)
-            else:
-                raise IRError("protocol definitions contain unknown irobject")
-
-        # Check the PDU types:
-        if protocol["pdus"] == []:
-            raise IRError("protocol has empty PDU array")
-        for pdu in protocol["pdus"]:
-            if not pdu in self.types:
-                raise IRError("protocol has unkown PDU type")
-        self.pdus = protocol["pdus"]
-
-
+        self._implements("Boolean", ["Value", "Equality", "Boolean"])
+        self._implements(   "Size", ["Value", "Equality", "Ordinal", "Arithmetic"])
 
 # =============================================================================
 # Unit tests:
@@ -225,40 +126,87 @@ class IR:
 import unittest
 
 class TestIR(unittest.TestCase):
-    def test_basic(self):
-        ir = IR({
-                  "irobject"    : "protocol",
-                  "name"        : "Test",
-                  "definitions" : [
-                      {
-                          "irobject"    : "newtype",
-                          "name"        : "SpinBit",
-                          "derivedFrom" : "Bit"
-                      },
-                      {
-                          "irobject"    : "array",
-                          "name"        : "SeqNum",
-                          "elementType" : "Bit",
-                          "length"      : 16
-                      },
-                      {
-                          "irobject"    : "struct",
-                          "name"        : "TestPacket",
-                          "fields"      : [
-                              {
-                                  "name" : "spin_bit",
-                                  "type" : "SpinBit"
-                              },
-                              {
-                                  "name" : "seq_num",
-                                  "type" : "SeqNum"
-                              }
-                          ],
-                          "constraints" : []
-                      }
-                  ],
-                  "pdus" : ["TestPacket"]
-                })
+    def test_builtin_types(self):
+        ir = IR()
+        # Check the number of built-in types:
+        self.assertEqual(len(ir.types), 3)
+        # Check the built-in Nothing type:
+        self.assertEqual(ir.types["Nothing"]["kind"],       "Nothing")
+        self.assertEqual(ir.types["Nothing"]["name"],       "Nothing")
+        self.assertEqual(ir.types["Nothing"]["attributes"], [])
+        self.assertEqual(ir.types["Nothing"]["implements"], [])
+        # Check the built-in Boolean type:
+        self.assertEqual(ir.types["Boolean"]["kind"],       "Boolean")
+        self.assertEqual(ir.types["Boolean"]["name"],       "Boolean")
+        self.assertEqual(ir.types["Boolean"]["attributes"], [])
+        self.assertEqual(ir.types["Boolean"]["implements"], ["Boolean", "Equality", "Value"])
+        # Check the built-in Size type:
+        self.assertEqual(ir.types["Size"]["kind"],       "Size")
+        self.assertEqual(ir.types["Size"]["name"],       "Size")
+        self.assertEqual(ir.types["Size"]["attributes"], [])
+        self.assertEqual(ir.types["Size"]["implements"], ["Arithmetic", "Equality", "Ordinal", "Value"])
+        # Check the number of built-in traits:
+        self.assertEqual(len(ir.traits), 5)
+        # Check the built-in Arithmetic trait:
+        self.assertEqual(ir.traits["Arithmetic"]["name"], "Arithmetic")
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["plus"    ]["name"],        "plus")
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["plus"    ]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["plus"    ]["return_type"], None)
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["minus"   ]["name"],        "minus")
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["minus"   ]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["minus"   ]["return_type"], None)
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["multiply"]["name"],        "multiply")
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["multiply"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["multiply"]["return_type"], None)
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["divide"  ]["name"],        "divide")
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["divide"  ]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Arithmetic"]["methods"]["divide"  ]["return_type"], None)
+        self.assertEqual(len(ir.traits["Arithmetic"]["methods"]), 4)
+        # Check the built-in Boolean trait:
+        self.assertEqual(ir.traits["Boolean"]["name"], "Boolean")
+        self.assertEqual(ir.traits["Boolean"]["methods"]["and"]["name"],        "and")
+        self.assertEqual(ir.traits["Boolean"]["methods"]["and"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Boolean"]["methods"]["and"]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["Boolean"]["methods"]["or" ]["name"],        "or")
+        self.assertEqual(ir.traits["Boolean"]["methods"]["or" ]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Boolean"]["methods"]["or" ]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["Boolean"]["methods"]["not"]["name"],        "not")
+        self.assertEqual(ir.traits["Boolean"]["methods"]["not"]["params"],      [("self", None)])
+        self.assertEqual(ir.traits["Boolean"]["methods"]["not"]["return_type"], "Boolean")
+        self.assertEqual(len(ir.traits["Boolean"]["methods"]), 3)
+        # Check the built-in Equality trait:
+        self.assertEqual(ir.traits["Equality"]["name"], "Equality")
+        self.assertEqual(ir.traits["Equality"]["methods"]["eq"]["name"],        "eq")
+        self.assertEqual(ir.traits["Equality"]["methods"]["eq"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Equality"]["methods"]["eq"]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["Equality"]["methods"]["ne"]["name"],        "ne")
+        self.assertEqual(ir.traits["Equality"]["methods"]["ne"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Equality"]["methods"]["ne"]["return_type"], "Boolean")
+        self.assertEqual(len(ir.traits["Equality"]["methods"]), 2)
+        # Check the built-in Ordinal trait:
+        self.assertEqual(ir.traits["Ordinal"]["name"], "Ordinal")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["lt"]["name"],        "lt")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["lt"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["lt"]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["le"]["name"],        "le")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["le"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["le"]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["gt"]["name"],        "gt")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["gt"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["gt"]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["ge"]["name"],        "ge")
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["ge"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["Ordinal"]["methods"]["ge"]["return_type"], "Boolean")
+        self.assertEqual(len(ir.traits["Ordinal"]["methods"]), 4)
+        # Check the built-in Value trait:
+        self.assertEqual(ir.traits["Value"]["name"], "Value")
+        self.assertEqual(ir.traits["Value"]["methods"]["get"]["name"],        "get")
+        self.assertEqual(ir.traits["Value"]["methods"]["get"]["params"],      [("self", None)])
+        self.assertEqual(ir.traits["Value"]["methods"]["get"]["return_type"], None)
+        self.assertEqual(ir.traits["Value"]["methods"]["set"]["name"],        "set")
+        self.assertEqual(ir.traits["Value"]["methods"]["set"]["params"],      [("self", None), ("value", None)])
+        self.assertEqual(ir.traits["Value"]["methods"]["set"]["return_type"], "Nothing")
+        self.assertEqual(len(ir.traits["Value"]["methods"]), 2)
 
 # =============================================================================
 if __name__ == "__main__":
