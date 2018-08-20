@@ -42,6 +42,8 @@ def new_array(name, type_name, type_namespace):
 	length = type_name[1]
 	type_name = type_name[0]
 	
+	print(name, type_name, length)
+	
 	# if name is None, we'll generate one: don't want to check
 	if name is not None:
 		check_typename(name, type_namespace, False)
@@ -49,6 +51,7 @@ def new_array(name, type_name, type_namespace):
 	# check if built-in type, and create if needed
 	if type(type_name) is tuple or type_name == "Bits":
 		type_name = new_bitstring(None, type_name, type_namespace)
+		print("..", type_name)
 	
 	# check if type has been defined
 	check_typename(type_name, type_namespace, True)
@@ -59,6 +62,10 @@ def new_array(name, type_name, type_namespace):
 	
 	if length == -1:
 		length = None
+		# construct Array
+		array = {"construct": "Array", "name": name, "element_type": type_name, "length": length}
+		type_namespace[name] = array
+	elif length is not None:
 		# construct Array
 		array = {"construct": "Array", "name": name, "element_type": type_name, "length": length}
 		type_namespace[name] = array
@@ -164,35 +171,11 @@ def build_tree(start, pairs, constraint_type):
 	       ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
 	       "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"),
 	       "==": ("eq", "equality"), "!=": ("ne", "equality")}
-	ret_type = {"IntegerConst": "Integer", "Arithmetic": "Integer", 
-				"BooleanConst": "Boolean", "Ordinal": "Boolean", "Equality": "Boolean",
-				"Fieldvalue": "Integer", "Fieldis_present": "Boolean", "Fieldwidth": "Integer"}
 	for pair in pairs:
-		if constraint_type == "Ordinal":
-			assert (start["constraint"] == "Arithmetic" \
-			       or start["constraint"] == "IntegerConst" \
-			       or (start["constraint"] == "Field" and (start["property"] == "value" or start["property"] == "width")))
-			assert (pair[1]["constraint"] == "Arithmetic" \
-			       or pair[1]["constraint"] == "IntegerConst" \
-			       or (pair[1]["constraint"] == "Field" and (pair[1]["property"] == "value" or pair[1]["property"] == "width")))
-		if constraint_type == "Arithmetic":
-			assert (start["constraint"] == "Arithmetic" \
-			       or start["constraint"] == "IntegerConst" \
-			       or (start["constraint"] == "Field" and (start["property"] == "value" or start["property"] == "width")))
-			assert (pair[1]["constraint"] == "Arithmetic" \
-			       or pair[1]["constraint"] == "IntegerConst" \
-			       or (pair[1]["constraint"] == "Field" and (pair[1]["property"] == "value" or pair[1]["property"] == "width")))
-		if constraint_type == "Equality":
-			if start["constraint"] == "Field":
-				left_type = "Field" + start["property"]
-			else:
-				left_type = start["constraint"]
-			if pair[1]["constraint"] == "Field":
-				right_type = "Field" + pair[1]["property"]
-			else:
-				right_type = pair[1]["constraint"]			
-			assert (ret_type[left_type] == ret_type[right_type])
-		start = {"constraint": constraint_type, "method": ops[pair[0]][0], "left": start, "right": pair[1]}
+		if constraint_type == "Conditional":
+			start = {"constraint": constraint_type, "condition": start, "true": pair[1], "false": pair[2]}
+		else:
+			start = {"constraint": constraint_type, "method": ops[pair[0]][0], "left": start, "right": pair[1]}
 	return start
 
 def parse_file(filename):
@@ -214,16 +197,17 @@ def parse_file(filename):
 				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
 	
 				# constraint grammar
-				primary_expr = number:n -> {"constraint": "IntegerConst", "value": n}
-							 | ('True'|'False'):bool -> {"constraint": "BooleanConst", "value": bool}
+				primary_expr = number:n -> {"constraint": "Constant", "type": "Integer", "value": n}
+							 | ('True'|'False'):bool -> {"constraint": "Constant", "type": "Boolean", "value": bool}
 				             | field_name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "Field", "name": n, "property": prop if prop else "value"}
-							 | '(' equality_expr:expr ')' -> expr
+							 | '(' cond_expr:expr ')' -> expr
 				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
 				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
 			
 				ordinal_expr = additive_expr:left (('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Ordinal")
 				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Boolean")
 				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Equality")
+				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "Conditional")
 
 				where_block = '}where{' (equality_expr:constraint ';' -> constraint)+:constraints -> constraints
 				bitstring_def = type_name:name ':=' (('Bits':t -> t)|('Bit':t number?:n -> (t, n))):type ';' -> new_bitstring(name, type, type_namespace)
