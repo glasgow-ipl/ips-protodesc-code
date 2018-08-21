@@ -97,9 +97,12 @@ class IR:
             self.types[type_]["implements"].sort()
 
     def __init__(self):
-        # Create the type and trait stores:
+        # Create the type, trait, and PDU stores:
         self.types  = {}
         self.traits = {}
+        self.pdus   = {}
+
+        self.protocol_name = ""
 
         # Define the internal types and standard traits:
         self._define_type("Nothing", "Nothing", [])
@@ -124,6 +127,39 @@ class IR:
 
         self._implements("Boolean", ["Value", "Equality", "Boolean"])
         self._implements(   "Size", ["Value", "Equality", "Ordinal", "Arithmetic"])
+
+    # protocol_json is a string holding the JSON form of a protocol object
+    def load(self, protocol_json):
+        # Load the JSON and check that it represents a Protocol object:
+        protocol = json.loads(protocol_json)
+        if protocol["construct"] != "Protocol":
+            raise IRError("Not a protocol object")
+
+        # Check and record the protocol name:
+        if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
+            raise IRError("Invalid protocol name: " + name)
+        self.protocol_name = protocol["name"]
+
+        # Load the definitions:
+        for defn in protocol["definitions"]:
+            if   defn["construct"] == "BitString":
+                raise IRError("unimplemented")
+            elif defn["construct"] == "Array":
+                raise IRError("unimplemented")
+            elif defn["construct"] == "Struct":
+                raise IRError("unimplemented")
+            elif defn["construct"] == "Enum":
+                raise IRError("unimplemented")
+            elif defn["construct"] == "NewType":
+                raise IRError("unimplemented")
+            elif defn["construct"] == "Function":
+                raise IRError("unimplemented")
+            elif defn["construct"] == "Context":
+                raise IRError("unimplemented")
+
+        # Record the PDUs:
+        for p in protocol["pdus"]:
+            raise IRError("unimplemented")
 
 # =============================================================================
 # Unit tests:
@@ -213,7 +249,28 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.traits["Value"]["methods"]["set"]["return_type"], "Nothing")
         self.assertEqual(len(ir.traits["Value"]["methods"]), 2)
 
+
+    def test_load_empty(self):
+        """Test loading an empty protocol object"""
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "EmptyProtocol",
+                "definitions" : [],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        # Check that we just have the built-in types and traits, and that
+        # no PDUs were defined:
+        self.assertEqual(len(ir.types),  3)
+        self.assertEqual(len(ir.traits), 5)
+        self.assertEqual(len(ir.pdus),   0)
+
+
 # =============================================================================
 if __name__ == "__main__":
     unittest.main()
+
 
