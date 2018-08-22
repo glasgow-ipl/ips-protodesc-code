@@ -184,7 +184,15 @@ class IR:
 
 
     def _construct_enum(self, defn):
-        raise IRError("unimplemented")
+        attributes = {}
+
+        attributes["variants"] = []
+        for v in defn["variants"]:
+            if not v["type"] in self.types:
+                raise IRError("Unknown variant: " + v["type"])
+            attributes["variants"].append(v["type"])
+            attributes["variants"].sort()
+        self._define_type("Enum", defn["name"], attributes)
 
 
 
@@ -484,6 +492,59 @@ class TestIR(unittest.TestCase):
         })
         self.assertEqual(ir.types["TestStruct"]["implements"], ["Collection"])
         self.assertEqual(ir.pdus, ["TestStruct"])
+
+
+
+    def test_load_enum(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadEnum",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "TypeA",
+                    "width"     : 32
+                },
+                {
+                    "construct" : "BitString",
+                    "name"      : "TypeB",
+                    "width"     : 32
+                },
+                {
+                    "construct"   : "Enum",
+                    "name"        : "TestEnum",
+                    "variants"    : [
+                        {"type" : "TypeA"},
+                        {"type" : "TypeB"}
+                    ]
+                }],
+                "pdus" : [
+                    {"type" : "TestEnum"}
+                ]
+            }
+        """
+        ir.load(protocol)
+        self.assertEqual(len(ir.types),  3 + 3)
+        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.pdus),   1)
+        self.assertEqual(ir.protocol_name, "LoadEnum")
+        self.assertEqual(ir.types["TypeA"]["kind"], "BitString")
+        self.assertEqual(ir.types["TypeA"]["name"], "TypeA")
+        self.assertEqual(ir.types["TypeA"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["TypeA"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.types["TypeB"]["kind"], "BitString")
+        self.assertEqual(ir.types["TypeB"]["name"], "TypeB")
+        self.assertEqual(ir.types["TypeB"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["TypeB"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.types["TestEnum"]["kind"], "Enum")
+        self.assertEqual(ir.types["TestEnum"]["name"], "TestEnum")
+        self.assertEqual(ir.types["TestEnum"]["attributes"], {
+            "variants" : ["TypeA", "TypeB"],
+        })
+        self.assertEqual(ir.types["TestEnum"]["implements"], [])
+        self.assertEqual(ir.pdus, ["TestEnum"])
 
 
 
