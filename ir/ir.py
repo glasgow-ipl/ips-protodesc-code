@@ -139,7 +139,7 @@ class IR:
 
     def _construct_array(self, defn):
         if not defn["element_type"] in self.types:
-            raise IRError("Unknown element_type")
+            raise IRError("Unknown element type")
         attributes = {}
         attributes["element_type"] = defn["element_type"]
         attributes["length"]       = defn["length"]
@@ -148,7 +148,26 @@ class IR:
         self._implements(defn["name"], ["Collection"])
 
     def _construct_struct(self, defn):
-        raise IRError("unimplemented")
+        attributes = {}
+
+        attributes["fields"] = []
+        field_names = {}
+        for field in defn["fields"]:
+            # Check that the field name is valid and its type exists, then record the field:
+            if re.search(FUNC_NAME_REGEX, field["name"]) == None:
+                raise IRError("Invalid field name: " + field["name"])
+            if field["name"] in field_names:
+                raise IRError("Duplicate field name: " + field["name"])
+            field_names[field["name"]] = True
+            if not field["type"] in self.types:
+                raise IRError("Unknown field type: " + field["type"])
+            attributes["fields"].append((field["name"], field["type"], field["is_present"]))
+
+        # FIXME: add support for constraints
+        attributes["constraints"] = []
+
+        self._define_type("Struct", defn["name"], attributes)
+        self._implements(defn["name"], ["Collection"])
 
     def _construct_enum(self, defn):
         raise IRError("unimplemented")
@@ -371,6 +390,66 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["CsrcList"]["name"], "CsrcList")
         self.assertEqual(ir.types["CsrcList"]["attributes"], {"length" : 4, "element_type" : "SSRC"})
         self.assertEqual(ir.types["CsrcList"]["implements"], ["Collection", "Equality"])
+
+    def test_load_struct(self):
+        ir = IR()
+        # FIXME: this doesn't test is_present
+        # FIXME: this doesn't test constraints
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadStruct",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "SeqNum",
+                    "width"     : 16
+                },
+                {
+                    "construct" : "BitString",
+                    "name"      : "Timestamp",
+                    "width"     : 32
+                },
+                {
+                    "construct"   : "Struct",
+                    "name"        : "TestStruct",
+                    "fields"      : [
+                    {
+                        "name"       : "seq",
+                        "type"       : "SeqNum",
+                        "is_present" : ""
+                    },
+                    {
+                        "name"       : "ts",
+                        "type"       : "Timestamp",
+                        "is_present" : ""
+                    }],
+                    "constraints" : []
+                }],
+                "pdus" : []
+            }
+        """
+        ir.load(protocol)
+        self.assertEqual(len(ir.types),  3 + 3)
+        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.protocol_name, "LoadStruct")
+        self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
+        self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
+        self.assertEqual(ir.types["SeqNum"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["SeqNum"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.types["Timestamp"]["kind"], "BitString")
+        self.assertEqual(ir.types["Timestamp"]["name"], "Timestamp")
+        self.assertEqual(ir.types["Timestamp"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["Timestamp"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.types["TestStruct"]["kind"], "Struct")
+        self.assertEqual(ir.types["TestStruct"]["name"], "TestStruct")
+        self.assertEqual(ir.types["TestStruct"]["attributes"], {
+            "fields"      : [("seq", "SeqNum", ""), ("ts",  "Timestamp", "")],
+            "constraints" : []
+        })
+        self.assertEqual(ir.types["TestStruct"]["implements"], ["Collection"])
+        # FIXME: test protocol PDUs
 
 # =============================================================================
 if __name__ == "__main__":
