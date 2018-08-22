@@ -124,6 +124,8 @@ class IR:
                                          ("minus", [("self", None), ("other", None)], None),
                                       ("multiply", [("self", None), ("other", None)], None),
                                         ("divide", [("self", None), ("other", None)], None)])
+        self._define_trait("Collection",  [("get", [("self", None), ("index", "Size")], None),
+                                           ("set", [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
 
         self._implements("Boolean", ["Value", "Equality", "Boolean"])
         self._implements(   "Size", ["Value", "Equality", "Ordinal", "Arithmetic"])
@@ -136,7 +138,12 @@ class IR:
         self._implements(defn["name"], ["Equality"])
 
     def _construct_array(self, defn):
-        raise IRError("unimplemented")
+        attributes = {}
+        attributes["element_type"] = defn["element_type"]
+        attributes["length"]       = defn["length"]
+        self._define_type("Array", defn["name"], attributes)
+        self._implements(defn["name"], ["Equality"])
+        self._implements(defn["name"], ["Collection"])
 
     def _construct_struct(self, defn):
         raise IRError("unimplemented")
@@ -212,7 +219,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["Size"]["attributes"], [])
         self.assertEqual(ir.types["Size"]["implements"], ["Arithmetic", "Equality", "Ordinal", "Value"])
         # Check the number of built-in traits:
-        self.assertEqual(len(ir.traits), 5)
+        self.assertEqual(len(ir.traits), 6)
         # Check the built-in Arithmetic trait:
         self.assertEqual(ir.traits["Arithmetic"]["name"], "Arithmetic")
         self.assertEqual(ir.traits["Arithmetic"]["methods"]["plus"    ]["name"],   "plus")
@@ -273,6 +280,15 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.traits["Value"]["methods"]["set"]["params"],      [("self", None), ("value", None)])
         self.assertEqual(ir.traits["Value"]["methods"]["set"]["return_type"], "Nothing")
         self.assertEqual(len(ir.traits["Value"]["methods"]), 2)
+        # Check the built-in Collection trait:
+        self.assertEqual(ir.traits["Collection"]["name"], "Collection")
+        self.assertEqual(ir.traits["Collection"]["methods"]["get"]["name"],        "get")
+        self.assertEqual(ir.traits["Collection"]["methods"]["get"]["params"], [("self", None), ("index", "Size")])
+        self.assertEqual(ir.traits["Collection"]["methods"]["get"]["return_type"], None)
+        self.assertEqual(ir.traits["Collection"]["methods"]["set"]["name"],        "set")
+        self.assertEqual(ir.traits["Collection"]["methods"]["set"]["params"], [("self", None), ("index", "Size"), ("value", None)])
+        self.assertEqual(ir.traits["Collection"]["methods"]["set"]["return_type"], "Nothing")
+        self.assertEqual(len(ir.traits["Value"]["methods"]), 2)
 
 
     def test_load_empty(self):
@@ -290,7 +306,7 @@ class TestIR(unittest.TestCase):
         # Check that we just have the built-in types and traits, and that
         # no PDUs were defined:
         self.assertEqual(len(ir.types),  3)
-        self.assertEqual(len(ir.traits), 5)
+        self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
 
     def test_load_bitstring(self):
@@ -298,7 +314,7 @@ class TestIR(unittest.TestCase):
         protocol = """
             {
                 "construct"   : "Protocol",
-                "name"        : "EmptyProtocol",
+                "name"        : "LoadBitstring",
                 "definitions" : [
                 {
                     "construct" : "BitString",
@@ -310,9 +326,34 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  3 + 1)
-        self.assertEqual(len(ir.traits), 5)
+        self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
-        print(ir.types)
+
+    def test_load_array(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadArray",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "SSRC",
+                    "width"     : 32
+                },
+                {
+                    "construct" : "Array",
+                    "name"      : "CsrcList",
+                    "element_type" : "SSSRC",
+                    "length"       : 4
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.pdus),   0)
 
 # =============================================================================
 if __name__ == "__main__":
