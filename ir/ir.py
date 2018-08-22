@@ -106,7 +106,7 @@ class IR:
         # Create the type, trait, and PDU stores:
         self.types  = {}
         self.traits = {}
-        self.pdus   = {}
+        self.pdus   = []
 
         self.protocol_name = ""
 
@@ -233,8 +233,11 @@ class IR:
                 self._construct_context(defn)
 
         # Record the PDUs:
-        for p in protocol["pdus"]:
-            raise IRError("unimplemented")
+        for pdu in protocol["pdus"]:
+            if not pdu["type"] in self.types:
+                raise IRError("Unknown PDU type: " + pdu["type"])
+            self.pdus.append(pdu["type"])
+            self.pdus.sort()
 
 # =============================================================================
 # Unit tests:
@@ -455,13 +458,15 @@ class TestIR(unittest.TestCase):
                     }],
                     "constraints" : []
                 }],
-                "pdus" : []
+                "pdus" : [
+                    {"type" : "TestStruct"}
+                ]
             }
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  3 + 3)
         self.assertEqual(len(ir.traits), 6)
-        self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadStruct")
         self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
         self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
@@ -478,7 +483,7 @@ class TestIR(unittest.TestCase):
             "constraints" : []
         })
         self.assertEqual(ir.types["TestStruct"]["implements"], ["Collection"])
-        # FIXME: test protocol PDUs
+        self.assertEqual(ir.pdus, ["TestStruct"])
 
 
 
