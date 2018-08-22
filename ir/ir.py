@@ -105,9 +105,9 @@ class IR:
         self.protocol_name = ""
 
         # Define the internal types and standard traits:
-        self._define_type("Nothing", "Nothing", [])
-        self._define_type("Boolean", "Boolean", [])
-        self._define_type("Size",    "Size",    [])
+        self._define_type("Nothing", "Nothing", {})
+        self._define_type("Boolean", "Boolean", {})
+        self._define_type("Size",    "Size",    {})
 
         self._define_trait("Value",       [("get", [("self", None)], None),
                                            ("set", [("self", None), ("value", None)], "Nothing")])
@@ -138,6 +138,8 @@ class IR:
         self._implements(defn["name"], ["Equality"])
 
     def _construct_array(self, defn):
+        if not defn["element_type"] in self.types:
+            raise IRError("Unknown element_type")
         attributes = {}
         attributes["element_type"] = defn["element_type"]
         attributes["length"]       = defn["length"]
@@ -206,17 +208,17 @@ class TestIR(unittest.TestCase):
         # Check the built-in Nothing type:
         self.assertEqual(ir.types["Nothing"]["kind"],       "Nothing")
         self.assertEqual(ir.types["Nothing"]["name"],       "Nothing")
-        self.assertEqual(ir.types["Nothing"]["attributes"], [])
+        self.assertEqual(ir.types["Nothing"]["attributes"], {})
         self.assertEqual(ir.types["Nothing"]["implements"], [])
         # Check the built-in Boolean type:
         self.assertEqual(ir.types["Boolean"]["kind"],       "Boolean")
         self.assertEqual(ir.types["Boolean"]["name"],       "Boolean")
-        self.assertEqual(ir.types["Boolean"]["attributes"], [])
+        self.assertEqual(ir.types["Boolean"]["attributes"], {})
         self.assertEqual(ir.types["Boolean"]["implements"], ["Boolean", "Equality", "Value"])
         # Check the built-in Size type:
         self.assertEqual(ir.types["Size"]["kind"],       "Size")
         self.assertEqual(ir.types["Size"]["name"],       "Size")
-        self.assertEqual(ir.types["Size"]["attributes"], [])
+        self.assertEqual(ir.types["Size"]["attributes"], {})
         self.assertEqual(ir.types["Size"]["implements"], ["Arithmetic", "Equality", "Ordinal", "Value"])
         # Check the number of built-in traits:
         self.assertEqual(len(ir.traits), 6)
@@ -328,6 +330,10 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.types),  3 + 1)
         self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.types["TestBitString"]["kind"], "BitString")
+        self.assertEqual(ir.types["TestBitString"]["name"], "TestBitString")
+        self.assertEqual(ir.types["TestBitString"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["TestBitString"]["implements"], ["Equality", "Value"])
 
     def test_load_array(self):
         ir = IR()
@@ -344,7 +350,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "Array",
                     "name"      : "CsrcList",
-                    "element_type" : "SSSRC",
+                    "element_type" : "SSRC",
                     "length"       : 4
                 }],
                 "pdus"        : []
@@ -354,6 +360,14 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.types),  3 + 2)
         self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.types["SSRC"]["kind"], "BitString")
+        self.assertEqual(ir.types["SSRC"]["name"], "SSRC")
+        self.assertEqual(ir.types["SSRC"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["SSRC"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.types["CsrcList"]["kind"], "Array")
+        self.assertEqual(ir.types["CsrcList"]["name"], "CsrcList")
+        self.assertEqual(ir.types["CsrcList"]["attributes"], {"length" : 4, "element_type" : "SSRC"})
+        self.assertEqual(ir.types["CsrcList"]["implements"], ["Collection", "Equality"])
 
 # =============================================================================
 if __name__ == "__main__":
