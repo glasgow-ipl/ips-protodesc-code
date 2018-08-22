@@ -128,6 +128,31 @@ class IR:
         self._implements("Boolean", ["Value", "Equality", "Boolean"])
         self._implements(   "Size", ["Value", "Equality", "Ordinal", "Arithmetic"])
 
+    def _construct_bitstring(self, defn):
+        attributes = {}
+        attributes["width"] = defn["width"]
+        self._define_type("BitString", defn["name"], attributes)
+        self._implements(defn["name"], ["Value"])
+        self._implements(defn["name"], ["Equality"])
+
+    def _construct_array(self, defn):
+        raise IRError("unimplemented")
+
+    def _construct_struct(self, defn):
+        raise IRError("unimplemented")
+
+    def _construct_enum(self, defn):
+        raise IRError("unimplemented")
+
+    def _construct_newtype(self, defn):
+        raise IRError("unimplemented")
+
+    def _construct_function(self, defn):
+        raise IRError("unimplemented")
+
+    def _construct_context(self, defn):
+        raise IRError("unimplemented")
+
     # protocol_json is a string holding the JSON form of a protocol object
     def load(self, protocol_json):
         # Load the JSON and check that it represents a Protocol object:
@@ -143,19 +168,19 @@ class IR:
         # Load the definitions:
         for defn in protocol["definitions"]:
             if   defn["construct"] == "BitString":
-                raise IRError("unimplemented")
+                self._construct_bitstring(defn)
             elif defn["construct"] == "Array":
-                raise IRError("unimplemented")
+                self._construct_array(defn)
             elif defn["construct"] == "Struct":
-                raise IRError("unimplemented")
+                self._construct_struct(defn)
             elif defn["construct"] == "Enum":
-                raise IRError("unimplemented")
+                self._construct_enum(defn)
             elif defn["construct"] == "NewType":
-                raise IRError("unimplemented")
+                self._construct_newtype(defn)
             elif defn["construct"] == "Function":
-                raise IRError("unimplemented")
+                self._construct_function(defn)
             elif defn["construct"] == "Context":
-                raise IRError("unimplemented")
+                self._construct_context(defn)
 
         # Record the PDUs:
         for p in protocol["pdus"]:
@@ -268,6 +293,26 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.traits), 5)
         self.assertEqual(len(ir.pdus),   0)
 
+    def test_load_bitstring(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "EmptyProtocol",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "TestBitString",
+                    "width"     : 16
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        self.assertEqual(len(ir.types),  3 + 1)
+        self.assertEqual(len(ir.traits), 5)
+        self.assertEqual(len(ir.pdus),   0)
+        print(ir.types)
 
 # =============================================================================
 if __name__ == "__main__":
