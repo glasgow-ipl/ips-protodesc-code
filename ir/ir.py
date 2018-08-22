@@ -49,6 +49,8 @@ class IR:
                 "implements" : []
             }
 
+
+
     def _define_trait(self, name, methods):
         # Check validity of trait:
         if re.search(TYPE_NAME_REGEX, name) == None:
@@ -85,6 +87,8 @@ class IR:
             self.traits[name]["methods"][m_name]["params"]      = m_params
             self.traits[name]["methods"][m_name]["return_type"] = m_returns
 
+
+
     def _implements(self, type_, traits):
         if not type_ in self.types:
             raise IRError("Undefined type " + type_)
@@ -95,6 +99,8 @@ class IR:
                 raise IRError("Reimplementation of trait " + trait + " for type " + type_)
             self.types[type_]["implements"].append(trait)
             self.types[type_]["implements"].sort()
+
+
 
     def __init__(self):
         # Create the type, trait, and PDU stores:
@@ -130,12 +136,16 @@ class IR:
         self._implements("Boolean", ["Value", "Equality", "Boolean"])
         self._implements(   "Size", ["Value", "Equality", "Ordinal", "Arithmetic"])
 
+
+
     def _construct_bitstring(self, defn):
         attributes = {}
         attributes["width"] = defn["width"]
         self._define_type("BitString", defn["name"], attributes)
         self._implements(defn["name"], ["Value"])
         self._implements(defn["name"], ["Equality"])
+
+
 
     def _construct_array(self, defn):
         if not defn["element_type"] in self.types:
@@ -146,6 +156,8 @@ class IR:
         self._define_type("Array", defn["name"], attributes)
         self._implements(defn["name"], ["Equality"])
         self._implements(defn["name"], ["Collection"])
+
+
 
     def _construct_struct(self, defn):
         attributes = {}
@@ -169,17 +181,27 @@ class IR:
         self._define_type("Struct", defn["name"], attributes)
         self._implements(defn["name"], ["Collection"])
 
+
+
     def _construct_enum(self, defn):
         raise IRError("unimplemented")
+
+
 
     def _construct_newtype(self, defn):
         raise IRError("unimplemented")
 
+
+
     def _construct_function(self, defn):
         raise IRError("unimplemented")
 
+
+
     def _construct_context(self, defn):
         raise IRError("unimplemented")
+
+
 
     # protocol_json is a string holding the JSON form of a protocol object
     def load(self, protocol_json):
@@ -312,6 +334,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.traits["Value"]["methods"]), 2)
 
 
+
     def test_load_empty(self):
         """Test loading an empty protocol object"""
         ir = IR()
@@ -330,6 +353,8 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "EmptyProtocol")
+
+
 
     def test_load_bitstring(self):
         ir = IR()
@@ -355,6 +380,8 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["TestBitString"]["name"], "TestBitString")
         self.assertEqual(ir.types["TestBitString"]["attributes"], {"width" : 16})
         self.assertEqual(ir.types["TestBitString"]["implements"], ["Equality", "Value"])
+
+
 
     def test_load_array(self):
         ir = IR()
@@ -390,6 +417,8 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["CsrcList"]["name"], "CsrcList")
         self.assertEqual(ir.types["CsrcList"]["attributes"], {"length" : 4, "element_type" : "SSRC"})
         self.assertEqual(ir.types["CsrcList"]["implements"], ["Collection", "Equality"])
+
+
 
     def test_load_struct(self):
         ir = IR()
@@ -450,6 +479,8 @@ class TestIR(unittest.TestCase):
         })
         self.assertEqual(ir.types["TestStruct"]["implements"], ["Collection"])
         # FIXME: test protocol PDUs
+
+
 
 # =============================================================================
 if __name__ == "__main__":
