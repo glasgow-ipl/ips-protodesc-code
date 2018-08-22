@@ -310,13 +310,14 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.types),  3)
         self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.protocol_name, "EmptyProtocol")
 
     def test_load_bitstring(self):
         ir = IR()
         protocol = """
             {
                 "construct"   : "Protocol",
-                "name"        : "LoadBitstring",
+                "name"        : "LoadBitString",
                 "definitions" : [
                 {
                     "construct" : "BitString",
@@ -330,6 +331,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.types),  3 + 1)
         self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.protocol_name, "LoadBitString")
         self.assertEqual(ir.types["TestBitString"]["kind"], "BitString")
         self.assertEqual(ir.types["TestBitString"]["name"], "TestBitString")
         self.assertEqual(ir.types["TestBitString"]["attributes"], {"width" : 16})
@@ -360,6 +362,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(len(ir.types),  3 + 2)
         self.assertEqual(len(ir.traits), 6)
         self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.protocol_name, "LoadArray")
         self.assertEqual(ir.types["SSRC"]["kind"], "BitString")
         self.assertEqual(ir.types["SSRC"]["name"], "SSRC")
         self.assertEqual(ir.types["SSRC"]["attributes"], {"width" : 32})
