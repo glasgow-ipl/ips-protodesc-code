@@ -1,0 +1,2 @@
+SingleBit := Bit;
+ThreeBits := Bit3;
