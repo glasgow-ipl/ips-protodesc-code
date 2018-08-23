@@ -210,7 +210,27 @@ class IR:
 
 
     def _construct_function(self, defn):
-        raise IRError("unimplemented")
+        attributes = {}
+
+        attributes["parameters"] = []
+        param_names = {}
+        for param in defn["parameters"]:
+            # Check that the parameter name is valid and its type exists, then record the field:
+            if re.search(FUNC_NAME_REGEX, param["name"]) == None:
+                raise IRError("Invalid parameter name: " + param["name"])
+            if param["name"] in param_names:
+                raise IRError("Duplicate parameter name: " + param["name"])
+            param_names[param["name"]] = True
+            if not param["type"] in self.types:
+                raise IRError("Unknown parameter type: " + param["type"])
+            attributes["parameters"].append((param["name"], param["type"]))
+            
+        if re.search(TYPE_NAME_REGEX, defn["return_type"]) == None:
+            raise IRError("Unknown return type: " + defn["return_type"])
+        attributes["return_type"] = defn["return_type"]
+
+        self._define_type("Function", defn["name"], attributes)
+        
 
 
 
@@ -590,6 +610,54 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
         self.assertEqual(ir.types["SeqNum"]["attributes"], {"width" : 16})
         self.assertEqual(ir.types["SeqNum"]["implements"], ["Equality", "Ordinal", "Value"])
+
+
+
+    def test_load_function(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadFunction",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "Bits16",
+                    "width"     : 16
+                },
+                {
+                    "construct"   : "Function",
+                    "name"        : "TestFunction",
+                    "parameters"  : [
+                    {
+                        "name" : "foo",
+                        "type" : "Bits16"
+                    },
+                    {
+                        "name" : "bar",
+                        "type" : "Boolean"
+                    }],
+                    "return_type" : "Boolean"
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.protocol_name, "LoadFunction")
+        self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
+        self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.types["TestFunction"]["kind"], "Function")
+        self.assertEqual(ir.types["TestFunction"]["name"], "TestFunction")
+        self.assertEqual(ir.types["TestFunction"]["attributes"], {
+            "parameters"  : [("foo", "Bits16"), ("bar", "Boolean")],
+            "return_type" : "Boolean"
+        })
+        self.assertEqual(ir.types["TestFunction"]["implements"], [])
 
 
 
