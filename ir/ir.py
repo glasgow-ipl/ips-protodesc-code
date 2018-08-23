@@ -103,10 +103,11 @@ class IR:
 
 
     def __init__(self):
-        # Create the type, trait, and PDU stores:
-        self.types  = {}
-        self.traits = {}
-        self.pdus   = []
+        # Create the context, type, trait, and PDU stores:
+        self.context = {}
+        self.types   = {}
+        self.traits  = {}
+        self.pdus    = []
 
         self.protocol_name = ""
 
@@ -235,7 +236,21 @@ class IR:
 
 
     def _construct_context(self, defn):
-        raise IRError("unimplemented")
+        field_names = {}
+
+        for field in defn["fields"]:
+            # Check that the field name is valid and its type exists, then record the field:
+            if re.search(FUNC_NAME_REGEX, field["name"]) == None:
+                raise IRError("Invalid field name in context: " + field["name"])
+            if field["name"] in field_names:
+                raise IRError("Duplicate field name in context: " + field["name"])
+            field_names[field["name"]] = True
+            if not field["type"] in self.types:
+                raise IRError("Unknown field type in context: " + field["type"])
+            self.context[field["name"]] = {}
+            self.context[field["name"]]["name"]  = field["name"]
+            self.context[field["name"]]["type"]  = field["type"]
+            self.context[field["name"]]["value"] = None
 
 
 
@@ -658,6 +673,51 @@ class TestIR(unittest.TestCase):
             "return_type" : "Boolean"
         })
         self.assertEqual(ir.types["TestFunction"]["implements"], [])
+
+
+
+    def test_load_context(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadContext",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "Bits16",
+                    "width"     : 16
+                },
+                {
+                    "construct"   : "Context",
+                    "fields"  : [
+                    {
+                        "name" : "foo",
+                        "type" : "Bits16"
+                    },
+                    {
+                        "name" : "bar",
+                        "type" : "Boolean"
+                    }]
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        self.assertEqual(len(ir.types),  3 + 1)
+        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.protocol_name, "LoadContext")
+        self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
+        self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.context["foo"]["name"], "foo")
+        self.assertEqual(ir.context["foo"]["type"], "Bits16")
+        self.assertEqual(ir.context["foo"]["value"], None)
+        self.assertEqual(ir.context["bar"]["name"], "bar")
+        self.assertEqual(ir.context["bar"]["type"], "Boolean")
+        self.assertEqual(ir.context["bar"]["value"], None)
 
 
 
