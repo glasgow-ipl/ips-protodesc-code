@@ -185,7 +185,6 @@ class IR:
 
     def _construct_enum(self, defn):
         attributes = {}
-
         attributes["variants"] = []
         for v in defn["variants"]:
             if not v["type"] in self.types:
@@ -197,7 +196,16 @@ class IR:
 
 
     def _construct_newtype(self, defn):
-        raise IRError("unimplemented")
+        base_type = defn["derived_from"]
+        if not base_type in self.types:
+            raise IRError("Derived from unknown type: " + base_type)
+
+        base_kind = self.types[base_type]["kind"]
+        base_attr = self.types[base_type]["attributes"]
+        base_impl = self.types[base_type]["implements"]
+
+        self._define_type(base_kind, defn["name"], base_attr)
+        self._implements(defn["name"], base_impl + defn["implements"])
 
 
 
@@ -545,6 +553,43 @@ class TestIR(unittest.TestCase):
         })
         self.assertEqual(ir.types["TestEnum"]["implements"], [])
         self.assertEqual(ir.pdus, ["TestEnum"])
+
+
+
+    def test_load_newtype(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadNewType",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "Bits16",
+                    "width"     : 16
+                },
+                {
+                    "construct"    : "NewType",
+                    "name"         : "SeqNum",
+                    "derived_from" : "Bits16",
+                    "implements"   : ["Ordinal"]
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.pdus),   0)
+        self.assertEqual(ir.protocol_name, "LoadNewType")
+        self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
+        self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
+        self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
+        self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
+        self.assertEqual(ir.types["SeqNum"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["SeqNum"]["implements"], ["Equality", "Ordinal", "Value"])
 
 
 
