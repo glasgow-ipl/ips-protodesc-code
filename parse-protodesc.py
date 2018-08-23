@@ -21,12 +21,14 @@ def main():
 
 	try:
 		input_parser = load_input_parser(args.input_format)
-	except ModuleNotFoundError:
+	except ModuleNotFoundError as e:
+		print(e)
 		print("Could not load input parser (%s)" % args.input_format)
 	
 	try:
 		proto = input_parser.parse_file(args.input_file)
 	except Exception as e:
+		print(e)
 		print("Could not parse input file (%s) with specified parser (%s)" % (args.input_file, args.input_format))
 
 	if args.json_output_file is not None:
@@ -42,8 +44,14 @@ def main():
 		print("Could not load output formatter: %s" % args.output_format)
 
 	try:
-		output = output_formatter.protostr(proto)
+		formatter = output_formatter.Formatter()
+		for definition in proto["definitions"]:
+			if "construct" in definition:
+				if definition["construct"] == "BitString":
+					formatter.bitstring(definition["name"], definition["width"])
+		output = formatter.output()
 	except Exception as e:
+		print(e)
 		print("Could not format output with specified formatter (%s)" % args.output_format)
 
 	try:
