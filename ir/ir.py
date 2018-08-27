@@ -118,21 +118,21 @@ class IR:
 
         self._define_trait("Value",       [("get", [("self", None)], None),
                                            ("set", [("self", None), ("value", None)], "Nothing")])
+        self._define_trait("Collection",  [("get", [("self", None), ("index", "Size")], None),
+                                           ("set", [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
         self._define_trait("Equality",    [("eq",  [("self", None), ("other", None)], "Boolean"),
                                            ("ne",  [("self", None), ("other", None)], "Boolean")])
-        self._define_trait("Boolean",     [("and", [("self", None), ("other", None)], "Boolean"),
-                                           ("or",  [("self", None), ("other", None)], "Boolean"),
-                                           ("not", [("self", None)                 ], "Boolean")])
         self._define_trait("Ordinal",     [("lt",  [("self", None), ("other", None)], "Boolean"),
                                            ("le",  [("self", None), ("other", None)], "Boolean"),
                                            ("gt",  [("self", None), ("other", None)], "Boolean"),
                                            ("ge",  [("self", None), ("other", None)], "Boolean")])
+        self._define_trait("Boolean",     [("and", [("self", None), ("other", None)], "Boolean"),
+                                           ("or",  [("self", None), ("other", None)], "Boolean"),
+                                           ("not", [("self", None)                 ], "Boolean")])
         self._define_trait("Arithmetic", [("plus", [("self", None), ("other", None)], None),
                                          ("minus", [("self", None), ("other", None)], None),
                                       ("multiply", [("self", None), ("other", None)], None),
                                         ("divide", [("self", None), ("other", None)], None)])
-        self._define_trait("Collection",  [("get", [("self", None), ("index", "Size")], None),
-                                           ("set", [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
 
         self._implements("Boolean", ["Value", "Equality", "Boolean"])
         self._implements(   "Size", ["Value", "Equality", "Ordinal", "Arithmetic"])
