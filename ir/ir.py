@@ -120,26 +120,26 @@ class IR:
         self._define_type("Boolean", "Boolean", {})
         self._define_type("Size",    "Size",    {})
 
-        self._define_trait("Value",       [("get", [("self", None)], None),
-                                           ("set", [("self", None), ("value", None)], "Nothing")])
-        self._define_trait("Collection",  [("get", [("self", None), ("index", "Size")], None),
-                                           ("set", [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
-        self._define_trait("Equality",    [("eq",  [("self", None), ("other", None)], "Boolean"),
-                                           ("ne",  [("self", None), ("other", None)], "Boolean")])
-        self._define_trait("Ordinal",     [("lt",  [("self", None), ("other", None)], "Boolean"),
-                                           ("le",  [("self", None), ("other", None)], "Boolean"),
-                                           ("gt",  [("self", None), ("other", None)], "Boolean"),
-                                           ("ge",  [("self", None), ("other", None)], "Boolean")])
-        self._define_trait("Boolean",     [("and", [("self", None), ("other", None)], "Boolean"),
-                                           ("or",  [("self", None), ("other", None)], "Boolean"),
-                                           ("not", [("self", None)                 ], "Boolean")])
-        self._define_trait("Arithmetic", [("plus", [("self", None), ("other", None)], None),
-                                         ("minus", [("self", None), ("other", None)], None),
-                                      ("multiply", [("self", None), ("other", None)], None),
-                                        ("divide", [("self", None), ("other", None)], None)])
+        self._define_trait("Value",          [("get", [("self", None)], None),
+                                              ("set", [("self", None), ("value", None)], "Nothing")])
+        self._define_trait("Collection",     [("get", [("self", None), ("index", "Size")], None),
+                                              ("set", [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
+        self._define_trait("Equality",       [("eq",  [("self", None), ("other", None)], "Boolean"),
+                                              ("ne",  [("self", None), ("other", None)], "Boolean")])
+        self._define_trait("Ordinal",        [("lt",  [("self", None), ("other", None)], "Boolean"),
+                                              ("le",  [("self", None), ("other", None)], "Boolean"),
+                                              ("gt",  [("self", None), ("other", None)], "Boolean"),
+                                              ("ge",  [("self", None), ("other", None)], "Boolean")])
+        self._define_trait("BooleanOps",     [("and", [("self", None), ("other", None)], "Boolean"),
+                                              ("or",  [("self", None), ("other", None)], "Boolean"),
+                                              ("not", [("self", None)                 ], "Boolean")])
+        self._define_trait("ArithmeticOps", [("plus", [("self", None), ("other", None)], None),
+                                            ("minus", [("self", None), ("other", None)], None),
+                                         ("multiply", [("self", None), ("other", None)], None),
+                                           ("divide", [("self", None), ("other", None)], None)])
 
-        self._implements("Boolean", ["Value", "Equality", "Boolean"])
-        self._implements(   "Size", ["Value", "Equality", "Ordinal", "Arithmetic"])
+        self._implements("Boolean", ["Value", "Equality", "BooleanOps"])
+        self._implements(   "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
 
 
 
@@ -313,41 +313,41 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["Boolean"]["kind"],       "Boolean")
         self.assertEqual(ir.types["Boolean"]["name"],       "Boolean")
         self.assertEqual(ir.types["Boolean"]["attributes"], {})
-        self.assertEqual(ir.types["Boolean"]["implements"], ["Boolean", "Equality", "Value"])
+        self.assertEqual(ir.types["Boolean"]["implements"], ["BooleanOps", "Equality", "Value"])
         # Check the built-in Size type:
         self.assertEqual(ir.types["Size"]["kind"],       "Size")
         self.assertEqual(ir.types["Size"]["name"],       "Size")
         self.assertEqual(ir.types["Size"]["attributes"], {})
-        self.assertEqual(ir.types["Size"]["implements"], ["Arithmetic", "Equality", "Ordinal", "Value"])
+        self.assertEqual(ir.types["Size"]["implements"], ["ArithmeticOps", "Equality", "Ordinal", "Value"])
         # Check the number of built-in traits:
         self.assertEqual(len(ir.traits), 6)
         # Check the built-in Arithmetic trait:
-        self.assertEqual(ir.traits["Arithmetic"]["name"], "Arithmetic")
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["plus"    ]["name"],   "plus")
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["plus"    ]["params"], [("self", None), ("other", None)])
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["plus"    ]["return_type"], None)
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["minus"   ]["name"],   "minus")
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["minus"   ]["params"], [("self", None), ("other", None)])
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["minus"   ]["return_type"], None)
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["multiply"]["name"],   "multiply")
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["multiply"]["params"], [("self", None), ("other", None)])
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["multiply"]["return_type"], None)
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["divide"  ]["name"],   "divide")
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["divide"  ]["params"], [("self", None), ("other", None)])
-        self.assertEqual(ir.traits["Arithmetic"]["methods"]["divide"  ]["return_type"], None)
-        self.assertEqual(len(ir.traits["Arithmetic"]["methods"]), 4)
+        self.assertEqual(ir.traits["ArithmeticOps"]["name"], "ArithmeticOps")
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["plus"    ]["name"],   "plus")
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["plus"    ]["params"], [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["plus"    ]["return_type"], None)
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["minus"   ]["name"],   "minus")
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["minus"   ]["params"], [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["minus"   ]["return_type"], None)
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["multiply"]["name"],   "multiply")
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["multiply"]["params"], [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["multiply"]["return_type"], None)
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["divide"  ]["name"],   "divide")
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["divide"  ]["params"], [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["divide"  ]["return_type"], None)
+        self.assertEqual(len(ir.traits["ArithmeticOps"]["methods"]), 4)
         # Check the built-in Boolean trait:
-        self.assertEqual(ir.traits["Boolean"]["name"], "Boolean")
-        self.assertEqual(ir.traits["Boolean"]["methods"]["and"]["name"],        "and")
-        self.assertEqual(ir.traits["Boolean"]["methods"]["and"]["params"],      [("self", None), ("other", None)])
-        self.assertEqual(ir.traits["Boolean"]["methods"]["and"]["return_type"], "Boolean")
-        self.assertEqual(ir.traits["Boolean"]["methods"]["or" ]["name"],        "or")
-        self.assertEqual(ir.traits["Boolean"]["methods"]["or" ]["params"],      [("self", None), ("other", None)])
-        self.assertEqual(ir.traits["Boolean"]["methods"]["or" ]["return_type"], "Boolean")
-        self.assertEqual(ir.traits["Boolean"]["methods"]["not"]["name"],        "not")
-        self.assertEqual(ir.traits["Boolean"]["methods"]["not"]["params"],      [("self", None)])
-        self.assertEqual(ir.traits["Boolean"]["methods"]["not"]["return_type"], "Boolean")
-        self.assertEqual(len(ir.traits["Boolean"]["methods"]), 3)
+        self.assertEqual(ir.traits["BooleanOps"]["name"], "BooleanOps")
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["and"]["name"],        "and")
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["and"]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["and"]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["or" ]["name"],        "or")
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["or" ]["params"],      [("self", None), ("other", None)])
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["or" ]["return_type"], "Boolean")
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["not"]["name"],        "not")
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["not"]["params"],      [("self", None)])
+        self.assertEqual(ir.traits["BooleanOps"]["methods"]["not"]["return_type"], "Boolean")
+        self.assertEqual(len(ir.traits["BooleanOps"]["methods"]), 3)
         # Check the built-in Equality trait:
         self.assertEqual(ir.traits["Equality"]["name"], "Equality")
         self.assertEqual(ir.traits["Equality"]["methods"]["eq"]["name"],        "eq")
