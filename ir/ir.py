@@ -42,6 +42,8 @@ class IR:
             raise IRError("Invalid type name: " + name)
         if name in self.types:
             raise IRError("Redefinition of type " + name)
+        if name in self.traits:
+            raise IRError("Type redefines trait " + name)
         self.types[name] = {
                 "kind" : kind,
                 "name" : name,
@@ -57,6 +59,8 @@ class IR:
             raise IRError("Invalid trait name: " + name)
         if name in self.traits:
             raise IRError("Redefinition of trait " + name)
+        if name in self.types:
+            raise IRError("Trait redefines type " + name)
 
         # Create the trait:
         self.traits[name] = {
