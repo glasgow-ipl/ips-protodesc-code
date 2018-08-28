@@ -217,8 +217,6 @@ def parse_file(filename):
 				type_def = (('Bits':t -> t)|('Bit':t number?:n -> (t, n))|type_name:t -> t):type (('[' number?:length ']') -> length if length is not None else -1)?:length -> (type, length)
 				
 				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
-	
-				field_ref = ((('value' | 'length' | 'is_present'):attribute -> attribute) | (field_name:name ('[' (number|'"' field_name:n '"' -> n):key ']' -> key)?:num -> name, num))
 				
 				# constraint grammar
 				primary_expr = number:n -> build_integer_constraint(n, type_namespace)
