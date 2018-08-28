@@ -1,5 +1,12 @@
 # Description language example #
 
+# The Context struct is special: it can't have `where` or `onparse` blocks, and defines
+  the fields found in the context #
+
+Context := {
+	field_three    :    Bit;
+};
+
 # Bit is a built-in type #
 # This constructs a BitString named 'SingleBit' with width 1 #
 SingleBit := Bit;
@@ -35,10 +42,11 @@ AltThreeManyBits := ManyBits[3]; # constructs one IR object: an Array named 'Alt
 NewStructure := {
 	field_one    :   Bit;
 	field_two    :   Bit[];
-	field_three  :   ManyBits;
 	field_four   :   ManyBits[];
 } where {
-	field_one == 3+1;
+	field_one.value == 3+1;
+	field_two[1].value == field_one.value + 1;
+	field_two.length == (4 ? 1 : 2);
 };
 
 # Enums #

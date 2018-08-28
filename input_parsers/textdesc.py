@@ -177,6 +177,17 @@ def build_integer_constraint(num, type_namespace):
 									                   {"trait": "ArithmeticOps"}]}
 	return {"constraint": "Constant", "type": int_typename, "value": num}
 
+def build_accessor_chain(refs):
+	if refs[0] in ["value", "length", "is_present"]:
+		accessor_type = "Attribute"
+	elif type(refs[0]) is str:
+		accessor_type = "NamedCollection"
+	else:
+		accessor_type = "IndexedCollection"
+	return {"access": accessor_type,
+			"key": refs[0],
+			"next":  build_accessor_chain(refs[1:]) if len(refs) > 1 else None}
+
 def build_tree(start, pairs, constraint_type):
 	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
 	       ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
@@ -207,10 +218,12 @@ def parse_file(filename):
 				
 				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
 	
+				field_ref = ((('value' | 'length' | 'is_present'):attribute -> attribute) | (field_name:name ('[' (number|'"' field_name:n '"' -> n):key ']' -> key)?:num -> name, num))
+				
 				# constraint grammar
 				primary_expr = number:n -> build_integer_constraint(n, type_namespace)
 							 | ('True'|'False'):bool -> {"constraint": "Constant", "type": "Boolean", "value": bool}
-				             | field_name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "Field", "name": n, "property": prop if prop else "value"}
+				             | field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> {"constraint": "Field", "accessor": build_accessor_chain([x]+xs)}
 							 | '(' cond_expr:expr ')' -> expr
 				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
 				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
@@ -243,6 +256,7 @@ def parse_file(filename):
 									       "new_protocol": new_protocol,
 									       "build_tree": build_tree,
 									       "build_integer_constraint": build_integer_constraint,
+									       "build_accessor_chain": build_accessor_chain,
 									       "context": {},
 									      })
 	with open(filename, "r+") as defFile:
