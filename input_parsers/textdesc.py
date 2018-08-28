@@ -172,8 +172,8 @@ def build_tree(start, pairs, constraint_type):
 	       "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"),
 	       "==": ("eq", "equality"), "!=": ("ne", "equality")}
 	for pair in pairs:
-		if constraint_type == "Conditional":
-			start = {"constraint": constraint_type, "condition": start, "true": pair[1], "false": pair[2]}
+		if constraint_type == "IfElse":
+			start = {"constraint": constraint_type, "condition": start, "if_true": pair[1], "if_false": pair[2]}
 		else:
 			start = {"constraint": constraint_type, "method": ops[pair[0]][0], "left": start, "right": pair[1]}
 	return start
@@ -207,7 +207,7 @@ def parse_file(filename):
 				ordinal_expr = additive_expr:left (('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Ordinal")
 				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Boolean")
 				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Equality")
-				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "Conditional")
+				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "IfElse")
 
 				where_block = '}where{' (equality_expr:constraint ';' -> constraint)+:constraints -> constraints
 				bitstring_def = type_name:name ':=' (('Bits':t -> t)|('Bit':t number?:n -> (t, n))):type ';' -> new_bitstring(name, type, type_namespace)
