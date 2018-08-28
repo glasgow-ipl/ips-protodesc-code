@@ -41,9 +41,7 @@ def new_bitstring(name, type_name, type_namespace):
 def new_array(name, type_name, type_namespace):
 	length = type_name[1]
 	type_name = type_name[0]
-	
-	print(name, type_name, length)
-	
+		
 	# if name is None, we'll generate one: don't want to check
 	if name is not None:
 		check_typename(name, type_namespace, False)
@@ -51,7 +49,6 @@ def new_array(name, type_name, type_namespace):
 	# check if built-in type, and create if needed
 	if type(type_name) is tuple or type_name == "Bits":
 		type_name = new_bitstring(None, type_name, type_namespace)
-		print("..", type_name)
 	
 	# check if type has been defined
 	check_typename(type_name, type_namespace, True)
@@ -166,6 +163,20 @@ def new_func(name, params, ret_type, type_namespace):
 	type_namespace[name] = function
 	return name
 
+def build_integer_constraint(num, type_namespace):
+	#TODO: widths
+	width = "32"
+	int_typename = "Int$" + width
+	if int_typename not in type_namespace: 
+		if "BitString$" + width not in type_namespace:
+			new_bitstring(None, ("Bit", int(width)), type_namespace)
+		type_namespace[int_typename] = {"construct": "NewType",
+									    "name": int_typename,
+									    "derived_from": "BitString$" + width,
+									    "implements": [{"trait": "Ordinal"}, 
+									                   {"trait": "ArithmeticOps"}]}
+	return {"constraint": "Constant", "type": int_typename, "value": num}
+
 def build_tree(start, pairs, constraint_type):
 	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
 	       ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
@@ -197,7 +208,7 @@ def parse_file(filename):
 				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
 	
 				# constraint grammar
-				primary_expr = number:n -> {"constraint": "Constant", "type": "Integer", "value": n}
+				primary_expr = number:n -> build_integer_constraint(n, type_namespace)
 							 | ('True'|'False'):bool -> {"constraint": "Constant", "type": "Boolean", "value": bool}
 				             | field_name:n ('.' ('length' | 'value' | 'is_present'):p -> p)?:prop -> {"constraint": "Field", "name": n, "property": prop if prop else "value"}
 							 | '(' cond_expr:expr ')' -> expr
@@ -231,6 +242,7 @@ def parse_file(filename):
 									       "new_func": new_func,
 									       "new_protocol": new_protocol,
 									       "build_tree": build_tree,
+									       "build_integer_constraint": build_integer_constraint,
 									       "context": {},
 									      })
 	with open(filename, "r+") as defFile:
