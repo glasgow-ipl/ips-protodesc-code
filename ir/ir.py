@@ -153,8 +153,7 @@ class IR:
         components = {}
         attributes["size"] = defn["size"]
         self._define_type("BitString", defn["name"], attributes, components)
-        self._implements(defn["name"], ["Value"])
-        self._implements(defn["name"], ["Equality"])
+        self._implements(defn["name"], ["Value", "Equality"])
 
 
 
@@ -173,8 +172,7 @@ class IR:
             attributes["size"] = None
 
         self._define_type("Array", defn["name"], attributes, components)
-        self._implements(defn["name"], ["Equality"])
-        self._implements(defn["name"], ["IndexCollection"])
+        self._implements(defn["name"], ["Equality", "IndexCollection"])
 
 
 
