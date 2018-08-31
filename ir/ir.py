@@ -159,7 +159,11 @@ class IR:
             raise IRError("Unknown element type")
         attributes = {}
         attributes["element_type"] = defn["element_type"]
-        attributes["length"]       = defn["length"]
+        attributes["length"] = defn["length"]
+        if attributes["length"] != None:
+            attributes["size"] = self.types[attributes["element_type"]]["attributes"]["size"] * attributes["length"]
+        else:
+            attributes["size"] = None
         self._define_type("Array", defn["name"], attributes)
         self._implements(defn["name"], ["Equality"])
         self._implements(defn["name"], ["IndexCollection"])
@@ -484,7 +488,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["SSRC"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["CsrcList"]["kind"], "Array")
         self.assertEqual(ir.types["CsrcList"]["name"], "CsrcList")
-        self.assertEqual(ir.types["CsrcList"]["attributes"], {"length" : 4, "element_type" : "SSRC"})
+        self.assertEqual(ir.types["CsrcList"]["attributes"], {"length" : 4, "size" : 128, "element_type" : "SSRC"})
         self.assertEqual(ir.types["CsrcList"]["implements"], ["Equality", "IndexCollection"])
 
 
