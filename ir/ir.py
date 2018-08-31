@@ -206,17 +206,19 @@ class IR:
 
 
     def _construct_enum(self, defn):
-        components = {}
         attributes = {}
         # The size of an enum is not known until it is parsed, since it
         # depends on the instantiated variant
         attributes["size"] = None
-        attributes["variants"] = []
+
+        components = {}
+        components["variants"] = []
         for v in defn["variants"]:
             if not v["type"] in self.types:
                 raise IRError("Unknown variant: " + v["type"])
-            attributes["variants"].append(v["type"])
-            attributes["variants"].sort()
+            components["variants"].append(v["type"])
+            components["variants"].sort()
+
         self._define_type("Enum", defn["name"], attributes, components)
 
 
@@ -630,10 +632,11 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["TestEnum"]["kind"], "Enum")
         self.assertEqual(ir.types["TestEnum"]["name"], "TestEnum")
         self.assertEqual(ir.types["TestEnum"]["attributes"], {
-            "size"     : None,
-            "variants" : ["TypeA", "TypeB"],
+            "size"     : None
         })
-        self.assertEqual(ir.types["TestEnum"]["components"], {})
+        self.assertEqual(ir.types["TestEnum"]["components"], {
+            "variants" : ["TypeA", "TypeB"]
+        })
         self.assertEqual(ir.types["TestEnum"]["implements"], [])
         self.assertEqual(ir.pdus, ["TestEnum"])
 
