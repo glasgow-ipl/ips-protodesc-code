@@ -173,6 +173,7 @@ class IR:
     def _construct_struct(self, defn):
         attributes = {}
 
+        attributes["size"] = 0
         attributes["fields"] = []
         field_names = {}
         for field in defn["fields"]:
@@ -185,6 +186,7 @@ class IR:
             if not field["type"] in self.types:
                 raise IRError("Unknown field type: " + field["type"])
             attributes["fields"].append((field["name"], field["type"], field["is_present"]))
+            attributes["size"] += self.types[field["type"]]["attributes"]["size"]
 
         # FIXME: add support for constraints
         attributes["constraints"] = []
@@ -549,6 +551,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["TestStruct"]["kind"], "Struct")
         self.assertEqual(ir.types["TestStruct"]["name"], "TestStruct")
         self.assertEqual(ir.types["TestStruct"]["attributes"], {
+            "size"        : 48,
             "fields"      : [("seq", "SeqNum", ""), ("ts",  "Timestamp", "")],
             "constraints" : []
         })
