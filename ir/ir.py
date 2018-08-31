@@ -147,7 +147,7 @@ class IR:
 
     def _construct_bitstring(self, defn):
         attributes = {}
-        attributes["width"] = defn["width"]
+        attributes["size"] = defn["size"]
         self._define_type("BitString", defn["name"], attributes)
         self._implements(defn["name"], ["Value"])
         self._implements(defn["name"], ["Equality"])
@@ -435,7 +435,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "TestBitString",
-                    "width"     : 16
+                    "size"      : 16
                 }],
                 "pdus"        : []
             }
@@ -447,7 +447,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadBitString")
         self.assertEqual(ir.types["TestBitString"]["kind"], "BitString")
         self.assertEqual(ir.types["TestBitString"]["name"], "TestBitString")
-        self.assertEqual(ir.types["TestBitString"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["TestBitString"]["attributes"], {"size" : 16})
         self.assertEqual(ir.types["TestBitString"]["implements"], ["Equality", "Value"])
 
 
@@ -462,7 +462,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "SSRC",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct" : "Array",
@@ -480,7 +480,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadArray")
         self.assertEqual(ir.types["SSRC"]["kind"], "BitString")
         self.assertEqual(ir.types["SSRC"]["name"], "SSRC")
-        self.assertEqual(ir.types["SSRC"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["SSRC"]["attributes"], {"size" : 32})
         self.assertEqual(ir.types["SSRC"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["CsrcList"]["kind"], "Array")
         self.assertEqual(ir.types["CsrcList"]["name"], "CsrcList")
@@ -501,12 +501,12 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "SeqNum",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct" : "BitString",
                     "name"      : "Timestamp",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct"   : "Struct",
@@ -536,11 +536,11 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadStruct")
         self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
         self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
-        self.assertEqual(ir.types["SeqNum"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["SeqNum"]["attributes"], {"size" : 16})
         self.assertEqual(ir.types["SeqNum"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["Timestamp"]["kind"], "BitString")
         self.assertEqual(ir.types["Timestamp"]["name"], "Timestamp")
-        self.assertEqual(ir.types["Timestamp"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["Timestamp"]["attributes"], {"size" : 32})
         self.assertEqual(ir.types["Timestamp"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TestStruct"]["kind"], "Struct")
         self.assertEqual(ir.types["TestStruct"]["name"], "TestStruct")
@@ -563,12 +563,12 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "TypeA",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct" : "BitString",
                     "name"      : "TypeB",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct"   : "Enum",
@@ -590,11 +590,11 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadEnum")
         self.assertEqual(ir.types["TypeA"]["kind"], "BitString")
         self.assertEqual(ir.types["TypeA"]["name"], "TypeA")
-        self.assertEqual(ir.types["TypeA"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["TypeA"]["attributes"], {"size" : 32})
         self.assertEqual(ir.types["TypeA"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TypeB"]["kind"], "BitString")
         self.assertEqual(ir.types["TypeB"]["name"], "TypeB")
-        self.assertEqual(ir.types["TypeB"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["TypeB"]["attributes"], {"size" : 32})
         self.assertEqual(ir.types["TypeB"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TestEnum"]["kind"], "Enum")
         self.assertEqual(ir.types["TestEnum"]["name"], "TestEnum")
@@ -616,7 +616,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "Bits16",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct"    : "NewType",
@@ -634,11 +634,11 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadNewType")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
         self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
-        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"size" : 16})
         self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
         self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
-        self.assertEqual(ir.types["SeqNum"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["SeqNum"]["attributes"], {"size" : 16})
         self.assertEqual(ir.types["SeqNum"]["implements"], ["Equality", "Ordinal", "Value"])
 
 
@@ -653,7 +653,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "Bits16",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct"   : "Function",
@@ -679,7 +679,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadFunction")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
         self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
-        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"size" : 16})
         self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TestFunction"]["kind"], "Function")
         self.assertEqual(ir.types["TestFunction"]["name"], "TestFunction")
@@ -701,7 +701,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "Bits16",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct"   : "Context",
@@ -725,7 +725,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadContext")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
         self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
-        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"size" : 16})
         self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.context["foo"]["name"], "foo")
         self.assertEqual(ir.context["foo"]["type"], "Bits16")
