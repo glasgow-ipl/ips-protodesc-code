@@ -51,7 +51,8 @@ class IR:
                 "name" : name,
                 "attributes" : attributes,
                 "components" : components,
-                "implements" : []
+                "implements" : [],
+                "methods"    : {}
             }
 
 
@@ -106,6 +107,23 @@ class IR:
                 raise IRError("Reimplementation of trait " + trait + " for type " + type_)
             self.types[type_]["implements"].append(trait)
             self.types[type_]["implements"].sort()
+
+            for method in self.traits[trait]["methods"]:
+                if method in self.types[type_]["methods"]:
+                    raise IRError("Reimplementation of method " + method + " by trait " + trait)
+                self.types[type_]["methods"][method] = {}
+                self.types[type_]["methods"][method]["name"] = self.traits[trait]["methods"][method]["name"]
+                # Record method parameters, setting any unspecified types to the implementing type:
+                self.types[type_]["methods"][method]["params"] = []
+                for (p_name, p_type) in self.traits[trait]["methods"][method]["params"]:
+                    if p_type == None:
+                        p_type = type_
+                    self.types[type_]["methods"][method]["params"].append((p_name, p_type))
+                # Record return type, setting to the implementing type if unspecified:
+                if self.traits[trait]["methods"][method]["return_type"] == None:
+                    self.types[type_]["methods"][method]["return_type"] = type_
+                else:
+                    self.types[type_]["methods"][method]["return_type"] = self.traits[trait]["methods"][method]["return_type"]
 
 
 
@@ -422,6 +440,58 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.traits["NamedCollection"]["methods"]["set"]["params"], [("self", None), ("key", "Size"), ("value", None)])
         self.assertEqual(ir.traits["NamedCollection"]["methods"]["set"]["return_type"], "Nothing")
         self.assertEqual(len(ir.traits["NamedCollection"]["methods"]), 2)
+
+
+
+    def test_implements_methods(self):
+        ir = IR()
+        # Check the built-in Size type:
+        self.assertEqual(ir.types["Size"]["kind"],       "Size")
+        self.assertEqual(ir.types["Size"]["name"],       "Size")
+        self.assertEqual(ir.types["Size"]["attributes"], {})
+        self.assertEqual(ir.types["Size"]["implements"], ["ArithmeticOps", "Equality", "Ordinal", "Value"])
+        # Should implement the methods of ArithmeticOps:
+        self.assertEqual(ir.types["Size"]["methods"]["plus"    ]["name"],   "plus")
+        self.assertEqual(ir.types["Size"]["methods"]["plus"    ]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["plus"    ]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["minus"   ]["name"],   "minus")
+        self.assertEqual(ir.types["Size"]["methods"]["minus"   ]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["minus"   ]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["multiply"]["name"],   "multiply")
+        self.assertEqual(ir.types["Size"]["methods"]["multiply"]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["multiply"]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["divide"  ]["name"],   "divide")
+        self.assertEqual(ir.types["Size"]["methods"]["divide"  ]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["divide"  ]["return_type"], "Size")
+        # Should implement the methods of Equality:
+        self.assertEqual(ir.types["Size"]["methods"]["eq"]["name"],        "eq")
+        self.assertEqual(ir.types["Size"]["methods"]["eq"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["eq"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["ne"]["name"],        "ne")
+        self.assertEqual(ir.types["Size"]["methods"]["ne"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["ne"]["return_type"], "Boolean")
+        # Should implement the methods of Ordinal:
+        self.assertEqual(ir.types["Size"]["methods"]["lt"]["name"],        "lt")
+        self.assertEqual(ir.types["Size"]["methods"]["lt"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["lt"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["le"]["name"],        "le")
+        self.assertEqual(ir.types["Size"]["methods"]["le"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["le"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["gt"]["name"],        "gt")
+        self.assertEqual(ir.types["Size"]["methods"]["gt"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["gt"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["ge"]["name"],        "ge")
+        self.assertEqual(ir.types["Size"]["methods"]["ge"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["ge"]["return_type"], "Boolean")
+        # Should implement the methods of Value:
+        self.assertEqual(ir.types["Size"]["methods"]["get"]["name"],        "get")
+        self.assertEqual(ir.types["Size"]["methods"]["get"]["params"],      [("self", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["get"]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["set"]["name"],        "set")
+        self.assertEqual(ir.types["Size"]["methods"]["set"]["params"],      [("self", "Size"), ("value", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["set"]["return_type"], "Nothing")
+        # Check the number of methods:
+        self.assertEqual(len(ir.types["Size"]["methods"]), 12)
 
 
 
