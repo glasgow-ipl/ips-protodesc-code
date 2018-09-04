@@ -68,9 +68,10 @@ class IR:
 
         # Create the trait:
         self.traits[name] = {
-                "name"    : name,
-                "methods" : {}
-            }
+            "name"    : name,
+            "methods" : {}
+        }
+
         for (m_name, m_params, m_returns) in methods:
             # Check validity of the method name:
             if re.search(FUNC_NAME_REGEX, m_name) == None:
@@ -141,25 +142,32 @@ class IR:
         self._define_type("Boolean", "Boolean", {}, {})
         self._define_type("Size",    "Size",    {}, {})
 
-        self._define_trait("Value",          [("get", [("self", None)], None),
-                                              ("set", [("self", None), ("value", None)], "Nothing")])
-        self._define_trait("IndexCollection",[("get", [("self", None), ("index", "Size")], None),
-                                              ("set", [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
-        self._define_trait("NamedCollection",[("get", [("self", None), ("key", "Size")], None),
-                                              ("set", [("self", None), ("key", "Size"), ("value", None)], "Nothing")])
-        self._define_trait("Equality",       [("eq",  [("self", None), ("other", None)], "Boolean"),
-                                              ("ne",  [("self", None), ("other", None)], "Boolean")])
-        self._define_trait("Ordinal",        [("lt",  [("self", None), ("other", None)], "Boolean"),
-                                              ("le",  [("self", None), ("other", None)], "Boolean"),
-                                              ("gt",  [("self", None), ("other", None)], "Boolean"),
-                                              ("ge",  [("self", None), ("other", None)], "Boolean")])
-        self._define_trait("BooleanOps",     [("and", [("self", None), ("other", None)], "Boolean"),
-                                              ("or",  [("self", None), ("other", None)], "Boolean"),
-                                              ("not", [("self", None)                 ], "Boolean")])
-        self._define_trait("ArithmeticOps", [("plus", [("self", None), ("other", None)], None),
-                                            ("minus", [("self", None), ("other", None)], None),
-                                         ("multiply", [("self", None), ("other", None)], None),
-                                           ("divide", [("self", None), ("other", None)], None)])
+        self._define_trait("Value",
+                         [("get",      [("self", None)                                    ],  None),
+                          ("set",      [("self", None), ("value",   None)                 ], "Nothing")])
+        self._define_trait("IndexCollection",
+                         [("get",      [("self", None), ("index", "Size")                 ],  None),
+                          ("set",      [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
+        self._define_trait("NamedCollection",
+                         [("get",      [("self", None), ("key",   "Size")                 ],  None),
+                          ("set",      [("self", None), ("key",   "Size"), ("value", None)], "Nothing")])
+        self._define_trait("Equality",
+                         [("eq",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("ne",       [("self", None), ("other",  None)                  ], "Boolean")])
+        self._define_trait("Ordinal",
+                         [("lt",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("le",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("gt",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("ge",       [("self", None), ("other",  None)                  ], "Boolean")])
+        self._define_trait("BooleanOps",
+                         [("and",      [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("or",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("not",      [("self", None)                                    ], "Boolean")])
+        self._define_trait("ArithmeticOps",
+                         [("plus",     [("self", None), ("other",  None)                  ],  None),
+                          ("minus",    [("self", None), ("other",  None)                  ],  None),
+                          ("multiply", [("self", None), ("other",  None)                  ],  None),
+                          ("divide",   [("self", None), ("other",  None)                  ],  None)])
 
         self._implements("Boolean", ["Value", "Equality", "BooleanOps"])
         self._implements(   "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
