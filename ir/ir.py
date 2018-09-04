@@ -37,9 +37,28 @@ class IRError(Exception):
         self.reason = reason
 
 class IR:
-    # attributes can be directly accessed in the IR by name, components are
-    # part of the internal representation of a type.
     def _define_type(self, kind, name, attributes, components):
+        """
+        Define a new type.
+
+        Arguments:
+          kind       -- The kind of type being defined
+          name       -- The name of the type being defined
+          attributes -- The public attributes of the new type
+          components -- The hidden components of the new type
+
+        Returns:
+          Nothing
+
+        The "kind" specifies what sort of type is being constructed. Examples
+        of kinds include "BitString", "Array", Struct", "Enum", and "Function".
+
+        The "attributes" are visible in the intermediate representation, and
+        include things such as the size of a bit string, or the length of an
+        array. The "components" are not directly visible in the intermediate
+        representation, and are used in the implementation of the type.
+        """
+
         if re.search(TYPE_NAME_REGEX, name) == None:
             raise IRError("Invalid type name: " + name)
         if name in self.types:
@@ -57,73 +76,114 @@ class IR:
 
 
 
-    def _define_trait(self, name, methods):
+    def _define_trait(self, t_name, methods):
+        """
+        Define a new trait.
+
+        Arguments:
+          t_name  -- The name of the trait being defined
+          methods -- A list of methods implemented by the trait
+
+        Returns:
+          Nothing
+
+        The "methods" argument is a list of tuples, one for each method, where
+        the elements of each tuple are "(method name, parameters, return type)".
+        The "parameters" element is itself a list of tuples, representing the
+        parameters of the method, of the form "(parameter name, parameter type)".
+
+        For example, calling:
+          _define_trait(self, "foo", [("set", [("self", None), ("value", Boolean)], "Nothing")])
+        defines a new trait named "foo" with a single method named "set". That
+        method takes two parameters: "self" with unspecified type, and "value"
+        with type Boolean, and returns Nothing.
+        """
+
         # Check validity of trait:
-        if re.search(TYPE_NAME_REGEX, name) == None:
-            raise IRError("Invalid trait name: " + name)
-        if name in self.traits:
-            raise IRError("Redefinition of trait " + name)
-        if name in self.types:
-            raise IRError("Trait redefines type " + name)
+        if re.search(TYPE_NAME_REGEX, t_name) == None:
+            raise IRError("Cannot define trait {}: invalid name".format(t_name))
+        if t_name in self.traits:
+            raise IRError("Cannot define trait {}: already defined".format(t_name))
+        if t_name in self.types:
+            raise IRError("Cannot define trait {}: already defined as type".format(t_name))
 
         # Create the trait:
-        self.traits[name] = {
-                "name"    : name,
-                "methods" : {}
-            }
+        self.traits[t_name] = {
+            "name"    : t_name,
+            "methods" : {}
+        }
+
         for (m_name, m_params, m_returns) in methods:
             # Check validity of the method name:
             if re.search(FUNC_NAME_REGEX, m_name) == None:
-                raise IRError("Invalid method name: " + m_name)
+                raise IRError("Method {} of trait {} has invalid name".format(m_name, t_name))
 
             # Check validity of the method parameters:
             if m_params[0] != ("self", None):
-                raise IRError("Method " + m_name + " does not have valid self parameter")
+                raise IRError("Method {} of trait {} is missing self parameter".format(m_name, t_name))
             for (p_name, p_type) in m_params:
                 if re.search(FUNC_NAME_REGEX, p_name) == None:
-                    raise IRError("Invalid parameter name: " + p_name)
+                    raise IRError("Method {} of trait {} has invalid parameter name {}".format(m_name, t_name, p_name))
                 if p_type != None and not p_type in self.types:
-                    raise IRError("Method " + m_name + " in trait " + name + "references undefined type " + p_type)
+                    raise IRError("Method {} of trait {} references undefined type {}".format(m_name, t_name, p_type))
 
             # Check validity of the method return type:
             if m_returns != None and not m_returns in self.types:
-                raise IRError("Unknown method return type " + m_returns + " in method " + m_name + " of trait " + name)
+                raise IRError("Method {} of trait {} return unknown type {}".format(m_name, t_name, m_returns))
 
             # Record the method:
-            self.traits[name]["methods"][m_name] = {}
-            self.traits[name]["methods"][m_name]["name"]        = m_name
-            self.traits[name]["methods"][m_name]["params"]      = m_params
-            self.traits[name]["methods"][m_name]["return_type"] = m_returns
+            self.traits[t_name]["methods"][m_name] = {}
+            self.traits[t_name]["methods"][m_name]["name"]        = m_name
+            self.traits[t_name]["methods"][m_name]["params"]      = m_params
+            self.traits[t_name]["methods"][m_name]["return_type"] = m_returns
 
 
 
-    def _implements(self, type_, traits):
-        if not type_ in self.types:
-            raise IRError("Undefined type " + type_)
-        for trait in traits:
+    def _implements(self, type_name, implements):
+        """
+        Record the traits implemented by a type, and add the definitions
+        of the methods provided by that trait to the type.
+
+        Arguments:
+          type_name  -- The type being extended
+          implements -- The traits to be implemented
+
+        Returns:
+          Nothing
+        """
+
+        if not type_name in self.types:
+            raise IRError("Undefined type " + type_name)
+
+        type_ = self.types[type_name]
+
+        for trait in implements:
             if not trait in self.traits:
-                raise IRError("Undefined trait " + trait)
-            if trait in self.types[type_]["implements"]:
-                raise IRError("Reimplementation of trait " + trait + " for type " + type_)
-            self.types[type_]["implements"].append(trait)
-            self.types[type_]["implements"].sort()
+                raise IRError("Type {} cannot implement undefined trait {}".format(type_name, trait))
+            if trait in type_["implements"]:
+                raise IRError("Type {} already implements trait {}".format(type_name, trait))
 
-            for method in self.traits[trait]["methods"]:
-                if method in self.types[type_]["methods"]:
-                    raise IRError("Reimplementation of method " + method + " by trait " + trait)
-                self.types[type_]["methods"][method] = {}
-                self.types[type_]["methods"][method]["name"] = self.traits[trait]["methods"][method]["name"]
-                # Record method parameters, setting any unspecified types to the implementing type:
-                self.types[type_]["methods"][method]["params"] = []
-                for (p_name, p_type) in self.traits[trait]["methods"][method]["params"]:
+            type_["implements"].append(trait)
+            type_["implements"].sort()
+
+            for method_name in self.traits[trait]["methods"]:
+                if method_name in type_["methods"]:
+                    raise IRError("Type {} already implements method {}".format(type_name, method_name))
+
+                type_["methods"][method_name] = {}
+                type_["methods"][method_name]["name"]   = method_name
+                type_["methods"][method_name]["params"] = []
+
+                for (p_name, p_type) in self.traits[trait]["methods"][method_name]["params"]:
                     if p_type == None:
-                        p_type = type_
-                    self.types[type_]["methods"][method]["params"].append((p_name, p_type))
-                # Record return type, setting to the implementing type if unspecified:
-                if self.traits[trait]["methods"][method]["return_type"] == None:
-                    self.types[type_]["methods"][method]["return_type"] = type_
+                        p_type = type_name
+                    type_["methods"][method_name]["params"].append((p_name, p_type))
+
+                rt = self.traits[trait]["methods"][method_name]["return_type"]
+                if rt == None:
+                    type_["methods"][method_name]["return_type"] = type_name
                 else:
-                    self.types[type_]["methods"][method]["return_type"] = self.traits[trait]["methods"][method]["return_type"]
+                    type_["methods"][method_name]["return_type"] = rt
 
 
 
@@ -141,25 +201,32 @@ class IR:
         self._define_type("Boolean", "Boolean", {}, {})
         self._define_type("Size",    "Size",    {}, {})
 
-        self._define_trait("Value",          [("get", [("self", None)], None),
-                                              ("set", [("self", None), ("value", None)], "Nothing")])
-        self._define_trait("IndexCollection",[("get", [("self", None), ("index", "Size")], None),
-                                              ("set", [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
-        self._define_trait("NamedCollection",[("get", [("self", None), ("key", "Size")], None),
-                                              ("set", [("self", None), ("key", "Size"), ("value", None)], "Nothing")])
-        self._define_trait("Equality",       [("eq",  [("self", None), ("other", None)], "Boolean"),
-                                              ("ne",  [("self", None), ("other", None)], "Boolean")])
-        self._define_trait("Ordinal",        [("lt",  [("self", None), ("other", None)], "Boolean"),
-                                              ("le",  [("self", None), ("other", None)], "Boolean"),
-                                              ("gt",  [("self", None), ("other", None)], "Boolean"),
-                                              ("ge",  [("self", None), ("other", None)], "Boolean")])
-        self._define_trait("BooleanOps",     [("and", [("self", None), ("other", None)], "Boolean"),
-                                              ("or",  [("self", None), ("other", None)], "Boolean"),
-                                              ("not", [("self", None)                 ], "Boolean")])
-        self._define_trait("ArithmeticOps", [("plus", [("self", None), ("other", None)], None),
-                                            ("minus", [("self", None), ("other", None)], None),
-                                         ("multiply", [("self", None), ("other", None)], None),
-                                           ("divide", [("self", None), ("other", None)], None)])
+        self._define_trait("Value",
+                         [("get",      [("self", None)                                    ],  None),
+                          ("set",      [("self", None), ("value",   None)                 ], "Nothing")])
+        self._define_trait("IndexCollection",
+                         [("get",      [("self", None), ("index", "Size")                 ],  None),
+                          ("set",      [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
+        self._define_trait("NamedCollection",
+                         [("get",      [("self", None), ("key",   "Size")                 ],  None),
+                          ("set",      [("self", None), ("key",   "Size"), ("value", None)], "Nothing")])
+        self._define_trait("Equality",
+                         [("eq",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("ne",       [("self", None), ("other",  None)                  ], "Boolean")])
+        self._define_trait("Ordinal",
+                         [("lt",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("le",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("gt",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("ge",       [("self", None), ("other",  None)                  ], "Boolean")])
+        self._define_trait("BooleanOps",
+                         [("and",      [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("or",       [("self", None), ("other",  None)                  ], "Boolean"),
+                          ("not",      [("self", None)                                    ], "Boolean")])
+        self._define_trait("ArithmeticOps",
+                         [("plus",     [("self", None), ("other",  None)                  ],  None),
+                          ("minus",    [("self", None), ("other",  None)                  ],  None),
+                          ("multiply", [("self", None), ("other",  None)                  ],  None),
+                          ("divide",   [("self", None), ("other",  None)                  ],  None)])
 
         self._implements("Boolean", ["Value", "Equality", "BooleanOps"])
         self._implements(   "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
@@ -167,6 +234,9 @@ class IR:
 
 
     def _construct_bitstring(self, defn):
+        """
+        The type constructor for a Bit String type.
+        """
         attributes = {}
         components = {}
         attributes["size"] = defn["size"]
@@ -176,6 +246,9 @@ class IR:
 
 
     def _construct_array(self, defn):
+        """
+        The type constructor for an array type.
+        """
         if not defn["element_type"] in self.types:
             raise IRError("Unknown element type")
 
@@ -195,6 +268,9 @@ class IR:
 
 
     def _construct_struct(self, defn):
+        """
+        The type constructor for a structure type.
+        """
         attributes = {}
         attributes["size"] = 0
 
@@ -222,6 +298,9 @@ class IR:
 
 
     def _construct_enum(self, defn):
+        """
+        The type constructor for an enumerated type.
+        """
         attributes = {}
         # The size of an enum is not known until it is parsed, since it
         # depends on the instantiated variant
@@ -240,6 +319,9 @@ class IR:
 
 
     def _construct_newtype(self, defn):
+        """
+        The type constructor for a derived type.
+        """
         base_type = defn["derived_from"]
         if not base_type in self.types:
             raise IRError("Derived from unknown type: " + base_type)
@@ -255,6 +337,9 @@ class IR:
 
 
     def _construct_function(self, defn):
+        """
+        The type constructor for a function type.
+        """
         components = {}
 
         attributes = {}
@@ -270,7 +355,7 @@ class IR:
             if not param["type"] in self.types:
                 raise IRError("Unknown parameter type: " + param["type"])
             attributes["parameters"].append((param["name"], param["type"]))
-            
+
         if re.search(TYPE_NAME_REGEX, defn["return_type"]) == None:
             raise IRError("Unknown return type: " + defn["return_type"])
         attributes["return_type"] = defn["return_type"]
@@ -281,6 +366,9 @@ class IR:
 
 
     def _construct_context(self, defn):
+        """
+        The constructor for the protocol context.
+        """
         field_names = {}
 
         for field in defn["fields"]:
@@ -292,6 +380,7 @@ class IR:
             field_names[field["name"]] = True
             if not field["type"] in self.types:
                 raise IRError("Unknown field type in context: " + field["type"])
+
             self.context[field["name"]] = {}
             self.context[field["name"]]["name"]  = field["name"]
             self.context[field["name"]]["type"]  = field["type"]
@@ -299,19 +388,24 @@ class IR:
 
 
 
-    # protocol_json is a string holding the JSON form of a protocol object
     def load(self, protocol_json):
-        # Load the JSON and check that it represents a Protocol object:
+        """
+        Load the JSON-formatted representation of a protocol object.
+
+        Arguments:
+          protocol_json -- A string containing the JSON form of a protocol object
+
+        Returns:
+          Nothing (but updates self to contain the loaded and type-checked IR)
+        """
         protocol = json.loads(protocol_json)
         if protocol["construct"] != "Protocol":
             raise IRError("Not a protocol object")
 
-        # Check and record the protocol name:
         if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
-            raise IRError("Invalid protocol name: " + name)
+            raise IRError("Invalid protocol name: {}".format(name))
         self.protocol_name = protocol["name"]
 
-        # Load the definitions:
         for defn in protocol["definitions"]:
             if   defn["construct"] == "BitString":
                 self._construct_bitstring(defn)
@@ -327,11 +421,12 @@ class IR:
                 self._construct_function(defn)
             elif defn["construct"] == "Context":
                 self._construct_context(defn)
+            else:
+                raise IRError("Unknown type constructor in definition: {}".format(defn["construct"]))
 
-        # Record the PDUs:
         for pdu in protocol["pdus"]:
             if not pdu["type"] in self.types:
-                raise IRError("Unknown PDU type: " + pdu["type"])
+                raise IRError("Unknown PDU type: {}".format(pdu["type"]))
             self.pdus.append(pdu["type"])
             self.pdus.sort()
 
@@ -586,6 +681,7 @@ class TestIR(unittest.TestCase):
     def test_load_struct(self):
         ir = IR()
         # FIXME: this doesn't test is_present
+        # FIXME: this doesn't test transform
         # FIXME: this doesn't test constraints
         protocol = """
             {
