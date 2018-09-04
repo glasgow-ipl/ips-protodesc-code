@@ -57,44 +57,44 @@ class IR:
 
 
 
-    def _define_trait(self, name, methods):
+    def _define_trait(self, t_name, methods):
         # Check validity of trait:
-        if re.search(TYPE_NAME_REGEX, name) == None:
-            raise IRError("Invalid trait name: " + name)
-        if name in self.traits:
-            raise IRError("Redefinition of trait " + name)
-        if name in self.types:
-            raise IRError("Trait redefines type " + name)
+        if re.search(TYPE_NAME_REGEX, t_name) == None:
+            raise IRError("Cannot define trait {}: invalid name".format(t_name))
+        if t_name in self.traits:
+            raise IRError("Cannot define trait {}: already defined".format(t_name))
+        if t_name in self.types:
+            raise IRError("Cannot define trait {}: already defined as type".format(t_name))
 
         # Create the trait:
-        self.traits[name] = {
-            "name"    : name,
+        self.traits[t_name] = {
+            "name"    : t_name,
             "methods" : {}
         }
 
         for (m_name, m_params, m_returns) in methods:
             # Check validity of the method name:
             if re.search(FUNC_NAME_REGEX, m_name) == None:
-                raise IRError("Invalid method name: " + m_name)
+                raise IRError("Method {} of trait {} has invalid name".format(m_name, t_name))
 
             # Check validity of the method parameters:
             if m_params[0] != ("self", None):
-                raise IRError("Method " + m_name + " does not have valid self parameter")
+                raise IRError("Method {} of trait {} is missing self parameter".format(m_name, t_name))
             for (p_name, p_type) in m_params:
                 if re.search(FUNC_NAME_REGEX, p_name) == None:
-                    raise IRError("Invalid parameter name: " + p_name)
+                    raise IRError("Method {} of trait {} has invalid parameter name {}".format(m_name, t_name, p_name))
                 if p_type != None and not p_type in self.types:
-                    raise IRError("Method " + m_name + " in trait " + name + "references undefined type " + p_type)
+                    raise IRError("Method {} of trait {} references undefined type {}".format(m_name, t_name, p_type))
 
             # Check validity of the method return type:
             if m_returns != None and not m_returns in self.types:
-                raise IRError("Unknown method return type " + m_returns + " in method " + m_name + " of trait " + name)
+                raise IRError("Method {} of trait {} return unknown type {}".format(m_name, t_name, m_returns))
 
             # Record the method:
-            self.traits[name]["methods"][m_name] = {}
-            self.traits[name]["methods"][m_name]["name"]        = m_name
-            self.traits[name]["methods"][m_name]["params"]      = m_params
-            self.traits[name]["methods"][m_name]["return_type"] = m_returns
+            self.traits[t_name]["methods"][m_name] = {}
+            self.traits[t_name]["methods"][m_name]["name"]        = m_name
+            self.traits[t_name]["methods"][m_name]["params"]      = m_params
+            self.traits[t_name]["methods"][m_name]["return_type"] = m_returns
 
 
 
