@@ -98,33 +98,51 @@ class IR:
 
 
 
-    def _implements(self, type_, traits):
-        if not type_ in self.types:
-            raise IRError("Undefined type " + type_)
-        for trait in traits:
-            if not trait in self.traits:
-                raise IRError("Undefined trait " + trait)
-            if trait in self.types[type_]["implements"]:
-                raise IRError("Reimplementation of trait " + trait + " for type " + type_)
-            self.types[type_]["implements"].append(trait)
-            self.types[type_]["implements"].sort()
+    def _implements(self, type_name, implements):
+        """
+        Record the traits implemented by a type, and add the definitions
+        of the methods provided by that trait to the type.
 
-            for method in self.traits[trait]["methods"]:
-                if method in self.types[type_]["methods"]:
-                    raise IRError("Reimplementation of method " + method + " by trait " + trait)
-                self.types[type_]["methods"][method] = {}
-                self.types[type_]["methods"][method]["name"] = self.traits[trait]["methods"][method]["name"]
-                # Record method parameters, setting any unspecified types to the implementing type:
-                self.types[type_]["methods"][method]["params"] = []
-                for (p_name, p_type) in self.traits[trait]["methods"][method]["params"]:
+        Arguments:
+          type_name  -- The type being extended
+          implements -- The traits to be implemented
+
+        Returns:
+          Nothing
+        """
+
+        if not type_name in self.types:
+            raise IRError("Undefined type " + type_name)
+
+        type_ = self.types[type_name]
+
+        for trait in implements:
+            if not trait in self.traits:
+                raise IRError("Type {} cannot implement undefined trait {}".format(type_name, trait))
+            if trait in type_["implements"]:
+                raise IRError("Type {} already implements trait {}".format(type_name, trait))
+
+            type_["implements"].append(trait)
+            type_["implements"].sort()
+
+            for method_name in self.traits[trait]["methods"]:
+                if method_name in type_["methods"]:
+                    raise IRError("Type {} already implements method {}".format(type_name, method_name))
+
+                type_["methods"][method_name] = {}
+                type_["methods"][method_name]["name"]   = method_name
+                type_["methods"][method_name]["params"] = []
+
+                for (p_name, p_type) in self.traits[trait]["methods"][method_name]["params"]:
                     if p_type == None:
-                        p_type = type_
-                    self.types[type_]["methods"][method]["params"].append((p_name, p_type))
-                # Record return type, setting to the implementing type if unspecified:
-                if self.traits[trait]["methods"][method]["return_type"] == None:
-                    self.types[type_]["methods"][method]["return_type"] = type_
+                        p_type = type_name
+                    type_["methods"][method_name]["params"].append((p_name, p_type))
+
+                rt = self.traits[trait]["methods"][method_name]["return_type"]
+                if rt == None:
+                    type_["methods"][method_name]["return_type"] = type_name
                 else:
-                    self.types[type_]["methods"][method]["return_type"] = self.traits[trait]["methods"][method]["return_type"]
+                    type_["methods"][method_name]["return_type"] = rt
 
 
 
