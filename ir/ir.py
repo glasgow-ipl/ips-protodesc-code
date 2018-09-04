@@ -37,7 +37,9 @@ class IRError(Exception):
         self.reason = reason
 
 class IR:
-    def _define_type(self, kind, name, attributes):
+    # attributes can be directly accessed in the IR by name, components are
+    # part of the internal representation of a type.
+    def _define_type(self, kind, name, attributes, components):
         if re.search(TYPE_NAME_REGEX, name) == None:
             raise IRError("Invalid type name: " + name)
         if name in self.types:
@@ -48,7 +50,9 @@ class IR:
                 "kind" : kind,
                 "name" : name,
                 "attributes" : attributes,
-                "implements" : []
+                "components" : components,
+                "implements" : [],
+                "methods"    : {}
             }
 
 
@@ -104,6 +108,23 @@ class IR:
             self.types[type_]["implements"].append(trait)
             self.types[type_]["implements"].sort()
 
+            for method in self.traits[trait]["methods"]:
+                if method in self.types[type_]["methods"]:
+                    raise IRError("Reimplementation of method " + method + " by trait " + trait)
+                self.types[type_]["methods"][method] = {}
+                self.types[type_]["methods"][method]["name"] = self.traits[trait]["methods"][method]["name"]
+                # Record method parameters, setting any unspecified types to the implementing type:
+                self.types[type_]["methods"][method]["params"] = []
+                for (p_name, p_type) in self.traits[trait]["methods"][method]["params"]:
+                    if p_type == None:
+                        p_type = type_
+                    self.types[type_]["methods"][method]["params"].append((p_name, p_type))
+                # Record return type, setting to the implementing type if unspecified:
+                if self.traits[trait]["methods"][method]["return_type"] == None:
+                    self.types[type_]["methods"][method]["return_type"] = type_
+                else:
+                    self.types[type_]["methods"][method]["return_type"] = self.traits[trait]["methods"][method]["return_type"]
+
 
 
     def __init__(self):
@@ -116,9 +137,9 @@ class IR:
         self.protocol_name = ""
 
         # Define the internal types and standard traits:
-        self._define_type("Nothing", "Nothing", {})
-        self._define_type("Boolean", "Boolean", {})
-        self._define_type("Size",    "Size",    {})
+        self._define_type("Nothing", "Nothing", {}, {})
+        self._define_type("Boolean", "Boolean", {}, {})
+        self._define_type("Size",    "Size",    {}, {})
 
         self._define_trait("Value",          [("get", [("self", None)], None),
                                               ("set", [("self", None), ("value", None)], "Nothing")])
@@ -147,29 +168,38 @@ class IR:
 
     def _construct_bitstring(self, defn):
         attributes = {}
-        attributes["width"] = defn["width"]
-        self._define_type("BitString", defn["name"], attributes)
-        self._implements(defn["name"], ["Value"])
-        self._implements(defn["name"], ["Equality"])
+        components = {}
+        attributes["size"] = defn["size"]
+        self._define_type("BitString", defn["name"], attributes, components)
+        self._implements(defn["name"], ["Value", "Equality"])
 
 
 
     def _construct_array(self, defn):
         if not defn["element_type"] in self.types:
             raise IRError("Unknown element type")
+
+        components = {}
+
         attributes = {}
         attributes["element_type"] = defn["element_type"]
-        attributes["length"]       = defn["length"]
-        self._define_type("Array", defn["name"], attributes)
-        self._implements(defn["name"], ["Equality"])
-        self._implements(defn["name"], ["IndexCollection"])
+        attributes["length"] = defn["length"]
+        if attributes["length"] != None:
+            attributes["size"] = self.types[attributes["element_type"]]["attributes"]["size"] * attributes["length"]
+        else:
+            attributes["size"] = None
+
+        self._define_type("Array", defn["name"], attributes, components)
+        self._implements(defn["name"], ["Equality", "IndexCollection"])
 
 
 
     def _construct_struct(self, defn):
         attributes = {}
+        attributes["size"] = 0
 
-        attributes["fields"] = []
+        components = {}
+        components["fields"] = []
         field_names = {}
         for field in defn["fields"]:
             # Check that the field name is valid and its type exists, then record the field:
@@ -180,25 +210,32 @@ class IR:
             field_names[field["name"]] = True
             if not field["type"] in self.types:
                 raise IRError("Unknown field type: " + field["type"])
-            attributes["fields"].append((field["name"], field["type"], field["is_present"]))
+            components["fields"].append((field["name"], field["type"], field["is_present"]))
+            attributes["size"] += self.types[field["type"]]["attributes"]["size"]
 
         # FIXME: add support for constraints
-        attributes["constraints"] = []
+        components["constraints"] = []
 
-        self._define_type("Struct", defn["name"], attributes)
+        self._define_type("Struct", defn["name"], attributes, components)
         self._implements(defn["name"], ["NamedCollection"])
 
 
 
     def _construct_enum(self, defn):
         attributes = {}
-        attributes["variants"] = []
+        # The size of an enum is not known until it is parsed, since it
+        # depends on the instantiated variant
+        attributes["size"] = None
+
+        components = {}
+        components["variants"] = []
         for v in defn["variants"]:
             if not v["type"] in self.types:
                 raise IRError("Unknown variant: " + v["type"])
-            attributes["variants"].append(v["type"])
-            attributes["variants"].sort()
-        self._define_type("Enum", defn["name"], attributes)
+            components["variants"].append(v["type"])
+            components["variants"].sort()
+
+        self._define_type("Enum", defn["name"], attributes, components)
 
 
 
@@ -209,16 +246,18 @@ class IR:
 
         base_kind = self.types[base_type]["kind"]
         base_attr = self.types[base_type]["attributes"]
+        base_comp = self.types[base_type]["components"]
         base_impl = self.types[base_type]["implements"]
 
-        self._define_type(base_kind, defn["name"], base_attr)
+        self._define_type(base_kind, defn["name"], base_attr, base_comp)
         self._implements(defn["name"], base_impl + defn["implements"])
 
 
 
     def _construct_function(self, defn):
-        attributes = {}
+        components = {}
 
+        attributes = {}
         attributes["parameters"] = []
         param_names = {}
         for param in defn["parameters"]:
@@ -236,7 +275,7 @@ class IR:
             raise IRError("Unknown return type: " + defn["return_type"])
         attributes["return_type"] = defn["return_type"]
 
-        self._define_type("Function", defn["name"], attributes)
+        self._define_type("Function", defn["name"], attributes, components)
         
 
 
@@ -404,6 +443,58 @@ class TestIR(unittest.TestCase):
 
 
 
+    def test_implements_methods(self):
+        ir = IR()
+        # Check the built-in Size type:
+        self.assertEqual(ir.types["Size"]["kind"],       "Size")
+        self.assertEqual(ir.types["Size"]["name"],       "Size")
+        self.assertEqual(ir.types["Size"]["attributes"], {})
+        self.assertEqual(ir.types["Size"]["implements"], ["ArithmeticOps", "Equality", "Ordinal", "Value"])
+        # Should implement the methods of ArithmeticOps:
+        self.assertEqual(ir.types["Size"]["methods"]["plus"    ]["name"],   "plus")
+        self.assertEqual(ir.types["Size"]["methods"]["plus"    ]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["plus"    ]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["minus"   ]["name"],   "minus")
+        self.assertEqual(ir.types["Size"]["methods"]["minus"   ]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["minus"   ]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["multiply"]["name"],   "multiply")
+        self.assertEqual(ir.types["Size"]["methods"]["multiply"]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["multiply"]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["divide"  ]["name"],   "divide")
+        self.assertEqual(ir.types["Size"]["methods"]["divide"  ]["params"], [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["divide"  ]["return_type"], "Size")
+        # Should implement the methods of Equality:
+        self.assertEqual(ir.types["Size"]["methods"]["eq"]["name"],        "eq")
+        self.assertEqual(ir.types["Size"]["methods"]["eq"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["eq"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["ne"]["name"],        "ne")
+        self.assertEqual(ir.types["Size"]["methods"]["ne"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["ne"]["return_type"], "Boolean")
+        # Should implement the methods of Ordinal:
+        self.assertEqual(ir.types["Size"]["methods"]["lt"]["name"],        "lt")
+        self.assertEqual(ir.types["Size"]["methods"]["lt"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["lt"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["le"]["name"],        "le")
+        self.assertEqual(ir.types["Size"]["methods"]["le"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["le"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["gt"]["name"],        "gt")
+        self.assertEqual(ir.types["Size"]["methods"]["gt"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["gt"]["return_type"], "Boolean")
+        self.assertEqual(ir.types["Size"]["methods"]["ge"]["name"],        "ge")
+        self.assertEqual(ir.types["Size"]["methods"]["ge"]["params"],      [("self", "Size"), ("other", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["ge"]["return_type"], "Boolean")
+        # Should implement the methods of Value:
+        self.assertEqual(ir.types["Size"]["methods"]["get"]["name"],        "get")
+        self.assertEqual(ir.types["Size"]["methods"]["get"]["params"],      [("self", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["get"]["return_type"], "Size")
+        self.assertEqual(ir.types["Size"]["methods"]["set"]["name"],        "set")
+        self.assertEqual(ir.types["Size"]["methods"]["set"]["params"],      [("self", "Size"), ("value", "Size")])
+        self.assertEqual(ir.types["Size"]["methods"]["set"]["return_type"], "Nothing")
+        # Check the number of methods:
+        self.assertEqual(len(ir.types["Size"]["methods"]), 12)
+
+
+
     def test_load_empty(self):
         """Test loading an empty protocol object"""
         ir = IR()
@@ -435,7 +526,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "TestBitString",
-                    "width"     : 16
+                    "size"      : 16
                 }],
                 "pdus"        : []
             }
@@ -447,7 +538,8 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadBitString")
         self.assertEqual(ir.types["TestBitString"]["kind"], "BitString")
         self.assertEqual(ir.types["TestBitString"]["name"], "TestBitString")
-        self.assertEqual(ir.types["TestBitString"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["TestBitString"]["attributes"], {"size" : 16})
+        self.assertEqual(ir.types["TestBitString"]["components"], {})
         self.assertEqual(ir.types["TestBitString"]["implements"], ["Equality", "Value"])
 
 
@@ -462,7 +554,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "SSRC",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct" : "Array",
@@ -480,11 +572,13 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadArray")
         self.assertEqual(ir.types["SSRC"]["kind"], "BitString")
         self.assertEqual(ir.types["SSRC"]["name"], "SSRC")
-        self.assertEqual(ir.types["SSRC"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["SSRC"]["attributes"], {"size" : 32})
+        self.assertEqual(ir.types["SSRC"]["components"], {})
         self.assertEqual(ir.types["SSRC"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["CsrcList"]["kind"], "Array")
         self.assertEqual(ir.types["CsrcList"]["name"], "CsrcList")
-        self.assertEqual(ir.types["CsrcList"]["attributes"], {"length" : 4, "element_type" : "SSRC"})
+        self.assertEqual(ir.types["CsrcList"]["attributes"], {"length" : 4, "size" : 128, "element_type" : "SSRC"})
+        self.assertEqual(ir.types["CsrcList"]["components"], {})
         self.assertEqual(ir.types["CsrcList"]["implements"], ["Equality", "IndexCollection"])
 
 
@@ -501,12 +595,12 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "SeqNum",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct" : "BitString",
                     "name"      : "Timestamp",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct"   : "Struct",
@@ -536,15 +630,20 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadStruct")
         self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
         self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
-        self.assertEqual(ir.types["SeqNum"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["SeqNum"]["attributes"], {"size" : 16})
+        self.assertEqual(ir.types["SeqNum"]["components"], {})
         self.assertEqual(ir.types["SeqNum"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["Timestamp"]["kind"], "BitString")
         self.assertEqual(ir.types["Timestamp"]["name"], "Timestamp")
-        self.assertEqual(ir.types["Timestamp"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["Timestamp"]["attributes"], {"size" : 32})
+        self.assertEqual(ir.types["Timestamp"]["components"], {})
         self.assertEqual(ir.types["Timestamp"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TestStruct"]["kind"], "Struct")
         self.assertEqual(ir.types["TestStruct"]["name"], "TestStruct")
         self.assertEqual(ir.types["TestStruct"]["attributes"], {
+            "size"        : 48
+        })
+        self.assertEqual(ir.types["TestStruct"]["components"], {
             "fields"      : [("seq", "SeqNum", ""), ("ts",  "Timestamp", "")],
             "constraints" : []
         })
@@ -563,12 +662,12 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "TypeA",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct" : "BitString",
                     "name"      : "TypeB",
-                    "width"     : 32
+                    "size"      : 32
                 },
                 {
                     "construct"   : "Enum",
@@ -590,16 +689,21 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadEnum")
         self.assertEqual(ir.types["TypeA"]["kind"], "BitString")
         self.assertEqual(ir.types["TypeA"]["name"], "TypeA")
-        self.assertEqual(ir.types["TypeA"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["TypeA"]["attributes"], {"size" : 32})
+        self.assertEqual(ir.types["TypeA"]["components"], {})
         self.assertEqual(ir.types["TypeA"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TypeB"]["kind"], "BitString")
         self.assertEqual(ir.types["TypeB"]["name"], "TypeB")
-        self.assertEqual(ir.types["TypeB"]["attributes"], {"width" : 32})
+        self.assertEqual(ir.types["TypeB"]["attributes"], {"size" : 32})
+        self.assertEqual(ir.types["TypeB"]["components"], {})
         self.assertEqual(ir.types["TypeB"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TestEnum"]["kind"], "Enum")
         self.assertEqual(ir.types["TestEnum"]["name"], "TestEnum")
         self.assertEqual(ir.types["TestEnum"]["attributes"], {
-            "variants" : ["TypeA", "TypeB"],
+            "size"     : None
+        })
+        self.assertEqual(ir.types["TestEnum"]["components"], {
+            "variants" : ["TypeA", "TypeB"]
         })
         self.assertEqual(ir.types["TestEnum"]["implements"], [])
         self.assertEqual(ir.pdus, ["TestEnum"])
@@ -616,7 +720,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "Bits16",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct"    : "NewType",
@@ -634,11 +738,13 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadNewType")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
         self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
-        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"size" : 16})
+        self.assertEqual(ir.types["Bits16"]["components"], {})
         self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
         self.assertEqual(ir.types["SeqNum"]["name"], "SeqNum")
-        self.assertEqual(ir.types["SeqNum"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["SeqNum"]["attributes"], {"size" : 16})
+        self.assertEqual(ir.types["SeqNum"]["components"], {})
         self.assertEqual(ir.types["SeqNum"]["implements"], ["Equality", "Ordinal", "Value"])
 
 
@@ -653,7 +759,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "Bits16",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct"   : "Function",
@@ -679,7 +785,8 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadFunction")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
         self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
-        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"size" : 16})
+        self.assertEqual(ir.types["Bits16"]["components"], {})
         self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.types["TestFunction"]["kind"], "Function")
         self.assertEqual(ir.types["TestFunction"]["name"], "TestFunction")
@@ -687,6 +794,7 @@ class TestIR(unittest.TestCase):
             "parameters"  : [("foo", "Bits16"), ("bar", "Boolean")],
             "return_type" : "Boolean"
         })
+        self.assertEqual(ir.types["TestFunction"]["components"], {})
         self.assertEqual(ir.types["TestFunction"]["implements"], [])
 
 
@@ -701,7 +809,7 @@ class TestIR(unittest.TestCase):
                 {
                     "construct" : "BitString",
                     "name"      : "Bits16",
-                    "width"     : 16
+                    "size"      : 16
                 },
                 {
                     "construct"   : "Context",
@@ -725,7 +833,8 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.protocol_name, "LoadContext")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
         self.assertEqual(ir.types["Bits16"]["name"], "Bits16")
-        self.assertEqual(ir.types["Bits16"]["attributes"], {"width" : 16})
+        self.assertEqual(ir.types["Bits16"]["attributes"], {"size" : 16})
+        self.assertEqual(ir.types["Bits16"]["components"], {})
         self.assertEqual(ir.types["Bits16"]["implements"], ["Equality", "Value"])
         self.assertEqual(ir.context["foo"]["name"], "foo")
         self.assertEqual(ir.context["foo"]["type"], "Bits16")
