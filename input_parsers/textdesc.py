@@ -112,10 +112,10 @@ def new_struct(name, fields, where_block, type_namespace, context):
 	# constraint processing
 	if where_block is not None:
 		for constraint in where_block:
-			assert constraint["constraint"] == "Ordinal" \
-		       	or constraint["constraint"] == "Boolean" \
-		       	or constraint["constraint"] == "BooleanConst" \
-		       	or constraint["constraint"] == "Equality"
+			assert constraint["expression"] == "Ordinal" \
+		       	or constraint["expression"] == "Boolean" \
+		       	or constraint["expression"] == "BooleanConst" \
+		       	or constraint["expression"] == "Equality"
 		       
 	# construct Struct
 	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": where_block}
@@ -163,7 +163,7 @@ def new_func(name, params, ret_type, type_namespace):
 	type_namespace[name] = function
 	return name
 
-def build_integer_constraint(num, type_namespace):
+def build_integer_expression(num, type_namespace):
 	#TODO: widths
 	width = "32"
 	int_typename = "Int$" + width
@@ -175,7 +175,7 @@ def build_integer_constraint(num, type_namespace):
 									    "derived_from": "BitString$" + width,
 									    "implements": [{"trait": "Ordinal"}, 
 									                   {"trait": "ArithmeticOps"}]}
-	return {"constraint": "Constant", "type": int_typename, "value": num}
+	return {"expression": "Constant", "type": int_typename, "value": num}
 
 def build_accessor_chain(refs):
 	if refs[0] in ["value", "length", "is_present"]:
@@ -188,16 +188,16 @@ def build_accessor_chain(refs):
 			"key": refs[0],
 			"next":  build_accessor_chain(refs[1:]) if len(refs) > 1 else None}
 
-def build_tree(start, pairs, constraint_type):
+def build_tree(start, pairs, expression_type):
 	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
 	       ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
 	       "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"),
 	       "==": ("eq", "equality"), "!=": ("ne", "equality")}
 	for pair in pairs:
-		if constraint_type == "IfElse":
-			start = {"constraint": constraint_type, "condition": start, "if_true": pair[1], "if_false": pair[2]}
+		if expression_type == "IfElse":
+			start = {"expression": expression_type, "condition": start, "if_true": pair[1], "if_false": pair[2]}
 		else:
-			start = {"constraint": constraint_type, "method": ops[pair[0]][0], "left": start, "right": pair[1]}
+			start = {"expression": expression_type, "method": ops[pair[0]][0], "left": start, "right": pair[1]}
 	return start
 
 def parse_file(filename):
@@ -218,10 +218,10 @@ def parse_file(filename):
 				
 				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
 				
-				# constraint grammar
-				primary_expr = number:n -> build_integer_constraint(n, type_namespace)
-							 | ('True'|'False'):bool -> {"constraint": "Constant", "type": "Boolean", "value": bool}
-				             | field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> {"constraint": "Field", "accessor": build_accessor_chain([x]+xs)}
+				# expression grammar
+				primary_expr = number:n -> build_integer_expression(n, type_namespace)
+							 | ('True'|'False'):bool -> {"expression": "Constant", "type": "Boolean", "value": bool}
+				             | field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> {"expression": "Field", "accessor": build_accessor_chain([x]+xs)}
 							 | '(' cond_expr:expr ')' -> expr
 				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
 				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
@@ -231,7 +231,7 @@ def parse_file(filename):
 				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Equality")
 				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "IfElse")
 
-				where_block = '}where{' (equality_expr:constraint ';' -> constraint)+:constraints -> constraints
+				where_block = '}where{' (equality_expr:expression ';' -> expression)+:constraints -> constraints
 				bitstring_def = type_name:name ':=' (('Bits':t -> t)|('Bit':t number?:n -> (t, n))):type ';' -> new_bitstring(name, type, type_namespace)
 				array_def = type_name:name ':=' type_def:type ';' -> new_array(name, type, type_namespace)
 				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields where_block?:where '};' -> new_struct(name, fields, where, type_namespace, context)
@@ -253,7 +253,7 @@ def parse_file(filename):
 									       "new_func": new_func,
 									       "new_protocol": new_protocol,
 									       "build_tree": build_tree,
-									       "build_integer_constraint": build_integer_constraint,
+									       "build_integer_expression": build_integer_expression,
 									       "build_accessor_chain": build_accessor_chain,
 									       "context": {},
 									      })
