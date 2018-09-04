@@ -37,9 +37,28 @@ class IRError(Exception):
         self.reason = reason
 
 class IR:
-    # attributes can be directly accessed in the IR by name, components are
-    # part of the internal representation of a type.
     def _define_type(self, kind, name, attributes, components):
+        """
+        Define a new type.
+
+        Arguments:
+          kind       -- The kind of type being defined
+          name       -- The name of the type being defined
+          attributes -- The public attributes of the new type
+          components -- The hidden components of the new type
+
+        Returns:
+          Nothing
+
+        The "kind" specifies what sort of type is being constructed. Examples
+        of kinds include "BitString", "Array", Struct", "Enum", and "Function".
+
+        The "attributes" are visible in the intermediate representation, and
+        include things such as the size of a bit string, or the length of an
+        array. The "components" are not directly visible in the intermediate
+        representation, and are used in the implementation of the type.
+        """
+
         if re.search(TYPE_NAME_REGEX, name) == None:
             raise IRError("Invalid type name: " + name)
         if name in self.types:
@@ -58,6 +77,28 @@ class IR:
 
 
     def _define_trait(self, t_name, methods):
+        """
+        Define a new trait.
+
+        Arguments:
+          t_name  -- The name of the trait being defined
+          methods -- A list of methods implemented by the trait
+
+        Returns:
+          Nothing
+
+        The "methods" argument is a list of tuples, one for each method, where
+        the elements of each tuple are "(method name, parameters, return type)".
+        The "parameters" element is itself a list of tuples, representing the
+        parameters of the method, of the form "(parameter name, parameter type)".
+
+        For example, calling:
+          _define_trait(self, "foo", [("set", [("self", None), ("value", Boolean)], "Nothing")])
+        defines a new trait named "foo" with a single method named "set". That
+        method takes two parameters: "self" with unspecified type, and "value"
+        with type Boolean, and returns Nothing.
+        """
+
         # Check validity of trait:
         if re.search(TYPE_NAME_REGEX, t_name) == None:
             raise IRError("Cannot define trait {}: invalid name".format(t_name))
@@ -193,6 +234,9 @@ class IR:
 
 
     def _construct_bitstring(self, defn):
+        """
+        The type constructor for a Bit String type.
+        """
         attributes = {}
         components = {}
         attributes["size"] = defn["size"]
@@ -202,6 +246,9 @@ class IR:
 
 
     def _construct_array(self, defn):
+        """
+        The type constructor for an array type.
+        """
         if not defn["element_type"] in self.types:
             raise IRError("Unknown element type")
 
@@ -221,6 +268,9 @@ class IR:
 
 
     def _construct_struct(self, defn):
+        """
+        The type constructor for a structure type.
+        """
         attributes = {}
         attributes["size"] = 0
 
@@ -248,6 +298,9 @@ class IR:
 
 
     def _construct_enum(self, defn):
+        """
+        The type constructor for an enumerated type.
+        """
         attributes = {}
         # The size of an enum is not known until it is parsed, since it
         # depends on the instantiated variant
@@ -266,6 +319,9 @@ class IR:
 
 
     def _construct_newtype(self, defn):
+        """
+        The type constructor for a derived type.
+        """
         base_type = defn["derived_from"]
         if not base_type in self.types:
             raise IRError("Derived from unknown type: " + base_type)
@@ -281,6 +337,9 @@ class IR:
 
 
     def _construct_function(self, defn):
+        """
+        The type constructor for a function type.
+        """
         components = {}
 
         attributes = {}
@@ -296,7 +355,7 @@ class IR:
             if not param["type"] in self.types:
                 raise IRError("Unknown parameter type: " + param["type"])
             attributes["parameters"].append((param["name"], param["type"]))
-            
+
         if re.search(TYPE_NAME_REGEX, defn["return_type"]) == None:
             raise IRError("Unknown return type: " + defn["return_type"])
         attributes["return_type"] = defn["return_type"]
@@ -307,6 +366,9 @@ class IR:
 
 
     def _construct_context(self, defn):
+        """
+        The constructor for the protocol context.
+        """
         field_names = {}
 
         for field in defn["fields"]:
@@ -318,6 +380,7 @@ class IR:
             field_names[field["name"]] = True
             if not field["type"] in self.types:
                 raise IRError("Unknown field type in context: " + field["type"])
+
             self.context[field["name"]] = {}
             self.context[field["name"]]["name"]  = field["name"]
             self.context[field["name"]]["type"]  = field["type"]
@@ -325,19 +388,24 @@ class IR:
 
 
 
-    # protocol_json is a string holding the JSON form of a protocol object
     def load(self, protocol_json):
-        # Load the JSON and check that it represents a Protocol object:
+        """
+        Load the JSON-formatted representation of a protocol object.
+
+        Arguments:
+          protocol_json -- A string containing the JSON form of a protocol object
+
+        Returns:
+          Nothing (but updates self to contain the loaded and type-checked IR)
+        """
         protocol = json.loads(protocol_json)
         if protocol["construct"] != "Protocol":
             raise IRError("Not a protocol object")
 
-        # Check and record the protocol name:
         if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
-            raise IRError("Invalid protocol name: " + name)
+            raise IRError("Invalid protocol name: {}".format(name))
         self.protocol_name = protocol["name"]
 
-        # Load the definitions:
         for defn in protocol["definitions"]:
             if   defn["construct"] == "BitString":
                 self._construct_bitstring(defn)
@@ -353,11 +421,12 @@ class IR:
                 self._construct_function(defn)
             elif defn["construct"] == "Context":
                 self._construct_context(defn)
+            else:
+                raise IRError("Unknown type constructor in definition: {}".format(defn["construct"]))
 
-        # Record the PDUs:
         for pdu in protocol["pdus"]:
             if not pdu["type"] in self.types:
-                raise IRError("Unknown PDU type: " + pdu["type"])
+                raise IRError("Unknown PDU type: {}".format(pdu["type"]))
             self.pdus.append(pdu["type"])
             self.pdus.sort()
 
