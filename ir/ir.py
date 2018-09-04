@@ -586,6 +586,7 @@ class TestIR(unittest.TestCase):
     def test_load_struct(self):
         ir = IR()
         # FIXME: this doesn't test is_present
+        # FIXME: this doesn't test transform
         # FIXME: this doesn't test constraints
         protocol = """
             {
