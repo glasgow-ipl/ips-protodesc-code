@@ -36,7 +36,10 @@ ThreeManyBits := Bits[3];  # constructs two IR objects:
 # Can create arrays of defined types #
 AltThreeManyBits := ManyBits[3]; # constructs one IR object: an Array named 'AltThreeManyBits'
                                    with element_type 'ManyBits' and length 3 #
-                                   
+
+# Function Prototypes #
+my_function :: (param_two : Bit) -> Bits;
+                              
 # Structures #
 # fields can be (arrays of) built-in types (Bit and Bits) or defined types (e.g., ManyBits) #
 NewStructure := {
@@ -44,9 +47,13 @@ NewStructure := {
 	field_two    :   Bit[];
 	field_four   :   ManyBits[];
 } where {
+	field_one[3]; 
+	Context.field_three;
 	field_one.value == 3+1;
 	field_two[1].value == field_one.value + 1;
 	field_two.length == (4 ? 1 : 2);
+	Context.field_three.value == 2;
+	Context.field_three.value == my_function(12);
 };
 
 # Enums #
@@ -56,5 +63,6 @@ Enum := { NewStructure[2] | UndefTwoBits | Bit[3]};
 # Derived Types #
 ManyManyBits := ManyBits; # no support for traits yet #
 
-# Function Prototypes #
-my_function :: (param_two : Bit) -> Bits;
+DemoStructure := {
+	field_one   : ManyBits;
+};

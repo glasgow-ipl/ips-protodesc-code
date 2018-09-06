@@ -108,15 +108,6 @@ def new_struct(name, fields, where_block, type_namespace, context):
 		type_namespace[name] = context
 		return name
 
-
-	# constraint processing
-	if where_block is not None:
-		for constraint in where_block:
-			assert constraint["expression"] == "Ordinal" \
-		       	or constraint["expression"] == "Boolean" \
-		       	or constraint["expression"] == "BooleanConst" \
-		       	or constraint["expression"] == "Equality"
-		       
 	# construct Struct
 	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": where_block}
 	type_namespace[name] = struct
@@ -163,6 +154,16 @@ def new_func(name, params, ret_type, type_namespace):
 	type_namespace[name] = function
 	return name
 
+def new_func_call(name, args, type_namespace):
+	if args[0] is None:
+		args = []
+	check_typename(name, type_namespace, True)
+	def_args = type_namespace[name]["parameters"]
+	def_args_names = [x["name"] for x in def_args]
+	def_args_types = [x["type"] for x in def_args]
+	named_args = [{"name": x[0], "value": x[1]} for x in zip(def_args_names, args)]
+	return {"expression": "FunctionInvocation", "name": name, "arguments": named_args}
+
 def build_integer_expression(num, type_namespace):
 	#TODO: widths
 	width = "32"
@@ -177,16 +178,18 @@ def build_integer_expression(num, type_namespace):
 									                   {"trait": "ArithmeticOps"}]}
 	return {"expression": "Constant", "type": int_typename, "value": num}
 
-def build_accessor_chain(refs):
-	if refs[0] in ["value", "length", "is_present"]:
-		accessor_type = "Attribute"
-	elif type(refs[0]) is str:
-		accessor_type = "NamedCollection"
-	else:
-		accessor_type = "IndexedCollection"
-	return {"access": accessor_type,
-			"key": refs[0],
-			"next":  build_accessor_chain(refs[1:]) if len(refs) > 1 else None}
+def build_accessor_chain(type, refs):
+	#if refs[0] in ["value", "length", "is_present"]:
+	#	accessor_type = "Attribute"
+	#elif type(refs[0]) is str:
+	#	accessor_type = "NamedCollection"
+	#else:
+	#	accessor_type = "IndexedCollection"
+	#
+	return {"expression": "MethodInvocation",
+				"method": "get",
+				"self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
+				"arguments": {"key": refs[-1]}}
 
 def build_tree(start, pairs, expression_type):
 	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
@@ -197,7 +200,7 @@ def build_tree(start, pairs, expression_type):
 		if expression_type == "IfElse":
 			start = {"expression": expression_type, "condition": start, "if_true": pair[1], "if_false": pair[2]}
 		else:
-			start = {"expression": expression_type, "method": ops[pair[0]][0], "left": start, "right": pair[1]}
+			start = {"expression": "MethodInvocation", "method": ops[pair[0]][0], "self": pair[1], "arguments": {"name": "other", "value": start}}
 	return start
 
 def parse_file(filename):
@@ -221,14 +224,17 @@ def parse_file(filename):
 				# expression grammar
 				primary_expr = number:n -> build_integer_expression(n, type_namespace)
 							 | ('True'|'False'):bool -> {"expression": "Constant", "type": "Boolean", "value": bool}
-				             | field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> {"expression": "Field", "accessor": build_accessor_chain([x]+xs)}
+							 | field_name:name '(' (cond_expr:e -> e)?:arg (',' cond_expr:e -> e)*:args ')' -> new_func_call(name, [arg] + args, type_namespace)
+				             | field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("this", [x]+xs)
+					         | 'Context.' field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("context", [x]+xs)
 							 | '(' cond_expr:expr ')' -> expr
-				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
-				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Arithmetic")
+				
+				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 			
-				ordinal_expr = additive_expr:left (('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Ordinal")
-				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Boolean")
-				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "Equality")
+				ordinal_expr = additive_expr:left (('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "IfElse")
 
 				where_block = '}where{' (equality_expr:expression ';' -> expression)+:constraints -> constraints
@@ -251,6 +257,7 @@ def parse_file(filename):
 									       "new_struct": new_struct,
 									       "new_enum": new_enum,
 									       "new_func": new_func,
+									       "new_func_call": new_func_call,
 									       "new_protocol": new_protocol,
 									       "build_tree": build_tree,
 									       "build_integer_expression": build_integer_expression,
