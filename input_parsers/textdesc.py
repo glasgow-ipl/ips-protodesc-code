@@ -89,7 +89,7 @@ def new_field(name, type_name, type_namespace):
 	field = {"name": name, "type": type_name, "is_present": True}
 	return field
 	
-def new_struct(name, fields, where_block, type_namespace, context):
+def new_struct(name, fields, where_block, type_namespace, context, actions):
 	check_typename(name, type_namespace, False)
 	
 	field_names = []
@@ -109,7 +109,7 @@ def new_struct(name, fields, where_block, type_namespace, context):
 		return name
 
 	# construct Struct
-	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": where_block}
+	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": where_block, "actions": actions}
 	type_namespace[name] = struct
 	return name
 	
@@ -221,12 +221,13 @@ def parse_file(filename):
 				
 				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
 				
+				field_accessor = field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("this", [x]+xs)
+					           | 'Context.' field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("context", [x]+xs)
 				# expression grammar
 				primary_expr = number:n -> build_integer_expression(n, type_namespace)
 							 | ('True'|'False'):bool -> {"expression": "Constant", "type": "Boolean", "value": bool}
 							 | field_name:name '(' (cond_expr:e -> e)?:arg (',' cond_expr:e -> e)*:args ')' -> new_func_call(name, [arg] + args, type_namespace)
-				             | field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("this", [x]+xs)
-					         | 'Context.' field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("context", [x]+xs)
+							 | field_accessor
 							 | '(' cond_expr:expr ')' -> expr
 				
 				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
@@ -236,11 +237,13 @@ def parse_file(filename):
 				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "IfElse")
+				assign_expr = field_accessor:left '=' cond_expr:expr -> {"expression": "MethodInvocation", "method": "set", "self": left, "arguments": {"value": expr}}
 
-				where_block = '}where{' (equality_expr:expression ';' -> expression)+:constraints -> constraints
+				onparse_block = '}onparse{' (assign_expr:expression ';' -> expression)+:constraints -> constraints
+				where_block = '}where{' (cond_expr:expression ';' -> expression)+:constraints -> constraints
 				bitstring_def = type_name:name ':=' (('Bits':t -> t)|('Bit':t number?:n -> (t, n))):type ';' -> new_bitstring(name, type, type_namespace)
 				array_def = type_name:name ':=' type_def:type ';' -> new_array(name, type, type_namespace)
-				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields where_block?:where '};' -> new_struct(name, fields, where, type_namespace, context)
+				struct_def = type_name:name ':={' (field_def:f ';' -> f)+:fields where_block?:where onparse_block?:actions '};' -> new_struct(name, fields, where, type_namespace, context, actions)
 				enum_def = type_name:name ':={' type_def:t ('|' type_def:n -> n)*:ts '};' -> new_enum(name, [t] + ts, type_namespace)
 				func_def = field_name:name '::(' (field_def:f -> f)?:param (',' field_def:f -> f)*:params ')->' type_def:ret_type ';' -> new_func(name, [param] + params, ret_type, type_namespace)
 				protocol = (bitstring_def|array_def|struct_def|enum_def|func_def|comment)+:elements -> new_protocol(protocol_name, type_namespace)
