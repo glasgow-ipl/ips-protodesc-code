@@ -71,7 +71,7 @@ def new_array(name, type_name, type_namespace):
 		type_namespace[name] = derived_type
 	return name
 
-def new_field(name, type_name, type_namespace):
+def new_field(name, type_name, transform, type_namespace):
 	length = type_name[1]
 	type_name = type_name[0]
 
@@ -86,20 +86,35 @@ def new_field(name, type_name, type_namespace):
 	# check if type has been defined
 	check_typename(type_name, type_namespace, True)
 	
-	field = {"name": name, "type": type_name, "is_present": True}
+	# process transform
+	if transform is not None:
+		to_typename = transform[1][0]
+		to_length = transform[1][1]
+
+		if type(to_typename) is tuple or to_typename == "Bits":
+			to_typename = new_bitstring(None, to_typename, type_namespace)
+		if to_length is not None:
+			if to_length == -1:
+				to_length = None
+			to_typename = new_array(None, (to_typename, to_length), type_namespace)
+		
+		check_typename(to_typename, type_namespace, True)
+		transform = {"into_name": transform[0], "into_type": to_typename, "using": None}
+	
+	field = {"name": name, "type": type_name, "transform": transform}
 	return field
 	
 def new_struct(name, fields, where_block, type_namespace, context, actions):
 	check_typename(name, type_namespace, False)
 	
-	field_names = []
+	field_dict = {}
 	
 	# field processing
 	for field in fields:
-		assert field["name"] not in field_names
+		assert field["name"] not in field_dict
 		assert field["name"] not in context
-		field_names.append(field["name"])
-	
+		field_dict[field["name"]] = field
+
 	if name == "Context":
 		assert where_block is None
 		for field in fields:
@@ -107,6 +122,17 @@ def new_struct(name, fields, where_block, type_namespace, context, actions):
 		context = {"construct": "Context", "fields": fields}
 		type_namespace[name] = context
 		return name
+
+	# action processing
+	if actions is None:
+		actions = []
+	
+	for i in range(len(actions)):
+		action = actions[i]
+		# is the action transforming a field?
+		if action["expression"] == "MethodInvocation" and action["method"] == "set" and action["self"]["expression"] == "MethodInvocation" and action["self"]["method"] == "get" and action["self"]["self"] == "this":
+			field_dict[action["self"]["arguments"]["key"]]["transform"]["using"] = action["arguments"]["value"]
+			actions.pop(i)
 
 	# construct Struct
 	struct = {"construct": "Struct", "name": name, "fields": fields, "constraints": where_block, "actions": actions}
@@ -219,7 +245,7 @@ def parse_file(filename):
 				
 				type_def = (('Bits':t -> t)|('Bit':t number?:n -> (t, n))|type_name:t -> t):type (('[' number?:length ']') -> length if length is not None else -1)?:length -> (type, length)
 				
-				field_def = field_name:name ':' type_def:type -> new_field(name, type, type_namespace)
+				field_def = field_name:name ':' type_def:type ('->' field_name:to_name ':' type_def:to_type -> (to_name, to_type))?:transform -> new_field(name, type, transform, type_namespace)
 				
 				field_accessor = field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("this", [x]+xs)
 					           | 'Context.' field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("context", [x]+xs)
