@@ -205,17 +205,10 @@ def build_integer_expression(num, type_namespace):
 	return {"expression": "Constant", "type": int_typename, "value": num}
 
 def build_accessor_chain(type, refs):
-	#if refs[0] in ["value", "length", "is_present"]:
-	#	accessor_type = "Attribute"
-	#elif type(refs[0]) is str:
-	#	accessor_type = "NamedCollection"
-	#else:
-	#	accessor_type = "IndexedCollection"
-	#
 	return {"expression": "MethodInvocation",
-				"method": "get",
-				"self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
-				"arguments": {"key": refs[-1]}}
+			"method": "get",
+			"self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
+			"arguments": {"key": refs[-1]}}
 
 def build_tree(start, pairs, expression_type):
 	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
@@ -247,8 +240,8 @@ def parse_file(filename):
 				
 				field_def = field_name:name ':' type_def:type ('->' field_name:to_name ':' type_def:to_type -> (to_name, to_type))?:transform -> new_field(name, type, transform, type_namespace)
 				
-				field_accessor = field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("this", [x]+xs)
-					           | 'Context.' field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain("context", [x]+xs)
+				field_accessor = field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain({"expression": "This"}, [x]+xs)
+					           | 'Context.' field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain({"expression": "Context"}, [x]+xs)
 				# expression grammar
 				primary_expr = number:n -> build_integer_expression(n, type_namespace)
 							 | ('True'|'False'):bool -> {"expression": "Constant", "type": "Boolean", "value": bool}
@@ -263,7 +256,7 @@ def parse_file(filename):
 				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "IfElse")
-				assign_expr = field_accessor:left '=' cond_expr:expr -> {"expression": "MethodInvocation", "method": "set", "self": left, "arguments": {"value": expr}}
+				assign_expr = field_accessor:left '=' cond_expr:expr -> {"expression": "MethodInvocation", "method": "set", "self": left["self"], "arguments": {"key": left["arguments"]["key"], "value": expr}}
 
 				onparse_block = '}onparse{' (assign_expr:expression ';' -> expression)+:constraints -> constraints
 				where_block = '}where{' (cond_expr:expression ';' -> expression)+:constraints -> constraints
