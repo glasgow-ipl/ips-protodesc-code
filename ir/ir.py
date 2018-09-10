@@ -197,39 +197,41 @@ class IR:
         self.protocol_name = ""
 
         # Define the internal types and standard traits:
-        self._define_type("Nothing", "Nothing", {}, {})
-        self._define_type("Boolean", "Boolean", {}, {})
-        self._define_type("Size",    "Size",    {}, {})
+        self._define_type("Nothing",   "Nothing",   {}, {})
+        self._define_type("Boolean",   "Boolean",   {}, {})
+        self._define_type("Size",      "Size",      {}, {})
+        self._define_type("FieldName", "FieldName", {}, {})
 
         self._define_trait("Value",
-                         [("get",      [("self", None)                                    ],  None),
-                          ("set",      [("self", None), ("value",   None)                 ], "Nothing")])
+                         [("get",      [("self", None)                                         ],  None),
+                          ("set",      [("self", None), ("value",   None)                      ], "Nothing")])
         self._define_trait("IndexCollection",
-                         [("get",      [("self", None), ("index", "Size")                 ],  None),
-                          ("set",      [("self", None), ("index", "Size"), ("value", None)], "Nothing")])
+                         [("get",      [("self", None), ("index", "Size")                      ],  None),
+                          ("set",      [("self", None), ("index", "Size"),      ("value", None)], "Nothing")])
         self._define_trait("NamedCollection",
-                         [("get",      [("self", None), ("key",   "Size")                 ],  None),
-                          ("set",      [("self", None), ("key",   "Size"), ("value", None)], "Nothing")])
+                         [("get",      [("self", None), ("key",   "FieldName")                 ],  None),
+                          ("set",      [("self", None), ("key",   "FieldName"), ("value", None)], "Nothing")])
         self._define_trait("Equality",
-                         [("eq",       [("self", None), ("other",  None)                  ], "Boolean"),
-                          ("ne",       [("self", None), ("other",  None)                  ], "Boolean")])
+                         [("eq",       [("self", None), ("other",  None)                       ], "Boolean"),
+                          ("ne",       [("self", None), ("other",  None)                       ], "Boolean")])
         self._define_trait("Ordinal",
-                         [("lt",       [("self", None), ("other",  None)                  ], "Boolean"),
-                          ("le",       [("self", None), ("other",  None)                  ], "Boolean"),
-                          ("gt",       [("self", None), ("other",  None)                  ], "Boolean"),
-                          ("ge",       [("self", None), ("other",  None)                  ], "Boolean")])
+                         [("lt",       [("self", None), ("other",  None)                       ], "Boolean"),
+                          ("le",       [("self", None), ("other",  None)                       ], "Boolean"),
+                          ("gt",       [("self", None), ("other",  None)                       ], "Boolean"),
+                          ("ge",       [("self", None), ("other",  None)                       ], "Boolean")])
         self._define_trait("BooleanOps",
-                         [("and",      [("self", None), ("other",  None)                  ], "Boolean"),
-                          ("or",       [("self", None), ("other",  None)                  ], "Boolean"),
-                          ("not",      [("self", None)                                    ], "Boolean")])
+                         [("and",      [("self", None), ("other",  None)                       ], "Boolean"),
+                          ("or",       [("self", None), ("other",  None)                       ], "Boolean"),
+                          ("not",      [("self", None)                                         ], "Boolean")])
         self._define_trait("ArithmeticOps",
-                         [("plus",     [("self", None), ("other",  None)                  ],  None),
-                          ("minus",    [("self", None), ("other",  None)                  ],  None),
-                          ("multiply", [("self", None), ("other",  None)                  ],  None),
-                          ("divide",   [("self", None), ("other",  None)                  ],  None)])
+                         [("plus",     [("self", None), ("other",  None)                       ],  None),
+                          ("minus",    [("self", None), ("other",  None)                       ],  None),
+                          ("multiply", [("self", None), ("other",  None)                       ],  None),
+                          ("divide",   [("self", None), ("other",  None)                       ],  None)])
 
-        self._implements("Boolean", ["Value", "Equality", "BooleanOps"])
-        self._implements(   "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
+        self._implements(  "Boolean", ["Value", "Equality", "BooleanOps"])
+        self._implements(     "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
+        self._implements("FieldName", ["Value", "Equality"])
 
 
 
@@ -267,6 +269,41 @@ class IR:
 
 
 
+    def _parse_expression(self, expression, this, depth):
+        """
+        Check that an expression is valid.
+
+        Arguments:
+          expression -- The expression to check
+          this       -- This type in which the expression is evaluated
+
+        Returns:
+          The type of the expression
+        """
+        if   expression["expression"] == "MethodInvocation":
+            target_type = self._parse_expression(expression["target"], this, depth+1)
+            method_name = expression["method"]
+            return_type = self.types[target_type]["methods"][method_name]["return_type"]
+
+            print("[{}] MethodInvocation {}.{}->{}".format(depth, target_type, method_name, return_type))
+            return return_type
+
+        elif expression["expression"] == "FunctionInvocation":
+            print("[{}] FunctionInvocation".format(depth))
+        elif expression["expression"] == "IfElse":
+            print("[{}] IfElse".format(depth))
+        elif expression["expression"] == "This":
+            print("[{}] This type={}".format(depth, this))
+            return this
+        elif expression["expression"] == "Context":
+            print("[{}] Context")
+        elif expression["expression"] == "Constant":
+            print("[{}] Constant type={} value={}".format(depth, expression["type"], expression["value"]))
+        else:
+            raise IRError("Unknown expression: {}".format(expression["expression"]))
+
+
+
     def _construct_struct(self, defn):
         """
         The type constructor for a structure type.
@@ -289,11 +326,13 @@ class IR:
             components["fields"].append((field["name"], field["type"], field["is_present"]))
             attributes["size"] += self.types[field["type"]]["attributes"]["size"]
 
-        # FIXME: add support for constraints
-        components["constraints"] = []
-
         self._define_type("Struct", defn["name"], attributes, components)
         self._implements(defn["name"], ["NamedCollection"])
+
+        components["constraints"] = []
+        for constraint in defn["constraints"]:
+            self._parse_expression(constraint, defn["name"], 0)
+            components["constraints"].append(constraint)
 
 
 
@@ -439,7 +478,7 @@ class TestIR(unittest.TestCase):
     def test_builtin_types(self):
         ir = IR()
         # Check the number of built-in types:
-        self.assertEqual(len(ir.types), 3)
+        self.assertEqual(len(ir.types), 4)
         # Check the built-in Nothing type:
         self.assertEqual(ir.types["Nothing"]["kind"],       "Nothing")
         self.assertEqual(ir.types["Nothing"]["name"],       "Nothing")
@@ -455,6 +494,11 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["Size"]["name"],       "Size")
         self.assertEqual(ir.types["Size"]["attributes"], {})
         self.assertEqual(ir.types["Size"]["implements"], ["ArithmeticOps", "Equality", "Ordinal", "Value"])
+        # Check the built-in FieldName type:
+        self.assertEqual(ir.types["FieldName"]["kind"],       "FieldName")
+        self.assertEqual(ir.types["FieldName"]["name"],       "FieldName")
+        self.assertEqual(ir.types["FieldName"]["attributes"], {})
+        self.assertEqual(ir.types["FieldName"]["implements"], ["Equality", "Value"])
         # Check the number of built-in traits:
         self.assertEqual(len(ir.traits), 7)
         # Check the built-in Arithmetic trait:
@@ -529,10 +573,10 @@ class TestIR(unittest.TestCase):
         # Check the built-in NamedCollection trait:
         self.assertEqual(ir.traits["NamedCollection"]["name"], "NamedCollection")
         self.assertEqual(ir.traits["NamedCollection"]["methods"]["get"]["name"],        "get")
-        self.assertEqual(ir.traits["NamedCollection"]["methods"]["get"]["params"], [("self", None), ("key", "Size")])
+        self.assertEqual(ir.traits["NamedCollection"]["methods"]["get"]["params"], [("self", None), ("key", "FieldName")])
         self.assertEqual(ir.traits["NamedCollection"]["methods"]["get"]["return_type"], None)
         self.assertEqual(ir.traits["NamedCollection"]["methods"]["set"]["name"],        "set")
-        self.assertEqual(ir.traits["NamedCollection"]["methods"]["set"]["params"], [("self", None), ("key", "Size"), ("value", None)])
+        self.assertEqual(ir.traits["NamedCollection"]["methods"]["set"]["params"], [("self", None), ("key", "FieldName"), ("value", None)])
         self.assertEqual(ir.traits["NamedCollection"]["methods"]["set"]["return_type"], "Nothing")
         self.assertEqual(len(ir.traits["NamedCollection"]["methods"]), 2)
 
@@ -604,7 +648,7 @@ class TestIR(unittest.TestCase):
         ir.load(protocol)
         # Check that we just have the built-in types and traits, and that
         # no PDUs were defined:
-        self.assertEqual(len(ir.types),  3)
+        self.assertEqual(len(ir.types),  4)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "EmptyProtocol")
@@ -627,7 +671,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 1)
+        self.assertEqual(len(ir.types),  4 + 1)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadBitString")
@@ -636,6 +680,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["TestBitString"]["attributes"], {"size" : 16})
         self.assertEqual(ir.types["TestBitString"]["components"], {})
         self.assertEqual(ir.types["TestBitString"]["implements"], ["Equality", "Value"])
+        self.assertEqual(len(ir.types["TestBitString"]["methods"]), 4)
 
 
 
@@ -661,7 +706,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.types),  4 + 2)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadArray")
@@ -682,45 +727,78 @@ class TestIR(unittest.TestCase):
         ir = IR()
         # FIXME: this doesn't test is_present
         # FIXME: this doesn't test transform
-        # FIXME: this doesn't test constraints
         protocol = """
             {
                 "construct"   : "Protocol",
                 "name"        : "LoadStruct",
                 "definitions" : [
-                {
-                    "construct" : "BitString",
-                    "name"      : "SeqNum",
-                    "size"      : 16
-                },
-                {
-                    "construct" : "BitString",
-                    "name"      : "Timestamp",
-                    "size"      : 32
-                },
-                {
-                    "construct"   : "Struct",
-                    "name"        : "TestStruct",
-                    "fields"      : [
                     {
-                        "name"       : "seq",
-                        "type"       : "SeqNum",
-                        "is_present" : ""
+                        "construct" : "BitString",
+                        "name"      : "SeqNum",
+                        "size"      : 16
                     },
                     {
-                        "name"       : "ts",
-                        "type"       : "Timestamp",
-                        "is_present" : ""
-                    }],
-                    "constraints" : []
-                }],
+                        "construct" : "BitString",
+                        "name"      : "Timestamp",
+                        "size"      : 32
+                    },
+                    {
+                        "construct"   : "Struct",
+                        "name"        : "TestStruct",
+                        "fields"      : [
+                            {
+                                "name"       : "seq",
+                                "type"       : "SeqNum",
+                                "is_present" : ""
+                            },
+                            {
+                                "name"       : "ts",
+                                "type"       : "Timestamp",
+                                "is_present" : ""
+                            }
+                        ],
+                        "constraints" : [
+                            {
+                                "expression" : "MethodInvocation",
+                                "target"     : {
+                                    "expression" : "MethodInvocation",
+                                    "target"     : {
+                                        "expression" : "This"
+                                    },
+                                    "method"     : "get",
+                                    "arguments"  : [
+                                        {
+                                            "name"  : "key",
+                                            "value" : {
+                                                "expression" : "Constant",
+                                                "type"       : "FieldName",
+                                                "value"      : "seq"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "method"     : "eq",
+                                "arguments"  : [
+                                    {
+                                        "name"  : "other",
+                                        "value" : {
+                                            "expression" : "Constant",
+                                            "type"       : "SeqNum",
+                                            "value"      : 47
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ],
                 "pdus" : [
                     {"type" : "TestStruct"}
                 ]
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 3)
+        self.assertEqual(len(ir.types),  4 + 3)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadStruct")
@@ -779,7 +857,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 3)
+        self.assertEqual(len(ir.types),  4 + 3)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadEnum")
@@ -828,7 +906,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.types),  4 + 2)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadNewType")
@@ -875,7 +953,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.types),  4 + 2)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadFunction")
@@ -923,7 +1001,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 1)
+        self.assertEqual(len(ir.types),  4 + 1)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadContext")
@@ -938,6 +1016,52 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.context["bar"]["name"], "bar")
         self.assertEqual(ir.context["bar"]["type"], "Boolean")
         self.assertEqual(ir.context["bar"]["value"], None)
+
+
+
+#    def test_constraints_parse_this(self):
+#        ir = IR()
+#        expr = {
+#                  "expression" : "This"
+#               }
+#        res = ir._parse_expression(expr, "Boolean")
+#        self.assertEqual(res, "Boolean")
+
+
+
+#    def test_constraints_parse_constant(self):
+#        ir = IR()
+#        expr = {
+#                  "expression" : "Constant",
+#                  "type"       : "Size",
+#                  "value"      : 2
+#               }
+#        res = ir._parse_expression(expr, "Boolean")
+#        self.assertEqual(res, "Size")
+
+
+
+#    def test_constraints_parse_method(self):
+#        ir = IR()
+#        expr = {
+#                  "expression" : "MethodInvocation",
+#                  "target"     : {
+#                      "expression" : "This"
+#                  },
+#                  "method"     : "eq",
+#                  "arguments"  : [
+#                      {
+#                          "name"  : "other",
+#                          "value" : {
+#                              "expression" : "Constant",
+#                              "type"       : "Boolean",
+#                              "value"      : "False"
+#                          }
+#                      }
+#                  ]
+#               }
+#        res = ir._parse_expression(expr, "Boolean")
+#        self.assertEqual(res, "Boolean")
 
 
 
