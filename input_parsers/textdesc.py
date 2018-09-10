@@ -208,6 +208,9 @@ def build_accessor_chain(type, refs):
 	if refs[-1] == "length":
 		method = "length"
 		arguments = None
+	elif refs[-1] == "size":
+		method = "size"
+		arguments = None
 	else:
 		method = "get"
 		arguments = {"key": refs[-1]}
