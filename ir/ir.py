@@ -267,6 +267,55 @@ class IR:
 
 
 
+    def _check_expression(self, expression, this):
+        """
+        Check that an expression is valid.
+
+        Arguments:
+          expression -- The expression to check
+          this       -- This type in which the expression is evaluated
+
+        Returns:
+          The type of the expression
+        """
+        if   expression["expression"] == "MethodInvocation":
+            # Check the target:
+            target_type = self._check_expression(expression["target"], this)
+            if not target_type in self.types:
+                raise IRError("Expression has unknown target type {}".format(target_type))
+            # Check the method is valid:
+            if not expression["method"] in self.types[target_type]["methods"]:
+                raise IRError("Expression calls unknown method {} on type {}".format(expression["method"], target_type))
+            # Check the arguments to the method:
+            for arg in expression["arguments"]:
+                self._check_expression(arg["value"], this)
+            # FIXME: need to check argument names and types match
+            # FIXME: what should this return?
+        elif expression["expression"] == "FunctionInvocation":
+            # FIXME: check the FunctionInvocation expression
+            # FIXME: what should this return?
+            pass
+        elif expression["expression"] == "IfElse":
+            # FIXME: check the IfElse expression
+            # FIXME: what should this return?
+            pass
+        elif expression["expression"] == "This":
+            if not this in self.types:
+                raise IRError("Expression has unknown This type: {}".format(this))
+            return this
+        elif expression["expression"] == "Context":
+            # FIXME: check the Context expression
+            # FIXME: what should this return?
+            pass
+        elif expression["expression"] == "Constant":
+            if not expression["type"] in self.types:
+                raise IRError("Expression has unknown Constant type: {}".format(expression["type"]))
+            return expression["type"]
+        else:
+            raise IRError("Unknown expression: {}".format(expression["expression"]))
+
+
+
     def _construct_struct(self, defn):
         """
         The type constructor for a structure type.
@@ -289,11 +338,13 @@ class IR:
             components["fields"].append((field["name"], field["type"], field["is_present"]))
             attributes["size"] += self.types[field["type"]]["attributes"]["size"]
 
-        # FIXME: add support for constraints
-        components["constraints"] = []
-
         self._define_type("Struct", defn["name"], attributes, components)
         self._implements(defn["name"], ["NamedCollection"])
+
+        components["constraints"] = []
+        for constraint in defn["constraints"]:
+            self._check_expression(constraint, defn["name"])
+            components["constraints"].append(constraint)
 
 
 
@@ -682,38 +733,71 @@ class TestIR(unittest.TestCase):
         ir = IR()
         # FIXME: this doesn't test is_present
         # FIXME: this doesn't test transform
-        # FIXME: this doesn't test constraints
         protocol = """
             {
                 "construct"   : "Protocol",
                 "name"        : "LoadStruct",
                 "definitions" : [
-                {
-                    "construct" : "BitString",
-                    "name"      : "SeqNum",
-                    "size"      : 16
-                },
-                {
-                    "construct" : "BitString",
-                    "name"      : "Timestamp",
-                    "size"      : 32
-                },
-                {
-                    "construct"   : "Struct",
-                    "name"        : "TestStruct",
-                    "fields"      : [
                     {
-                        "name"       : "seq",
-                        "type"       : "SeqNum",
-                        "is_present" : ""
+                        "construct" : "BitString",
+                        "name"      : "SeqNum",
+                        "size"      : 16
                     },
                     {
-                        "name"       : "ts",
-                        "type"       : "Timestamp",
-                        "is_present" : ""
-                    }],
-                    "constraints" : []
-                }],
+                        "construct" : "BitString",
+                        "name"      : "Timestamp",
+                        "size"      : 32
+                    },
+                    {
+                        "construct"   : "Struct",
+                        "name"        : "TestStruct",
+                        "fields"      : [
+                            {
+                                "name"       : "seq",
+                                "type"       : "SeqNum",
+                                "is_present" : ""
+                            },
+                            {
+                                "name"       : "ts",
+                                "type"       : "Timestamp",
+                                "is_present" : ""
+                            }
+                        ],
+                        "constraints" : [
+                          {
+                             "expression" : "MethodInvocation",
+                             "target"     : {
+                               "expression" : "MethodInvocation",
+                               "target" : {
+                                 "expression" : "This"
+                               },
+                               "method"    : "get",
+                               "arguments" : [
+                                 {
+                                     "name"  : "index",
+                                     "value" : {
+                                       "expression" : "Constant",
+                                       "type"       : "FieldName",
+                                       "value"      : "seq"
+                                     }
+                                  }
+                               ]
+                             },
+                             "method"     : "lt",
+                             "arguments"  : [
+                               {
+                                   "name"  : "other",
+                                   "value" : {
+                                     "expression" : "Constant",
+                                     "type"       : "SeqNum",
+                                     "value"      : "47"
+                                   }
+                               }
+                             ]
+                          }
+                        ]
+                    }
+                ],
                 "pdus" : [
                     {"type" : "TestStruct"}
                 ]
@@ -739,9 +823,43 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["TestStruct"]["attributes"], {
             "size"        : 48
         })
+        # FIXME: this is not a very useful test of the constraints, since it just 
+        # checks that the JSON is unloaded unchanged.
         self.assertEqual(ir.types["TestStruct"]["components"], {
             "fields"      : [("seq", "SeqNum", ""), ("ts",  "Timestamp", "")],
-            "constraints" : []
+            "constraints" : [
+              {
+                 "expression" : "MethodInvocation",
+                 "target"     : {
+                   "expression" : "MethodInvocation",
+                   "target" : {
+                     "expression" : "This"
+                   },
+                   "method"    : "get",
+                   "arguments" : [
+                     {
+                         "name"  : "index",
+                         "value" : {
+                           "expression" : "Constant",
+                           "type"       : "FieldName",
+                           "value"      : "seq"
+                         }
+                      }
+                   ]
+                 },
+                 "method"     : "lt",
+                 "arguments"  : [
+                   {
+                       "name"  : "other",
+                       "value" : {
+                         "expression" : "Constant",
+                         "type"       : "SeqNum",
+                         "value"      : "47"
+                       }
+                   }
+                 ]
+              }
+            ]
         })
         self.assertEqual(ir.types["TestStruct"]["implements"], ["NamedCollection"])
         self.assertEqual(ir.pdus, ["TestStruct"])
