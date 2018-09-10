@@ -205,10 +205,16 @@ def build_integer_expression(num, type_namespace):
 	return {"expression": "Constant", "type": int_typename, "value": num}
 
 def build_accessor_chain(type, refs):
+	if refs[-1] == "length":
+		method = "length"
+		arguments = None
+	else:
+		method = "get"
+		arguments = {"key": refs[-1]}
 	return {"expression": "MethodInvocation",
-			"method": "get",
+			"method": method,
 			"self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
-			"arguments": {"key": refs[-1]}}
+			"arguments": arguments}
 
 def build_tree(start, pairs, expression_type):
 	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
