@@ -1,32 +1,30 @@
-header_ext := {
-	id      : bit[16];
-	len     : bit[16];
-	payload : bit[];
+HeaderExt := {
+	id      : Bit16;
+	len     : Bit16;
+	payload : Bit[];
 } where {
 	payload.length == 32*len;
 };
 
-rtp_packet := {
-	version          : bit[2];
-	padding          : bit;
-	extension        : bit;
-	csrc_count       : bit[4];
-	marker           : bit;
-	payload_type     : bit[7];
-	sequence_num     : bit[16];
-	timestamp        : bit[32];
-	ssrc_id          : bit[32];
-	csrc_list        : bit[];
-	header_extension : header_ext;
-	payload          : bit[];
-	padding          : bit[];
-	padding_count    : bit[8];
+RTPPacket := {
+	version          : Bit2;
+	padding_flag     : Bit;
+	extension        : Bit;
+	csrc_count       : Bit4;
+	marker           : Bit;
+	payload_type     : Bit7;
+	sequence_num     : Bit16;
+	timestamp        : Bit32;
+	ssrc_id          : Bit32;
+	csrc_list        : Bit[];
+	header_extension : HeaderExt;
+	payload          : Bit[];
+	padding          : Bit[];
+	padding_count    : Bit8;
 } where {
 	version == 2;
 	csrc_list.length == 32*4*crsc_count;
-	header_extension.is_present = (extension == 1);
-	padding_count.is_present = (padding == 1);
-	padding.length == ((padding_count.is_present) ? 8*padding_count : 0);
+	padding.length == ((padding_count) ? 8*padding_count : 0);
 };
 
-pdus := {rtp_packet};
+PDUs := {RTPPacket};
