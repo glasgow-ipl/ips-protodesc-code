@@ -213,7 +213,7 @@ def build_accessor_chain(type, refs):
 		arguments = None
 	else:
 		method = "get"
-		arguments = {"key": refs[-1]}
+		arguments = {"key": {"expression": "Constant", "type": "FieldName", "value": refs[-1]}}
 	return {"expression": "MethodInvocation",
 			"method": method,
 			"self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
