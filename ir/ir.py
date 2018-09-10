@@ -197,9 +197,10 @@ class IR:
         self.protocol_name = ""
 
         # Define the internal types and standard traits:
-        self._define_type("Nothing", "Nothing", {}, {})
-        self._define_type("Boolean", "Boolean", {}, {})
-        self._define_type("Size",    "Size",    {}, {})
+        self._define_type("Nothing",   "Nothing",   {}, {})
+        self._define_type("Boolean",   "Boolean",   {}, {})
+        self._define_type("Size",      "Size",      {}, {})
+        self._define_type("FieldName", "FieldName", {}, {})
 
         self._define_trait("Value",
                          [("get",      [("self", None)                                    ],  None),
@@ -228,8 +229,9 @@ class IR:
                           ("multiply", [("self", None), ("other",  None)                  ],  None),
                           ("divide",   [("self", None), ("other",  None)                  ],  None)])
 
-        self._implements("Boolean", ["Value", "Equality", "BooleanOps"])
-        self._implements(   "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
+        self._implements(  "Boolean", ["Value", "Equality", "BooleanOps"])
+        self._implements(     "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
+        self._implements("FieldName", ["Value", "Equality"])
 
 
 
@@ -490,7 +492,7 @@ class TestIR(unittest.TestCase):
     def test_builtin_types(self):
         ir = IR()
         # Check the number of built-in types:
-        self.assertEqual(len(ir.types), 3)
+        self.assertEqual(len(ir.types), 4)
         # Check the built-in Nothing type:
         self.assertEqual(ir.types["Nothing"]["kind"],       "Nothing")
         self.assertEqual(ir.types["Nothing"]["name"],       "Nothing")
@@ -506,6 +508,11 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["Size"]["name"],       "Size")
         self.assertEqual(ir.types["Size"]["attributes"], {})
         self.assertEqual(ir.types["Size"]["implements"], ["ArithmeticOps", "Equality", "Ordinal", "Value"])
+        # Check the built-in FieldName type:
+        self.assertEqual(ir.types["FieldName"]["kind"],       "FieldName")
+        self.assertEqual(ir.types["FieldName"]["name"],       "FieldName")
+        self.assertEqual(ir.types["FieldName"]["attributes"], {})
+        self.assertEqual(ir.types["FieldName"]["implements"], ["Equality", "Value"])
         # Check the number of built-in traits:
         self.assertEqual(len(ir.traits), 7)
         # Check the built-in Arithmetic trait:
@@ -655,7 +662,7 @@ class TestIR(unittest.TestCase):
         ir.load(protocol)
         # Check that we just have the built-in types and traits, and that
         # no PDUs were defined:
-        self.assertEqual(len(ir.types),  3)
+        self.assertEqual(len(ir.types),  4)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "EmptyProtocol")
@@ -678,7 +685,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 1)
+        self.assertEqual(len(ir.types),  4 + 1)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadBitString")
@@ -712,7 +719,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.types),  4 + 2)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadArray")
@@ -804,7 +811,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 3)
+        self.assertEqual(len(ir.types),  4 + 3)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadStruct")
@@ -897,7 +904,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 3)
+        self.assertEqual(len(ir.types),  4 + 3)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadEnum")
@@ -946,7 +953,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.types),  4 + 2)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadNewType")
@@ -993,7 +1000,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 2)
+        self.assertEqual(len(ir.types),  4 + 2)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadFunction")
@@ -1041,7 +1048,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  3 + 1)
+        self.assertEqual(len(ir.types),  4 + 1)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadContext")
