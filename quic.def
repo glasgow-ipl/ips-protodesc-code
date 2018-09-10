@@ -1,61 +1,64 @@
-packet_type := bit[7];
-version := bit[32];
-cid_len := bit[4];
-full_packet_num := bit[62];
-frame_type := bit[8];
-cryptobit := bit;
+PacketType := Bit7;
+Version := Bit32;
+CIDLength := Bit4;
+FullPacketNum := Bit62;
+FrameType := Bit8;
+Cryptobits := Bits;
 
-var_enc := {
-	length : bit[2];
-	value  : bit[];
+VarEncoding := {
+	length : Bit2;
+	value  : Bits;
 } where {
 	value.length == (length*length * 8) - 2;
 };
 
-packet_num := {
-           "0" followed by packet_number : bit[7]; 
-         | "01" followed by packet_number : bit[14];
-         | "11" followed by packet_number : bit[30];
-};
+#todo#
+#PacketNumber := {
+           "0" followed by  packet_number : bit7; 
+         | "01" followed by packet_number : bit14;
+         | "11" followed by packet_number : bit30;
+};#
 
-padding_frame := {
-	type 	: frame_type;
+PacketNumber := Bit32;
+
+PaddingFrame := {
+	type 	: FrameType;
 } where {
 	type == 0;
 };
 
-frame := {padding_frame};
+Frame := {PaddingFrame};
 
-decrypt :: (enc_payload : cryptobit[], pn : full_packet_num) -> bit[];
+decrypt :: (enc_payload : Cryptobits, pn : FullPacketNum) -> Bits;
 
-long_hdr := {
-	header_type   : bit;
-	type		  : packet_type;
-	version		  : version;
-	dcid_len	  : cid_len;
-	scid_len	  : cid_len;
-	dcid		  : bit[];
-	scid		  : bit[];
-	payload_len   : var_enc;
-	packet_number : packet_num;
-	payload		  : bit[];	
-} where { 
+LongHeader := {
+	header_type   : Bit;
+	type		  : PacketType;
+	version		  : Version;
+	dcid_len	  : CIDLength;
+	scid_len	  : CIDLength;
+	dcid		  : Bits;
+	scid		  : Bits;
+	payload_len   : VarEncoding;
+	packet_number : PacketNumber;
+	payload		  : Bits;	
+} where {
 	header_type == 1;
 	dcid.length == ((dcid_len == 0) ? 0 : (dcid_len+3) * 8);
 	scid.length == ((scid_len == 0) ? 0 : (scid_len+3) * 8);
 	payload.length == payload_len*payload_len;
 };
 
-short_hdr := {
-	header_type	      : bit;
-	key_phase         : bit;
-	third_bit         : bit;
-	forth_bit         : bit;
-	google_demux      : bit;
-	reserved          : bit[3];
-	dcid              : bit[];
-	packet_number     : packet_num;
-	protected_payload : cryptobit[] -> payload : frame[];
+ShortHeader := {
+	header_type	      : Bit;
+	key_phase         : Bit;
+	third_bit         : Bit;
+	forth_bit         : Bit;
+	google_demux      : Bit;
+	reserved          : Bit3;
+	dcid              : Bits;
+	packet_number     : PacketNumber;
+	protected_payload : Cryptobits -> payload : Frame[];
 } where { 
 	header_type == 0;
 	third_bit == 1;
@@ -65,15 +68,15 @@ short_hdr := {
 	payload = decrypt(protected_payload, packet_number);
 };
 
-version_negotiation := {
-	header_type        : bit;
-	unused			   : bit[7];
-	ver				   : version;
-	dcid_len		   : cid_len;
-	scid_len		   : cid_len;
-	dcid			   : bit[];
-	scid			   : bit[];
-	supported_versions : version[];
+VersionNegotiation := {
+	header_type        : Bit;
+	unused			   : Bit7;
+	ver				   : Version;
+	dcid_len		   : CIDLength;
+	scid_len		   : CIDLength;
+	dcid			   : Bits;
+	scid			   : Bits;
+	supported_versions : Version[];
 } where { 
 	header_type == 1;
 	ver == 0;
@@ -81,4 +84,4 @@ version_negotiation := {
 	scid.length == ((scid_len == 0) ? 0 : (scid_len+3) * 8);
 };
 
-pdus := {long_hdr | short_hdr | version_negotiation};
+PDUs := {LongHeader | ShortHeader | VersionNegotiation};
