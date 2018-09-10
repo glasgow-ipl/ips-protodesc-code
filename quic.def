@@ -12,14 +12,28 @@ VarEncoding := {
 	value.length == (length*length * 8) - 2;
 };
 
-#todo#
-#PacketNumber := {
-           "0" followed by  packet_number : bit7; 
-         | "01" followed by packet_number : bit14;
-         | "11" followed by packet_number : bit30;
-};#
+PacketNumber8 := {
+	first_bit     : Bit;
+	packet_number : Bit7;
+} where {
+	first_bit == 0;
+};
 
-PacketNumber := Bit32;
+PacketNumber16 := {
+	first_twobits : Bit2;
+	packet_number : Bit14;
+} where {
+	first_twobits == 1;
+};
+
+PacketNumber32 := {
+	first_twobits : Bit2;
+	packet_number : Bit30;
+} where {
+	first_twobits == 2;
+};
+
+PacketNumber := { PacketNumber8 | PacketNumber16 | PacketNumber32 };
 
 PaddingFrame := {
 	type 	: FrameType;

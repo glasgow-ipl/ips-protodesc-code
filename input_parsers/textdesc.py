@@ -235,6 +235,7 @@ def parse_file(filename):
 	protocol_name = filename.split(".")[0]
 	grammar = r"""
 				letter = anything:x ?(x in ascii_letters)
+				letterdigit = anything:x ?(x in ascii_letters or x in '0123456789')
 				uppercase_letter = anything:x ?(x in ascii_uppercase)
 				lowercase_letter = anything:x ?(x in ascii_lowercase)
 				digit = anything:x ?(x in '0123456789')
@@ -242,7 +243,7 @@ def parse_file(filename):
 
 				comment = '#' (anything:x ?(x != '#'))* '#'
 
-				type_name = <uppercase_letter>:x <letter+>:xs -> x + "".join(xs)
+				type_name = <uppercase_letter>:x <letterdigit+>:xs -> x + "".join(xs)
 				field_name = <lowercase_letter>:x <(letter|'_')+>:xs -> x + "".join(xs)
 				
 				type_def = (('Bits':t -> t)|('Bit':t number?:n -> (t, n))|type_name:t -> t):type (('[' number?:length ']') -> length if length is not None else -1)?:length -> (type, length)
@@ -277,6 +278,7 @@ def parse_file(filename):
 				protocol = (bitstring_def|array_def|struct_def|enum_def|func_def|comment)+:elements -> new_protocol(protocol_name, type_namespace)
 				
 				"""
+
 	parser = parsley.makeGrammar(grammar, {"protocol_name": protocol_name,
 	                                       "ascii_letters": string.ascii_letters,
 									       "ascii_uppercase": string.ascii_uppercase,
