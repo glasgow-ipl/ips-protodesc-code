@@ -108,12 +108,14 @@ def new_struct(name, fields, where_block, type_namespace, context, actions):
 	check_typename(name, type_namespace, False)
 	
 	field_dict = {}
-	
+	transform_dict = {}
 	# field processing
 	for field in fields:
 		assert field["name"] not in field_dict
 		assert field["name"] not in context
 		field_dict[field["name"]] = field
+		if field["transform"] is not None:
+			transform_dict[field["transform"]["into_name"]] = field["transform"]
 
 	if name == "Context":
 		assert where_block is None
@@ -130,8 +132,8 @@ def new_struct(name, fields, where_block, type_namespace, context, actions):
 	for i in range(len(actions)):
 		action = actions[i]
 		# is the action transforming a field?
-		if action["expression"] == "MethodInvocation" and action["method"] == "set" and action["self"]["expression"] == "MethodInvocation" and action["self"]["method"] == "get" and action["self"]["self"] == "this":
-			field_dict[action["self"]["arguments"]["key"]]["transform"]["using"] = action["arguments"]["value"]
+		if action["expression"] == "MethodInvocation" and action["method"] == "set" and action["self"]["expression"] == "FieldAccess":
+			transform_dict[action["self"]["field_name"]]["using"] = action["arguments"]["value"]
 			actions.pop(i)
 
 	# construct Struct
@@ -205,19 +207,15 @@ def build_integer_expression(num, type_namespace):
 	return {"expression": "Constant", "type": int_typename, "value": num}
 
 def build_accessor_chain(type, refs):
-	if refs[-1] == "length":
-		method = "length"
-		arguments = None
-	elif refs[-1] == "size":
-		method = "size"
-		arguments = None
-	else:
-		method = "get"
-		arguments = {"key": {"expression": "Constant", "type": "FieldName", "value": refs[-1]}}
-	return {"expression": "MethodInvocation",
-			"method": method,
+	if refs[-1] == "length" or refs[-1] == "size":
+		return {"expression": "MethodInvocation",
+			"method": refs[-1],
 			"self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
-			"arguments": arguments}
+			"arguments": None}
+	else:
+		return {"expression": "FieldAccess",
+			    "target": build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
+			    "field_name": refs[-1]}
 
 def build_tree(start, pairs, expression_type):
 	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
@@ -266,7 +264,7 @@ def parse_file(filename):
 				boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "IfElse")
-				assign_expr = field_accessor:left '=' cond_expr:expr -> {"expression": "MethodInvocation", "method": "set", "self": left["self"], "arguments": {"key": left["arguments"]["key"], "value": expr}}
+				assign_expr = field_accessor:left '=' cond_expr:expr -> {"expression": "MethodInvocation", "method": "set", "self": left, "arguments": {"value": expr}}
 
 				onparse_block = '}onparse{' (assign_expr:expression ';' -> expression)+:constraints -> constraints
 				where_block = '}where{' (cond_expr:expression ';' -> expression)+:constraints -> constraints
