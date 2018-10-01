@@ -1,0 +1,13 @@
+Port := Bit16;
+Length := Bit16;
+Checksum := Bit16;
+
+Packet := {
+	src_port   : Port;
+	dst_port   : Port;
+	length     : Length;
+	checksum   : Checksum;
+	payload    : Bits;
+};
+
+PDUs := {Packet};
