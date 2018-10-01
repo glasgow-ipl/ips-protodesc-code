@@ -6,10 +6,17 @@ class Formatter:
 		self.definitions = []
 
 	def output(self):
-		return "\n\n".join(self.definitions)
+		definitions = "\n\n".join(self.definitions)
+		return definitions + """
+
+int main(int argc, char *argv[]) {
+	// TODO
+}"""
 
 	def bitstring(self, name, width):
-		bitfield_typedef = """typedef struct %s {
+		if width is None:
+			return
+		typedef = """typedef struct %s {
 	unsigned int value:%d;
 } %s;""" % (name, width, name)
-		self.definitions.append(bitfield_typedef)
+		self.definitions.append(typedef)
