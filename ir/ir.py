@@ -269,36 +269,31 @@ class IR:
 
 
 
-    def _parse_expression(self, expression, this, depth):
+    def _parse_expression(self, expression, thisType):
         """
         Check that an expression is valid.
 
         Arguments:
           expression -- The expression to check
-          this       -- This type in which the expression is evaluated
+          thisType   -- This type in which the expression is evaluated
 
         Returns:
           The type of the expression
         """
         if   expression["expression"] == "MethodInvocation":
-            target_type = self._parse_expression(expression["target"], this, depth+1)
-            method_name = expression["method"]
-            return_type = self.types[target_type]["methods"][method_name]["return_type"]
-
-            print("[{}] MethodInvocation {}.{}->{}".format(depth, target_type, method_name, return_type))
-            return return_type
-
+            raise IRError("unimplemented: MethodInvocation")
         elif expression["expression"] == "FunctionInvocation":
-            print("[{}] FunctionInvocation".format(depth))
+            raise IRError("unimplemented: FunctionInvocation")
+        elif expression["expression"] == "FieldAccess":
+            raise IRError("unimplemented: FieldAccess")
         elif expression["expression"] == "IfElse":
-            print("[{}] IfElse".format(depth))
+            raise IRError("unimplemented: IfElse")
         elif expression["expression"] == "This":
-            print("[{}] This type={}".format(depth, this))
-            return this
+            raise IRError("unimplemented: This")
         elif expression["expression"] == "Context":
-            print("[{}] Context")
+            raise IRError("unimplemented: Context")
         elif expression["expression"] == "Constant":
-            print("[{}] Constant type={} value={}".format(depth, expression["type"], expression["value"]))
+            raise IRError("unimplemented: Constant")
         else:
             raise IRError("Unknown expression: {}".format(expression["expression"]))
 
@@ -331,7 +326,7 @@ class IR:
 
         components["constraints"] = []
         for constraint in defn["constraints"]:
-            self._parse_expression(constraint, defn["name"], 0)
+            self._parse_expression(constraint, defn["name"])
             components["constraints"].append(constraint)
 
 
