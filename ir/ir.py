@@ -1008,49 +1008,50 @@ class TestIR(unittest.TestCase):
 
 
 
-#    def test_constraints_parse_this(self):
-#        ir = IR()
-#        expr = {
-#                  "expression" : "This"
-#               }
-#        res = ir._parse_expression(expr, "Boolean")
-#        self.assertEqual(res, "Boolean")
+    def test_parse_expression_This(self):
+        # The return type of a This expression should equal the thisType
+        ir = IR()
+        expr = {
+                  "expression" : "This"
+               }
+        res = ir._parse_expression(expr, "Boolean")
+        self.assertEqual(res, "Boolean")
 
 
 
-#    def test_constraints_parse_constant(self):
-#        ir = IR()
-#        expr = {
-#                  "expression" : "Constant",
-#                  "type"       : "Size",
-#                  "value"      : 2
-#               }
-#        res = ir._parse_expression(expr, "Boolean")
-#        self.assertEqual(res, "Size")
+    def test_parse_expression_Constant(self):
+        ir = IR()
+        expr = {
+                  "expression" : "Constant",
+                  "type"       : "Size",
+                  "value"      : 2
+               }
+        res = ir._parse_expression(expr, "Boolean")
+        self.assertEqual(res, "Size")
 
 
 
-#    def test_constraints_parse_method(self):
-#        ir = IR()
-#        expr = {
-#                  "expression" : "MethodInvocation",
-#                  "target"     : {
-#                      "expression" : "This"
-#                  },
-#                  "method"     : "eq",
-#                  "arguments"  : [
-#                      {
-#                          "name"  : "other",
-#                          "value" : {
-#                              "expression" : "Constant",
-#                              "type"       : "Boolean",
-#                              "value"      : "False"
-#                          }
-#                      }
-#                  ]
-#               }
-#        res = ir._parse_expression(expr, "Boolean")
-#        self.assertEqual(res, "Boolean")
+    def test_parse_expression_MethodInvocation(self):
+        ir = IR()
+        expr = {
+                  "expression" : "MethodInvocation",
+                  "target"     : {
+                      "expression" : "This"
+                  },
+                  "method"     : "eq",
+                  "arguments"  : [
+                      {
+                          "name"  : "other",
+                          "value" : {
+                              "expression" : "Constant",
+                              "type"       : "Boolean",
+                              "value"      : "False"
+                          }
+                      }
+                  ]
+               }
+        res = ir._parse_expression(expr, "Boolean")
+        self.assertEqual(res, "Boolean")
 
 
 
