@@ -205,6 +205,8 @@ class IR:
         self._define_trait("Value",
                          [("get",      [("self", None)                                         ],  None),
                           ("set",      [("self", None), ("value",   None)                      ], "Nothing")])
+        self._define_trait("Sized",
+                         [("size",     [("self", None)                                         ], "Size")])
         self._define_trait("IndexCollection",
                          [("get",      [("self", None), ("index", "Size")                      ],  None),
                           ("set",      [("self", None), ("index", "Size"),      ("value", None)], "Nothing")])
@@ -491,7 +493,7 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.types["FieldName"]["attributes"], {})
         self.assertEqual(ir.types["FieldName"]["implements"], ["Equality", "Value"])
         # Check the number of built-in traits:
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         # Check the built-in Arithmetic trait:
         self.assertEqual(ir.traits["ArithmeticOps"]["name"], "ArithmeticOps")
         self.assertEqual(ir.traits["ArithmeticOps"]["methods"]["plus"    ]["name"],   "plus")
@@ -551,6 +553,12 @@ class TestIR(unittest.TestCase):
         self.assertEqual(ir.traits["Value"]["methods"]["set"]["name"],        "set")
         self.assertEqual(ir.traits["Value"]["methods"]["set"]["params"],      [("self", None), ("value", None)])
         self.assertEqual(ir.traits["Value"]["methods"]["set"]["return_type"], "Nothing")
+        self.assertEqual(len(ir.traits["Value"]["methods"]), 2)
+        # Check the built-in Sized trait:
+        self.assertEqual(ir.traits["Sized"]["name"], "Sized")
+        self.assertEqual(ir.traits["Sized"]["methods"]["size"]["name"],        "size")
+        self.assertEqual(ir.traits["Sized"]["methods"]["size"]["params"],      [("self", None)])
+        self.assertEqual(ir.traits["Sized"]["methods"]["size"]["return_type"], "Size")
         self.assertEqual(len(ir.traits["Value"]["methods"]), 2)
         # Check the built-in IndexCollection trait:
         self.assertEqual(ir.traits["IndexCollection"]["name"], "IndexCollection")
@@ -631,7 +639,7 @@ class TestIR(unittest.TestCase):
         # Check that we just have the built-in types and traits, and that
         # no PDUs were defined:
         self.assertEqual(len(ir.types),  4)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "EmptyProtocol")
 
@@ -654,7 +662,7 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  4 + 1)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadBitString")
         self.assertEqual(ir.types["TestBitString"]["kind"], "BitString")
@@ -689,7 +697,7 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  4 + 2)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadArray")
         self.assertEqual(ir.types["SSRC"]["kind"], "BitString")
@@ -781,7 +789,7 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  4 + 3)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadStruct")
         self.assertEqual(ir.types["SeqNum"]["kind"], "BitString")
@@ -839,7 +847,7 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  4 + 3)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadEnum")
         self.assertEqual(ir.types["TypeA"]["kind"], "BitString")
@@ -888,7 +896,7 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  4 + 2)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadNewType")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
@@ -935,7 +943,7 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  4 + 2)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadFunction")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
@@ -983,7 +991,7 @@ class TestIR(unittest.TestCase):
         """
         ir.load(protocol)
         self.assertEqual(len(ir.types),  4 + 1)
-        self.assertEqual(len(ir.traits), 6)
+        self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   0)
         self.assertEqual(ir.protocol_name, "LoadContext")
         self.assertEqual(ir.types["Bits16"]["kind"], "BitString")
