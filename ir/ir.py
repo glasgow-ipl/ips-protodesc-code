@@ -751,21 +751,11 @@ class TestIR(unittest.TestCase):
                             {
                                 "expression" : "MethodInvocation",
                                 "target"     : {
-                                    "expression" : "MethodInvocation",
+                                    "expression" : "FieldAccess",
                                     "target"     : {
                                         "expression" : "This"
                                     },
-                                    "method"     : "get",
-                                    "arguments"  : [
-                                        {
-                                            "name"  : "key",
-                                            "value" : {
-                                                "expression" : "Constant",
-                                                "type"       : "FieldName",
-                                                "value"      : "seq"
-                                            }
-                                        }
-                                    ]
+                                    "field"     : "seq"
                                 },
                                 "method"     : "eq",
                                 "arguments"  : [
