@@ -292,7 +292,10 @@ class IR:
         elif expression["expression"] == "Context":
             raise IRError("unimplemented: Context")
         elif expression["expression"] == "Constant":
-            raise IRError("unimplemented: Constant")
+            if not expression["type"] in self.types:
+                raise IRError("Unknown type {} in Constant expression".format(expression["type"]))
+            # FIXME: this should check that expression["value"] is compatible with expression["type"]
+            return expression["type"]
         else:
             raise IRError("Unknown expression: {}".format(expression["expression"]))
 
