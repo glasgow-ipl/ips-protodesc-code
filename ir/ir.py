@@ -306,10 +306,6 @@ class IR:
                 if expression["field"] == field_name:
                     return field_type
             raise IRError("Unknown field {} in FieldAccess on type {}".format(expression["field"], target_type_name))
-        elif expression["expression"] == "ContextAccess":
-            # FIXME: implement this
-            # FIXME: write spec for this
-            pass
         elif expression["expression"] == "IfElse":
             # FIXME: implement this
             raise IRError("unimplemented: IfElse")
@@ -317,6 +313,10 @@ class IR:
             return this_type
         elif expression["expression"] == "Context":
             # FIXME: implement this
+            raise IRError("unimplemented: Context")
+        elif expression["expression"] == "ContextAccess":
+            # FIXME: implement this
+            # FIXME: write spec for this - does it replace Context?
             raise IRError("unimplemented: Context")
         elif expression["expression"] == "Constant":
             if not expression["type"] in self.types:
