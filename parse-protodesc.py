@@ -10,6 +10,49 @@ def load_input_parser(name):
 def load_output_formatter(name):
 	return importlib.import_module("." + name, "formatters")
 
+def dfs_array(formatter, type_constructors, defined, array_name):
+	array = type_constructors[array_name]
+	print("dfs array %s" % array_name)
+	dfs(formatter, type_constructors, defined, array["type"])
+	if array_name not in defined:
+		formatter.array(array_name, array["type"], array["length"])
+		defined.append(array_name)
+		
+def dfs_struct(formatter, type_constructors, defined, struct_name):
+	struct = type_constructors[struct_name]
+	print("dfs struct %s" % struct_name)
+	for field in struct["fields"]:
+		print("proc field %s" % field["name"])
+		dfs(formatter, type_constructors, defined, field["type"])
+	if struct_name not in defined:
+		formatter.struct(struct_name, struct["fields"])
+		defined.append(struct_name)
+
+def dfs_enum(formatter, type_constructors, defined, enum_name):
+	enum = type_constructors[enum_name]
+	print("dfs enum %s" % enum_name)
+	for variant in enum["variants"]:
+	
+		dfs(formatter, type_constructors, defined, variant["type"])
+	if enum_name not in defined:
+		formatter.enum(enum_name, enum["variants"])
+		defined.append(enum_name)
+	
+def dfs(formatter, type_constructors, defined, type_name):
+	print("dfs %s" % type_constructors[type_name]["construct"])
+	type_constructor = type_constructors[type_name]
+	if type_constructor["construct"] == "BitString":
+		if type_constructor["name"] not in defined:
+			formatter.bitstring(type_constructor["name"], type_constructor["width"])
+			defined.append(type_constructor["name"])
+	if type_constructors[type_name]["construct"] == "Struct":
+		dfs_struct(formatter, type_constructors, defined, type_name)
+	if type_constructors[type_name]["construct"] == "Array":
+		dfs_array(formatter, type_constructors, defined, type_name)
+	if type_constructors[type_name]["construct"] == "Enum":
+		dfs_enum(formatter, type_constructors, defined, type_name)
+		
+	
 def main():
 	parser = argparse.ArgumentParser(description='Parse a packet description into a specified output format')
 	parser.add_argument('--input-format', type=str, required=True, help='Input format name')
@@ -45,10 +88,16 @@ def main():
 
 	try:
 		formatter = output_formatter.Formatter()
-		for definition in proto["definitions"]:
-			if "construct" in definition:
-				if definition["construct"] == "BitString":
-					formatter.bitstring(definition["name"], definition["width"])
+		
+		# construct dictionary of type constructors
+		defined = []
+		type_constructors = {}
+		for constructor in proto["definitions"]:
+			type_constructors[constructor["name"]] = constructor
+		for variant in proto["pdus"]:
+			name = variant["type"]
+			dfs(formatter, type_constructors, defined, name)
+		formatter.protocol(proto["pdus"])
 		output = formatter.output()
 	except Exception as e:
 		print(e)
