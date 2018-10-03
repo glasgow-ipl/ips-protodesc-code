@@ -268,13 +268,13 @@ class IR:
 
 
 
-    def _parse_expression(self, expression, thisType):
+    def _parse_expression(self, expression, this_type):
         """
         Check that an expression is valid.
 
         Arguments:
           expression -- The expression to check
-          thisType   -- This type in which the expression is evaluated
+          this_type  -- This type in which the expression is evaluated
 
         Returns:
           The type of the expression
@@ -288,7 +288,7 @@ class IR:
         elif expression["expression"] == "IfElse":
             raise IRError("unimplemented: IfElse")
         elif expression["expression"] == "This":
-            return thisType
+            return this_type
         elif expression["expression"] == "Context":
             raise IRError("unimplemented: Context")
         elif expression["expression"] == "Constant":
@@ -1002,7 +1002,6 @@ class TestIR(unittest.TestCase):
 
 
     def test_parse_expression_This(self):
-        # The return type of a This expression should equal the thisType
         ir = IR()
         expr = {
                   "expression" : "This"
