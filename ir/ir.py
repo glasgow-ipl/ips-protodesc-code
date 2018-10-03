@@ -279,8 +279,22 @@ class IR:
         Returns:
           The type of the expression
         """
+        print(expression)
         if   expression["expression"] == "MethodInvocation":
-            raise IRError("unimplemented: MethodInvocation")
+            target_type_name   = self._parse_expression(expression["target"], this_type)
+            target_method_name = expression["method"]
+            if not target_method_name in self.types[target_type_name]["methods"]:
+                raise IRError("Unknown method {} call on type {}".format(target_method_name, target_type_name))
+            target_method = self.types[target_type_name]["methods"][target_method_name]
+            # Check that the arguments supplied to the method match its parameters:
+            for ((pn, pt), arg) in zip(target_method["params"][1:], expression["arguments"]):
+                an = arg["name"]
+                at = self._parse_expression(arg["value"], this_type)
+                if pn != an:
+                    raise IRError("Method argument name mismatch: {} != {}".format(pn, an))
+                if pt != at:
+                    raise IRError("Method argument type mismatch: {} != {}".format(pt, at))
+            return target_method["return_type"]
         elif expression["expression"] == "FunctionInvocation":
             raise IRError("unimplemented: FunctionInvocation")
         elif expression["expression"] == "FieldAccess":
@@ -1051,4 +1065,4 @@ class TestIR(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-
+# vim: set tw=0 ai:
