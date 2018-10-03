@@ -268,31 +268,54 @@ class IR:
 
 
 
-    def _parse_expression(self, expression, thisType):
+    def _parse_expression(self, expression, this_type):
         """
         Check that an expression is valid.
 
         Arguments:
           expression -- The expression to check
-          thisType   -- This type in which the expression is evaluated
+          this_type  -- This type in which the expression is evaluated
 
         Returns:
           The type of the expression
         """
         if   expression["expression"] == "MethodInvocation":
-            raise IRError("unimplemented: MethodInvocation")
+            target_type_name   = self._parse_expression(expression["target"], this_type)
+            target_method_name = expression["method"]
+            if not target_method_name in self.types[target_type_name]["methods"]:
+                raise IRError("Unknown method {} call on type {}".format(target_method_name, target_type_name))
+            target_method = self.types[target_type_name]["methods"][target_method_name]
+            # Check that the arguments supplied to the method match its parameters:
+            for ((pn, pt), arg) in zip(target_method["params"][1:], expression["arguments"]):
+                an = arg["name"]
+                at = self._parse_expression(arg["value"], this_type)
+                if pn != an:
+                    raise IRError("Method argument name mismatch: {} != {}".format(pn, an))
+                if pt != at:
+                    raise IRError("Method argument type mismatch: {} != {}".format(pt, at))
+            return target_method["return_type"]
         elif expression["expression"] == "FunctionInvocation":
             raise IRError("unimplemented: FunctionInvocation")
         elif expression["expression"] == "FieldAccess":
-            raise IRError("unimplemented: FieldAccess")
+            target_type_name = self._parse_expression(expression["target"], this_type)
+            target_type      = self.types[target_type_name]
+            if target_type["kind"] != "Struct":
+                raise IRError("FieldAccess expression called on non-struct")
+            for (field_name, field_type, field_xform) in target_type["components"]["fields"]:
+                if expression["field"] == field_name:
+                    return field_type
+            raise IRError("Unknown field {} in FieldAccess on type {}".format(expression["field"], target_type_name))
         elif expression["expression"] == "IfElse":
             raise IRError("unimplemented: IfElse")
         elif expression["expression"] == "This":
-            raise IRError("unimplemented: This")
+            return this_type
         elif expression["expression"] == "Context":
             raise IRError("unimplemented: Context")
         elif expression["expression"] == "Constant":
-            raise IRError("unimplemented: Constant")
+            if not expression["type"] in self.types:
+                raise IRError("Unknown type {} in Constant expression".format(expression["type"]))
+            # FIXME: this should check that expression["value"] is compatible with expression["type"]
+            return expression["type"]
         else:
             raise IRError("Unknown expression: {}".format(expression["expression"]))
 
@@ -999,7 +1022,6 @@ class TestIR(unittest.TestCase):
 
 
     def test_parse_expression_This(self):
-        # The return type of a This expression should equal the thisType
         ir = IR()
         expr = {
                   "expression" : "This"
@@ -1049,4 +1071,4 @@ class TestIR(unittest.TestCase):
 if __name__ == "__main__":
     unittest.main()
 
-
+# vim: set tw=0 ai:
