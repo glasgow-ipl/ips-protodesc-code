@@ -279,7 +279,6 @@ class IR:
         Returns:
           The type of the expression
         """
-        print(expression)
         if   expression["expression"] == "MethodInvocation":
             target_type_name   = self._parse_expression(expression["target"], this_type)
             target_method_name = expression["method"]
@@ -298,7 +297,14 @@ class IR:
         elif expression["expression"] == "FunctionInvocation":
             raise IRError("unimplemented: FunctionInvocation")
         elif expression["expression"] == "FieldAccess":
-            raise IRError("unimplemented: FieldAccess")
+            target_type_name = self._parse_expression(expression["target"], this_type)
+            target_type      = self.types[target_type_name]
+            if target_type["kind"] != "Struct":
+                raise IRError("FieldAccess expression called on non-struct")
+            for (field_name, field_type, field_xform) in target_type["components"]["fields"]:
+                if expression["field"] == field_name:
+                    return field_type
+            raise IRError("Unknown field {} in FieldAccess on type {}".format(expression["field"], target_type_name))
         elif expression["expression"] == "IfElse":
             raise IRError("unimplemented: IfElse")
         elif expression["expression"] == "This":
