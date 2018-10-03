@@ -268,7 +268,7 @@ class IR:
 
 
 
-    def _parse_expression(self, expression, this_type):
+    def _check_expression(self, expression, this_type):
         """
         Check that an expression is valid.
 
@@ -280,7 +280,7 @@ class IR:
           The type of the expression
         """
         if   expression["expression"] == "MethodInvocation":
-            target_type_name   = self._parse_expression(expression["target"], this_type)
+            target_type_name   = self._check_expression(expression["target"], this_type)
             target_method_name = expression["method"]
             if not target_method_name in self.types[target_type_name]["methods"]:
                 raise IRError("Unknown method {} call on type {}".format(target_method_name, target_type_name))
@@ -288,7 +288,7 @@ class IR:
             # Check that the arguments supplied to the method match its parameters:
             for ((pn, pt), arg) in zip(target_method["params"][1:], expression["arguments"]):
                 an = arg["name"]
-                at = self._parse_expression(arg["value"], this_type)
+                at = self._check_expression(arg["value"], this_type)
                 if pn != an:
                     raise IRError("Method argument name mismatch: {} != {}".format(pn, an))
                 if pt != at:
@@ -297,7 +297,7 @@ class IR:
         elif expression["expression"] == "FunctionInvocation":
             raise IRError("unimplemented: FunctionInvocation")
         elif expression["expression"] == "FieldAccess":
-            target_type_name = self._parse_expression(expression["target"], this_type)
+            target_type_name = self._check_expression(expression["target"], this_type)
             target_type      = self.types[target_type_name]
             if target_type["kind"] != "Struct":
                 raise IRError("FieldAccess expression called on non-struct")
@@ -347,7 +347,7 @@ class IR:
 
         components["constraints"] = []
         for constraint in defn["constraints"]:
-            self._parse_expression(constraint, defn["name"])
+            self._check_expression(constraint, defn["name"])
             components["constraints"].append(constraint)
 
 
@@ -1021,29 +1021,29 @@ class TestIR(unittest.TestCase):
 
 
 
-    def test_parse_expression_This(self):
+    def test_check_expression_This(self):
         ir = IR()
         expr = {
                   "expression" : "This"
                }
-        res = ir._parse_expression(expr, "Boolean")
+        res = ir._check_expression(expr, "Boolean")
         self.assertEqual(res, "Boolean")
 
 
 
-    def test_parse_expression_Constant(self):
+    def test_check_expression_Constant(self):
         ir = IR()
         expr = {
                   "expression" : "Constant",
                   "type"       : "Size",
                   "value"      : 2
                }
-        res = ir._parse_expression(expr, "Boolean")
+        res = ir._check_expression(expr, "Boolean")
         self.assertEqual(res, "Size")
 
 
 
-    def test_parse_expression_MethodInvocation(self):
+    def test_check_expression_MethodInvocation(self):
         ir = IR()
         expr = {
                   "expression" : "MethodInvocation",
@@ -1062,7 +1062,7 @@ class TestIR(unittest.TestCase):
                       }
                   ]
                }
-        res = ir._parse_expression(expr, "Boolean")
+        res = ir._check_expression(expr, "Boolean")
         self.assertEqual(res, "Boolean")
 
 
