@@ -4,9 +4,12 @@ import sys
 import json
 
 def new_protocol(protocol_name, type_namespace):
+	pdus = [{"type": t} for t in type_namespace["PDUs"]["variants"]]
+	type_namespace.pop("PDUs")
 	return {"construct": "Protocol", 
 	        "name": protocol_name, 
-	        "definitions": [element for element in type_namespace.values()]}
+	        "definitions": [element for element in type_namespace.values()],
+	        "pdus": pdus}
 
 def check_typename(name, type_namespace, should_be_defined):
 	if name in type_namespace and not should_be_defined:
