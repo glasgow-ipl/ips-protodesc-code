@@ -295,8 +295,7 @@ class IR:
                     raise IRError("Method argument type mismatch: {} != {}".format(pt, at))
             return target_method["return_type"]
         elif expression["expression"] == "FunctionInvocation":
-            # FIXME: implement this
-            raise IRError("unimplemented: FunctionInvocation")
+            raise NotImplementedError("unimplemented: FunctionInvocation")
         elif expression["expression"] == "FieldAccess":
             target_type_name = self._check_expression(expression["target"], this_type)
             target_type      = self.types[target_type_name]
@@ -307,17 +306,14 @@ class IR:
                     return field_type
             raise IRError("Unknown field {} in FieldAccess on type {}".format(expression["field"], target_type_name))
         elif expression["expression"] == "IfElse":
-            # FIXME: implement this
-            raise IRError("unimplemented: IfElse")
+            raise NotImplementedError("unimplemented: IfElse")
         elif expression["expression"] == "This":
             return this_type
         elif expression["expression"] == "Context":
-            # FIXME: implement this
-            raise IRError("unimplemented: Context")
+            raise NotImplementedError("unimplemented: Context")
         elif expression["expression"] == "ContextAccess":
-            # FIXME: implement this
             # FIXME: write spec for this - does it replace Context?
-            raise IRError("unimplemented: Context")
+            raise NotImplementedError("unimplemented: Context")
         elif expression["expression"] == "Constant":
             if not expression["type"] in self.types:
                 raise IRError("Unknown type {} in Constant expression".format(expression["type"]))
