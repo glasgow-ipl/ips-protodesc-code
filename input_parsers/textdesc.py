@@ -4,7 +4,7 @@ import sys
 import json
 
 def new_protocol(protocol_name, type_namespace):
-	pdus = [{"type": t} for t in type_namespace["PDUs"]["variants"]]
+	pdus = type_namespace["PDUs"]["variants"]
 	type_namespace.pop("PDUs")
 	return {"construct": "Protocol", 
 	        "name": protocol_name, 
@@ -162,7 +162,7 @@ def new_enum(name, variants, type_namespace):
 			checked_variants.append(type_name)
 	
 	# construct Enum
-	enum = {"construct": "Enum", "name": name, "variants": checked_variants}
+	enum = {"construct": "Enum", "name": name, "variants": [{"type": variant} for variant in checked_variants]}
 	type_namespace[name] = enum
 	return name
 
