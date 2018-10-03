@@ -288,7 +288,7 @@ class IR:
         elif expression["expression"] == "IfElse":
             raise IRError("unimplemented: IfElse")
         elif expression["expression"] == "This":
-            raise IRError("unimplemented: This")
+            return thisType
         elif expression["expression"] == "Context":
             raise IRError("unimplemented: Context")
         elif expression["expression"] == "Constant":
