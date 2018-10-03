@@ -309,6 +309,7 @@ class IR:
         elif expression["expression"] == "ContextAccess":
             # FIXME: implement this
             # FIXME: write spec for this
+            pass
         elif expression["expression"] == "IfElse":
             # FIXME: implement this
             raise IRError("unimplemented: IfElse")
