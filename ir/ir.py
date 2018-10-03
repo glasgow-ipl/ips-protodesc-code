@@ -295,6 +295,7 @@ class IR:
                     raise IRError("Method argument type mismatch: {} != {}".format(pt, at))
             return target_method["return_type"]
         elif expression["expression"] == "FunctionInvocation":
+            # FIXME: implement this
             raise IRError("unimplemented: FunctionInvocation")
         elif expression["expression"] == "FieldAccess":
             target_type_name = self._check_expression(expression["target"], this_type)
@@ -305,11 +306,16 @@ class IR:
                 if expression["field"] == field_name:
                     return field_type
             raise IRError("Unknown field {} in FieldAccess on type {}".format(expression["field"], target_type_name))
+        elif expression["expression"] == "ContextAccess":
+            # FIXME: implement this
+            # FIXME: write spec for this
         elif expression["expression"] == "IfElse":
+            # FIXME: implement this
             raise IRError("unimplemented: IfElse")
         elif expression["expression"] == "This":
             return this_type
         elif expression["expression"] == "Context":
+            # FIXME: implement this
             raise IRError("unimplemented: Context")
         elif expression["expression"] == "Constant":
             if not expression["type"] in self.types:
@@ -1065,6 +1071,62 @@ class TestIR(unittest.TestCase):
         res = ir._check_expression(expr, "Boolean")
         self.assertEqual(res, "Boolean")
 
+
+
+    def test_check_expression_FunctionInvocation(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadFunction",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "Bits16",
+                    "size"      : 16
+                },
+                {
+                    "construct"   : "Function",
+                    "name"        : "TestFunction",
+                    "parameters"  : [
+                    {
+                        "name" : "foo",
+                        "type" : "Bits16"
+                    },
+                    {
+                        "name" : "bar",
+                        "type" : "Boolean"
+                    }],
+                    "return_type" : "Boolean"
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        expr = {
+                  "expression" : "FunctionInvocation",
+                  "name"       : "TestFunction",
+                  "arguments"  : [
+                      {
+                          "name"  : "foo",
+                          "value" : {
+                              "expression" : "Constant",
+                              "type"       : "Bits16",
+                              "value"      : 12
+                          }
+                      },
+                      {
+                          "name"  : "bar",
+                          "value" : {
+                              "expression" : "Constant",
+                              "type"       : "Boolean",
+                              "value"      : "False"
+                          }
+                      }
+                  ]
+               }
+        res = ir._check_expression(expr, "Boolean")
+        self.assertEqual(res, "Boolean")
 
 
 # =============================================================================
