@@ -8,6 +8,8 @@ Packet := {
 	length     : Length;
 	checksum   : Checksum;
 	payload    : Bits;
+} where {
+	payload.length == length*8;
 };
 
 PDUs := {Packet};
