@@ -210,7 +210,7 @@ def build_integer_expression(num, type_namespace):
 	return {"expression": "Constant", "type": int_typename, "value": num}
 
 def build_accessor_chain(type, refs):
-	if refs[-1] == "length" or refs[-1] == "size":
+	if len(refs) != 1 and (refs[-1] == "length" or refs[-1] == "size"  or refs[-1] == "width"):
 		return {"expression": "MethodInvocation",
 			"method": refs[-1],
 			"self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
@@ -221,7 +221,7 @@ def build_accessor_chain(type, refs):
 			    "field_name": refs[-1]}
 
 def build_tree(start, pairs, expression_type):
-	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiple", "arith"), "/": ("divide", "arith"),
+	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"),
 	       ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
 	       "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"),
 	       "==": ("eq", "equality"), "!=": ("ne", "equality")}
@@ -251,7 +251,7 @@ def parse_file(filename):
 				
 				field_def = field_name:name ':' type_def:type ('->' field_name:to_name ':' type_def:to_type -> (to_name, to_type))?:transform -> new_field(name, type, transform, type_namespace)
 				
-				field_accessor = field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain({"expression": "This"}, [x]+xs)
+				field_accessor = field_name:x (('.' ('value' | 'length' | 'is_present' | 'width'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain({"expression": "This"}, [x]+xs)
 					           | 'Context.' field_name:x (('.' ('value' | 'length' | 'is_present'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain({"expression": "Context"}, [x]+xs)
 				# expression grammar
 				primary_expr = number:n -> build_integer_expression(n, type_namespace)
@@ -277,7 +277,6 @@ def parse_file(filename):
 				enum_def = type_name:name ':={' type_def:t ('|' type_def:n -> n)*:ts '};' -> new_enum(name, [t] + ts, type_namespace)
 				func_def = field_name:name '::(' (field_def:f -> f)?:param (',' field_def:f -> f)*:params ')->' type_def:ret_type ';' -> new_func(name, [param] + params, ret_type, type_namespace)
 				protocol = (bitstring_def|array_def|struct_def|enum_def|func_def|comment)+:elements -> new_protocol(protocol_name, type_namespace)
-				
 				"""
 
 	parser = parsley.makeGrammar(grammar, {"protocol_name": protocol_name,
