@@ -9,7 +9,7 @@ Packet := {
 	checksum   : Checksum;
 	payload    : Bits;
 } where {
-	payload.length == length*8;
+	payload.width == (length*8)+32;
 };
 
 PDUs := {Packet};
