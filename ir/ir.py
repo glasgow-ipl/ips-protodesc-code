@@ -265,59 +265,65 @@ class IR:
 
 
 
-    def _check_expression(self, expression, this_type):
+    def _check_expression(self, expr, this):
         """
         Check that an expression is valid.
 
         Arguments:
-          expression -- The expression to check
-          this_type  -- This type in which the expression is evaluated
+          expr -- The expression to check
+          this  -- This type in which the expression is evaluated
 
         Returns:
           The type of the expression
         """
-        if   expression["expression"] == "MethodInvocation":
-            target_type_name   = self._check_expression(expression["target"], this_type)
-            target_method_name = expression["method"]
-            if not target_method_name in self.types[target_type_name]["methods"]:
-                raise IRError("Unknown method {} call on type {}".format(target_method_name, target_type_name))
-            target_method = self.types[target_type_name]["methods"][target_method_name]
-            # Check that the arguments supplied to the method match its parameters:
-            for ((pn, pt), arg) in zip(target_method["params"][1:], expression["arguments"]):
+        if   expr["expression"] == "MethodInvocation":
+            target = self._check_expression(expr["target"], this)
+            method = expr["method"]
+            if not method in self.types[target]["methods"]:
+                raise IRError("Cannot invoke method " + method + " on " + target + ": method not implemented")
+
+            for ((pn, pt), arg) in zip(self.types[target]["methods"][method]["params"][1:], expr["arguments"]):
                 an = arg["name"]
-                at = self._check_expression(arg["value"], this_type)
+                at = self._check_expression(arg["value"], this)
                 if pn != an:
-                    raise IRError("Method argument name mismatch: {} != {}".format(pn, an))
+                    raise IRError("Cannot involve method " + method + " on " + target + ": name mismatch")
                 if pt != at:
-                    raise IRError("Method argument type mismatch: {} != {}".format(pt, at))
-            return target_method["return_type"]
-        elif expression["expression"] == "FunctionInvocation":
+                    raise IRError("Cannot involve method " + method + " on " + target + ": type mismatch")
+            return self.types[target]["methods"][method]["return_type"]
+
+        elif expr["expression"] == "FunctionInvocation":
             raise NotImplementedError("unimplemented: FunctionInvocation")
-        elif expression["expression"] == "FieldAccess":
-            target_type_name = self._check_expression(expression["target"], this_type)
-            target_type      = self.types[target_type_name]
-            if target_type["kind"] != "Struct":
-                raise IRError("FieldAccess expression called on non-struct")
-            for (field_name, field_type, field_xform) in target_type["components"]["fields"]:
-                if expression["field"] == field_name:
+
+        elif expr["expression"] == "FieldAccess":
+            target = self._check_expression(expr["target"], this)
+            if self.types[target]["kind"] != "Struct":
+                raise IRError("Cannot access field: " + target + " is not a struct")
+            for (field_name, field_type, field_xform) in self.types[target]["components"]["fields"]:
+                if expr["field"] == field_name:
                     return field_type
-            raise IRError("Unknown field {} in FieldAccess on type {}".format(expression["field"], target_type_name))
-        elif expression["expression"] == "IfElse":
+            raise IRError("Cannot access field: " + target + " has no field named " + expr["field"])
+
+        elif expr["expression"] == "IfElse":
             raise NotImplementedError("unimplemented: IfElse")
-        elif expression["expression"] == "This":
-            return this_type
-        elif expression["expression"] == "Context":
+
+        elif expr["expression"] == "This":
+            return this
+
+        elif expr["expression"] == "Context":
             raise NotImplementedError("unimplemented: Context")
-        elif expression["expression"] == "ContextAccess":
+
+        elif expr["expression"] == "ContextAccess":
             # FIXME: write spec for this - does it replace Context?
             raise NotImplementedError("unimplemented: Context")
-        elif expression["expression"] == "Constant":
-            if not expression["type"] in self.types:
-                raise IRError("Unknown type {} in Constant expression".format(expression["type"]))
+
+        elif expr["expression"] == "Constant":
+            if not expr["type"] in self.types:
+                raise IRError("Unknown type {} in Constant expression".format(expr["type"]))
             # FIXME: this should check that expression["value"] is compatible with expression["type"]
-            return expression["type"]
+            return expr["type"]
+
         else:
-            raise IRError("Unknown expression: {}".format(expression["expression"]))
+            raise IRError("Cannot check expression " + expr["expression"] + ": unknown expression")
 
 
 
