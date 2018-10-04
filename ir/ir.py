@@ -76,12 +76,12 @@ class IR:
 
 
 
-    def _define_trait(self, t_name, methods):
+    def _define_trait(self, trait, methods):
         """
         Define a new trait.
 
         Arguments:
-          t_name  -- The name of the trait being defined
+          trait   -- The name of the trait being defined
           methods -- A list of methods implemented by the trait
 
         Returns:
@@ -98,44 +98,43 @@ class IR:
         method takes two parameters: "self" with unspecified type, and "value"
         with type Boolean, and returns Nothing.
         """
-
-        # Check validity of trait:
-        if re.search(TYPE_NAME_REGEX, t_name) == None:
-            raise IRError("Cannot define trait {}: invalid name".format(t_name))
-        if t_name in self.traits:
-            raise IRError("Cannot define trait {}: already defined".format(t_name))
-        if t_name in self.types:
-            raise IRError("Cannot define trait {}: already defined as type".format(t_name))
+        # Check that the trait name is valid and not already defined:
+        if re.search(TYPE_NAME_REGEX, trait) == None:
+            raise IRError("Cannot define trait " + trait + ": invalid name")
+        if trait in self.traits:
+            raise IRError("Cannot define trait " + trait + ": already defined")
+        if trait in self.types:
+            raise IRError("Cannot define trait " + trait + ": already defined as type")
 
         # Create the trait:
-        self.traits[t_name] = {
-            "name"    : t_name,
+        self.traits[trait] = {
+            "name"    : trait,
             "methods" : {}
         }
 
-        for (m_name, m_params, m_returns) in methods:
+        for (method, params, return_type) in methods:
             # Check validity of the method name:
-            if re.search(FUNC_NAME_REGEX, m_name) == None:
-                raise IRError("Method {} of trait {} has invalid name".format(m_name, t_name))
+            if re.search(FUNC_NAME_REGEX, method) == None:
+                raise IRError("Cannot define method " + method + " in trait " + trait + ": invalid name")
 
             # Check validity of the method parameters:
-            if m_params[0] != ("self", None):
-                raise IRError("Method {} of trait {} is missing self parameter".format(m_name, t_name))
-            for (p_name, p_type) in m_params:
-                if re.search(FUNC_NAME_REGEX, p_name) == None:
-                    raise IRError("Method {} of trait {} has invalid parameter name {}".format(m_name, t_name, p_name))
-                if p_type != None and not p_type in self.types:
-                    raise IRError("Method {} of trait {} references undefined type {}".format(m_name, t_name, p_type))
+            if params[0] != ("self", None):
+                raise IRError("Cannot define method " + method + " in trait " + trait + ": missing self parameter")
+            for (pname, ptype) in params:
+                if re.search(FUNC_NAME_REGEX, pname) == None:
+                    raise IRError("Cannot define method " + method + " in trait " + trait + ": invalid parameter name " + pname)
+                if ptype != None and not ptype in self.types:
+                    raise IRError("Cannot define method " + method + " in trait " + trait + ": invalid parameter type " + ptype)
 
             # Check validity of the method return type:
-            if m_returns != None and not m_returns in self.types:
-                raise IRError("Method {} of trait {} return unknown type {}".format(m_name, t_name, m_returns))
+            if return_type != None and not return_type in self.types:
+                raise IRError("Cannot define method " + method + " in trait " + trait + ": invalid return type " + return_type)
 
             # Record the method:
-            self.traits[t_name]["methods"][m_name] = {}
-            self.traits[t_name]["methods"][m_name]["name"]        = m_name
-            self.traits[t_name]["methods"][m_name]["params"]      = m_params
-            self.traits[t_name]["methods"][m_name]["return_type"] = m_returns
+            self.traits[trait]["methods"][method] = {}
+            self.traits[trait]["methods"][method]["name"]        = method
+            self.traits[trait]["methods"][method]["params"]      = params
+            self.traits[trait]["methods"][method]["return_type"] = return_type
 
 
 
