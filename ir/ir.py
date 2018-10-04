@@ -66,12 +66,12 @@ class IR:
         if name in self.traits:
             raise IRError("Type redefines trait " + name)
         self.types[name] = {
-                "kind" : kind,
-                "name" : name,
-                "attributes" : attributes,
-                "components" : components,
+                "kind"       : kind,
+                "name"       : name,
                 "implements" : [],
-                "methods"    : {}
+                "methods"    : {},
+                "attributes" : attributes,
+                "components" : components
             }
 
 
