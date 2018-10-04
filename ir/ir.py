@@ -138,51 +138,49 @@ class IR:
 
 
 
-    def _implements(self, type_name, implements):
+    def _implements_traits(self, type_, traits):
         """
         Record the traits implemented by a type, and add the definitions
         of the methods provided by that trait to the type.
 
         Arguments:
-          type_name  -- The type being extended
-          implements -- The traits to be implemented
+          type_  -- The type being extended
+          traits -- A list of traits to be implemented
 
         Returns:
           Nothing
         """
 
-        if not type_name in self.types:
-            raise IRError("Undefined type " + type_name)
+        if not type_ in self.types:
+            raise IRError("Undefined type " + type_)
 
-        type_ = self.types[type_name]
-
-        for trait in implements:
+        for trait in traits:
             if not trait in self.traits:
-                raise IRError("Type {} cannot implement undefined trait {}".format(type_name, trait))
-            if trait in type_["implements"]:
-                raise IRError("Type {} already implements trait {}".format(type_name, trait))
+                raise IRError("Cannot implement trait " + trait + " for type " + type_ + ": undefined trait")
+            if trait in self.types[type_]["implements"]:
+                raise IRError("Cannot implement trait " + trait + " for type " + type_ + ": already implemented")
 
-            type_["implements"].append(trait)
-            type_["implements"].sort()
+            self.types[type_]["implements"].append(trait)
+            self.types[type_]["implements"].sort()
 
-            for method_name in self.traits[trait]["methods"]:
-                if method_name in type_["methods"]:
-                    raise IRError("Type {} already implements method {}".format(type_name, method_name))
+            for method in self.traits[trait]["methods"]:
+                if method in self.types[type_]["methods"]:
+                    raise IRError("Cannot add method " + method + " to type " + type_ + ": already added")
 
-                type_["methods"][method_name] = {}
-                type_["methods"][method_name]["name"]   = method_name
-                type_["methods"][method_name]["params"] = []
+                self.types[type_]["methods"][method] = {}
+                self.types[type_]["methods"][method]["name"]   = method
+                self.types[type_]["methods"][method]["params"] = []
 
-                for (p_name, p_type) in self.traits[trait]["methods"][method_name]["params"]:
+                for (p_name, p_type) in self.traits[trait]["methods"][method]["params"]:
                     if p_type == None:
-                        p_type = type_name
-                    type_["methods"][method_name]["params"].append((p_name, p_type))
+                        p_type = type_
+                    self.types[type_]["methods"][method]["params"].append((p_name, p_type))
 
-                rt = self.traits[trait]["methods"][method_name]["return_type"]
+                rt = self.traits[trait]["methods"][method]["return_type"]
                 if rt == None:
-                    type_["methods"][method_name]["return_type"] = type_name
+                    self.types[type_]["methods"][method]["return_type"] = type_
                 else:
-                    type_["methods"][method_name]["return_type"] = rt
+                    self.types[type_]["methods"][method]["return_type"] = rt
 
 
 
@@ -227,9 +225,9 @@ class IR:
                           ("multiply", [("self", None), ("other",  None)                  ],  None),
                           ("divide",   [("self", None), ("other",  None)                  ],  None)])
 
-        self._implements(  "Boolean", ["Value", "Equality", "BooleanOps"])
-        self._implements(     "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
-        self._implements("FieldName", ["Value", "Equality"])
+        self._implements_traits(  "Boolean", ["Value", "Equality", "BooleanOps"])
+        self._implements_traits(     "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
+        self._implements_traits("FieldName", ["Value", "Equality"])
 
 
 
@@ -241,7 +239,7 @@ class IR:
         components = {}
         attributes["size"] = defn["size"]
         self._define_type("BitString", defn["name"], attributes, components)
-        self._implements(defn["name"], ["Value", "Equality"])
+        self._implements_traits(defn["name"], ["Value", "Equality"])
 
 
 
@@ -263,7 +261,7 @@ class IR:
             attributes["size"] = None
 
         self._define_type("Array", defn["name"], attributes, components)
-        self._implements(defn["name"], ["Equality", "IndexCollection"])
+        self._implements_traits(defn["name"], ["Equality", "IndexCollection"])
 
 
 
@@ -389,7 +387,7 @@ class IR:
         base_impl = self.types[base_type]["implements"]
 
         self._define_type(base_kind, defn["name"], base_attr, base_comp)
-        self._implements(defn["name"], base_impl + defn["implements"])
+        self._implements_traits(defn["name"], base_impl + defn["implements"])
 
 
 
