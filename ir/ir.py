@@ -828,7 +828,29 @@ class TestIR(unittest.TestCase):
         })
         self.assertEqual(ir.types["TestStruct"]["components"], {
             "fields"      : [("seq", "SeqNum", ""), ("ts",  "Timestamp", "")],
-            "constraints" : []
+            "constraints" : [
+                {
+                    "expression" : "MethodInvocation",
+                    "target"     : {
+                        "expression" : "FieldAccess",
+                        "target"     : {
+                            "expression" : "This"
+                        },
+                        "field"     : "seq"
+                    },
+                    "method"     : "eq",
+                    "arguments"  : [
+                        {
+                            "name"  : "other",
+                            "value" : {
+                                "expression" : "Constant",
+                                "type"       : "SeqNum",
+                                "value"      : 47
+                            }
+                        }
+                    ]
+                }
+            ]
         })
         self.assertEqual(ir.pdus, ["TestStruct"])
 
