@@ -231,37 +231,37 @@ class IR:
 
 
 
-    def _construct_bitstring(self, defn):
+    def _construct_bitstring(self, json):
         """
         The type constructor for a Bit String type.
         """
         attributes = {}
         components = {}
-        attributes["size"] = defn["size"]
-        self._define_type("BitString", defn["name"], attributes, components)
-        self._implements(defn["name"], ["Value", "Equality"])
+        attributes["size"] = json["size"]
+        self._define_type("BitString", json["name"], attributes, components)
+        self._implements(json["name"], ["Value", "Equality"])
 
 
 
-    def _construct_array(self, defn):
+    def _construct_array(self, json):
         """
         The type constructor for an array type.
         """
-        if not defn["element_type"] in self.types:
+        if not json["element_type"] in self.types:
             raise IRError("Unknown element type")
 
         components = {}
 
         attributes = {}
-        attributes["element_type"] = defn["element_type"]
-        attributes["length"] = defn["length"]
+        attributes["element_type"] = json["element_type"]
+        attributes["length"] = json["length"]
         if attributes["length"] != None:
             attributes["size"] = self.types[attributes["element_type"]]["attributes"]["size"] * attributes["length"]
         else:
             attributes["size"] = None
 
-        self._define_type("Array", defn["name"], attributes, components)
-        self._implements(defn["name"], ["Equality", "IndexCollection"])
+        self._define_type("Array", json["name"], attributes, components)
+        self._implements(json["name"], ["Equality", "IndexCollection"])
 
 
 
@@ -321,7 +321,7 @@ class IR:
 
 
 
-    def _construct_struct(self, defn):
+    def _construct_struct(self, json):
         """
         The type constructor for a structure type.
         """
@@ -331,7 +331,7 @@ class IR:
         components = {}
         components["fields"] = []
         field_names = {}
-        for field in defn["fields"]:
+        for field in json["fields"]:
             # Check that the field name is valid and its type exists, then record the field:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
                 raise IRError("Invalid field name: " + field["name"])
@@ -343,16 +343,16 @@ class IR:
             components["fields"].append((field["name"], field["type"], field["is_present"]))
             attributes["size"] += self.types[field["type"]]["attributes"]["size"]
 
-        self._define_type("Struct", defn["name"], attributes, components)
+        self._define_type("Struct", json["name"], attributes, components)
 
         components["constraints"] = []
-        for constraint in defn["constraints"]:
-            self._check_expression(constraint, defn["name"])
+        for constraint in json["constraints"]:
+            self._check_expression(constraint, json["name"])
             components["constraints"].append(constraint)
 
 
 
-    def _construct_enum(self, defn):
+    def _construct_enum(self, json):
         """
         The type constructor for an enumerated type.
         """
@@ -363,21 +363,21 @@ class IR:
 
         components = {}
         components["variants"] = []
-        for v in defn["variants"]:
+        for v in json["variants"]:
             if not v["type"] in self.types:
                 raise IRError("Unknown variant: " + v["type"])
             components["variants"].append(v["type"])
             components["variants"].sort()
 
-        self._define_type("Enum", defn["name"], attributes, components)
+        self._define_type("Enum", json["name"], attributes, components)
 
 
 
-    def _construct_newtype(self, defn):
+    def _construct_newtype(self, json):
         """
         The type constructor for a derived type.
         """
-        base_type = defn["derived_from"]
+        base_type = json["derived_from"]
         if not base_type in self.types:
             raise IRError("Derived from unknown type: " + base_type)
 
@@ -386,12 +386,12 @@ class IR:
         base_comp = self.types[base_type]["components"]
         base_impl = self.types[base_type]["implements"]
 
-        self._define_type(base_kind, defn["name"], base_attr, base_comp)
-        self._implements(defn["name"], base_impl + defn["implements"])
+        self._define_type(base_kind, json["name"], base_attr, base_comp)
+        self._implements(json["name"], base_impl + json["implements"])
 
 
 
-    def _construct_function(self, defn):
+    def _construct_function(self, json):
         """
         The type constructor for a function type.
         """
@@ -400,7 +400,7 @@ class IR:
         attributes = {}
         attributes["parameters"] = []
         param_names = {}
-        for param in defn["parameters"]:
+        for param in json["parameters"]:
             # Check that the parameter name is valid and its type exists, then record the field:
             if re.search(FUNC_NAME_REGEX, param["name"]) == None:
                 raise IRError("Invalid parameter name: " + param["name"])
@@ -411,22 +411,22 @@ class IR:
                 raise IRError("Unknown parameter type: " + param["type"])
             attributes["parameters"].append((param["name"], param["type"]))
 
-        if re.search(TYPE_NAME_REGEX, defn["return_type"]) == None:
-            raise IRError("Unknown return type: " + defn["return_type"])
-        attributes["return_type"] = defn["return_type"]
+        if re.search(TYPE_NAME_REGEX, json["return_type"]) == None:
+            raise IRError("Unknown return type: " + json["return_type"])
+        attributes["return_type"] = json["return_type"]
 
-        self._define_type("Function", defn["name"], attributes, components)
+        self._define_type("Function", json["name"], attributes, components)
         
 
 
 
-    def _construct_context(self, defn):
+    def _construct_context(self, json):
         """
         The constructor for the protocol context.
         """
         field_names = {}
 
-        for field in defn["fields"]:
+        for field in json["fields"]:
             # Check that the field name is valid and its type exists, then record the field:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
                 raise IRError("Invalid field name in context: " + field["name"])
@@ -461,27 +461,27 @@ class IR:
             raise IRError("Invalid protocol name: {}".format(name))
         self.protocol_name = protocol["name"]
 
-        for defn in protocol["definitions"]:
-            if   defn["construct"] == "BitString":
-                self._construct_bitstring(defn)
-            elif defn["construct"] == "Array":
-                self._construct_array(defn)
-            elif defn["construct"] == "Struct":
-                self._construct_struct(defn)
-            elif defn["construct"] == "Enum":
-                self._construct_enum(defn)
-            elif defn["construct"] == "NewType":
-                self._construct_newtype(defn)
-            elif defn["construct"] == "Function":
-                self._construct_function(defn)
-            elif defn["construct"] == "Context":
-                self._construct_context(defn)
+        for obj in protocol["definitions"]:
+            if   obj["construct"] == "BitString":
+                self._construct_bitstring(obj)
+            elif obj["construct"] == "Array":
+                self._construct_array(obj)
+            elif obj["construct"] == "Struct":
+                self._construct_struct(obj)
+            elif obj["construct"] == "Enum":
+                self._construct_enum(obj)
+            elif obj["construct"] == "NewType":
+                self._construct_newtype(obj)
+            elif obj["construct"] == "Function":
+                self._construct_function(obj)
+            elif obj["construct"] == "Context":
+                self._construct_context(obj)
             else:
-                raise IRError("Unknown type constructor in definition: {}".format(defn["construct"]))
+                raise IRError("Cannot load protocol: unknown type constructor " + obj["construct"])
 
         for pdu in protocol["pdus"]:
             if not pdu["type"] in self.types:
-                raise IRError("Unknown PDU type: {}".format(pdu["type"]))
+                raise IRError("Cannot load protocol: unknown PDU type " + pdu["type"])
             self.pdus.append(pdu["type"])
             self.pdus.sort()
 
