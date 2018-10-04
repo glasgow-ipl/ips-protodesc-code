@@ -138,7 +138,7 @@ class IR:
 
 
 
-    def _implements_traits(self, type_, traits):
+    def _implements(self, type_, traits):
         """
         Record the traits implemented by a type, and add the definitions
         of the methods provided by that trait to the type.
@@ -225,9 +225,9 @@ class IR:
                           ("multiply", [("self", None), ("other",  None)                  ],  None),
                           ("divide",   [("self", None), ("other",  None)                  ],  None)])
 
-        self._implements_traits(  "Boolean", ["Value", "Equality", "BooleanOps"])
-        self._implements_traits(     "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
-        self._implements_traits("FieldName", ["Value", "Equality"])
+        self._implements(  "Boolean", ["Value", "Equality", "BooleanOps"])
+        self._implements(     "Size", ["Value", "Equality", "Ordinal", "ArithmeticOps"])
+        self._implements("FieldName", ["Value", "Equality"])
 
 
 
@@ -239,7 +239,7 @@ class IR:
         components = {}
         attributes["size"] = defn["size"]
         self._define_type("BitString", defn["name"], attributes, components)
-        self._implements_traits(defn["name"], ["Value", "Equality"])
+        self._implements(defn["name"], ["Value", "Equality"])
 
 
 
@@ -261,7 +261,7 @@ class IR:
             attributes["size"] = None
 
         self._define_type("Array", defn["name"], attributes, components)
-        self._implements_traits(defn["name"], ["Equality", "IndexCollection"])
+        self._implements(defn["name"], ["Equality", "IndexCollection"])
 
 
 
@@ -387,7 +387,7 @@ class IR:
         base_impl = self.types[base_type]["implements"]
 
         self._define_type(base_kind, defn["name"], base_attr, base_comp)
-        self._implements_traits(defn["name"], base_impl + defn["implements"])
+        self._implements(defn["name"], base_impl + defn["implements"])
 
 
 
