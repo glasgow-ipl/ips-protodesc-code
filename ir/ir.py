@@ -286,13 +286,22 @@ class IR:
                 an = arg["name"]
                 at = self._check_expression(arg["value"], this)
                 if pn != an:
-                    raise IRError("Cannot involve method " + method + " on " + target + ": name mismatch")
+                    raise IRError("Cannot invoke method " + method + " on " + target + ": name mismatch")
                 if pt != at:
-                    raise IRError("Cannot involve method " + method + " on " + target + ": type mismatch")
+                    raise IRError("Cannot invoke method " + method + " on " + target + ": type mismatch")
             return self.types[target]["methods"][method]["return_type"]
 
         elif expr["expression"] == "FunctionInvocation":
-            raise NotImplementedError("unimplemented: FunctionInvocation")
+            if not expr["name"] in self.types:
+                raise IRError("Cannot invoke function: " + expr["name"] + " does not exist")
+            for ((an, at), p) in zip(self.types[expr["name"]]["attributes"]["parameters"], expr["arguments"]):
+                pn = p["name"]
+                pt = self._check_expression(p["value"], this)
+                if pn != an:
+                    raise IRError("Cannot invoke function " + method + ": name mismatch")
+                if pt != at:
+                    raise IRError("Cannot invoke function " + method + ": type mismatch")
+            return self.types[expr["name"]]["attributes"]["return_type"]
 
         elif expr["expression"] == "FieldAccess":
             target = self._check_expression(expr["target"], this)
