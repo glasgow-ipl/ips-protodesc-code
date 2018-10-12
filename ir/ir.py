@@ -325,11 +325,7 @@ class IR:
         elif expr["expression"] == "This":
             return this
 
-        elif expr["expression"] == "Context":
-            raise NotImplementedError("unimplemented: Context")
-
         elif expr["expression"] == "ContextAccess":
-            # FIXME: write spec for this - does it replace Context?
             return self.context[expr["field"]]["type"]
 
         elif expr["expression"] == "Constant":
