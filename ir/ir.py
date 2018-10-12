@@ -313,7 +313,14 @@ class IR:
             raise IRError("Cannot access field: " + target + " has no field named " + expr["field"])
 
         elif expr["expression"] == "IfElse":
-            raise NotImplementedError("unimplemented: IfElse")
+            condition = self._check_expression(expr["condition"], this)
+            if_true   = self._check_expression(expr["if_true"],   this)
+            if_false  = self._check_expression(expr["if_false"],  this)
+            if condition != "Boolean":
+                raise IRError("Condition in IfElse expression must be Boolean expression")
+            if if_true != if_false:
+                raise IRError("Type mismatch in IfElse branches: {} != {}".format(if_true, if_false))
+            return if_true
 
         elif expr["expression"] == "This":
             return this
@@ -1158,6 +1165,33 @@ class TestIR(unittest.TestCase):
                }
         res = ir._check_expression(expr, "Boolean")
         self.assertEqual(res, "Boolean")
+
+
+
+    def test_check_expression_IfElse(self):
+        ir = IR()
+        expr = {
+                  "expression" : "IfElse",
+                  "condition"  : {
+                      "expression" : "Constant",
+                      "type"       : "Boolean",
+                      "value"      : "True"
+                  },
+                  "if_true"    : {
+                      "expression" : "Constant",
+                      "type"       : "Boolean",
+                      "value"      : "True"
+                  },
+                  "if_false"   : {
+                      "expression" : "Constant",
+                      "type"       : "Boolean",
+                      "value"      : "False"
+                  },
+               }
+        res = ir._check_expression(expr, "Boolean")
+        self.assertEqual(res, "Boolean")
+
+
 
 
 # =============================================================================
