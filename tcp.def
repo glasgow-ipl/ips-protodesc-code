@@ -38,7 +38,7 @@ Packet := {
 	checksum	: Bit16;
 	urg_ptr		: Bit16;
 	options		: Option[];
-	eol_option	: EndOfList;
+	eol_option	: EndOfList if (options.size() % 4) != 0;
 	padding		: Bit[];
 	payload		: Bit[];
 };
