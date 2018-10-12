@@ -330,7 +330,7 @@ class IR:
 
         elif expr["expression"] == "ContextAccess":
             # FIXME: write spec for this - does it replace Context?
-            raise NotImplementedError("unimplemented: Context")
+            return self.context[expr["field"]]["type"]
 
         elif expr["expression"] == "Constant":
             if not expr["type"] in self.types:
@@ -1191,6 +1191,42 @@ class TestIR(unittest.TestCase):
         res = ir._check_expression(expr, "Boolean")
         self.assertEqual(res, "Boolean")
 
+
+
+    def test_check_expression_ContextAccess(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadContext",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "Bits16",
+                    "size"      : 16
+                },
+                {
+                    "construct"   : "Context",
+                    "fields"  : [
+                    {
+                        "name" : "foo",
+                        "type" : "Bits16"
+                    },
+                    {
+                        "name" : "bar",
+                        "type" : "Boolean"
+                    }]
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        expr = {
+                  "expression" : "ContextAccess",
+                  "field"      : "foo"
+               }
+        res = ir._check_expression(expr, "Boolean")
+        self.assertEqual(res, "Bits16")
 
 
 
