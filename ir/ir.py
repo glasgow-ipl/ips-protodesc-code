@@ -307,7 +307,7 @@ class IR:
             target = self._check_expression(expr["target"], this)
             if self.types[target]["kind"] != "Struct":
                 raise IRError("Cannot access field: " + target + " is not a struct")
-            for (field_name, field_type, field_xform) in self.types[target]["components"]["fields"]:
+            for (field_name, field_type, _, _) in self.types[target]["components"]["fields"]:
                 if expr["field"] == field_name:
                     return field_type
             raise IRError("Cannot access field: " + target + " has no field named " + expr["field"])
@@ -350,15 +350,27 @@ class IR:
         components["fields"] = []
         field_names = {}
         for field in json["fields"]:
-            # Check that the field name is valid and its type exists, then record the field:
+            # Check the field name:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
-                raise IRError("Invalid field name: " + field["name"])
+                raise IRError("Cannot parse {}::{} invalid field name".format(json["name"], field["name"]))
+
             if field["name"] in field_names:
-                raise IRError("Duplicate field name: " + field["name"])
+                raise IRError("Cannot parse {}::{} duplicate field name".format(json["name"], field["name"]))
             field_names[field["name"]] = True
+
+            # Check the field type:
             if not field["type"] in self.types:
-                raise IRError("Unknown field type: " + field["type"])
-            components["fields"].append((field["name"], field["type"], field["is_present"]))
+                raise IRError("Cannot parse {}::{} unknown type {}".format(json["name"], field["name"], field["type"]))
+
+            # Check the is_present expression:
+            if self._check_expression(field["is_present"], json["name"]) != "Boolean":
+                raise IRError("Cannot parse {}::{} is_present is not Boolean".format(json["name"], field["name"]))
+
+            # Check the transform expression:
+            # FIXME
+
+            # Record the field:
+            components["fields"].append((field["name"], field["type"], field["is_present"], field["transform"]))
             attributes["size"] += self.types[field["type"]]["attributes"]["size"]
 
         self._define_type("Struct", json["name"], attributes, components)
@@ -756,7 +768,6 @@ class TestIR(unittest.TestCase):
 
     def test_load_struct(self):
         ir = IR()
-        # FIXME: this doesn't test is_present
         # FIXME: this doesn't test transform
         protocol = """
             {
@@ -780,12 +791,22 @@ class TestIR(unittest.TestCase):
                             {
                                 "name"       : "seq",
                                 "type"       : "SeqNum",
-                                "is_present" : ""
+                                "is_present" : {
+                                    "expression" : "Constant",
+                                    "type"       : "Boolean",
+                                    "value"      : "True"
+                                },
+                                "transform"  : null
                             },
                             {
                                 "name"       : "ts",
                                 "type"       : "Timestamp",
-                                "is_present" : ""
+                                "is_present" : {
+                                    "expression" : "Constant",
+                                    "type"       : "Boolean",
+                                    "value"      : "True"
+                                },
+                                "transform"  : null
                             }
                         ],
                         "constraints" : [
@@ -839,7 +860,10 @@ class TestIR(unittest.TestCase):
             "size"        : 48
         })
         self.assertEqual(ir.types["TestStruct"]["components"], {
-            "fields"      : [("seq", "SeqNum", ""), ("ts",  "Timestamp", "")],
+            "fields"      : [
+                ("seq", "SeqNum",    {"expression" : "Constant", "type" : "Boolean", "value" : "True"}, None),
+                ("ts",  "Timestamp", {"expression" : "Constant", "type" : "Boolean", "value" : "True"}, None),
+            ],
             "constraints" : [
                 {
                     "expression" : "MethodInvocation",
