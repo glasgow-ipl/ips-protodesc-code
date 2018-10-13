@@ -29,8 +29,9 @@ import json
 import re
 
 # Type names begin with an upper case letter, function names do not:
-TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$]+$"
-FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$]+$"
+TYPE_NAME_REGEX  = "^[A-Z][A-Za-z0-9$]+$"
+FUNC_NAME_REGEX  = "^[a-z][A-Za-z0-9$]+$"
+FIELD_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
 
 class IRError(Exception):
     def __init__(self, reason):
@@ -367,7 +368,33 @@ class IR:
                 raise IRError("Cannot parse {}::{} is_present is not Boolean".format(json["name"], field["name"]))
 
             # Check the transform expression:
-            # FIXME
+            if field["transform"] != None:
+                if re.search(FIELD_NAME_REGEX, field["transform"]["into_name"]) == None:
+                    raise IRError("Cannot parse {}::{} transform - invalid into_name".format(json["name"], field["name"]))
+
+                if field["transform"]["into_name"] in field_names:
+                    raise IRError("Cannot parse {}::{} transform - duplicate into_name".format(json["name"], field["name"]))
+
+                if not field["transform"]["into_type"] in self.types:
+                    raise IRError("Cannot parse {}::{} transform - invalid into_type".format(json["name"], field["name"]))
+
+                using = field["transform"]["using"]
+                if self.types[using]["attributes"]["return_type"] != field["transform"]["into_type"]:
+                    raise IRError("Cannot parse {}::{} transform - mismatch using return type".format(json["name"], field["name"]))
+
+                params = self.types[using]["attributes"]["parameters"]
+                # The using function must take only one parameter:
+                if len(params) != 1:
+                    raise IRError("Cannot parse {}::{} transform - using function takes multiple parameters".format(json["name"], field["name"]))
+                # ...and the type of that parameter MUST match the type of the original field:
+                _, pt = params[0]
+                if pt != field["type"]:
+                    raise IRError("Cannot parse {}::{} transform - using function parameter type mismatch".format(json["name"], field["name"]))
+
+                orig_size = self.types[field["type"]]                  ["attributes"]["size"]
+                into_size = self.types[field["transform"]["into_type"]]["attributes"]["size"]
+                if orig_size != into_size:
+                    raise IRError("Cannot parse {}::{} transform - size mismatch".format(json["name"], field["name"]))
 
             # Record the field:
             components["fields"].append((field["name"], field["type"], field["is_present"], field["transform"]))
@@ -768,12 +795,16 @@ class TestIR(unittest.TestCase):
 
     def test_load_struct(self):
         ir = IR()
-        # FIXME: this doesn't test transform
         protocol = """
             {
                 "construct"   : "Protocol",
                 "name"        : "LoadStruct",
                 "definitions" : [
+                    {
+                        "construct" : "BitString",
+                        "name"      : "SeqNumTrans",
+                        "size"      : 16
+                    },
                     {
                         "construct" : "BitString",
                         "name"      : "SeqNum",
@@ -783,6 +814,16 @@ class TestIR(unittest.TestCase):
                         "construct" : "BitString",
                         "name"      : "Timestamp",
                         "size"      : 32
+                    },
+                    {
+                        "construct"   : "Function",
+                        "name"        : "TransformSeq",
+                        "parameters"  : [
+                        {
+                            "name" : "seq",
+                            "type" : "SeqNum"
+                        }],
+                        "return_type" : "SeqNumTrans"
                     },
                     {
                         "construct"   : "Struct",
@@ -796,7 +837,11 @@ class TestIR(unittest.TestCase):
                                     "type"       : "Boolean",
                                     "value"      : "True"
                                 },
-                                "transform"  : null
+                                "transform"  : {
+                                    "into_name" : "ext_seq",
+                                    "into_type" : "SeqNumTrans",
+                                    "using"     : "TransformSeq"
+                                }
                             },
                             {
                                 "name"       : "ts",
@@ -840,7 +885,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  4 + 3)
+        self.assertEqual(len(ir.types),  4 + 5)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadStruct")
@@ -861,7 +906,13 @@ class TestIR(unittest.TestCase):
         })
         self.assertEqual(ir.types["TestStruct"]["components"], {
             "fields"      : [
-                ("seq", "SeqNum",    {"expression" : "Constant", "type" : "Boolean", "value" : "True"}, None),
+                ("seq", "SeqNum",    {"expression" : "Constant", "type" : "Boolean", "value" : "True"}, 
+                    {
+                        "into_name" : "ext_seq",
+                        "into_type" : "SeqNumTrans",
+                        "using"     : "TransformSeq"
+                    }
+                ),
                 ("ts",  "Timestamp", {"expression" : "Constant", "type" : "Boolean", "value" : "True"}, None),
             ],
             "constraints" : [
