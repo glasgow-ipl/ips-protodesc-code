@@ -29,8 +29,9 @@ import json
 import re
 
 # Type names begin with an upper case letter, function names do not:
-TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$]+$"
-FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$]+$"
+TYPE_NAME_REGEX  = "^[A-Z][A-Za-z0-9$]+$"
+FUNC_NAME_REGEX  = "^[a-z][A-Za-z0-9$]+$"
+FIELD_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
 
 class IRError(Exception):
     def __init__(self, reason):
@@ -307,23 +308,26 @@ class IR:
             target = self._check_expression(expr["target"], this)
             if self.types[target]["kind"] != "Struct":
                 raise IRError("Cannot access field: " + target + " is not a struct")
-            for (field_name, field_type, field_xform) in self.types[target]["components"]["fields"]:
+            for (field_name, field_type, _, _) in self.types[target]["components"]["fields"]:
                 if expr["field"] == field_name:
                     return field_type
             raise IRError("Cannot access field: " + target + " has no field named " + expr["field"])
 
         elif expr["expression"] == "IfElse":
-            raise NotImplementedError("unimplemented: IfElse")
+            condition = self._check_expression(expr["condition"], this)
+            if_true   = self._check_expression(expr["if_true"],   this)
+            if_false  = self._check_expression(expr["if_false"],  this)
+            if condition != "Boolean":
+                raise IRError("Condition in IfElse expression must be Boolean expression")
+            if if_true != if_false:
+                raise IRError("Type mismatch in IfElse branches: {} != {}".format(if_true, if_false))
+            return if_true
 
         elif expr["expression"] == "This":
             return this
 
-        elif expr["expression"] == "Context":
-            raise NotImplementedError("unimplemented: Context")
-
         elif expr["expression"] == "ContextAccess":
-            # FIXME: write spec for this - does it replace Context?
-            raise NotImplementedError("unimplemented: Context")
+            return self.context[expr["field"]]["type"]
 
         elif expr["expression"] == "Constant":
             if not expr["type"] in self.types:
@@ -347,15 +351,53 @@ class IR:
         components["fields"] = []
         field_names = {}
         for field in json["fields"]:
-            # Check that the field name is valid and its type exists, then record the field:
+            # Check the field name:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
-                raise IRError("Invalid field name: " + field["name"])
+                raise IRError("Cannot parse {}::{} invalid field name".format(json["name"], field["name"]))
+
             if field["name"] in field_names:
-                raise IRError("Duplicate field name: " + field["name"])
+                raise IRError("Cannot parse {}::{} duplicate field name".format(json["name"], field["name"]))
             field_names[field["name"]] = True
+
+            # Check the field type:
             if not field["type"] in self.types:
-                raise IRError("Unknown field type: " + field["type"])
-            components["fields"].append((field["name"], field["type"], field["is_present"]))
+                raise IRError("Cannot parse {}::{} unknown type {}".format(json["name"], field["name"], field["type"]))
+
+            # Check the is_present expression:
+            if self._check_expression(field["is_present"], json["name"]) != "Boolean":
+                raise IRError("Cannot parse {}::{} is_present is not Boolean".format(json["name"], field["name"]))
+
+            # Check the transform expression:
+            if field["transform"] != None:
+                if re.search(FIELD_NAME_REGEX, field["transform"]["into_name"]) == None:
+                    raise IRError("Cannot parse {}::{} transform - invalid into_name".format(json["name"], field["name"]))
+
+                if field["transform"]["into_name"] in field_names:
+                    raise IRError("Cannot parse {}::{} transform - duplicate into_name".format(json["name"], field["name"]))
+
+                if not field["transform"]["into_type"] in self.types:
+                    raise IRError("Cannot parse {}::{} transform - invalid into_type".format(json["name"], field["name"]))
+
+                using = field["transform"]["using"]
+                if self.types[using]["attributes"]["return_type"] != field["transform"]["into_type"]:
+                    raise IRError("Cannot parse {}::{} transform - mismatch using return type".format(json["name"], field["name"]))
+
+                params = self.types[using]["attributes"]["parameters"]
+                # The using function must take only one parameter:
+                if len(params) != 1:
+                    raise IRError("Cannot parse {}::{} transform - using function takes multiple parameters".format(json["name"], field["name"]))
+                # ...and the type of that parameter MUST match the type of the original field:
+                _, pt = params[0]
+                if pt != field["type"]:
+                    raise IRError("Cannot parse {}::{} transform - using function parameter type mismatch".format(json["name"], field["name"]))
+
+                orig_size = self.types[field["type"]]                  ["attributes"]["size"]
+                into_size = self.types[field["transform"]["into_type"]]["attributes"]["size"]
+                if orig_size != into_size:
+                    raise IRError("Cannot parse {}::{} transform - size mismatch".format(json["name"], field["name"]))
+
+            # Record the field:
+            components["fields"].append((field["name"], field["type"], field["is_present"], field["transform"]))
             attributes["size"] += self.types[field["type"]]["attributes"]["size"]
 
         self._define_type("Struct", json["name"], attributes, components)
@@ -753,13 +795,16 @@ class TestIR(unittest.TestCase):
 
     def test_load_struct(self):
         ir = IR()
-        # FIXME: this doesn't test is_present
-        # FIXME: this doesn't test transform
         protocol = """
             {
                 "construct"   : "Protocol",
                 "name"        : "LoadStruct",
                 "definitions" : [
+                    {
+                        "construct" : "BitString",
+                        "name"      : "SeqNumTrans",
+                        "size"      : 16
+                    },
                     {
                         "construct" : "BitString",
                         "name"      : "SeqNum",
@@ -771,18 +816,42 @@ class TestIR(unittest.TestCase):
                         "size"      : 32
                     },
                     {
+                        "construct"   : "Function",
+                        "name"        : "TransformSeq",
+                        "parameters"  : [
+                        {
+                            "name" : "seq",
+                            "type" : "SeqNum"
+                        }],
+                        "return_type" : "SeqNumTrans"
+                    },
+                    {
                         "construct"   : "Struct",
                         "name"        : "TestStruct",
                         "fields"      : [
                             {
                                 "name"       : "seq",
                                 "type"       : "SeqNum",
-                                "is_present" : ""
+                                "is_present" : {
+                                    "expression" : "Constant",
+                                    "type"       : "Boolean",
+                                    "value"      : "True"
+                                },
+                                "transform"  : {
+                                    "into_name" : "ext_seq",
+                                    "into_type" : "SeqNumTrans",
+                                    "using"     : "TransformSeq"
+                                }
                             },
                             {
                                 "name"       : "ts",
                                 "type"       : "Timestamp",
-                                "is_present" : ""
+                                "is_present" : {
+                                    "expression" : "Constant",
+                                    "type"       : "Boolean",
+                                    "value"      : "True"
+                                },
+                                "transform"  : null
                             }
                         ],
                         "constraints" : [
@@ -816,7 +885,7 @@ class TestIR(unittest.TestCase):
             }
         """
         ir.load(protocol)
-        self.assertEqual(len(ir.types),  4 + 3)
+        self.assertEqual(len(ir.types),  4 + 5)
         self.assertEqual(len(ir.traits), 7)
         self.assertEqual(len(ir.pdus),   1)
         self.assertEqual(ir.protocol_name, "LoadStruct")
@@ -836,7 +905,16 @@ class TestIR(unittest.TestCase):
             "size"        : 48
         })
         self.assertEqual(ir.types["TestStruct"]["components"], {
-            "fields"      : [("seq", "SeqNum", ""), ("ts",  "Timestamp", "")],
+            "fields"      : [
+                ("seq", "SeqNum",    {"expression" : "Constant", "type" : "Boolean", "value" : "True"}, 
+                    {
+                        "into_name" : "ext_seq",
+                        "into_type" : "SeqNumTrans",
+                        "using"     : "TransformSeq"
+                    }
+                ),
+                ("ts",  "Timestamp", {"expression" : "Constant", "type" : "Boolean", "value" : "True"}, None),
+            ],
             "constraints" : [
                 {
                     "expression" : "MethodInvocation",
@@ -1158,6 +1236,69 @@ class TestIR(unittest.TestCase):
                }
         res = ir._check_expression(expr, "Boolean")
         self.assertEqual(res, "Boolean")
+
+
+
+    def test_check_expression_IfElse(self):
+        ir = IR()
+        expr = {
+                  "expression" : "IfElse",
+                  "condition"  : {
+                      "expression" : "Constant",
+                      "type"       : "Boolean",
+                      "value"      : "True"
+                  },
+                  "if_true"    : {
+                      "expression" : "Constant",
+                      "type"       : "Boolean",
+                      "value"      : "True"
+                  },
+                  "if_false"   : {
+                      "expression" : "Constant",
+                      "type"       : "Boolean",
+                      "value"      : "False"
+                  },
+               }
+        res = ir._check_expression(expr, "Boolean")
+        self.assertEqual(res, "Boolean")
+
+
+
+    def test_check_expression_ContextAccess(self):
+        ir = IR()
+        protocol = """
+            {
+                "construct"   : "Protocol",
+                "name"        : "LoadContext",
+                "definitions" : [
+                {
+                    "construct" : "BitString",
+                    "name"      : "Bits16",
+                    "size"      : 16
+                },
+                {
+                    "construct"   : "Context",
+                    "fields"  : [
+                    {
+                        "name" : "foo",
+                        "type" : "Bits16"
+                    },
+                    {
+                        "name" : "bar",
+                        "type" : "Boolean"
+                    }]
+                }],
+                "pdus"        : []
+            }
+        """
+        ir.load(protocol)
+        expr = {
+                  "expression" : "ContextAccess",
+                  "field"      : "foo"
+               }
+        res = ir._check_expression(expr, "Boolean")
+        self.assertEqual(res, "Bits16")
+
 
 
 # =============================================================================
