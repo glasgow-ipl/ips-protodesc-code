@@ -7,13 +7,13 @@ EndOfList := {
 	kind	: OptionKind;
 } where {
 	kind == 0;
-}
+};
 
 NoOp := {
 	kind	: OptionKind;
 } where {
 	kind == 1;
-}
+};
 
 MSS := {
 	kind	: OptionKind;
@@ -38,12 +38,15 @@ Packet := {
 	checksum	: Bit16;
 	urg_ptr		: Bit16;
 	options		: Option[];
-	eol_option	: EndOfList if (options.size() % 4) != 0;
+	eol_option	: EndOfList;
 	padding		: Bit[];
 	payload		: Bit[];
+} where {
+	eol_option.is_present == (options.length > 0);
 };
 
-#todo: constrain padding length based on option width#
-#todo: set presence of eol_option based on option length#
+#padding.length == 32 - (options.length % 32);#
+#todo: add modulo (%) operator? #
+#todo: make sure difference between length and width is clear in parser #
 
 PDUs := {Packet};
