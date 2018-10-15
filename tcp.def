@@ -38,11 +38,9 @@ Packet := {
 	checksum	: Bit16;
 	urg_ptr		: Bit16;
 	options		: Option[];
-	eol_option	: EndOfList;
+	eol_option	: EndOfList ? (options.length > 0);
 	padding		: Bit[];
 	payload		: Bit[];
-} where {
-	eol_option.is_present == (options.length > 0);
 };
 
 #padding.length == 32 - (options.length % 32);#
