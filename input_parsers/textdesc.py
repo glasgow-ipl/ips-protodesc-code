@@ -226,7 +226,7 @@ def build_accessor_chain(type, refs):
 			    "field_name": refs[-1]}
 
 def build_tree(start, pairs, expression_type):
-	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"),
+	ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"), "%": ("modulo", "arith"),
 	       ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
 	       "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"),
 	       "==": ("eq", "equality"), "!=": ("ne", "equality")}
@@ -263,7 +263,7 @@ def parse_file(filename):
 							 | field_accessor
 							 | '(' cond_expr:expr ')' -> expr
 				
-				multiplicative_expr = primary_expr:left (('*'|'/'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+				multiplicative_expr = primary_expr:left (('*'|'/'|'%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 				additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
 			
 				ordinal_expr = additive_expr:left (('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")

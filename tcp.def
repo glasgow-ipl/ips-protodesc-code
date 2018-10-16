@@ -41,10 +41,10 @@ Packet := {
 	eol_option	: EndOfList ? (options.length > 0);
 	padding		: Bit[];
 	payload		: Bit[];
+} where {
+	padding.length == 32 - (options.length % 32);
 };
 
-#padding.length == 32 - (options.length % 32);#
-#todo: add modulo (%) operator? #
 #todo: make sure difference between length and width is clear in parser #
 
 PDUs := {Packet};
