@@ -4,7 +4,8 @@ import json
 class Formatter:
 	def __init__(self):
 		self.definitions = []
-
+		self.type_lengths = {}
+		
 	def output(self):
 		libs = """#include <stdint.h>
 #include <stdio.h>
@@ -19,6 +20,7 @@ class Formatter:
 			width = 8
 			name = "Bits"
 		typedef = "typedef uint%d_t %s;" % (width, name)
+		self.type_lengths[name] = int(width / 8)
 		self.definitions.append(typedef)
 		
 	def array(self, name, type, length):
@@ -41,10 +43,21 @@ class Formatter:
 } %s;""" % (name, "\n".join(field_defs), name)
 
 		# construct parser function
+		field_memcpys = []
+		cumulative_len = 0
+		for field in fields:
+			if field["type"] in self.type_lengths:
+				length = self.type_lengths[field["type"]]
+				cumulative_len += length
+			else:
+				length = "len-%d" % (cumulative_len)
+			field_memcpys.append("memcpy(&%s->%s, buffer, %s);" % (name.lower(), field["name"], length))
+			field_memcpys.append("buffer = buffer + %s;" % (length))	
 		parser_func = """%s *parse_%s(uint8_t *buffer, size_t len) {
     %s *%s = (%s *) malloc(sizeof(%s));
+    %s
     return %s;
-}""" % (name, name.lower(), name, name.lower(), name, name, name.lower())
+}""" % (name, name.lower(), name, name.lower(), name, name, "\n\t".join(field_memcpys), name.lower())
 
 		self.definitions.append(struct_def + "\n\n" + parser_func)
 		
