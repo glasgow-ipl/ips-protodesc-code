@@ -3,12 +3,6 @@ SequenceNumber := Bit32;
 OptionKind := Bit8;
 OptionLength := Bit8;
 
-EndOfList := {
-	kind	: OptionKind;
-} where {
-	kind == 0;
-};
-
 NoOp := {
 	kind	: OptionKind;
 } where {
@@ -38,13 +32,14 @@ Packet := {
 	checksum	: Bit16;
 	urg_ptr		: Bit16;
 	options		: Option[];
-	eol_option	: EndOfList ? (options.length > 0);
 	padding		: Bit[];
 	payload		: Bit[];
 } where {
-	padding.length == 32 - (options.length % 32);
+	padding.length == offset - options.width;
 };
 
 #todo: make sure difference between length and width is clear in parser #
-
+#length of an array: number of items#
+#width of a field: number of bits taken to represent#
+ 
 PDUs := {Packet};
