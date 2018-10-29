@@ -35,7 +35,7 @@ Packet := {
 	padding		: Bit[];
 	payload		: Bit[];
 } where {
-	padding.length == offset - options.width;
+	padding.length == (32*offset) - options.width;
 };
 
 #todo: make sure difference between length and width is clear in parser #
