@@ -25,7 +25,7 @@ def dfs_struct(formatter, type_constructors, defined, struct_name):
 		print("proc field %s" % field["name"])
 		dfs(formatter, type_constructors, defined, field["type"])
 	if struct_name not in defined:
-		formatter.struct(struct_name, struct["fields"])
+		formatter.struct(struct_name, struct["fields"], struct["constraints"])
 		defined.append(struct_name)
 
 def dfs_enum(formatter, type_constructors, defined, enum_name):
