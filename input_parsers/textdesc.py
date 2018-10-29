@@ -234,7 +234,7 @@ def build_tree(start, pairs, expression_type):
 		if expression_type == "IfElse":
 			start = {"expression": expression_type, "condition": start, "if_true": pair[1], "if_false": pair[2]}
 		else:
-			start = {"expression": "MethodInvocation", "method": ops[pair[0]][0], "self": pair[1], "arguments": {"name": "other", "value": start}}
+			start = {"expression": "MethodInvocation", "method": ops[pair[0]][0], "self": pair[1], "arguments": [{"name": "other", "value": start}]}
 	return start
 
 def parse_file(filename):
