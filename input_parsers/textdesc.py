@@ -4,7 +4,6 @@ import sys
 import json
 from shared import *
 
-
 def parse_file(filename):
 	protocol_name = filename.split(".")[0]
 	grammar = r"""

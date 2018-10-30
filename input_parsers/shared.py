@@ -1,14 +1,13 @@
 import re
 
+
 def new_protocol(protocol_name, type_namespace):
     pdus = type_namespace["PDUs"]["variants"]
     type_namespace.pop("PDUs")
-    return {
-        "construct": "Protocol",
-        "name": protocol_name,
-        "definitions": [element for element in type_namespace.values()],
-        "pdus": pdus
-    }
+    return {"construct": "Protocol",
+            "name": protocol_name,
+            "definitions": [element for element in type_namespace.values()],
+            "pdus": pdus}
 
 
 def check_typename(name, type_namespace, should_be_defined):
@@ -212,40 +211,44 @@ def new_func_call(name, args, type_namespace):
 
 
 def build_integer_expression(num, type_namespace):
-    #TODO: widths
+    # TODO: widths
     width = "32"
     int_typename = "Int$" + width
-    if int_typename not in type_namespace: 
+    if int_typename not in type_namespace:
         if "BitString$" + width not in type_namespace:
             new_bitstring(None, ("Bit", int(width)), type_namespace)
         type_namespace[int_typename] = {"construct": "NewType",
                                         "name": int_typename,
                                         "derived_from": "BitString$" + width,
-                                        "implements": [{"trait": "Ordinal"}, 
+                                        "implements": [{"trait": "Ordinal"},
                                                        {"trait": "ArithmeticOps"}]}
     return {"expression": "Constant", "type": int_typename, "value": num}
 
+
 def build_accessor_chain(type, refs):
-    if len(refs) != 1 and (refs[-1] == "length" or refs[-1] == "size"  or refs[-1] == "width"):
+    if len(refs) != 1 and (refs[-1] == "length" or refs[-1] == "size" or refs[-1] == "width"):
         return {"expression": "MethodInvocation",
-            "method": refs[-1],
-            "self":  build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
-            "arguments": None}
+                "method": refs[-1],
+                "self": build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
+                "arguments": None}
     else:
         return {"expression": "FieldAccess",
                 "target": build_accessor_chain(type, refs[:-1]) if len(refs) > 1 else type,
                 "field_name": refs[-1]}
 
+
 def build_tree(start, pairs, expression_type):
-    ops = {"+": ("plus", "arith") , "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"), "%": ("modulo", "arith"),
-           ">=": ("ge", "ord"), ">": ("gt","ord"), "<": ("lt", "ord"), "<=": ("le","ord"),
+    ops = {"+": ("plus", "arith"), "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"),
+           "%": ("modulo", "arith"),
+           ">=": ("ge", "ord"), ">": ("gt", "ord"), "<": ("lt", "ord"), "<=": ("le", "ord"),
            "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"),
            "==": ("eq", "equality"), "!=": ("ne", "equality")}
     for pair in pairs:
         if expression_type == "IfElse":
             start = {"expression": expression_type, "condition": start, "if_true": pair[1], "if_false": pair[2]}
         else:
-            start = {"expression": "MethodInvocation", "method": ops[pair[0]][0], "self": pair[1], "arguments": {"name": "other", "value": start}}
+            start = {"expression": "MethodInvocation", "method": ops[pair[0]][0], "self": pair[1],
+                     "arguments": [{"name": "other", "value": start}]}
     return start
 
 
