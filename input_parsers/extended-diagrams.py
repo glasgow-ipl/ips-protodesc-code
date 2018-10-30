@@ -168,17 +168,21 @@ def parse_convert(packet, protocol_name):
     type_namespace = {}
 
     fields = []
+    bitstrings = []
 
     for p in packet:
-        typeName = generate_type_name(p["name"])
+        typeName = "BitString$" + str(p["width"])
         fieldName = generate_field_name(p["name"])
 
-        if p["width"] is None:
-            bits = None
-        else:
-            bits = ('Bits', p["width"])
+        # If a bitstring of this width hasn't been added yet, add it
+        if p["width"] not in bitstrings:
+            if p["width"] is None:
+                bits = None
+            else:
+                bits = ('Bits', p["width"])
+            new_bitstring(typeName, bits, type_namespace)
+            bitstrings.append(p["width"])
 
-        new_bitstring(typeName, bits, type_namespace)
         fields.append(new_field(fieldName, (typeName, None), None, type_namespace))
 
     new_struct("Packet", fields, None, type_namespace, [], [])
