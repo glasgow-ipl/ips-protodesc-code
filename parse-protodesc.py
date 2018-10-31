@@ -97,7 +97,7 @@ def main():
 		for variant in proto["pdus"]:
 			name = variant["type"]
 			dfs(formatter, type_constructors, defined, name)
-		formatter.protocol(proto["pdus"])
+		formatter.protocol(proto["name"], proto["pdus"])
 		output = formatter.output()
 	except Exception as e:
 		print(e)
