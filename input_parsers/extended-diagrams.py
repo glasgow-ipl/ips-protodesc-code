@@ -5,6 +5,7 @@ import json
 import re
 from shared import *
 
+
 def ascii_data_processor(d):
     output = []
     for x in d:
@@ -45,7 +46,6 @@ def data_processor(asciiData, textData):
                 textData.remove(td)
 
     return asciiData
-
 
 def text_title_processor(name, data):
     name = "".join(name)
@@ -110,6 +110,9 @@ def generate_field_name(str):
     str = re.sub('_+', '_', str)
     return str
 
+def test(data):
+    return {'name': "".join(data).strip(), 'width': int((len(data)+1)/2)}
+
 def parse_extended_diagram(str):
     grammar = r"""
                 letter = anything:x ?(x in ascii_letters) -> x
@@ -126,7 +129,7 @@ def parse_extended_diagram(str):
                 separator = '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
             
                 rowStart = '|'
-                field = (' ' | letter)*:data '|' -> {'name': "".join(data).strip(), 'width': int((len(data)+1)/2)}
+                field = (((' ' | letter)*:d1 '|' crlf ws '+' (' ' | letter)*:d2 '+' crlf ws '|' (' ' | letter)*:d3 -> d1 + d2 + d3)|(' ' | letter)*):data '|' -> test(data) 
             
                 header = ws header1a ws crlf ws header1b ws crlf 
                 row = ws rowStart field*:data crlf -> data
@@ -159,6 +162,7 @@ def parse_extended_diagram(str):
         "text_title_processor": text_title_processor,
         "text_bits_processor": text_bits_processor,
         "text_control_bits_processor": text_control_bits_processor,
+        "test": test
     })
 
     return parser(str).expr()
