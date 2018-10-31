@@ -5,6 +5,7 @@ class Formatter:
 	def __init__(self):
 		self.definitions = []
 		self.type_lengths = {}
+		self.field_lengths = {}
 		
 	def output(self):
 		libs = """#include <stdint.h>
@@ -42,7 +43,7 @@ class Formatter:
 		# Field width
 		if json_expr["expression"] == "MethodInvocation" and json_expr["method"] == "width":
 			field = self.expression(struct_name, json_expr["self"])
-			return "sizeof(%s)" % (field)
+			return self.field_lengths[field]
 
 		print(json_expr)
 
@@ -84,17 +85,18 @@ class Formatter:
 				length = "len-%d" % (cumulative_len)
 			field_memcpys.append("memcpy(&%s->%s, buffer, %s);" % (name.lower(), field["name"], length))
 			field_memcpys.append("buffer = buffer + %s;" % (length))
+			self.field_lengths[name.lower() + "->" + field["name"].lower()] = length
 		
 		# constraints
 		constraint_checks = []
 		
 		for constraint in constraints:
-			constraint_checks.append("if !(%s) {" % (self.expression(name.lower(), constraint)))
+			constraint_checks.append("if (!(%s)) {" % (self.expression(name.lower(), constraint)))
 			constraint_checks.append("    free(%s);" % (name.lower()))
 			constraint_checks.append("    return -1;")
 			constraint_checks.append("}")
 
-		parser_func = """%s *parse_%s(uint8_t *buffer, size_t len) {
+		parser_func = """int parse_%s(uint8_t *buffer, size_t len, %s **parsed_%s) {
 	/* malloc struct, and parse buffer into it */
     %s *%s = (%s *) malloc(sizeof(%s));
     %s
@@ -102,8 +104,9 @@ class Formatter:
     /* check constraints */
     %s
     
-    return %s;
-}""" % (name, name.lower(), name, name.lower(), name, name, "\n\t".join(field_memcpys), "\n\t".join(constraint_checks), name.lower())
+    *parsed_%s = %s;
+    return 0;
+}""" % (name.lower(), name, name.lower(), name, name.lower(), name, name, "\n\t".join(field_memcpys), "\n\t".join(constraint_checks), name.lower(), name.lower())
 
 		self.definitions.append(struct_def + "\n\n" + parser_func)
 		
@@ -111,8 +114,44 @@ class Formatter:
 		#TODO
 		self.definitions.append("enum %s %s" % (name, str(variants)))
 		
-	def protocol(self, pdus):
-		#TODO
+	def protocol(self, name, pdus):
+		pdu_parsers = []
+		for pdu in pdus:
+			pdu_parsers.append("/* try to parse as %s */" % pdu["type"])
+			pdu_parsers.append("if (parse_%s(buffer, filesize, (%s**) pdu) == 0) {" % (pdu["type"].lower(), pdu["type"]))
+			pdu_parsers.append("    printf(\"Parsed: %s\\n\");" % (pdu["type"]))
+			pdu_parsers.append("}")
+
 		self.definitions.append( """int main(int argc, char *argv[]) {
-	// TODO %s
-}""" % (str(pdus)))
+	if (argc != 2) {
+		printf("usage: %%s <buffer filename>\\n", argv[0]);
+		return -1;
+	}
+	
+	/* open file */
+	FILE *fp = fopen(argv[1], "rb");
+	
+	/* get file size */
+	fseek(fp, 0, SEEK_END);
+	size_t filesize = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	
+	/* malloc buffer */
+	uint8_t *buffer = malloc(filesize);
+	
+	/* read file into buffer */
+	if (fread(&buffer, sizeof(int8_t), filesize, fp) != filesize) {
+		printf("error: could not read file\\n");
+		return -1;
+	}
+	
+	fclose(fp);
+	
+	/* parse buffer using PDU parsing functions */
+	void **pdu;
+	%s
+	
+	/* clean-up */
+	free(*pdu);
+	free(buffer);
+}""" % ("\n\t".join(pdu_parsers)))
