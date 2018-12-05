@@ -74,9 +74,10 @@ class Trait:
 # Expressions:
 
 class Expression:
-    pass
+    def type(self):
+        raise IRError("Expression::type not re-implemented by subclass")
 
-class MethodInvocationExpression:
+class MethodInvocationExpression(Expression):
     def __init__(self, target, method, args):
         if re.search(FUNC_NAME_REGEX, method) == None:
             raise IRError("Cannot create expression {}: malformed method name".format(method))
@@ -90,7 +91,7 @@ class MethodInvocationExpression:
         method = target.get_method(self.method)
         return method.return_type
 
-class FunctionInvocationExpression:
+class FunctionInvocationExpression(Expression):
     def __init__(self, name, args):
         if re.search(FUNC_NAME_REGEX, name) == None:
             raise IRError("Cannot create expression {}: malformed function name".format(name))
@@ -102,7 +103,7 @@ class FunctionInvocationExpression:
         # FIXME: implement this
         raise IRError("unimplemented (FunctionInvocationExpression::type)")
 
-class FieldAccessExpression:
+class FieldAccessExpression(Expression):
     def __init__(self, target, field):
         if target.type().kind != "Struct":
             raise IRError("Cannot access field of object with type {}".format(target.type()))
@@ -114,7 +115,7 @@ class FieldAccessExpression:
         field  = target.get_field(self.field)
         return field.type
 
-class ContextAccessExpression:
+class ContextAccessExpression(Expression):
     def __init__(self, field):
         self.field = field
 
@@ -122,7 +123,7 @@ class ContextAccessExpression:
         # FIXME: implement this
         raise IRError("unimplemented (ContextAccessExpression::type)")
 
-class IfElseExpression:
+class IfElseExpression(Expression):
     def __init__(self, condition, if_true, if_false):
         self.condition = condition
         self.if_true   = if_true
@@ -135,14 +136,14 @@ class IfElseExpression:
     def type(self):
         return self.if_true.type()
 
-class ThisExpression:
+class ThisExpression(Expression):
     def __init__(self, this):
         self.this = this
 
     def type(self):
         return self.this
 
-class ConstantExpression:
+class ConstantExpression(Expression):
     def __init__(self, type_, value):
         self.type_ = type_
         self.value = value
@@ -187,7 +188,7 @@ class Type:
     def __str__(self):
         return "Type<{}::{}>".format(self.kind, self.name)
 
-    def implement_trait(self, trait):
+    def implement_trait(self, trait: Trait):
         if trait in self.traits:
             raise IRError("Cannot implement trait {} for type {}: already implemented".format(trait.name, self.name))
         else:
@@ -198,7 +199,7 @@ class Type:
                 else:
                     self.methods[method.name] = method
 
-    def get_method(self, method_name):
+    def get_method(self, method_name) -> Function:
         return self.methods[method_name]
 
 class Nothing(Type):
@@ -253,16 +254,16 @@ class Struct(Type):
         self.constraints = []
         self.actions     = []
 
-    def add_field(self, field):
+    def add_field(self, field: Field):
         self.fields.append(field)
 
-    def add_constraint(self, constraint):
+    def add_constraint(self, constraint: Expression):
         self.constraints.append(constraint)
 
-    def add_action(self, action):
+    def add_action(self, action: Expression):
         self.actions.append(action)
 
-    def get_field(self, field_name):
+    def get_field(self, field_name) -> Optional[Field]:
         for field in self.fields:
             if field.name == field_name:
                 return field
@@ -342,7 +343,7 @@ class Protocol:
         if re.search(TYPE_NAME_REGEX, irobj["name"]) == None:
             raise IRError("Cannot create type {}: malformed name".format(irobj["name"]))
 
-    def _parse_arguments(self, args, this):
+    def _parse_arguments(self, args, this) -> List[Argument]:
         res = []
         for arg in args:
             name_  = arg["name"]
@@ -353,7 +354,7 @@ class Protocol:
             res.append(Argument(name_, type_, value_))
         return res
 
-    def _parse_expression(self, expr, this):
+    def _parse_expression(self, expr, this) -> Expression:
         if   expr["expression"] == "MethodInvocation":
             target = self._parse_expression(expr["target"], this)
             method = expr["method"]
@@ -361,19 +362,19 @@ class Protocol:
             return MethodInvocationExpression(target, method, args)
         elif expr["expression"] == "FunctionInvocation":
             name   = self._funcs(expr["name"])
-            args   = self._parse_arguments(expr["arguments"])
-            return FunctionInvocationExpression(target, methods, args)
+            args   = self._parse_arguments(expr["arguments"], this)
+            return FunctionInvocationExpression(name, args)
         elif expr["expression"] == "FieldAccess":
             target = self._parse_expression(expr["target"], this)
             field  = expr["field"]
             return FieldAccessExpression(target, field)
         elif expr["expression"] == "ContextAccess":
             field  = expr["field"]
-            return ContextAccessExpression(target, field)
+            return ContextAccessExpression(field)
         elif expr["expression"] == "IfElse":
             condition = self._parse_expression(expr["condition"], this)
-            if_true   = self._parse_expression(expr["if_true"],   this)
-            if_false  = self._parse_expression(expr["if_false"],  this)
+            if_true   = self._parse_expression(expr["if_true"  ], this)
+            if_false  = self._parse_expression(expr["if_false" ], this)
             return IfElseExpression(condition, if_true, if_false)
         elif expr["expression"] == "This":
             return ThisExpression(this)
@@ -384,15 +385,16 @@ class Protocol:
         else:
             raise IRError("Cannot parse expression: {}".format(expr["expression"]))
         
-    def _parse_transform(self, transform):
+    def _parse_transform(self, transform) -> Optional[Transform]:
         if transform != None:
             into_name = transform["into_name"]
             into_type = self.type(transform["into_type"])
             using     = self.func(transform["using"])
+            return Transform(into_name, into_type, using)
         else:
-            None
+            return None
 
-    def _parse_fields(self, fields, this):
+    def _parse_fields(self, fields, this) -> List[Field]:
         res = []
         for field in fields:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
@@ -404,7 +406,7 @@ class Protocol:
             res.append(Field(_name, _type, _is_present, _transform))
         return res
 
-    def _parse_constraints(self, constraints, this):
+    def _parse_constraints(self, constraints, this) -> List[Expression]:
         res = []
         for constraint in constraints:
             expr = self._parse_expression(constraint, this)
@@ -413,7 +415,7 @@ class Protocol:
             res.append(expr)
         return res
 
-    def _parse_actions(self, actions, this):
+    def _parse_actions(self, actions, this) -> List[Expression]:
         res = []
         for action in actions:
             expr = self._parse_expression(action, this)
@@ -426,7 +428,7 @@ class Protocol:
         # FIXME: implement this
         raise IRError("unimplemented (_parse_variants)")
 
-    def _parse_parameters(self, parameters):
+    def _parse_parameters(self, parameters) -> List[Parameter]:
         res = []
         for p in parameters:
             res.append(Parameter(p["name"], self.type(p["type"])))
@@ -476,8 +478,8 @@ class Protocol:
     def add_newtype(self, irobj):
         self._validate_irtype(irobj, "NewType")
         # FIXME: implement this
-        raise IRError("unimplemented (add_newtype)")
         # FIXME: add trait implementations
+        raise IRError("unimplemented (add_newtype)")
 
     def add_function(self, irobj):
         if irobj["construct"] != "Function":
@@ -486,20 +488,19 @@ class Protocol:
             raise IRError("Cannot create Function {}: already exists".format(irobj["name"]))
         if re.search(FUNC_NAME_REGEX, irobj["name"]) == None:
             raise IRError("Cannot create Function {}: malformed name".format(irobj["name"]))
-
         name        = irobj["name"]
         params      = self._parse_parameters(irobj["parameters"])
         return_type = self.type(irobj["return_type"])
         self._funcs[name] = Function(name, params, return_type)
 
-    def type(self, name):
-        return self._types[name]
+    def type(self, type_name):
+        return self._types[type_name]
 
-    def func(self, name):
-        return self._funcs[name]
+    def func(self, func_name):
+        return self._funcs[func_name]
 
-    def trait(self, name):
-        return self._traits[name]
+    def trait(self, trait_name):
+        return self._traits[trait_name]
 
     def typecheck(self):
         # FIXME: implement this
@@ -622,6 +623,7 @@ class TestProtocol(unittest.TestCase):
                     ]
                 }
             ],
+            # FIXME: add tests for actions
             "actions" : [
             ]
         })
