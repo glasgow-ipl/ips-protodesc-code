@@ -92,16 +92,15 @@ class MethodInvocationExpression(Expression):
         return method.return_type
 
 class FunctionInvocationExpression(Expression):
-    def __init__(self, name, args):
-        if re.search(FUNC_NAME_REGEX, name) == None:
-            raise IRError("Cannot create expression {}: malformed function name".format(name))
+    def __init__(self, func: Function, args: List[Argument]) -> None:
+        if re.search(FUNC_NAME_REGEX, func.name) == None:
+            raise IRError("Cannot create expression {}: malformed function name".format(func.name))
         self.kind   = "FunctionInvocation"
-        self.name   = method
+        self.func   = func
         self.args   = args
 
     def type(self):
-        # FIXME: implement this
-        raise IRError("unimplemented (FunctionInvocationExpression::type)")
+        return self.func.return_type
 
 class FieldAccessExpression(Expression):
     def __init__(self, target, field):
@@ -361,9 +360,9 @@ class Protocol:
             args   = self._parse_arguments(expr["arguments"], this)
             return MethodInvocationExpression(target, method, args)
         elif expr["expression"] == "FunctionInvocation":
-            name   = self._funcs(expr["name"])
+            func   = self.func(expr["name"])
             args   = self._parse_arguments(expr["arguments"], this)
-            return FunctionInvocationExpression(name, args)
+            return FunctionInvocationExpression(func, args)
         elif expr["expression"] == "FieldAccess":
             target = self._parse_expression(expr["target"], this)
             field  = expr["field"]
