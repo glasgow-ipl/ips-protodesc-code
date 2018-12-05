@@ -314,11 +314,11 @@ class Protocol:
                                     Function("not",    [Parameter("self", None)                                                                 ], self.type("Boolean"))
                                 ])
         self._traits["ArithmeticOps"] = Trait("ArithmeticOps", [
-                                    Function("plus",    [Parameter("self", None), Parameter("other", None)                                       ], None),
-                                    Function("minus",   [Parameter("self", None), Parameter("other", None)                                       ], None),
-                                    Function("multiply",[Parameter("self", None)                                                                 ], None),
-                                    Function("divide",  [Parameter("self", None)                                                                 ], None),
-                                    Function("modulo",  [Parameter("self", None)                                                                 ], None)
+                                    Function("plus",    [Parameter("self", None), Parameter("other", None)                                      ], None),
+                                    Function("minus",   [Parameter("self", None), Parameter("other", None)                                      ], None),
+                                    Function("multiply",[Parameter("self", None)                                                                ], None),
+                                    Function("divide",  [Parameter("self", None)                                                                ], None),
+                                    Function("modulo",  [Parameter("self", None)                                                                ], None)
                                 ])
         # Implement standard traits:
         self.type("Boolean").implement_trait(self.trait("Value"))
