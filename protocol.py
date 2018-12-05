@@ -424,9 +424,11 @@ class Protocol:
             res.append(expr)
         return res
 
-    def _parse_variants(self, expression):
-        # FIXME: implement this
-        raise IRError("unimplemented (_parse_variants)")
+    def _parse_variants(self, variants) -> List[Type]:
+        res = []
+        for v in variants:
+            res.append(self.type(v["type"]))
+        return res
 
     def _parse_parameters(self, parameters) -> List[Parameter]:
         res = []
@@ -640,6 +642,30 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for fields[1].transform
         # FIXME: add test for constraints
         # FIXME: add test for actions
+
+    def test_add_enum(self):
+        protocol = Protocol()
+        protocol.add_bitstring({
+            "construct" : "BitString",
+            "name"      : "TypeA",
+            "size"      : 32
+        })
+        protocol.add_bitstring({
+            "construct" : "BitString",
+            "name"      : "TypeB",
+            "size"      : 32
+        })
+        protocol.add_enum({
+            "construct"   : "Enum",
+            "name"        : "TestEnum",
+            "variants"    : [
+                {"type" : "TypeA"},
+                {"type" : "TypeB"}
+            ]
+        })
+        res = protocol.type("TestEnum")
+        self.assertEqual(res.variants[0], protocol.type("TypeA"))
+        self.assertEqual(res.variants[1], protocol.type("TypeB"))
 
 # =================================================================================================
 if __name__ == "__main__":
