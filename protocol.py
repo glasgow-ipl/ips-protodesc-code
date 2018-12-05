@@ -39,56 +39,36 @@ class IRError(Exception):
         self.reason = reason
 
 # =================================================================================================
-# Types:
+# Functions, parameters, arguments, traits:
 
-class Type:
-    pass
-
-class Nothing(Type):
-    def __init__(self):
-        self.kind  = "Nothing"
-        self.name  = "Nothing"
-
-class Boolean(Type):
-    def __init__(self):
-        self.kind  = "Boolean"
-        self.name  = "Boolean"
-
-class Size(Type):
-    def __init__(self):
-        self.kind  = "Size"
-        self.name  = "Size"
-
-class BitString(Type):
-    def __init__(self, name, size):
-        self.kind = "BitString"
-        self.name = name
-        self.size = size
-
-class Array(Type):
-    def __init__(self, name, element_type, length):
-        self.kind         = "Array"
-        self.name         = name
-        self.element_type = element_type
-        self.length       = length
-        if length == None:
-            self.size = None
-        else:
-            self.size = self.length * self.element_type.size
-
-class Struct(Type):
-    def __init__(self, name, fields, constraints, actions):
-        self.kind        = "Struct"
+class Function:
+    def __init__(self, name, parameters, return_type):
         self.name        = name
-        self.fields      = fields
-        self.constraints = constraints
-        self.actions     = actions
+        self.parameters  = parameters
+        self.return_type = return_type
 
-class Enum(Type):
-    def __init__(self, name, variants):
-        self.kind     = "Enum"
-        self.name     = name
-        self.variants = variants
+    def is_method_compatible(self):
+        return self.parameters[0].name == "self"
+        return self.parameters[0].type == None
+
+class Parameter:
+    def __init__(self, name_, type_):
+        self.name = name_
+        self.type = type_
+
+class Argument:
+    def __init__(self, name_, type_, value_):
+        self.name  = name_
+        self.type  = type_
+        self.value = value_
+
+class Trait:
+    def __init__(self, name, methods):
+        self.name    = name
+        self.methods = methods
+
+    def __str__(self):
+        print("Trait<{}>".format(self.name))
 
 # =================================================================================================
 # Expressions:
@@ -106,10 +86,9 @@ class MethodInvocationExpression:
         self.args   = args
 
     def type(self):
-        # FIXME: implement this
-        # FIXME: This is the return type of self.method on self.target
-        print("target = {}".format(self.target.type()))
-        raise IRError("unimplemented (MethodInvocationExpression)")
+        target = self.target.type()
+        method = target.get_method(self.method)
+        return method.return_type
 
 class FunctionInvocationExpression:
     def __init__(self, name, args):
@@ -121,15 +100,19 @@ class FunctionInvocationExpression:
 
     def type(self):
         # FIXME: implement this
-        raise IRError("unimplemented")
+        raise IRError("unimplemented (FunctionInvocationExpression::type)")
 
 class FieldAccessExpression:
     def __init__(self, target, field):
+        if target.type().kind != "Struct":
+            raise IRError("Cannot access field of object with type {}".format(target.type()))
         self.target = target
         self.field  = field
 
     def type(self):
-        return self.target.type()
+        target = self.target.type()
+        field  = target.get_field(self.field)
+        return field.type
 
 class ContextAccessExpression:
     def __init__(self, field):
@@ -137,7 +120,7 @@ class ContextAccessExpression:
 
     def type(self):
         # FIXME: implement this
-        raise IRError("unimplemented (ContextAccessExpression)")
+        raise IRError("unimplemented (ContextAccessExpression::type)")
 
 class IfElseExpression:
     def __init__(self, condition, if_true, if_false):
@@ -153,12 +136,11 @@ class IfElseExpression:
         return self.if_true.type()
 
 class ThisExpression:
-    def __init__(self):
-        pass
+    def __init__(self, this):
+        self.this = this
 
     def type(self):
-        # FIXME: implement this
-        raise IRError("unimplemented (ThisExpression)")
+        return self.this
 
 class ConstantExpression:
     def __init__(self, type_, value):
@@ -167,26 +149,6 @@ class ConstantExpression:
 
     def type(self):
         return self.type_
-
-# =================================================================================================
-# Functions, parameters, and arguments:
-
-class Function:
-    def __init__(self, name, parameters, return_type):
-        self.name        = name
-        self.parameters  = parameters
-        self.return_type = return_type
-
-class Parameter:
-    def __init__(self, name_, type_):
-        self.name = name_
-        self.type = type_
-
-class Argument:
-    def __init__(self, name_, type_, value_):
-        self.name  = name_
-        self.type  = type_
-        self.value = value_
 
 # =================================================================================================
 # Fields in a structure or the context:
@@ -198,6 +160,9 @@ class Field:
         self.is_present = is_present_
         self.transform  = transform_
 
+    def __str__(self):
+        return "Field<{},{},{},{}>".format(self.name, self.type, self.is_present, self.transform)
+
 class Transform:
     def __init__(self, into_name, into_type, using):
         self.into_name = into_name
@@ -205,14 +170,164 @@ class Transform:
         self.using     = using
 
 # =================================================================================================
+# Types:
+
+class Type:
+    kind:    str
+    name:    str
+    traits:  Dict[str,Trait]
+    methods: Dict[str,Function]
+
+    def __init__(self):
+        self.kind    = None
+        self.name    = None
+        self.traits  = {}
+        self.methods = {}
+
+    def __str__(self):
+        return "Type<{}::{}>".format(self.kind, self.name)
+
+    def implement_trait(self, trait):
+        if trait in self.traits:
+            raise IRError("Cannot implement trait {} for type {}: already implemented".format(trait.name, self.name))
+        else:
+            self.traits[trait.name] = trait
+            for method in trait.methods:
+                if method.name in self.methods:
+                    raise IRError("Cannot add method {} for type {}: already implemented".format(method.name, self.name))
+                else:
+                    self.methods[method.name] = method
+
+    def get_method(self, method_name):
+        return self.methods[method_name]
+
+class Nothing(Type):
+    def __init__(self):
+        super().__init__()
+        self.kind  = "Nothing"
+        self.name  = "Nothing"
+
+class Boolean(Type):
+    def __init__(self):
+        super().__init__()
+        self.kind  = "Boolean"
+        self.name  = "Boolean"
+
+class Size(Type):
+    def __init__(self):
+        super().__init__()
+        self.kind  = "Size"
+        self.name  = "Size"
+
+class BitString(Type):
+    def __init__(self, name, size):
+        super().__init__()
+        self.kind = "BitString"
+        self.name = name
+        self.size = size
+
+class Array(Type):
+    def __init__(self, name, element_type, length):
+        super().__init__()
+        self.kind         = "Array"
+        self.name         = name
+        self.element_type = element_type
+        self.length       = length
+        if length == None:
+            self.size = None
+        else:
+            self.size = self.length * self.element_type.size
+
+class Struct(Type):
+    kind:        str
+    name:        str
+    fields:      List[Field]
+    constraints: List[Expression]
+    actions:     List[Expression]
+
+    def __init__(self, name):
+        super().__init__()
+        self.kind        = "Struct"
+        self.name        = name
+        self.fields      = []
+        self.constraints = []
+        self.actions     = []
+
+    def add_field(self, field):
+        self.fields.append(field)
+
+    def add_constraint(self, constraint):
+        self.constraints.append(constraint)
+
+    def add_action(self, action):
+        self.actions.append(action)
+
+    def get_field(self, field_name):
+        for field in self.fields:
+            if field.name == field_name:
+                return field
+        return None
+
+class Enum(Type):
+    def __init__(self, name, variants):
+        super().__init__()
+        self.kind     = "Enum"
+        self.name     = name
+        self.variants = variants
+
+# =================================================================================================
 
 class Protocol:
     def __init__(self):
-        # Types:
+        # Define the primitive types:
         self._types = {}
         self._types["Nothing"] = Nothing()
         self._types["Boolean"] = Boolean()
         self._types["Size"]    = Size()
+        # Define the standard traits:
+        self._traits = {}
+        self._traits["Value"] = Trait("Value", [
+                                    Function("get", [Parameter("self", None)                                                                    ], None),
+                                    Function("set", [Parameter("self", None), Parameter("value", None)                                          ], None)
+                                ])
+        self._traits["Sized"] = Trait("Sized", [
+                                    Function("size",   [Parameter("self", None)                                                                 ], self.type("Size"))
+                                ])
+        self._traits["IndexCollection"] = Trait("IndexCollection", [
+                                    Function("get",    [Parameter("self", None), Parameter("index", self.type("Size"))                          ], None),
+                                    Function("set",    [Parameter("self", None), Parameter("index", self.type("Size")), Parameter("value", None)], None),
+                                    Function("length", [Parameter("self", None)                                                                 ], self.type("Size"))
+                                ])
+        self._traits["Equality"] = Trait("Equality", [
+                                    Function("eq",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
+                                    Function("ne",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean"))
+                                ])
+        self._traits["Ordinal"] = Trait("Ordinal", [
+                                    Function("lt",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
+                                    Function("le",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
+                                    Function("gt",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
+                                    Function("ge",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean"))
+                                ])
+        self._traits["BooleanOps"] = Trait("BooleanOps", [
+                                    Function("and",    [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
+                                    Function("or",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
+                                    Function("not",    [Parameter("self", None)                                                                 ], self.type("Boolean"))
+                                ])
+        self._traits["ArithmeticOps"] = Trait("ArithmeticOps", [
+                                    Function("plus",    [Parameter("self", None), Parameter("other", None)                                       ], None),
+                                    Function("minus",   [Parameter("self", None), Parameter("other", None)                                       ], None),
+                                    Function("multiply",[Parameter("self", None)                                                                 ], None),
+                                    Function("divide",  [Parameter("self", None)                                                                 ], None),
+                                    Function("modulo",  [Parameter("self", None)                                                                 ], None)
+                                ])
+        # Implement standard traits:
+        self.type("Boolean").implement_trait(self.trait("Value"))
+        self.type("Boolean").implement_trait(self.trait("Equality"))
+        self.type("Boolean").implement_trait(self.trait("BooleanOps"))
+        self.type("Size").implement_trait(self.trait("Value"))
+        self.type("Size").implement_trait(self.trait("Equality"))
+        self.type("Size").implement_trait(self.trait("Ordinal"))
+        self.type("Size").implement_trait(self.trait("ArithmeticOps"))
         # Functions:
         self._funcs = {}
 
@@ -227,43 +342,43 @@ class Protocol:
         if re.search(TYPE_NAME_REGEX, irobj["name"]) == None:
             raise IRError("Cannot create type {}: malformed name".format(irobj["name"]))
 
-    def _parse_arguments(self, args):
+    def _parse_arguments(self, args, this):
         res = []
         for arg in args:
             name_  = arg["name"]
-            expr_  = self._parse_expression(arg["value"])
+            expr_  = self._parse_expression(arg["value"], this)
             type_  = expr_.type()
             # FIXME: what is the value?
             value_ = None
             res.append(Argument(name_, type_, value_))
         return res
 
-    def _parse_expression(self, expr):
+    def _parse_expression(self, expr, this):
         if   expr["expression"] == "MethodInvocation":
-            target = self._parse_expression(expr["target"])
+            target = self._parse_expression(expr["target"], this)
             method = expr["method"]
-            args   = self._parse_arguments(expr["arguments"])
+            args   = self._parse_arguments(expr["arguments"], this)
             return MethodInvocationExpression(target, method, args)
         elif expr["expression"] == "FunctionInvocation":
             name   = self._funcs(expr["name"])
             args   = self._parse_arguments(expr["arguments"])
             return FunctionInvocationExpression(target, methods, args)
         elif expr["expression"] == "FieldAccess":
-            target = self._parse_expression(expr["target"])
+            target = self._parse_expression(expr["target"], this)
             field  = expr["field"]
             return FieldAccessExpression(target, field)
         elif expr["expression"] == "ContextAccess":
             field  = expr["field"]
             return ContextAccessExpression(target, field)
         elif expr["expression"] == "IfElse":
-            condition = self._parse_expression(expr["condition"])
-            if_true   = self._parse_expression(expr["if_true"])
-            if_false  = self._parse_expression(expr["if_false"])
+            condition = self._parse_expression(expr["condition"], this)
+            if_true   = self._parse_expression(expr["if_true"],   this)
+            if_false  = self._parse_expression(expr["if_false"],  this)
             return IfElseExpression(condition, if_true, if_false)
         elif expr["expression"] == "This":
-            return ThisExpression()
+            return ThisExpression(this)
         elif expr["expression"] == "Constant":
-            type_ = self.get_type(expr["type"])
+            type_ = self.type(expr["type"])
             value = expr["value"]
             return ConstantExpression(type_, value)
         else:
@@ -272,33 +387,33 @@ class Protocol:
     def _parse_transform(self, transform):
         if transform != None:
             into_name = transform["into_name"]
-            into_type = self.get_type(transform["into_type"])
-            using     = self.get_func(transform["using"])
+            into_type = self.type(transform["into_type"])
+            using     = self.func(transform["using"])
         else:
             None
 
-    def _parse_fields(self, fields):
+    def _parse_fields(self, fields, this):
         res = []
         for field in fields:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
                 raise IRError("Cannot parse field {}: malformed name".format(field["name"]))
             _name       = field["name"]
-            _type       = self.get_type(field["type"])
-            _is_present = self._parse_expression(field["is_present"])
+            _type       = self.type(field["type"])
+            _is_present = self._parse_expression(field["is_present"], this)
             _transform  = self._parse_transform(field["transform"])
             res.append(Field(_name, _type, _is_present, _transform))
         return res
 
-    def _parse_constraints(self, constraints):
+    def _parse_constraints(self, constraints, this):
         res = []
         for constraint in constraints:
-            expr = self._parse_expression(constraint)
-            if expr.type() != self.get_type("Boolean"):
+            expr = self._parse_expression(constraint, this)
+            if expr.type() != self.type("Boolean"):
                 raise IRError("Cannot parse constraint: {} != Boolean".format(expr.type()))
             res.append(expr)
         return res
 
-    def _parse_actions(self, expression):
+    def _parse_actions(self, expression, this):
         # FIXME: implement this
         raise IRError("unimplemented (_parse_actions)")
 
@@ -309,7 +424,7 @@ class Protocol:
     def _parse_parameters(self, parameters):
         res = []
         for p in parameters:
-            res.append(Parameter(p["name"], self.get_type(p["type"])))
+            res.append(Parameter(p["name"], self.type(p["type"])))
         return res
 
     # =============================================================================================
@@ -320,6 +435,9 @@ class Protocol:
         name         = irobj["name"]
         size         = irobj["size"]
         self._types[name] = BitString(name, size)
+        self._types[name].implement_trait(self.trait("Sized"))
+        self._types[name].implement_trait(self.trait("Value"))
+        self._types[name].implement_trait(self.trait("Equality"))
 
     def add_array(self, irobj):
         self._validate_irtype(irobj, "Array")
@@ -327,25 +445,34 @@ class Protocol:
         element_type = self._types[irobj["element_type"]]
         length       = irobj["length"]
         self._types[name] = Array(name, element_type, length)
+        self._types[name].implement_trait(self.trait("Sized"))
+        self._types[name].implement_trait(self.trait("Equality"))
+        self._types[name].implement_trait(self.trait("IndexCollection"))
 
     def add_struct(self, irobj):
         self._validate_irtype(irobj, "Struct")
         name         = irobj["name"]
-        fields       = self._parse_fields     (irobj["fields"])
-        constraints  = self._parse_constraints(irobj["constraints"])
-        actions      = self._parse_actions    (irobj["actions"])
-        self._types[name] = Struct(name, fields, constraints, actions)
+        self._types[name] = Struct(irobj["name"])
+        for field in self._parse_fields(irobj["fields"], self._types[name]):
+            self._types[name].add_field(field)
+        for constraint in self._parse_constraints(irobj["constraints"], self._types[name]):
+            self._types[name].add_constraint(constraint)
+        for action in self._parse_actions(irobj["actions"], self._types[name]):
+            self._types[name].add_action(action)
+        self._types[name].implement_trait(self.trait("Sized"))
 
     def add_enum(self, irobj):
         self._validate_irtype(irobj, "Enum")
         name         = irobj["name"]
         variants     = self._parse_variants(irobj["variants"])
         self._types[name] = Enum(name, variants)
+        self._types[name].implement_trait(self.trait("Sized"))
 
     def add_newtype(self, irobj):
         self._validate_irtype(irobj, "NewType")
         # FIXME: implement this
         raise IRError("unimplemented (add_newtype)")
+        # FIXME: add trait implementations
 
     def add_function(self, irobj):
         if irobj["construct"] != "Function":
@@ -357,14 +484,17 @@ class Protocol:
 
         name        = irobj["name"]
         params      = self._parse_parameters(irobj["parameters"])
-        return_type = self.get_type(irobj["return_type"])
+        return_type = self.type(irobj["return_type"])
         self._funcs[name] = Function(name, params, return_type)
 
-    def get_type(self, name):
+    def type(self, name):
         return self._types[name]
 
-    def get_func(self, name):
+    def func(self, name):
         return self._funcs[name]
+
+    def trait(self, name):
+        return self._traits[name]
 
     def typecheck(self):
         # FIXME: implement this
@@ -383,7 +513,7 @@ class TestProtocol(unittest.TestCase):
             "name"         : "Timestamp",
             "size"         : 32
         })
-        res = protocol.get_type("Timestamp")
+        res = protocol.type("Timestamp")
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "Timestamp")
         self.assertEqual(res.size, 32)
@@ -401,10 +531,10 @@ class TestProtocol(unittest.TestCase):
             "element_type" : "SSRC",
             "length"       : 4
         })
-        res = protocol.get_type("CSRCList")
+        res = protocol.type("CSRCList")
         self.assertEqual(res.kind, "Array")
         self.assertEqual(res.name, "CSRCList")
-        self.assertEqual(res.element_type, protocol.get_type("SSRC"))
+        self.assertEqual(res.element_type, protocol.type("SSRC"))
         self.assertEqual(res.length, 4)
         self.assertEqual(res.size, 128)
 
@@ -490,15 +620,15 @@ class TestProtocol(unittest.TestCase):
             "actions" : [
             ]
         })
-        res = protocol.get_type("TestStruct")
+        res = protocol.type("TestStruct")
         self.assertEqual(res.kind, "Struct")
         self.assertEqual(res.name, "TestStruct")
         self.assertEqual(res.fields[0].name, "seq")
-        self.assertEqual(res.fields[0].type, protocol.get_type("SeqNum"))
+        self.assertEqual(res.fields[0].type, protocol.type("SeqNum"))
         # FIXME: add test for fields[0].is_present
         # FIXME: add test for fields[0].transform
         self.assertEqual(res.fields[1].name, "ts")
-        self.assertEqual(res.fields[1].type, protocol.get_type("Timestamp"))
+        self.assertEqual(res.fields[1].type, protocol.type("Timestamp"))
         # FIXME: add test for fields[1].is_present
         # FIXME: add test for fields[1].transform
         # FIXME: add test for constraints
