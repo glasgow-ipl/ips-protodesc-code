@@ -342,7 +342,7 @@ class Protocol:
         if re.search(TYPE_NAME_REGEX, irobj["name"]) == None:
             raise IRError("Cannot create type {}: malformed name".format(irobj["name"]))
 
-    def _parse_arguments(self, args, this) -> List[Argument]:
+    def _parse_arguments(self, args, this: Type) -> List[Argument]:
         res = []
         for arg in args:
             name_  = arg["name"]
@@ -353,7 +353,7 @@ class Protocol:
             res.append(Argument(name_, type_, value_))
         return res
 
-    def _parse_expression(self, expr, this) -> Expression:
+    def _parse_expression(self, expr, this: Type) -> Expression:
         if   expr["expression"] == "MethodInvocation":
             target = self._parse_expression(expr["target"], this)
             method = expr["method"]
@@ -383,7 +383,7 @@ class Protocol:
             return ConstantExpression(type_, value)
         else:
             raise IRError("Cannot parse expression: {}".format(expr["expression"]))
-        
+
     def _parse_transform(self, transform) -> Optional[Transform]:
         if transform != None:
             into_name = transform["into_name"]
@@ -405,7 +405,7 @@ class Protocol:
             res.append(Field(_name, _type, _is_present, _transform))
         return res
 
-    def _parse_constraints(self, constraints, this) -> List[Expression]:
+    def _parse_constraints(self, constraints, this: Type) -> List[Expression]:
         res = []
         for constraint in constraints:
             expr = self._parse_expression(constraint, this)
@@ -414,7 +414,7 @@ class Protocol:
             res.append(expr)
         return res
 
-    def _parse_actions(self, actions, this) -> List[Expression]:
+    def _parse_actions(self, actions, this: Type) -> List[Expression]:
         res = []
         for action in actions:
             expr = self._parse_expression(action, this)
