@@ -413,9 +413,14 @@ class Protocol:
             res.append(expr)
         return res
 
-    def _parse_actions(self, expression, this):
-        # FIXME: implement this
-        raise IRError("unimplemented (_parse_actions)")
+    def _parse_actions(self, actions, this):
+        res = []
+        for action in actions:
+            expr = self._parse_expression(action, this)
+            if expr.type() != self.type("Nothing"):
+                raise IRError("Cannot parse actions: returns {} not Nothing".format(expr.type()))
+            res.append(expr)
+        return res
 
     def _parse_variants(self, expression):
         # FIXME: implement this
