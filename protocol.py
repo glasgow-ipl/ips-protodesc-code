@@ -494,6 +494,11 @@ class Protocol:
         return_type = self.type(irobj["return_type"])
         self._funcs[name] = Function(name, params, return_type)
 
+    def add_context(self, irobj):
+        # FIXME: implement this
+        # FIXME: add trait implementations
+        raise IRError("unimplemented (add_context)")
+
     def type(self, type_name):
         return self._types[type_name]
 
@@ -513,6 +518,9 @@ class Protocol:
 import unittest
 
 class TestProtocol(unittest.TestCase):
+    # =============================================================================================
+    # Test cases for types in the IR:
+
     def test_add_bitstring(self):
         protocol = Protocol()
         protocol.add_bitstring({
@@ -524,6 +532,8 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "Timestamp")
         self.assertEqual(res.size, 32)
+        # FIXME: add test for traits
+        # FIXME: add test for methods
 
     def test_add_array(self):
         protocol = Protocol()
@@ -544,6 +554,8 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.element_type, protocol.type("SSRC"))
         self.assertEqual(res.length, 4)
         self.assertEqual(res.size, 128)
+        # FIXME: add test for traits
+        # FIXME: add test for methods
 
     def test_add_struct(self):
         protocol = Protocol()
@@ -641,6 +653,8 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for fields[1].transform
         # FIXME: add test for constraints
         # FIXME: add test for actions
+        # FIXME: add test for traits
+        # FIXME: add test for methods
 
     def test_add_enum(self):
         protocol = Protocol()
@@ -665,6 +679,73 @@ class TestProtocol(unittest.TestCase):
         res = protocol.type("TestEnum")
         self.assertEqual(res.variants[0], protocol.type("TypeA"))
         self.assertEqual(res.variants[1], protocol.type("TypeB"))
+        # FIXME: add test for traits
+        # FIXME: add test for methods
+
+    def test_add_newtype(self):
+        protocol = Protocol()
+        protocol.add_bitstring({
+            "construct" : "BitString",
+            "name"      : "Bits16",
+            "size"      : 16
+        })
+        protocol.add_newtype({
+            "construct"    : "NewType",
+            "name"         : "SeqNum",
+            "derived_from" : "Bits16",
+            "implements"   : ["Ordinal"]
+        })
+        res = protocol.type("SeqNum")
+        self.assertEqual(res.kind, "BitStemp")
+        self.assertEqual(res.name, "SeqNum")
+        # FIXME: add test for traits
+        # FIXME: add test for methods
+
+    def test_add_function(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    def test_add_context(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    # =============================================================================================
+    # Test cases for expressions:
+
+    def test_expr_parser_MethodInvocation(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    def test_expr_parser_FunctionInvocation(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    def test_expr_parser_FieldAccess(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    def test_expr_parser_ContextAccess(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    def test_expr_parser_IfElse(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    def test_expr_parser_This(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    def test_expr_parser_Constant(self):
+        # FIXME: implement test case
+        self.assertTrue(False)
+
+    # =============================================================================================
+    # Test cases for the overall protocol:
+
+    def test_protocol(self):
+        # FIXME: add test for overall protocol definition
+        self.assertTrue(False)
 
 # =================================================================================================
 if __name__ == "__main__":
