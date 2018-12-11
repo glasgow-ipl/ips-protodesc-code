@@ -1,0 +1,280 @@
+[
+    {
+        "construct": "Protocol",
+        "name": "TCP",
+        "definitions": [
+            {
+                "construct": "BitString",
+                "name": "BitString$32",
+                "width": 32
+            },
+            {
+                "construct": "NewType",
+                "name": "Int$32",
+                "derived_from": "BitString$32",
+                "implements": [
+                    {
+                        "trait": "Ordinal"
+                    },
+                    {
+                        "trait": "ArithmeticOps"
+                    }
+                ]
+            },
+            {
+                "construct": "BitString",
+                "name": "Port$16",
+                "width": 16
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$4",
+                "width": 4
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$6",
+                "width": 6
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$1",
+                "width": 1
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$16",
+                "width": 16
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$Variable",
+                "width": null
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$8",
+                "width": 8
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$None",
+                "width": null
+            },
+            {
+                "construct": "Struct",
+                "name": "TCP",
+                "fields": [
+                    {
+                        "name": "source_port",
+                        "type": "Port$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "destination_port",
+                        "type": "Port$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "sequence_number",
+                        "type": "BitString$32",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "acknowledgment_number",
+                        "type": "BitString$32",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "data_offset",
+                        "type": "BitString$4",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "reserved",
+                        "type": "BitString$6",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "urgent_pointer_field_significant",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "acknowledgment_field_significant",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "push_function",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "reset_the_connection",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "synchronize_sequence_numbers",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "no_more_data_from_sender",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "window",
+                        "type": "BitString$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "checksum",
+                        "type": "BitString$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "urgent_pointer",
+                        "type": "BitString$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "options",
+                        "type": "BitString$Variable",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "Static$1",
+                        "type": "BitString$8",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "padding",
+                        "type": "BitString$None",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "data",
+                        "type": "BitString$Variable",
+                        "is_present": true,
+                        "transform": null
+                    }
+                ],
+                "constraints": [
+                    {
+                        "expression": "MethodInvocation",
+                        "method": "eq",
+                        "self": {
+                            "expression": "Constant",
+                            "type": "Int$32",
+                            "value": 0
+                        },
+                        "arguments": [
+                            {
+                                "name": "other",
+                                "value": {
+                                    "expression": "FieldAccess",
+                                    "target": {
+                                        "expression": "This"
+                                    },
+                                    "field_name": "Static$1"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "expression": "MethodInvocation",
+                        "method": "eq",
+                        "self": {
+                            "expression": "Constant",
+                            "type": "Int$32",
+                            "value": {
+                                "expression": "MethodInvocation",
+                                "method": "minus",
+                                "self": {
+                                    "expression": "MethodInvocation",
+                                    "method": "modulo",
+                                    "self": {
+                                        "expression": "Constant",
+                                        "type": "Int$32",
+                                        "value": 32
+                                    },
+                                    "arguments": [
+                                        {
+                                            "name": "other",
+                                            "value": {
+                                                "expression": "MethodInvocation",
+                                                "method": "length",
+                                                "self": {
+                                                    "expression": "FieldAccess",
+                                                    "target": {
+                                                        "expression": "This"
+                                                    },
+                                                    "field_name": "options"
+                                                },
+                                                "arguments": null
+                                            }
+                                        }
+                                    ]
+                                },
+                                "arguments": [
+                                    {
+                                        "name": "other",
+                                        "value": {
+                                            "expression": "Constant",
+                                            "type": "Int$32",
+                                            "value": 32
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "arguments": [
+                            {
+                                "name": "other",
+                                "value": {
+                                    "expression": "MethodInvocation",
+                                    "method": "length",
+                                    "self": {
+                                        "expression": "FieldAccess",
+                                        "target": {
+                                            "expression": "This"
+                                        },
+                                        "field_name": "padding"
+                                    },
+                                    "arguments": null
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "actions": []
+            }
+        ],
+        "pdus": [
+            {
+                "type": "TCP"
+            }
+        ]
+    }
+]

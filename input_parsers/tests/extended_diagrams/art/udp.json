@@ -1,0 +1,22 @@
+[
+  {
+    "name": "Source Port",
+    "width": 16
+  },
+  {
+    "name": "Destination Port",
+    "width": 16
+  },
+  {
+    "name": "Length",
+    "width": 16
+  },
+  {
+    "name": "Checksum",
+    "width": 16
+  },
+  {
+    "name": "Data",
+    "width": null
+  }
+]

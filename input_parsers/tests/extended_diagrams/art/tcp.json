@@ -1,0 +1,80 @@
+[
+  {
+    "name": "Source Port",
+    "width": 16
+  },
+  {
+    "name": "Destination Port",
+    "width": 16
+  },
+  {
+    "name": "Sequence Number",
+    "width": 32
+  },
+  {
+    "name": "Acknowledgment Number",
+    "width": 32
+  },
+  {
+    "name": "Offset",
+    "width": 4
+  },
+  {
+    "name": "Reserved",
+    "width": 6
+  },
+  {
+    "name": "U",
+    "width": 1
+  },
+  {
+    "name": "A",
+    "width": 1
+  },
+  {
+    "name": "P",
+    "width": 1
+  },
+  {
+    "name": "R",
+    "width": 1
+  },
+  {
+    "name": "S",
+    "width": 1
+  },
+  {
+    "name": "F",
+    "width": 1
+  },
+  {
+    "name": "Window",
+    "width": 16
+  },
+  {
+    "name": "Checksum",
+    "width": 16
+  },
+  {
+    "name": "Urgent Pointer",
+    "width": 16
+  },
+  {
+    "name": "Options",
+    "width": null,
+    "array": true
+  },
+  {
+    "name": null,
+    "value": 0,
+    "width": 8
+  },
+  {
+    "name": "Padding",
+    "width": null
+  },
+  {
+    "name": "Data",
+    "width": null
+  }
+]

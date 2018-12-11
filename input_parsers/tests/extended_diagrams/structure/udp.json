@@ -1,0 +1,138 @@
+{
+    "construct": "Protocol",
+    "name": "Protocol",
+    "definitions": [
+        {
+            "construct": "BitString",
+            "name": "BitString$32",
+            "width": 32
+        },
+        {
+            "construct": "NewType",
+            "name": "Int$32",
+            "derived_from": "BitString$32",
+            "implements": [
+                {
+                    "trait": "Ordinal"
+                },
+                {
+                    "trait": "ArithmeticOps"
+                }
+            ]
+        },
+        {
+            "construct": "BitString",
+            "name": "BitString$16",
+            "width": 16
+        },
+        {
+            "construct": "BitString",
+            "name": "BitString$None",
+            "width": null
+        },
+        {
+            "construct": "Struct",
+            "name": "Packet",
+            "fields": [
+                {
+                    "name": "source_port",
+                    "type": "BitString$16",
+                    "is_present": true,
+                    "transform": null
+                },
+                {
+                    "name": "destination_port",
+                    "type": "BitString$16",
+                    "is_present": true,
+                    "transform": null
+                },
+                {
+                    "name": "length",
+                    "type": "BitString$16",
+                    "is_present": true,
+                    "transform": null
+                },
+                {
+                    "name": "checksum",
+                    "type": "BitString$16",
+                    "is_present": true,
+                    "transform": null
+                },
+                {
+                    "name": "data",
+                    "type": "BitString$None",
+                    "is_present": true,
+                    "transform": null
+                }
+            ],
+            "constraints": [
+                {
+                    "expression": "MethodInvocation",
+                    "method": "eq",
+                    "self": {
+                        "expression": "Constant",
+                        "type": "Int$32",
+                        "value": {
+                            "expression": "MethodInvocation",
+                            "method": "plus",
+                            "self": {
+                                "expression": "Constant",
+                                "type": "Int$32",
+                                "value": 64
+                            },
+                            "arguments": [
+                                {
+                                    "name": "other",
+                                    "value": {
+                                        "expression": "MethodInvocation",
+                                        "method": "multiply",
+                                        "self": {
+                                            "expression": "Constant",
+                                            "type": "Int$32",
+                                            "value": 8
+                                        },
+                                        "arguments": [
+                                            {
+                                                "name": "other",
+                                                "value": {
+                                                    "expression": "FieldAccess",
+                                                    "target": {
+                                                        "expression": "This"
+                                                    },
+                                                    "field_name": "length"
+                                                }
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "arguments": [
+                        {
+                            "name": "other",
+                            "value": {
+                                "expression": "MethodInvocation",
+                                "method": "length",
+                                "self": {
+                                    "expression": "FieldAccess",
+                                    "target": {
+                                        "expression": "This"
+                                    },
+                                    "field_name": "data"
+                                },
+                                "arguments": null
+                            }
+                        }
+                    ]
+                }
+            ],
+            "actions": []
+        }
+    ],
+    "pdus": [
+        {
+            "type": "Packet"
+        }
+    ]
+}

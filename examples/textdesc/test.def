@@ -1,0 +1,8 @@
+RTPPacket := {
+	len              : Bit8;
+	payload          : Bit[];
+} where {
+	payload.length == 8*len;
+};
+
+PDUs := {RTPPacket};

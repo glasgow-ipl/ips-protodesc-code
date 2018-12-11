@@ -1,0 +1,205 @@
+word        = (letterOrDigit)+:x -> "".join(x)
+ws_word     = ws word:x -> ' ' + x
+spaces_word = spaces word:x -> ' ' + x
+crlf        = '\n'
+ff          = '\f'
+spaces      = ' '+:a -> "".join(a)
+AOrAn       = ('An'|'A')
+binary      = ('0'|'1')
+indent      = ' '{3}
+bits        = ('bits'|'bit')
+number      = <digit+>:ds -> int(ds)
+
+abbrv           = letterOrDigit+:x -> "".join(x)
+abbrv_bracket   = '(' abbrv:x ')' -> x
+
+punctuation                     = anything:x ?(x in punctuation) -> x
+punctuation_not_bracket         = punctuation:b ?(b != '(' and b != ')') -> b
+punctuation_not_colon           = punctuation:b ?(b != ':') -> b
+
+char_no_crlf                    = (digit|letter|punctuation|spaces)
+char_no_crlf_bracket            = (digit|letter|punctuation_not_bracket|spaces)
+char_no_crlf_colon              = (digit|letter|punctuation_not_colon|spaces)
+char_visible                    = (letterOrDigit|punctuation)
+char_visible_no_bracket        = (letterOrDigit|punctuation_not_bracket)
+char_visible_no_colon           = (digit|letter|punctuation_not_colon)
+chars_visible_space_separated   = (chars_visible+:x ' ':y -> "".join(x) + y)*:a chars_visible*:b -> "".join(a) + "".join(b)
+
+chars_no_crlf_bracket           = char_no_crlf_bracket+:x -> "".join(x)
+chars_visible                   = char_visible+:x -> "".join(x)
+chars_visible_no_bracket       = char_visible_no_bracket+:x -> "".join(x)
+
+section_number                  = (digit+):a (('.' digit+)*):b -> ".".join(list(map(lambda x: x[0], ([a] + b))))
+
+packet_name_word                = ws_word:b ?(b != ' packet') -> b
+packet_name                     = word:a packet_name_word*:b -> a + "".join(b)
+packet_name_w_bracket           = packet_name:a (ws '(' word:y ')' -> ' ('+y+')'){0,1}:b -> a + "".join(b)
+
+packet_intro_pre                = (indent char_no_crlf_colon+ crlf+)*
+packet_intro                    = crlf* packet_intro_pre{0,1} (packet_intro_single | packet_intro_multiple)
+packet_intro_single             = indent AOrAn ws packet_name_w_bracket:a ws 'packet' ws 'is' ws 'formatted' ws 'as' ws 'follows:' -> {"title":a, "pdus":[{"title": a, "section": None}]}
+packet_intro_multiple_name      = AOrAn ws packet_name_w_bracket:a ws 'packet' ws 'can' ws 'have' ws 'the' ws 'following' ws 'formats:' -> a
+packet_intro_multiple_bullet    = 'o  ' (chars_visible_no_bracket:x spaces -> x)*:a '(as defined in Section ' section_number:b ')' '.'{0,1} (spaces chars_visible)* (crlf (spaces chars_visible)+)* -> {"title": " ".join(a), "section": b}
+packet_intro_multiple_bullets   = (ws packet_intro_multiple_bullet:x crlf crlf -> x)+
+packet_intro_multiple           = ws packet_intro_multiple_name:a crlf crlf packet_intro_multiple_bullets:b -> {"title":a, "pdus":b}
+
+########################################################################
+# Parse RFC
+########################################################################
+
+# RFC Whitespace (I.e. ignore headers and footers)
+rfc_ws                          = (rfc_ws_footer_header|crlf)
+rfc_ws_footer_header            = rfc_ws_footer ff crlf rfc_header_footer crlf
+rfc_ws_footer                   = crlf:a rfc_header_footer:b crlf:c
+
+# RFC Body
+rfc                             = rfc_line* rfc_section* -> rfc(type_namespace, grammar, data)
+rfc_line                        = (((letter|' '):a char_no_crlf*:b rfc_ws*:c -> a + "".join(b) + "".join(c)) | rfc_ws):x -> x
+rfc_header_footer               = chars_visible_space_separated spaces chars_visible_space_separated spaces chars_visible_space_separated
+rfc_section                     = rfc_section_title_line (rfc_section_packet_intro|rfc_section_regular)
+rfc_section_title_line          = rfc_section_title:a rfc_ws:b -> a
+rfc_section_title               = section_number:section_number ('.':x ' '+:y -> x + "".join(y)):separator chars_visible_space_separated:title -> section_header(data, section_number, separator, title)
+rfc_section_packet_intro        = packet_intro:packet rfc_line*:lines -> section_packet(data, packet, lines)
+rfc_section_regular             = rfc_line*:lines -> section_regular(data, lines)
+
+########################################################################
+# ASCII Art Packet Diagram
+########################################################################
+
+art_indent = ' '{0,8}
+art_crlf                        = ' '* (crlf crlf | crlf art_indent)
+
+art_header_a                    = '0                   1                   2                   3'
+art_header_b                    = '0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1'
+art_separator_full              = '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
+art_header                      = art_header_a art_crlf art_header_b art_crlf art_separator_full art_crlf
+
+art_field_body_punctuation      = punctuation:x ?(x not in "|.=[]()") -> x
+art_field_body_char             = (letterOrDigit|art_field_body_punctuation|' ')
+art_field_body_chars            = art_field_body_char+:x art_field_body_abbrv{0,1}:y art_field_body_char*:z -> {'body': "".join(x+y+z), 'name': "".join(x)}
+art_field_body_abbrv            = abbrv_bracket:x -> '(' + x + ')'
+
+art_field_regular_width         = '(':a number:b ' ':c bits:d ')':e -> {'body': a+str(b)+c+d+e, 'width': b}
+
+art_field_regular               = art_field_body_chars:x art_field_regular_width:y art_field_body_chars:z -> art_field(x['body']+y['body']+z['body'], name=x['name'], width=y['width'])
+                                | art_field_body_chars:x -> art_field(x['body'], name=x['name'])
+art_field_regular_variable      = art_field_body_chars:x '...' -> art_field(x['body'], variable=True, name=x['name'])
+art_field_variable              = art_field_body_chars:x '...' -> art_field(x['body'], variable=True, name=x['name'])
+art_field_variable_list         = ' '* '[' art_field_body_chars:x ']' ' '* '...' -> art_field(x['body'], variable=True, array=True, name=x['name'])
+
+art_field_value                 = art_field_value_binary | art_field_value_named
+art_field_value_named           = art_field_body_chars:a "=":b (art_field_body_chars:x "=":y -> x['body']+y)*:c digit+:d ' '*:e -> art_field(a['body'] + b + "".join(c+d+e), name=a['name'], value=int("".join(d)))
+art_field_value_binary          = binary:a (' ' binary)*:b -> art_field_binary(a + "".join(b))
+
+art_field                       = (art_field_variable_list | art_field_value | art_field_regular_variable | art_field_regular):x '|' -> x
+
+art_line_regular                = '|' art_field+:x -> x
+art_line_variable               = '|' (art_field_variable_list | art_field_variable):x -> [x]
+
+art_line                        = (art_line_regular | art_line_variable):x (art_crlf| art_field_regular_variable:a art_crlf -> a):y art_separator_full art_crlf -> art_line(x, y)
+art_body                        = art_line+:x -> art_body(x)
+
+art                             = art_indent art_header art_body
+
+########################################################################
+# Fields - Length Formula
+########################################################################
+
+field_name_word                 = spaces_word:b ?(b != ' bit' and b != ' bits' and b != ' is' and b != ' should') -> b
+field_name_x                    = word:a field_name_word*:b -> field_name_to_id(a + "".join(b))
+field_name                      = '(' field_name_x:x ')' -> x
+                                | field_name_x
+
+field_accessor                  = field_name:x (('.' ('value' | 'length' | 'width'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain({"expression": "This"}, [x]+xs)
+					            | 'Context.' field_name:x (('.' ('value' | 'length'):attribute -> attribute)|('[' (number|'"' field_name:n '"' -> n):key ']' -> key))*:xs -> build_accessor_chain({"expression": "Context"}, [x]+xs)
+primary_expr                    = number:n -> build_integer_expression(n, type_namespace)
+							    | ('True'|'False'):bool -> {"expression": "Constant", "type": "Boolean", "value": bool}
+							    | field_accessor
+							    | '(' additive_expr:expr ')' -> expr
+multiplicative_expr             = primary_expr:left (('*'|'/'|'%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+additive_expr                   = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+
+########################################################################
+# Fields
+########################################################################
+
+field_heading_name_punctuation  = punctuation:x ?(x not in ":()") -> x
+field_heading_name_char         = (letterOrDigit|field_heading_name_punctuation)
+field_heading_name_char_space   = (field_heading_name_char|' ')
+field_heading_name              = field_heading_name_char:a field_heading_name_char_space*:b -> {"name": a + "".join(b), "abbrv": None}
+field_heading_abbrv             = field_heading_name:a abbrv_bracket:b -> {"name": a["name"], "abbrv": b}
+field_heading_name_abbrv        = (field_heading_abbrv | field_heading_name)
+
+field_heading_width_static      = digit+:width ' ' bits -> {"width": int("".join(width))}
+field_heading_width_variable    = 'variable' -> {"width": -1}
+field_heading_width_formula     = additive_expr:x ' '* bits -> {"constraint": x}
+field_heading_width             = ':' ' '+ (field_heading_width_static | field_heading_width_variable | field_heading_width_formula):a field_heading_type:type -> {**a, "type": type}
+                                | field_heading_type:type -> {"width": None, "type": type}
+
+type_name                       = word:a spaces_word*:b -> a + "".join(b)
+field_heading_type              = ' [' type_name:a ']' crlf -> a
+                                | crlf -> None
+
+field_heading                   = indent field_heading_name_abbrv:a field_heading_width:b crlf+ -> {"id": field_name_to_id(a["name"]), **{"name": a["name"].strip(), "abbrv": a["abbrv"]}, **b}
+
+field_body_line_end             = (crlf+ | ' '+)
+field_body_line_indented        = char_no_crlf*:x field_body_line_end -> "".join(x)
+field_body_line                 = indent{2} field_body_line_indented
+
+field_body_data_ws              = (' ' | crlf indent{2})
+
+field_body_data_struct_loc      = indent{2} 'If' field_body_data_ws field_name:field_this field_body_data_ws 'is' field_body_data_ws number:value ',' field_body_data_ws
+                                  field_name:field_new field_body_data_ws 'should' field_body_data_ws ('precede'|'follow'):rel_loc field_body_data_ws field_name:field_loc field_body_data_ws '(format'
+                                  field_body_data_ws 'defined' field_body_data_ws 'in' field_body_data_ws 'Section' field_body_data_ws section_number:section ').' field_body_line_indented
+                                  -> {
+                                        "structure_location": {
+                                            "field_this": field_this,
+                                            "value": value,
+                                            "field_new": field_new,
+                                            "structure_section": section,
+                                            "relative_location": rel_loc,
+                                            "field_location": field_loc
+                                        }
+                                     }
+field_body_data_struct_field    = indent{2} 'Format' field_body_data_ws 'defined' field_body_data_ws 'in' field_body_data_ws 'Section' field_body_data_ws section_number:section '.' field_body_line_indented
+                                  -> {"structure_section": section}
+
+field_body_data                 = field_body_data_struct_loc | field_body_data_struct_field
+
+field_body                      = field_body_data:x field_body_line*:y -> {**x, "description": " ".join(y).strip()}
+                                | field_body_line*:y -> {"description": " ".join(y).strip()}
+
+################
+
+field_control_heading           = indent field_heading_name ': ' field_heading_width_static ' (from left to right):' crlf crlf
+field_control_bit               = indent{2} field_heading_abbrv:a crlf -> {"id": field_name_to_id(a["name"]), "name": a["name"].strip(), "abbrv": a["abbrv"]}
+field_control                   = field_control_heading field_control_bit+:a crlf -> a
+
+field_regular                   = field_heading:a field_body:b -> {**a, **b}
+field                           = (field_control | field_regular)
+fields                          = field+:a -> fields(a)
+
+########################################################################
+# Structure
+########################################################################
+
+art_prefix                      = indent char_visible char_no_crlf* (crlf crlf|crlf)
+
+figure                          = indent ' '* 'Figure ' (char_no_crlf+ crlf)+ crlf
+
+fields_prefix                   = (indent char_visible char_no_crlf_colon* (crlf | ":" crlf) crlf*)+
+
+structure                       = crlf* art_prefix* art:art figure{0,1} fields_prefix{0,1} fields:fields -> pdu(type_namespace, data, art, fields)
+
+########################################################################
+# Pdu
+########################################################################
+
+pdu                             = crlf* structure
+
+########################################################################
+# Old
+########################################################################
+
+bullet = 'o' (spaces chars_visible:x -> x)*:a (crlf (spaces chars_visible:x -> ' '+x)+:x -> "".join(x))*:b -> " ".join(a) + " ".join(b)
+bullets = (ws bullet:x crlf crlf -> x)+

@@ -1,0 +1,79 @@
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |V=2|P|    RC   |   PT=SR=200   |             length            |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         SSRC of sender                        |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                     sender info (160 bits)                    |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                        [report blocks]                      ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                  profile specific extensions                  |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The sender report packet consists of three sections, possibly
+   followed by a fourth profile-specific extension section if defined.
+   The first section, the header, is 8 octets long.  The fields have the
+   following meaning:
+
+   version (V): 2 bits
+
+      Identifies the version of RTP, which is the same in RTCP packets
+      as in RTP data packets.  The version defined by this specification
+      is two (2).
+
+   padding (P): 1 bit
+
+      If the padding bit is set, this individual RTCP packet contains
+      some additional padding octets at the end which are not part of
+      the control information but are included in the length field.  The
+      last octet of the padding is a count of how many padding octets
+      should be ignored, including itself (it will be a multiple of
+      four).  Padding may be needed by some encryption algorithms with
+      fixed block sizes.  In a compound RTCP packet, padding is only
+      required on one individual packet because the compound packet is
+      encrypted as a whole for the method in Section 9.1.  Thus, padding
+      MUST only be added to the last individual packet, and if padding
+      is added to that packet, the padding bit MUST be set only on that
+      packet.  This convention aids the header validity checks described
+      in Appendix A.2 and allows detection of packets from some early
+      implementations that incorrectly set the padding bit on the first
+      individual packet and add padding to the last individual packet.
+
+   reception report count (RC): 5 bits
+
+      The number of reception report blocks contained in this packet.  A
+      value of zero is valid.
+
+   packet type (PT): 8 bits
+
+      Contains the constant 200 to identify this as an RTCP SR packet.
+
+   length: 16 bits
+
+      The length of this RTCP packet in 32-bit words minus one,
+      including the header and any padding.  (The offset of one makes
+      zero a valid length and avoids a possible infinite loop in
+      scanning a compound RTCP packet, while counting 32-bit words
+      avoids a validity check for a multiple of 4.)
+
+   SSRC of sender: 32 bits
+
+      The synchronization source identifier for the originator of this
+      SR packet.
+
+   sender info: 160 bits
+
+      Format defined in Section 2.1. The sender information, is 20
+      octets long and is present in every sender report packet.  It
+      summarizes the data transmissions from this sender.
+
+   report blocks: variable
+
+      The third section contains zero or more reception report blocks
+      depending on the number of other sources heard by this sender
+      since the last report.  Each reception report block conveys
+      statistics on the reception of RTP packets from a single
+      synchronization source. Receivers SHOULD NOT carry over statistics
+      when a source changes its SSRC identifier due to a collision.

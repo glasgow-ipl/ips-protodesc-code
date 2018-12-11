@@ -111,8 +111,11 @@ def new_field(name, type_name, transform, type_namespace):
         is_present = transform
         transform = None
 
-    field = {"name": name, "type": type_name, "is_present": is_present, "transform": transform}
-    return field
+    return new_field_data(name, type_name, is_present, transform)
+
+
+def new_field_data(name, type_name, is_present=True, transform=None):
+    return {"name": name, "type": type_name, "is_present": is_present, "transform": transform}
 
 
 def new_struct(name, fields, where_block, type_namespace, context, actions):

@@ -1,0 +1,44 @@
+[
+  {
+    "name": "V",
+    "value": 2,
+    "width": 2
+  },
+  {
+    "name": "P",
+    "width": 1
+  },
+  {
+    "name": "RC",
+    "width": 5
+  },
+  {
+    "name": "PT",
+    "value": 200,
+    "width": 8
+  },
+  {
+    "name": "length",
+    "width": 16
+  },
+  {
+    "name": "SSRC of sender",
+    "width": 32
+  },
+  {
+    "name": "sender info",
+    "width": 160
+  },
+  {
+    "name": "report block 1",
+    "width": 192
+  },
+  {
+    "name": "report block 2",
+    "width": 192
+  },
+  {
+    "name": "profile specific extensions",
+    "width": 32
+  }
+]

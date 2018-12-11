@@ -1,0 +1,374 @@
+[
+    {
+        "construct": "Protocol",
+        "name": "RTP",
+        "definitions": [
+            {
+                "construct": "BitString",
+                "name": "BitString$32",
+                "width": 32
+            },
+            {
+                "construct": "NewType",
+                "name": "Int$32",
+                "derived_from": "BitString$32",
+                "implements": [
+                    {
+                        "trait": "Ordinal"
+                    },
+                    {
+                        "trait": "ArithmeticOps"
+                    }
+                ]
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$2",
+                "width": 2
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$1",
+                "width": 1
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$4",
+                "width": 4
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$7",
+                "width": 7
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$16",
+                "width": 16
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$None",
+                "width": null
+            },
+            {
+                "construct": "Struct",
+                "name": "HeaderExtension",
+                "fields": [
+                    {
+                        "name": "defined_by_profile",
+                        "type": "BitString$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "length",
+                        "type": "BitString$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "header_extension",
+                        "type": "BitString$None",
+                        "is_present": true,
+                        "transform": null
+                    }
+                ],
+                "constraints": [
+                    {
+                        "expression": "MethodInvocation",
+                        "method": "eq",
+                        "self": {
+                            "expression": "Constant",
+                            "type": "Int$32",
+                            "value": {
+                                "expression": "MethodInvocation",
+                                "method": "multiply",
+                                "self": {
+                                    "expression": "FieldAccess",
+                                    "target": {
+                                        "expression": "This"
+                                    },
+                                    "field_name": "length"
+                                },
+                                "arguments": [
+                                    {
+                                        "name": "other",
+                                        "value": {
+                                            "expression": "Constant",
+                                            "type": "Int$32",
+                                            "value": 32
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "arguments": [
+                            {
+                                "name": "other",
+                                "value": {
+                                    "expression": "MethodInvocation",
+                                    "method": "length",
+                                    "self": {
+                                        "expression": "FieldAccess",
+                                        "target": {
+                                            "expression": "This"
+                                        },
+                                        "field_name": "header_extension"
+                                    },
+                                    "arguments": null
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "actions": []
+            },
+            {
+                "construct": "BitString",
+                "name": "BitString$8",
+                "width": 8
+            },
+            {
+                "construct": "Struct",
+                "name": "Padding2",
+                "fields": [
+                    {
+                        "name": "padding",
+                        "type": "BitString$None",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "padding_count",
+                        "type": "BitString$8",
+                        "is_present": true,
+                        "transform": null
+                    }
+                ],
+                "constraints": [
+                    {
+                        "expression": "MethodInvocation",
+                        "method": "eq",
+                        "self": {
+                            "expression": "Constant",
+                            "type": "Int$32",
+                            "value": {
+                                "expression": "MethodInvocation",
+                                "method": "multiply",
+                                "self": {
+                                    "expression": "FieldAccess",
+                                    "target": {
+                                        "expression": "This"
+                                    },
+                                    "field_name": "padding_count"
+                                },
+                                "arguments": [
+                                    {
+                                        "name": "other",
+                                        "value": {
+                                            "expression": "Constant",
+                                            "type": "Int$32",
+                                            "value": 8
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "arguments": [
+                            {
+                                "name": "other",
+                                "value": {
+                                    "expression": "MethodInvocation",
+                                    "method": "length",
+                                    "self": {
+                                        "expression": "FieldAccess",
+                                        "target": {
+                                            "expression": "This"
+                                        },
+                                        "field_name": "padding"
+                                    },
+                                    "arguments": null
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "actions": []
+            },
+            {
+                "construct": "Struct",
+                "name": "RTP",
+                "fields": [
+                    {
+                        "name": "version",
+                        "type": "BitString$2",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "padding",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "extension",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "csrc_count",
+                        "type": "BitString$4",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "marker",
+                        "type": "BitString$1",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "payload_type",
+                        "type": "BitString$7",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "sequence_number",
+                        "type": "BitString$16",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "timestamp",
+                        "type": "BitString$32",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "synchronization_source_identifier",
+                        "type": "BitString$32",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "contributing_source_identifiers",
+                        "type": "BitString$None",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "header_extension",
+                        "type": "HeaderExtension",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "payload",
+                        "type": "BitString$None",
+                        "is_present": true,
+                        "transform": null
+                    },
+                    {
+                        "name": "padding_2",
+                        "type": "Padding2",
+                        "is_present": true,
+                        "transform": null
+                    }
+                ],
+                "constraints": [
+                    {
+                        "expression": "MethodInvocation",
+                        "method": "eq",
+                        "self": {
+                            "expression": "Constant",
+                            "type": "Int$32",
+                            "value": 2
+                        },
+                        "arguments": [
+                            {
+                                "name": "other",
+                                "value": {
+                                    "expression": "FieldAccess",
+                                    "target": {
+                                        "expression": "This"
+                                    },
+                                    "field_name": "version"
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "expression": "MethodInvocation",
+                        "method": "eq",
+                        "self": {
+                            "expression": "Constant",
+                            "type": "Int$32",
+                            "value": {
+                                "expression": "MethodInvocation",
+                                "method": "multiply",
+                                "self": {
+                                    "expression": "FieldAccess",
+                                    "target": {
+                                        "expression": "This"
+                                    },
+                                    "field_name": "csrc_count"
+                                },
+                                "arguments": [
+                                    {
+                                        "name": "other",
+                                        "value": {
+                                            "expression": "MethodInvocation",
+                                            "method": "multiply",
+                                            "self": {
+                                                "expression": "Constant",
+                                                "type": "Int$32",
+                                                "value": 4
+                                            },
+                                            "arguments": [
+                                                {
+                                                    "name": "other",
+                                                    "value": {
+                                                        "expression": "Constant",
+                                                        "type": "Int$32",
+                                                        "value": 32
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        "arguments": [
+                            {
+                                "name": "other",
+                                "value": {
+                                    "expression": "MethodInvocation",
+                                    "method": "length",
+                                    "self": {
+                                        "expression": "FieldAccess",
+                                        "target": {
+                                            "expression": "This"
+                                        },
+                                        "field_name": "contributing_source_identifiers"
+                                    },
+                                    "arguments": null
+                                }
+                            }
+                        ]
+                    }
+                ],
+                "actions": []
+            }
+        ],
+        "pdus": [
+            {
+                "type": "RTP"
+            }
+        ]
+    }
+]

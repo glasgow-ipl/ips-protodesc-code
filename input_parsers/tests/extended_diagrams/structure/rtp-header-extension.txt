@@ -1,0 +1,49 @@
+   An extension mechanism is provided to allow individual
+   implementations to experiment with new payload-format-independent
+   functions that require additional information to be carried in the
+   RTP data packet header.  This mechanism is designed so that the
+   header extension may be ignored by other interoperating
+   implementations that have not been extended.
+
+   Note that this header extension is intended only for limited use.
+   Most potential uses of this mechanism would be better done another
+   way, using the methods described in the previous section.  For
+   example, a profile-specific extension to the fixed header is less
+   expensive to process because it is not conditional nor in a variable
+   location.  Additional information required for a particular payload
+   format SHOULD NOT use this header extension, but SHOULD be carried in
+   the payload section of the packet.
+
+   Only a single extension can be appended to the RTP data header.
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |      defined by profile       |           length              |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                        header extension                     ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                   Figure 1: User Datagram Header Format
+
+   defined by profile: 16 bits
+
+      To allow multiple interoperating implementations to each
+      experiment independently with different header extensions, or to
+      allow a particular implementation to experiment with more than one
+      type of header extension, the first 16 bits of the header
+      extension are left open for distinguishing identifiers or
+      parameters.  The format of these 16 bits is to be defined by the
+      profile specification under which the implementations are
+      operating.  This RTP specification does not define any header
+      extensions itself.
+
+   length: 16 bits
+
+      The header extension contains a 16-bit length field that counts
+      the number of 32-bit words in the extension, excluding the four-
+      octet extension header (therefore zero is a valid length).
+
+   header extension: 32*length bits
+
+      The payload of this header extension
