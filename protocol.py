@@ -545,11 +545,6 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_This(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "TestField",
-            "size"      : 32
-        })
         protocol.define_struct({
             "construct"   : "Struct",
             "name"        : "TestStruct",
