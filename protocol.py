@@ -571,8 +571,40 @@ class TestProtocol(unittest.TestCase):
         self.assertTrue(False)
 
     def test_parse_expression_IfElse(self):
-        # FIXME: implement test case
-        self.assertTrue(False)
+        # Expressions must be parsed in the context of a structure type:
+        protocol = Protocol()
+        protocol.define_struct({
+            "construct"   : "Struct",
+            "name"        : "TestStruct",
+            "fields"      : [],
+            "constraints" : [],
+            "actions"     : []
+        })
+        # Check we can parse IfElse expressions:
+        json = {
+            "expression" : "IfElse",
+            "condition"  : {
+                  "expression" : "Constant",
+                  "type"       : "Boolean",
+                  "value"      : "True"
+            },
+            "if_true"    : {
+                  "expression" : "Constant",
+                  "type"       : "Boolean",
+                  "value"      : "True"
+            },
+            "if_false"   : {
+                  "expression" : "Constant",
+                  "type"       : "Boolean",
+                  "value"      : "False"
+            },
+        }
+        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        self.assertTrue(isinstance(expr, IfElseExpression))
+        self.assertEqual(expr.type(), protocol.type("Boolean"))
+        self.assertEqual(expr.condition.type(), protocol.type("Boolean"))
+        self.assertEqual(expr.if_true.type(),   protocol.type("Boolean"))
+        self.assertEqual(expr.if_false.type(),  protocol.type("Boolean"))
 
     def test_parse_expression_This(self):
         # Expressions must be parsed in the context of a structure type:

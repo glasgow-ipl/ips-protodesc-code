@@ -130,14 +130,16 @@ class ContextAccessExpression(Expression):
         raise TypeError("unimplemented (ContextAccessExpression::type)")
 
 class IfElseExpression(Expression):
+    condition : Expression
+    if_else   : Expression
+    if_false  : Expression
+
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
         self.condition = condition
         self.if_true   = if_true
         self.if_false  = if_false
         if if_true.type() != if_false.type():
             raise TypeError("Cannot create expression: IfElse branch types differ")
-        #if condition.type() != self.get_type["Boolean"]:
-        #    raise TypeError("Cannot create expression: IfElse condition not Boolean")
 
     def type(self):
         return self.if_true.type()
