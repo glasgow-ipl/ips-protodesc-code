@@ -76,8 +76,10 @@ class Trait:
 # Expressions as defined in Section 3.4 of the IR specification:
 
 class Expression:
+    kind: str
+
     def type(self):
-        raise TypeError("Expression::type not re-implemented by subclass")
+        raise TypeError("Expression::type() must be implemented by subclasses")
 
 class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method, args: List[Argument]) -> None:
@@ -278,3 +280,4 @@ class Enum(Type):
         self.variants = variants
 
 # =================================================================================================
+# vim: set tw=0 ai:
