@@ -26,7 +26,7 @@
 # =================================================================================================
 
 from typing import Dict, List, Tuple, Optional
-from protocol_types import *
+from protocoltypes import *
 
 import json
 import re
