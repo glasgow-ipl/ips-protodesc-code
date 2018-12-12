@@ -255,6 +255,7 @@ class Protocol:
         for action in self._parse_actions(irobj["actions"], self._types[name]):
             self._types[name].add_action(action)
         self._types[name].implement_trait(self.trait("Sized"))
+        self._types[name].implement_trait(self.trait("Equality"))
 
     def define_enum(self, irobj):
         """
@@ -350,7 +351,11 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "Timestamp")
         self.assertEqual(res.size, 32)
-        # FIXME: add test for traits
+        # Check trait implementations:
+        self.assertEqual(len(res.traits), 3)
+        self.assertIn("Equality", res.traits)
+        self.assertIn("Sized",    res.traits)
+        self.assertIn("Value",    res.traits)
         # FIXME: add test for methods
 
     def test_define_array(self):
@@ -372,7 +377,11 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.element_type, protocol.type("SSRC"))
         self.assertEqual(res.length, 4)
         self.assertEqual(res.size, 128)
-        # FIXME: add test for traits
+        # Check trait implementations:
+        self.assertEqual(len(res.traits), 3)
+        self.assertIn("Equality",        res.traits)
+        self.assertIn("IndexCollection", res.traits)
+        self.assertIn("Sized",           res.traits)
         # FIXME: add test for methods
 
     def test_define_struct(self):
@@ -471,7 +480,10 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for fields[1].transform
         # FIXME: add test for constraints
         # FIXME: add test for actions
-        # FIXME: add test for traits
+        # Check trait implementations:
+        self.assertEqual(len(res.traits), 2)
+        self.assertIn("Equality", res.traits)
+        self.assertIn("Sized",    res.traits)
         # FIXME: add test for methods
 
     def test_define_enum(self):
@@ -497,7 +509,9 @@ class TestProtocol(unittest.TestCase):
         res = protocol.type("TestEnum")
         self.assertEqual(res.variants[0], protocol.type("TypeA"))
         self.assertEqual(res.variants[1], protocol.type("TypeB"))
-        # FIXME: add test for traits
+        # Check trait implementations:
+        self.assertEqual(len(res.traits), 1)
+        self.assertIn("Sized", res.traits)
         # FIXME: add test for methods
 
     def test_derive_type(self):
@@ -516,7 +530,12 @@ class TestProtocol(unittest.TestCase):
         res = protocol.type("SeqNum")
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "SeqNum")
-        # FIXME: add test for traits
+        # Check trait implementations:
+        self.assertEqual(len(res.traits), 4)
+        self.assertIn("Equality", res.traits)
+        self.assertIn("Sized",    res.traits)
+        self.assertIn("Value",    res.traits)
+        self.assertIn("Ordinal",  res.traits)
         # FIXME: add test for methods
 
     @unittest.skip("test case not yet implemented")
