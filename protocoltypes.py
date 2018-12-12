@@ -76,8 +76,6 @@ class Trait:
 # Expressions as defined in Section 3.4 of the IR specification:
 
 class Expression:
-    kind: str
-
     def type(self):
         raise TypeError("Expression::type() must be implemented by subclasses")
 
@@ -85,7 +83,6 @@ class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method) == None:
             raise TypeError("Cannot create expression {}: malformed method name".format(method))
-        self.kind   = "MethodInvocation"
         self.target = target
         self.method = method
         self.args   = args
@@ -99,7 +96,6 @@ class FunctionInvocationExpression(Expression):
     def __init__(self, func: Function, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
             raise TypeError("Cannot create expression {}: malformed function name".format(func.name))
-        self.kind   = "FunctionInvocation"
         self.func   = func
         self.args   = args
 
@@ -141,10 +137,10 @@ class IfElseExpression(Expression):
 
 class ThisExpression(Expression):
     def __init__(self, this):
-        self.this = this
+        self._this = this
 
     def type(self):
-        return self.this
+        return self._this
 
 class ConstantExpression(Expression):
     def __init__(self, type_, value):

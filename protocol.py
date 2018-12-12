@@ -114,6 +114,8 @@ class Protocol:
         return res
 
     def _parse_expression(self, expr, this: Type) -> Expression:
+        if not this.kind == "Struct":
+            raise TypeError("Expressions can only be evaluated in context of structure types")
         if   expr["expression"] == "MethodInvocation":
             target = self._parse_expression(expr["target"], this)
             method = expr["method"]
@@ -541,8 +543,27 @@ class TestProtocol(unittest.TestCase):
         self.assertTrue(False)
 
     def test_parse_expression_This(self):
-        # FIXME: implement test case
-        self.assertTrue(False)
+        # Expressions must be parsed in the context of a structure type:
+        protocol = Protocol()
+        protocol.define_bitstring({
+            "construct" : "BitString",
+            "name"      : "TestField",
+            "size"      : 32
+        })
+        protocol.define_struct({
+            "construct"   : "Struct",
+            "name"        : "TestStruct",
+            "fields"      : [],
+            "constraints" : [],
+            "actions"     : []
+        })
+        # Check we can parse This expressions:
+        json = {
+            "expression" : "This"
+        }
+        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        self.assertTrue(isinstance(expr, ThisExpression))
+        self.assertEqual(expr.type(), protocol.type("TestStruct"))
 
     def test_parse_expression_Constant(self):
         # FIXME: implement test case
