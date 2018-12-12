@@ -520,31 +520,31 @@ class TestProtocol(unittest.TestCase):
     # =============================================================================================
     # Test cases for expressions:
 
-    def test_expr_parser_MethodInvocation(self):
+    def test_parse_expression_MethodInvocation(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
-    def test_expr_parser_FunctionInvocation(self):
+    def test_parse_expression_FunctionInvocation(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
-    def test_expr_parser_FieldAccess(self):
+    def test_parse_expression_FieldAccess(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
-    def test_expr_parser_ContextAccess(self):
+    def test_parse_expression_ContextAccess(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
-    def test_expr_parser_IfElse(self):
+    def test_parse_expression_IfElse(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
-    def test_expr_parser_This(self):
+    def test_parse_expression_This(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
-    def test_expr_parser_Constant(self):
+    def test_parse_expression_Constant(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
