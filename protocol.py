@@ -34,6 +34,10 @@ import re
 # =================================================================================================
 
 class Protocol:
+    _types : Dict[str,Type]
+    _traits: Dict[str,Trait]
+    _funcs : Dict[str,Function]
+
     def __init__(self):
         # Define the primitive types:
         self._types = {}
@@ -43,48 +47,48 @@ class Protocol:
         # Define the standard traits:
         self._traits = {}
         self._traits["Value"] = Trait("Value", [
-                                    Function("get", [Parameter("self", None)                                                                    ], None),
-                                    Function("set", [Parameter("self", None), Parameter("value", None)                                          ], None)
-                                ])
+            Function("get", [Parameter("self", None)], None),
+            Function("set", [Parameter("self", None), Parameter("value", None)], None)
+        ])
         self._traits["Sized"] = Trait("Sized", [
-                                    Function("size",   [Parameter("self", None)                                                                 ], self.type("Size"))
-                                ])
+            Function("size", [Parameter("self", None)], self.type("Size"))
+        ])
         self._traits["IndexCollection"] = Trait("IndexCollection", [
-                                    Function("get",    [Parameter("self", None), Parameter("index", self.type("Size"))                          ], None),
-                                    Function("set",    [Parameter("self", None), Parameter("index", self.type("Size")), Parameter("value", None)], None),
-                                    Function("length", [Parameter("self", None)                                                                 ], self.type("Size"))
-                                ])
+            Function("get",    [Parameter("self", None), Parameter("index", self.type("Size"))], None),
+            Function("set",    [Parameter("self", None), Parameter("index", self.type("Size")), Parameter("value", None)], None),
+            Function("length", [Parameter("self", None)], self.type("Size"))
+        ])
         self._traits["Equality"] = Trait("Equality", [
-                                    Function("eq",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
-                                    Function("ne",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean"))
-                                ])
+            Function("eq", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
+            Function("ne", [Parameter("self", None), Parameter("other", None)], self.type("Boolean"))
+        ])
         self._traits["Ordinal"] = Trait("Ordinal", [
-                                    Function("lt",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
-                                    Function("le",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
-                                    Function("gt",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
-                                    Function("ge",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean"))
-                                ])
+            Function("lt", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
+            Function("le", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
+            Function("gt", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
+            Function("ge", [Parameter("self", None), Parameter("other", None)], self.type("Boolean"))
+        ])
         self._traits["BooleanOps"] = Trait("BooleanOps", [
-                                    Function("and",    [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
-                                    Function("or",     [Parameter("self", None), Parameter("other", None)                                       ], self.type("Boolean")),
-                                    Function("not",    [Parameter("self", None)                                                                 ], self.type("Boolean"))
-                                ])
+            Function("and", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
+            Function("or",  [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
+            Function("not", [Parameter("self", None)], self.type("Boolean"))
+        ])
         self._traits["ArithmeticOps"] = Trait("ArithmeticOps", [
-                                    Function("plus",    [Parameter("self", None), Parameter("other", None)                                      ], None),
-                                    Function("minus",   [Parameter("self", None), Parameter("other", None)                                      ], None),
-                                    Function("multiply",[Parameter("self", None)                                                                ], None),
-                                    Function("divide",  [Parameter("self", None)                                                                ], None),
-                                    Function("modulo",  [Parameter("self", None)                                                                ], None)
-                                ])
+            Function("plus",    [Parameter("self", None), Parameter("other", None)], None),
+            Function("minus",   [Parameter("self", None), Parameter("other", None)], None),
+            Function("multiply",[Parameter("self", None)], None),
+            Function("divide",  [Parameter("self", None)], None),
+            Function("modulo",  [Parameter("self", None)], None)
+        ])
         # Implement standard traits:
-        self.type("Boolean").implement_trait(self.trait("Value"))
-        self.type("Boolean").implement_trait(self.trait("Equality"))
-        self.type("Boolean").implement_trait(self.trait("BooleanOps"))
-        self.type("Size").implement_trait(self.trait("Value"))
-        self.type("Size").implement_trait(self.trait("Equality"))
-        self.type("Size").implement_trait(self.trait("Ordinal"))
-        self.type("Size").implement_trait(self.trait("ArithmeticOps"))
-        # Functions:
+        self._types["Boolean"].implement_trait(self.trait("Value"))
+        self._types["Boolean"].implement_trait(self.trait("Equality"))
+        self._types["Boolean"].implement_trait(self.trait("BooleanOps"))
+        self._types["Size"].implement_trait(self.trait("Value"))
+        self._types["Size"].implement_trait(self.trait("Equality"))
+        self._types["Size"].implement_trait(self.trait("Ordinal"))
+        self._types["Size"].implement_trait(self.trait("ArithmeticOps"))
+        # Define the standards functions:
         self._funcs = {}
 
     # =============================================================================================
@@ -195,6 +199,14 @@ class Protocol:
     # Public API:
 
     def add_bitstring(self, irobj):
+        """
+        Define a new bit string type for this protocol. 
+        The type constructor is described in Section 3.2.1 of the IR specification.
+
+        Parameters:
+            self  - the protocol in which the new type is defined
+            irobj - a dict representing the JSON type constructor
+        """
         self._validate_irtype(irobj, "BitString")
         name         = irobj["name"]
         size         = irobj["size"]
@@ -204,6 +216,14 @@ class Protocol:
         self._types[name].implement_trait(self.trait("Equality"))
 
     def add_array(self, irobj):
+        """
+        Define a new array type for this protocol. 
+        The type constructor is described in Section 3.2.2 of the IR specification.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          irobj - a dict representing the JSON type constructor
+        """
         self._validate_irtype(irobj, "Array")
         name         = irobj["name"]
         element_type = self._types[irobj["element_type"]]
@@ -214,6 +234,14 @@ class Protocol:
         self._types[name].implement_trait(self.trait("IndexCollection"))
 
     def add_struct(self, irobj):
+        """
+        Define a new structure type for this protocol. 
+        The type constructor is described in Section 3.2.3 of the IR specification.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          irobj - a dict representing the JSON type constructor
+        """
         self._validate_irtype(irobj, "Struct")
         name         = irobj["name"]
         self._types[name] = Struct(irobj["name"])
@@ -226,6 +254,14 @@ class Protocol:
         self._types[name].implement_trait(self.trait("Sized"))
 
     def add_enum(self, irobj):
+        """
+        Define a new enumerated type for this protocol. 
+        The type constructor is described in Section 3.2.4 of the IR specification.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          irobj - a dict representing the JSON type constructor
+        """
         self._validate_irtype(irobj, "Enum")
         name         = irobj["name"]
         variants     = self._parse_variants(irobj["variants"])
@@ -233,12 +269,28 @@ class Protocol:
         self._types[name].implement_trait(self.trait("Sized"))
 
     def add_newtype(self, irobj):
+        """
+        Define a new derived type for this protocol. 
+        The type constructor is described in Section 3.2.5 of the IR specification.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          irobj - a dict representing the JSON type constructor
+        """
         self._validate_irtype(irobj, "NewType")
         # FIXME: implement this
         # FIXME: add trait implementations
         raise TypeError("unimplemented (add_newtype)")
 
     def add_function(self, irobj):
+        """
+        Define a new function type for this protocol. 
+        The type constructor is described in Section 3.2.6 of the IR specification.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          irobj - a dict representing the JSON type constructor
+        """
         if irobj["construct"] != "Function":
             raise TypeError("Cannot create Function from {} object".format(irobj["construct"]))
         if irobj["name"] in self._funcs:

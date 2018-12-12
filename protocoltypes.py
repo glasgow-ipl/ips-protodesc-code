@@ -29,15 +29,16 @@ from typing import Dict, List, Tuple, Optional
 
 import re
 
+# Type names begin with an upper case letter, function names do not:
+TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$_]+$"
+FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
+
 # =================================================================================================
+# Type errors:
 
 class TypeError(Exception):
     def __init__(self, reason):
         self.reason = reason
-
-# Type names begin with an upper case letter, function names do not:
-TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$_]+$"
-FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
 
 # =================================================================================================
 # Functions, parameters, arguments, traits:
@@ -64,7 +65,7 @@ class Argument:
         self.value = value_
 
 class Trait:
-    def __init__(self, name, methods):
+    def __init__(self, name, methods: List[Function]) -> None:
         self.name    = name
         self.methods = methods
 
@@ -72,14 +73,14 @@ class Trait:
         print("Trait<{}>".format(self.name))
 
 # =================================================================================================
-# Expressions:
+# Expressions as defined in Section 3.4 of the IR specification:
 
 class Expression:
     def type(self):
         raise TypeError("Expression::type not re-implemented by subclass")
 
 class MethodInvocationExpression(Expression):
-    def __init__(self, target, method, args):
+    def __init__(self, target: Expression, method, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method) == None:
             raise TypeError("Cannot create expression {}: malformed method name".format(method))
         self.kind   = "MethodInvocation"
@@ -124,14 +125,14 @@ class ContextAccessExpression(Expression):
         raise TypeError("unimplemented (ContextAccessExpression::type)")
 
 class IfElseExpression(Expression):
-    def __init__(self, condition, if_true, if_false):
+    def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
         self.condition = condition
         self.if_true   = if_true
         self.if_false  = if_false
         if if_true.type() != if_false.type():
             raise TypeError("Cannot create expression: IfElse branch types differ")
-        if condition.type() != self.get_type["Boolean"]:
-            raise TypeError("Cannot create expression: IfElse condition not Boolean")
+        #if condition.type() != self.get_type["Boolean"]:
+        #    raise TypeError("Cannot create expression: IfElse condition not Boolean")
 
     def type(self):
         return self.if_true.type()
@@ -154,8 +155,14 @@ class ConstantExpression(Expression):
 # =================================================================================================
 # Fields in a structure or the context:
 
+class Transform:
+    def __init__(self, into_name, into_type, using):
+        self.into_name = into_name
+        self.into_type = into_type
+        self.using     = using
+
 class Field:
-    def __init__(self, name_, type_, is_present_, transform_):
+    def __init__(self, name_, type_, is_present_: Optional[Expression], transform_: Optional[Transform]) -> None:
         self.name       = name_
         self.type       = type_
         self.is_present = is_present_
@@ -163,12 +170,6 @@ class Field:
 
     def __str__(self):
         return "Field<{},{},{},{}>".format(self.name, self.type, self.is_present, self.transform)
-
-class Transform:
-    def __init__(self, into_name, into_type, using):
-        self.into_name = into_name
-        self.into_type = into_type
-        self.using     = using
 
 # =================================================================================================
 # Types:
