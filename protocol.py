@@ -531,8 +531,40 @@ class TestProtocol(unittest.TestCase):
         self.assertTrue(False)
 
     def test_parse_expression_FieldAccess(self):
-        # FIXME: implement test case
-        self.assertTrue(False)
+        # Expressions must be parsed in the context of a structure type:
+        protocol = Protocol()
+        protocol.define_bitstring({
+            "construct" : "BitString",
+            "name"      : "TestField",
+            "size"      : 32
+        })
+        protocol.define_struct({
+            "construct"   : "Struct",
+            "name"        : "TestStruct",
+            "fields"      : [{
+                "name"       : "test",
+                "type"       : "TestField",
+                "is_present" : {
+                    "expression" : "Constant",
+                    "type"       : "Boolean",
+                    "value"      : "True"
+                },
+                "transform"  : None
+            }],
+            "constraints" : [],
+            "actions"     : []
+        })
+        # Check that we can parse FieldAccess expressions
+        json = {
+            "expression" : "FieldAccess",
+            "target"     : {"expression" : "This"},
+            "field"      : "test"
+        }
+        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        self.assertTrue(isinstance(expr, FieldAccessExpression))
+        self.assertEqual(expr.type(), protocol.type("TestField"))
+        self.assertEqual(expr.target.type(), protocol.type("TestStruct"))
+        self.assertEqual(expr.field, "test")
 
     def test_parse_expression_ContextAccess(self):
         # FIXME: implement test case

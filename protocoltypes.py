@@ -103,6 +103,13 @@ class FunctionInvocationExpression(Expression):
         return self.func.return_type
 
 class FieldAccessExpression(Expression):
+    """
+    An expression representing access to `field` of `target`.
+    The `target` must be a structure type.
+    """
+    target : Expression
+    field  : str
+
     def __init__(self, target, field):
         if target.type().kind != "Struct":
             raise TypeError("Cannot access field of object with type {}".format(target.type()))
