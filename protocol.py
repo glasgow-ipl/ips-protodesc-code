@@ -31,10 +31,6 @@ from protocoltypes import *
 import json
 import re
 
-class IRError(Exception):
-    def __init__(self, reason):
-        self.reason = reason
-
 # =================================================================================================
 
 class Protocol:
@@ -96,11 +92,11 @@ class Protocol:
 
     def _validate_irtype(self, irobj, kind):
         if irobj["construct"] != kind:
-            raise IRError("Cannot create {} from {} object".format(kind, irobj["construct"]))
+            raise TypeError("Cannot create {} from {} object".format(kind, irobj["construct"]))
         if irobj["name"] in self._types:
-            raise IRError("Cannot create type {}: already exists".format(irobj["name"]))
+            raise TypeError("Cannot create type {}: already exists".format(irobj["name"]))
         if re.search(TYPE_NAME_REGEX, irobj["name"]) == None:
-            raise IRError("Cannot create type {}: malformed name".format(irobj["name"]))
+            raise TypeError("Cannot create type {}: malformed name".format(irobj["name"]))
 
     def _parse_arguments(self, args, this: Type) -> List[Argument]:
         res = []
@@ -142,7 +138,7 @@ class Protocol:
             value = expr["value"]
             return ConstantExpression(type_, value)
         else:
-            raise IRError("Cannot parse expression: {}".format(expr["expression"]))
+            raise TypeError("Cannot parse expression: {}".format(expr["expression"]))
 
     def _parse_transform(self, transform) -> Optional[Transform]:
         if transform != None:
@@ -157,7 +153,7 @@ class Protocol:
         res = []
         for field in fields:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
-                raise IRError("Cannot parse field {}: malformed name".format(field["name"]))
+                raise TypeError("Cannot parse field {}: malformed name".format(field["name"]))
             _name       = field["name"]
             _type       = self.type(field["type"])
             _is_present = self._parse_expression(field["is_present"], this)
@@ -170,7 +166,7 @@ class Protocol:
         for constraint in constraints:
             expr = self._parse_expression(constraint, this)
             if expr.type() != self.type("Boolean"):
-                raise IRError("Cannot parse constraint: {} != Boolean".format(expr.type()))
+                raise TypeError("Cannot parse constraint: {} != Boolean".format(expr.type()))
             res.append(expr)
         return res
 
@@ -179,7 +175,7 @@ class Protocol:
         for action in actions:
             expr = self._parse_expression(action, this)
             if expr.type() != self.type("Nothing"):
-                raise IRError("Cannot parse actions: returns {} not Nothing".format(expr.type()))
+                raise TypeError("Cannot parse actions: returns {} not Nothing".format(expr.type()))
             res.append(expr)
         return res
 
@@ -240,15 +236,15 @@ class Protocol:
         self._validate_irtype(irobj, "NewType")
         # FIXME: implement this
         # FIXME: add trait implementations
-        raise IRError("unimplemented (add_newtype)")
+        raise TypeError("unimplemented (add_newtype)")
 
     def add_function(self, irobj):
         if irobj["construct"] != "Function":
-            raise IRError("Cannot create Function from {} object".format(irobj["construct"]))
+            raise TypeError("Cannot create Function from {} object".format(irobj["construct"]))
         if irobj["name"] in self._funcs:
-            raise IRError("Cannot create Function {}: already exists".format(irobj["name"]))
+            raise TypeError("Cannot create Function {}: already exists".format(irobj["name"]))
         if re.search(FUNC_NAME_REGEX, irobj["name"]) == None:
-            raise IRError("Cannot create Function {}: malformed name".format(irobj["name"]))
+            raise TypeError("Cannot create Function {}: malformed name".format(irobj["name"]))
         name        = irobj["name"]
         params      = self._parse_parameters(irobj["parameters"])
         return_type = self.type(irobj["return_type"])
@@ -257,7 +253,7 @@ class Protocol:
     def add_context(self, irobj):
         # FIXME: implement this
         # FIXME: add trait implementations
-        raise IRError("unimplemented (add_context)")
+        raise TypeError("unimplemented (add_context)")
 
     def type(self, type_name):
         return self._types[type_name]
@@ -270,7 +266,7 @@ class Protocol:
 
     def typecheck(self):
         # FIXME: implement this
-        raise IRError("unimplemented (typecheck)")
+        raise TypeError("unimplemented (typecheck)")
 
 # =================================================================================================
 # Unit tests:
