@@ -198,7 +198,7 @@ class Protocol:
     # =============================================================================================
     # Public API:
 
-    def add_bitstring(self, irobj):
+    def define_bitstring(self, irobj):
         """
         Define a new bit string type for this protocol. 
         The type constructor is described in Section 3.2.1 of the IR specification.
@@ -215,7 +215,7 @@ class Protocol:
         self._types[name].implement_trait(self.trait("Value"))
         self._types[name].implement_trait(self.trait("Equality"))
 
-    def add_array(self, irobj):
+    def define_array(self, irobj):
         """
         Define a new array type for this protocol. 
         The type constructor is described in Section 3.2.2 of the IR specification.
@@ -233,7 +233,7 @@ class Protocol:
         self._types[name].implement_trait(self.trait("Equality"))
         self._types[name].implement_trait(self.trait("IndexCollection"))
 
-    def add_struct(self, irobj):
+    def define_struct(self, irobj):
         """
         Define a new structure type for this protocol. 
         The type constructor is described in Section 3.2.3 of the IR specification.
@@ -253,7 +253,7 @@ class Protocol:
             self._types[name].add_action(action)
         self._types[name].implement_trait(self.trait("Sized"))
 
-    def add_enum(self, irobj):
+    def define_enum(self, irobj):
         """
         Define a new enumerated type for this protocol. 
         The type constructor is described in Section 3.2.4 of the IR specification.
@@ -268,7 +268,7 @@ class Protocol:
         self._types[name] = Enum(name, variants)
         self._types[name].implement_trait(self.trait("Sized"))
 
-    def add_newtype(self, irobj):
+    def derive_type(self, irobj):
         """
         Define a new derived type for this protocol. 
         The type constructor is described in Section 3.2.5 of the IR specification.
@@ -280,9 +280,9 @@ class Protocol:
         self._validate_irtype(irobj, "NewType")
         # FIXME: implement this
         # FIXME: add trait implementations
-        raise TypeError("unimplemented (add_newtype)")
+        raise TypeError("unimplemented (derive_type)")
 
-    def add_function(self, irobj):
+    def define_function(self, irobj):
         """
         Define a new function type for this protocol. 
         The type constructor is described in Section 3.2.6 of the IR specification.
@@ -302,10 +302,10 @@ class Protocol:
         return_type = self.type(irobj["return_type"])
         self._funcs[name] = Function(name, params, return_type)
 
-    def add_context(self, irobj):
+    def define_context(self, irobj):
         # FIXME: implement this
         # FIXME: add trait implementations
-        raise TypeError("unimplemented (add_context)")
+        raise TypeError("unimplemented (define_context)")
 
     def type(self, type_name):
         return self._types[type_name]
@@ -329,9 +329,9 @@ class TestProtocol(unittest.TestCase):
     # =============================================================================================
     # Test cases for types in the IR:
 
-    def test_add_bitstring(self):
+    def test_define_bitstring(self):
         protocol = Protocol()
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct"    : "BitString",
             "name"         : "Timestamp",
             "size"         : 32
@@ -343,14 +343,14 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for traits
         # FIXME: add test for methods
 
-    def test_add_array(self):
+    def test_define_array(self):
         protocol = Protocol()
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct"    : "BitString",
             "name"         : "SSRC",
             "size"         : 32
         })
-        protocol.add_array({
+        protocol.define_array({
             "construct"    : "Array",
             "name"         : "CSRCList",
             "element_type" : "SSRC",
@@ -365,24 +365,24 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for traits
         # FIXME: add test for methods
 
-    def test_add_struct(self):
+    def test_define_struct(self):
         protocol = Protocol()
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct" : "BitString",
             "name"      : "SeqNumTrans",
             "size"      : 16
         })
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct" : "BitString",
             "name"      : "SeqNum",
             "size"      : 16
         })
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct" : "BitString",
             "name"      : "Timestamp",
             "size"      : 32
         })
-        protocol.add_function({
+        protocol.define_function({
             "construct"   : "Function",
             "name"        : "transform_seq",
             "parameters"  : [
@@ -392,7 +392,7 @@ class TestProtocol(unittest.TestCase):
             }],
             "return_type" : "SeqNumTrans"
         })
-        protocol.add_struct({
+        protocol.define_struct({
             "construct"   : "Struct",
             "name"        : "TestStruct",
             "fields"      : [
@@ -464,19 +464,19 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for traits
         # FIXME: add test for methods
 
-    def test_add_enum(self):
+    def test_define_enum(self):
         protocol = Protocol()
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct" : "BitString",
             "name"      : "TypeA",
             "size"      : 32
         })
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct" : "BitString",
             "name"      : "TypeB",
             "size"      : 32
         })
-        protocol.add_enum({
+        protocol.define_enum({
             "construct"   : "Enum",
             "name"        : "TestEnum",
             "variants"    : [
@@ -490,14 +490,14 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for traits
         # FIXME: add test for methods
 
-    def test_add_newtype(self):
+    def test_derive_type(self):
         protocol = Protocol()
-        protocol.add_bitstring({
+        protocol.define_bitstring({
             "construct" : "BitString",
             "name"      : "Bits16",
             "size"      : 16
         })
-        protocol.add_newtype({
+        protocol.derive_type({
             "construct"    : "NewType",
             "name"         : "SeqNum",
             "derived_from" : "Bits16",
@@ -509,11 +509,11 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for traits
         # FIXME: add test for methods
 
-    def test_add_function(self):
+    def test_define_function(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
-    def test_add_context(self):
+    def test_define_context(self):
         # FIXME: implement test case
         self.assertTrue(False)
 
