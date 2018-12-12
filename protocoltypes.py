@@ -194,7 +194,11 @@ class Type:
         self.methods = {}
 
     def __str__(self):
-        return "Type<{}::{}>".format(self.kind, self.name)
+        res = "Type<{}::{}".format(self.kind, self.name)
+        for trait in self.traits:
+            res += " " + trait
+        res += ">"
+        return res
 
     def implement_trait(self, trait: Trait):
         if trait in self.traits:
