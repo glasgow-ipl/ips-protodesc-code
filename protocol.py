@@ -27,6 +27,7 @@
 
 from typing import Dict, List, Tuple, Optional
 from protocoltypes import *
+from copy import copy
 
 import json
 import re
@@ -280,9 +281,16 @@ class Protocol:
           irobj - a dict representing the JSON type constructor
         """
         self._validate_irtype(irobj, "NewType")
-        # FIXME: implement this
-        # FIXME: add trait implementations
-        raise TypeError("unimplemented (derive_type)")
+        name         = irobj["name"]
+        derived_from = irobj["derived_from"]
+        implements   = irobj["implements"]
+        orig_type    = self.type(derived_from)
+        self._types[name] = copy(orig_type)
+        self._types[name].name    = name
+        self._types[name].traits  = copy(orig_type.traits)
+        self._types[name].methods = copy(orig_type.methods)
+        for impl in irobj["implements"]:
+            self._types[name].implement_trait(self.trait(impl["trait"]))
 
     def define_function(self, irobj):
         """
@@ -503,10 +511,10 @@ class TestProtocol(unittest.TestCase):
             "construct"    : "NewType",
             "name"         : "SeqNum",
             "derived_from" : "Bits16",
-            "implements"   : ["Ordinal"]
+            "implements"   : [{"trait" : "Ordinal"}]
         })
         res = protocol.type("SeqNum")
-        self.assertEqual(res.kind, "BitStemp")
+        self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "SeqNum")
         # FIXME: add test for traits
         # FIXME: add test for methods
