@@ -511,24 +511,28 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for traits
         # FIXME: add test for methods
 
+    @unittest.skip("test case not yet implemented")
     def test_define_function(self):
         # FIXME: implement test case
-        self.assertTrue(False)
+        pass
 
+    @unittest.skip("test case not yet implemented")
     def test_define_context(self):
         # FIXME: implement test case
-        self.assertTrue(False)
+        pass
 
     # =============================================================================================
     # Test cases for expressions:
 
+    @unittest.skip("test case not yet implemented")
     def test_parse_expression_MethodInvocation(self):
         # FIXME: implement test case
-        self.assertTrue(False)
+        pass
 
+    @unittest.skip("test case not yet implemented")
     def test_parse_expression_FunctionInvocation(self):
         # FIXME: implement test case
-        self.assertTrue(False)
+        pass
 
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
@@ -566,9 +570,10 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(expr.target.type(), protocol.type("TestStruct"))
         self.assertEqual(expr.field, "test")
 
+    @unittest.skip("test case not yet implemented")
     def test_parse_expression_ContextAccess(self):
         # FIXME: implement test case
-        self.assertTrue(False)
+        pass
 
     def test_parse_expression_IfElse(self):
         # Expressions must be parsed in the context of a structure type:
@@ -624,16 +629,18 @@ class TestProtocol(unittest.TestCase):
         self.assertTrue(isinstance(expr, ThisExpression))
         self.assertEqual(expr.type(), protocol.type("TestStruct"))
 
+    @unittest.skip("test case not yet implemented")
     def test_parse_expression_Constant(self):
         # FIXME: implement test case
-        self.assertTrue(False)
+        pass
 
     # =============================================================================================
     # Test cases for the overall protocol:
 
+    @unittest.skip("test case not yet implemented")
     def test_protocol(self):
         # FIXME: add test for overall protocol definition
-        self.assertTrue(False)
+        pass
 
 # =================================================================================================
 if __name__ == "__main__":
