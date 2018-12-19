@@ -33,7 +33,8 @@ import json
 
 class Formatter:
 	def __init__(self):
-		self.definitions = []
+		self.type_defs = []
+		self.parse_funcs = []
 		self.type_lengths = {}
 		self.field_lengths = {}
 		
@@ -43,8 +44,100 @@ class Formatter:
 #include <string.h>
 #include <stdlib.h>
 """
-		definitions = "\n\n".join(self.definitions)
-		return libs + "\n" + definitions
+		bitreader = """
+typedef struct BitBuffer {
+	/* buffers */
+	uint8_t byte_buffer;
+	uint8_t *buffer;
+
+	/* lengths */
+	size_t bytes_read;
+	size_t bits_read;
+	size_t buffer_length; /* in bytes */
+} BitBuffer;
+
+BitBuffer *new_bbuf(uint8_t *buffer, size_t length) {
+	BitBuffer *bbuf;
+	if ((bbuf = (BitBuffer *) malloc(sizeof(BitBuffer))) == NULL) {
+		return (BitBuffer *) -1;
+	}
+	
+	bbuf->buffer = buffer;
+	bbuf->bytes_read = 0;
+	bbuf->bits_read = 0;
+	bbuf->buffer_length = length;
+
+	return bbuf;
+}
+
+void destroy_bbuf(BitBuffer *bbuf) {
+	return free(bbuf);
+}
+
+void bytewise_bitshift_right(uint8_t *buf, size_t buf_len, size_t shift) {
+	for (int i = buf_len; i >= 0; i--) {
+		buf[i] = buf[i] >> shift;
+		if (i-1 >= 0) {
+			buf[i] = (buf[i-1] << (8-shift)) | buf[i];
+		}
+	}
+}
+
+size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
+	/* want bytes, no bits read */
+	if (bbuf->bits_read == 0 && num_bits % 8 == 0) {
+		memcpy(dest, bbuf->buffer+bbuf->bytes_read, num_bits / 8);
+		bbuf->bytes_read += num_bits / 8;
+	}
+	/* need to read bits, but <= number of bits remaining in first byte */
+	else if (num_bits <= (8-bbuf->bits_read)) {
+		memcpy(&bbuf->byte_buffer, bbuf->buffer+bbuf->bytes_read, 1);
+		bbuf->byte_buffer = bbuf->byte_buffer << bbuf->bits_read;
+		bbuf->byte_buffer = bbuf->byte_buffer >> (8-num_bits);
+		memcpy(dest, &bbuf->byte_buffer, 1);
+		bbuf->bits_read += num_bits;
+		if (bbuf->bits_read > 8) {
+			bbuf->bytes_read++;
+			bbuf->bits_read -= 8;
+		}
+	}
+	/* need to read bits, but <= 8, and need to read into next byte */
+	else if (num_bits <= 8) {
+		memcpy(&bbuf->byte_buffer, bbuf->buffer+bbuf->bytes_read, 1);
+		bbuf->byte_buffer = bbuf->byte_buffer << bbuf->bits_read;
+		uint8_t next_byte = *(bbuf->buffer+bbuf->bytes_read+1);
+		next_byte = next_byte >> (8-bbuf->bits_read);
+		bbuf->byte_buffer = bbuf->byte_buffer | next_byte;
+		bbuf->byte_buffer = bbuf->byte_buffer >> (8-num_bits);
+		memcpy(dest, &bbuf->byte_buffer, 1);
+		bbuf->bytes_read++;
+		bbuf->bits_read = num_bits-(8-bbuf->bits_read);
+	} 
+	else if (bbuf->bits_read == 0 && num_bits > 8) {
+		read_bits(bbuf, dest, num_bits - (num_bits % 8));
+		memcpy(dest + ((num_bits - (num_bits % 8))/8), bbuf->buffer+bbuf->bytes_read, 1);
+		bbuf->bits_read = num_bits % 8;
+		bytewise_bitshift_right(dest, num_bits / 8, 8 - (num_bits % 8));
+	}
+	else if (bbuf->bits_read != 0 && num_bits % 8 != 0) {
+		size_t bits_read_prev = bbuf->bits_read;
+		read_bits(bbuf, dest, num_bits - (num_bits % 8));
+		memcpy(dest + ((num_bits - (num_bits % 8))/8), bbuf->buffer+bbuf->bytes_read, 1);
+		dest[((num_bits - (num_bits % 8))/8)] = dest[((num_bits - (num_bits % 8))/8)] << bits_read_prev;
+		bytewise_bitshift_right(dest, num_bits / 8, bits_read_prev);
+	}
+	else if (bbuf->bits_read != 0 && num_bits % 8 == 0) {
+		for (int i = 0; i < num_bits / 8; i++) {
+			read_bits(bbuf, dest+i, 8);
+		}
+	}
+	return num_bits;
+}
+"""
+
+		type_defs = "\n\n".join(self.type_defs)
+		parse_funcs = "\n\n".join(self.parse_funcs)
+		return libs + "\n" + type_defs + "\n" + bitreader + "\n" + parse_funcs
 
 	def expression(self, struct_name, json_expr):
 		# Equality trait
@@ -84,12 +177,12 @@ class Formatter:
 		typedef = """typedef struct %s {
     unsigned int value : %d;
 } %s;""" % (name, width, name)
-		self.type_lengths[name] = int(width / 8)
-		self.definitions.append(typedef)
+		self.type_lengths[name] = width
+		self.type_defs.append(typedef)
 		
 	def array(self, name, type, length):
 		#TODO
-		self.definitions.append("array %s %s %d" % (name, type, length))
+		self.type_defs.append("array %s %s %d" % (name, type, length))
 
 	def struct(self, name, fields, constraints):
 		# get field definitions
@@ -105,7 +198,8 @@ class Formatter:
 		struct_def = """typedef struct %s {
 %s
 } %s;""" % (name, "\n".join(field_defs), name)
-
+		self.type_defs.append(struct_def)
+		
 		# construct parser function
 		field_memcpys = []
 		cumulative_len = 0
@@ -115,8 +209,7 @@ class Formatter:
 				cumulative_len += length
 			else:
 				length = "len-%d" % (cumulative_len)
-			field_memcpys.append("memcpy(&%s->%s, buffer, %s);" % (name.lower(), field["name"], length))
-			field_memcpys.append("buffer = buffer + %s;" % (length))
+			field_memcpys.append("read_bits(bbuf, &%s->%s, %s);" % (name.lower(), field["name"], length))
 			self.field_lengths[name.lower() + "->" + field["name"].lower()] = length
 		
 		# constraints
@@ -128,12 +221,9 @@ class Formatter:
 			constraint_checks.append("    return -1;")
 			constraint_checks.append("}")
 
-		parser_func = """int parse_%s(uint8_t *buffer, size_t len, %s **parsed_%s) {
+		parser_func = """int parse_%s(BitBuffer *bbuf, size_t len, %s **parsed_%s) {
 	/* malloc struct */
     %s *%s = (%s *) malloc(sizeof(%s));
-    
-    /* need a buffer for bitfields */
-    uint32_t byte_buf;
     
     /* parse input buffer */
     %s
@@ -145,21 +235,21 @@ class Formatter:
     return 0;
 }""" % (name.lower(), name, name.lower(), name, name.lower(), name, name, "\n\t".join(field_memcpys), "\n\t".join(constraint_checks), name.lower(), name.lower())
 
-		self.definitions.append(struct_def + "\n\n" + parser_func)
+		self.parse_funcs.append(parser_func)
 		
 	def enum(self, name, variants):
 		#TODO
-		self.definitions.append("enum %s %s" % (name, str(variants)))
+		self.type_defs.append("enum %s %s" % (name, str(variants)))
 		
 	def protocol(self, name, pdus):
 		pdu_parsers = []
 		for pdu in pdus:
 			pdu_parsers.append("/* try to parse as %s */" % pdu["type"])
-			pdu_parsers.append("if (parse_%s(buffer, filesize, (%s**) pdu) == 0) {" % (pdu["type"].lower(), pdu["type"]))
+			pdu_parsers.append("if (parse_%s(bbuf, filesize, (%s**) pdu) == 0) {" % (pdu["type"].lower(), pdu["type"]))
 			pdu_parsers.append("    printf(\"Parsed: %s\\n\");" % (pdu["type"]))
 			pdu_parsers.append("}")
 
-		self.definitions.append( """int main(int argc, char *argv[]) {
+		self.parse_funcs.append( """int main(int argc, char *argv[]) {
 	if (argc != 2) {
 		printf("usage: %%s <buffer filename>\\n", argv[0]);
 		return -1;
@@ -184,11 +274,15 @@ class Formatter:
 	
 	fclose(fp);
 	
+	/* create BitBuffer */
+	BitBuffer *bbuf = new_bbuf((uint8_t *) buffer, filesize);
+	
 	/* parse buffer using PDU parsing functions */
 	void **pdu;
 	%s
 	
 	/* clean-up */
 	free(*pdu);
+	destroy_bbuf(bbuf);
 	free(buffer);
 }""" % ("\n\t".join(pdu_parsers)))
