@@ -51,7 +51,9 @@ class Formatter:
 		if width is None:
 			width = 8
 			name = "Bits"
-		typedef = "typedef uint%d_t %s;" % (width, name)
+		typedef = """typedef struct %s {
+    unsigned int value : %d;
+} %s;""" % (name, width, name)
 		self.type_lengths[name] = int(width / 8)
 		self.definitions.append(typedef)
 		
@@ -97,8 +99,13 @@ class Formatter:
 			constraint_checks.append("}")
 
 		parser_func = """int parse_%s(uint8_t *buffer, size_t len, %s **parsed_%s) {
-	/* malloc struct, and parse buffer into it */
+	/* malloc struct */
     %s *%s = (%s *) malloc(sizeof(%s));
+    
+    /* need a buffer for bitfields */
+    uint32_t byte_buf;
+    
+    /* parse input buffer */
     %s
     
     /* check constraints */
