@@ -584,10 +584,61 @@ class TestProtocol(unittest.TestCase):
         # FIXME: implement test case
         pass
 
-    @unittest.skip("test case not yet implemented")
     def test_parse_expression_FunctionInvocation(self):
-        # FIXME: implement test case
-        pass
+        # Expressions must be parsed in the context of a structure type:
+        protocol = Protocol()
+        protocol.define_struct({
+            "construct"   : "Struct",
+            "name"        : "TestStruct",
+            "fields"      : [],
+            "constraints" : [],
+            "actions"     : []
+        })
+        protocol.define_bitstring({
+            "construct" : "BitString",
+            "name"      : "Bits16",
+            "size"      : 16
+        })
+        protocol.define_function({
+            "construct"   : "Function",
+            "name"        : "testFunction",
+            "parameters"  : [
+            {
+                "name" : "foo",
+                "type" : "Bits16"
+            },
+            {
+                "name" : "bar",
+                "type" : "Boolean"
+            }],
+            "return_type" : "Boolean"
+        })
+        # Check we can parse FunctionInvocation expressions:
+        json = {
+            "expression" : "FunctionInvocation",
+            "name"       : "testFunction",
+            "arguments"  : [
+                {
+                    "name"  : "foo",
+                    "value" : {
+                        "expression" : "Constant",
+                        "type"       : "Bits16",
+                        "value"      : 12
+                    }
+                },
+                {
+                    "name"  : "bar",
+                    "value" : {
+                        "expression" : "Constant",
+                        "type"       : "Boolean",
+                        "value"      : "False"
+                    }
+                }
+            ]
+        }
+        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        self.assertTrue(isinstance(expr, FunctionInvocationExpression))
+        self.assertTrue(expr.type(), protocol.type("Boolean"))
 
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
