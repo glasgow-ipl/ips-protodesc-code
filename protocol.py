@@ -739,10 +739,42 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(expr.target.type(), protocol.type("TestStruct"))
         self.assertEqual(expr.field, "test")
 
-    @unittest.skip("test case not yet implemented")
     def test_parse_expression_ContextAccess(self):
-        # FIXME: implement test case
-        pass
+        # Expressions must be parsed in the context of a structure type:
+        protocol = Protocol()
+        protocol.define_struct({
+            "construct"   : "Struct",
+            "name"        : "TestStruct",
+            "fields"      : [],
+            "constraints" : [],
+            "actions"     : []
+        })
+        protocol.define_bitstring({
+            "construct" : "BitString",
+            "name"      : "Bits16",
+            "size"      : 16
+        })
+        protocol.define_context({
+            "construct"   : "Context",
+            "fields"  : [
+                {
+                    "name" : "foo",
+                    "type" : "Bits16"
+                },
+                {
+                    "name" : "bar",
+                    "type" : "Boolean"
+                }
+            ]
+        })
+        # Check that we can parse ContextAccess expressions
+        json = {
+            "expression" : "ContextAccess",
+            "field"      : "foo"
+        }
+        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        self.assertTrue(isinstance(expr, ContextAccessExpression))
+        self.assertEqual(expr.type(), protocol.type("Bits16"))
 
     def test_parse_expression_IfElse(self):
         # Expressions must be parsed in the context of a structure type:
