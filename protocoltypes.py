@@ -125,12 +125,12 @@ class FieldAccessExpression(Expression):
         return field.type
 
 class ContextAccessExpression(Expression):
-    def __init__(self, field):
-        self.field = field
+    def __init__(self, context, field):
+        self.context = context
+        self.field   = field
 
     def type(self):
-        # FIXME: implement this
-        raise TypeError("unimplemented (ContextAccessExpression::type)")
+        return self.context[self.field].type
 
 class IfElseExpression(Expression):
     condition : Expression

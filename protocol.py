@@ -41,7 +41,7 @@ class Protocol:
     _types  : Dict[str,Type]
     _traits : Dict[str,Trait]
     _funcs  : Dict[str,Function]
-    _context: List[ContextField]
+    _context: Dict[str, ContextField]
 
     def __init__(self):
         # Define the primitive types:
@@ -96,7 +96,7 @@ class Protocol:
         # Define the standards functions:
         self._funcs = {}
         # Define the context:
-        self._context = []
+        self._context = {}
 
     # =============================================================================================
     # Private helper functions:
@@ -138,7 +138,7 @@ class Protocol:
             return FieldAccessExpression(target, field)
         elif expr["expression"] == "ContextAccess":
             field  = expr["field"]
-            return ContextAccessExpression(field)
+            return ContextAccessExpression(self._context, field)
         elif expr["expression"] == "IfElse":
             condition = self._parse_expression(expr["condition"], this)
             if_true   = self._parse_expression(expr["if_true"  ], this)
@@ -332,7 +332,7 @@ class Protocol:
         for field in irobj["fields"]:
             _name = field["name"]
             _type = self.type(field["type"])
-            self._context.append(ContextField(_name, _type))
+            self._context[_name] = ContextField(_name, _type)
 
     def type(self, type_name):
         return self._types[type_name]
@@ -607,10 +607,10 @@ class TestProtocol(unittest.TestCase):
                 }
             ]
         })
-        self.assertEqual(protocol.context()[0].name, "foo")
-        self.assertEqual(protocol.context()[0].type, protocol.type("Bits16"))
-        self.assertEqual(protocol.context()[1].name, "bar")
-        self.assertEqual(protocol.context()[1].type, protocol.type("Boolean"))
+        self.assertEqual(protocol.context()["foo"].name, "foo")
+        self.assertEqual(protocol.context()["foo"].type, protocol.type("Bits16"))
+        self.assertEqual(protocol.context()["bar"].name, "bar")
+        self.assertEqual(protocol.context()["bar"].type, protocol.type("Boolean"))
 
     # =============================================================================================
     # Test cases for expressions:
