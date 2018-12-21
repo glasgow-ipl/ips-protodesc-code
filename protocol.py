@@ -38,9 +38,10 @@ import re
 # =================================================================================================
 
 class Protocol:
-    _types : Dict[str,Type]
-    _traits: Dict[str,Trait]
-    _funcs : Dict[str,Function]
+    _types  : Dict[str,Type]
+    _traits : Dict[str,Trait]
+    _funcs  : Dict[str,Function]
+    _context: List[Field]
 
     def __init__(self):
         # Define the primitive types:
@@ -330,6 +331,9 @@ class Protocol:
     def trait(self, trait_name):
         return self._traits[trait_name]
 
+    def context(self):
+        return self._context
+
     def typecheck(self):
         # FIXME: implement this
         raise TypeError("unimplemented (typecheck)")
@@ -571,10 +575,30 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.parameters[1].type, protocol.type("Boolean"))
         self.assertEqual(res.return_type, protocol.type("Boolean"))
 
-    @unittest.skip("test case not yet implemented")
     def test_define_context(self):
-        # FIXME: implement test case
-        pass
+        protocol = Protocol()
+        protocol.define_bitstring({
+            "construct" : "BitString",
+            "name"      : "Bits16",
+            "size"      : 16
+        })
+        protocol.define_context({
+            "construct"   : "Context",
+            "fields"  : [
+                {
+                    "name" : "foo",
+                    "type" : "Bits16"
+                },
+                {
+                    "name" : "bar",
+                    "type" : "Boolean"
+                }
+            ]
+        })
+        self.assertEqual(protocol.context()[0].name, "foo")
+        self.assertEqual(protocol.context()[0].type, protocol.type("Bits16"))
+        self.assertEqual(protocol.context()[1].name, "bar")
+        self.assertEqual(protocol.context()[1].type, protocol.type("Boolean"))
 
     # =============================================================================================
     # Test cases for expressions:
