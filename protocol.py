@@ -541,10 +541,35 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Ordinal",  res.traits)
         # FIXME: add test for methods
 
-    @unittest.skip("test case not yet implemented")
     def test_define_function(self):
-        # FIXME: implement test case
-        pass
+        protocol = Protocol()
+        protocol.define_bitstring({
+            "construct" : "BitString",
+            "name"      : "Bits16",
+            "size"      : 16
+        })
+        protocol.define_function({
+            "construct"   : "Function",
+            "name"        : "testFunction",
+            "parameters"  : [
+                {
+                    "name" : "foo",
+                    "type" : "Bits16"
+                },
+                {
+                    "name" : "bar",
+                    "type" : "Boolean"
+                }
+            ],
+            "return_type" : "Boolean"
+        })
+        res = protocol.func("testFunction")
+        self.assertEqual(res.name, "testFunction")
+        self.assertEqual(res.parameters[0].name, "foo")
+        self.assertEqual(res.parameters[0].type, protocol.type("Bits16"))
+        self.assertEqual(res.parameters[1].name, "bar")
+        self.assertEqual(res.parameters[1].type, protocol.type("Boolean"))
+        self.assertEqual(res.return_type, protocol.type("Boolean"))
 
     @unittest.skip("test case not yet implemented")
     def test_define_context(self):
