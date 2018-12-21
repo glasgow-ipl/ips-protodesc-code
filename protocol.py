@@ -579,10 +579,37 @@ class TestProtocol(unittest.TestCase):
     # =============================================================================================
     # Test cases for expressions:
 
-    @unittest.skip("test case not yet implemented")
     def test_parse_expression_MethodInvocation(self):
-        # FIXME: implement test case
-        pass
+        # Expressions must be parsed in the context of a structure type:
+        protocol = Protocol()
+        protocol.define_struct({
+            "construct"   : "Struct",
+            "name"        : "TestStruct",
+            "fields"      : [],
+            "constraints" : [],
+            "actions"     : []
+        })
+        # Check we can parse MethodInvocation expressions:
+        json = {
+            "expression" : "MethodInvocation",
+            "target"     : {
+                "expression" : "This"
+            },
+            "method"     : "eq",
+            "arguments"  : [
+                {
+                    "name"  : "other",
+                    "value" : {
+                        "expression" : "Constant",
+                        "type"       : "Boolean",
+                        "value"      : "False"
+                    }
+                }
+            ]
+        }
+        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        self.assertTrue(isinstance(expr, MethodInvocationExpression))
+        self.assertTrue(expr.type(), protocol.type("Boolean"))
 
     def test_parse_expression_FunctionInvocation(self):
         # Expressions must be parsed in the context of a structure type:
