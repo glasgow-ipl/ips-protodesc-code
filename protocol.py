@@ -735,10 +735,25 @@ class TestProtocol(unittest.TestCase):
         self.assertTrue(isinstance(expr, ThisExpression))
         self.assertEqual(expr.type(), protocol.type("TestStruct"))
 
-    @unittest.skip("test case not yet implemented")
     def test_parse_expression_Constant(self):
-        # FIXME: implement test case
-        pass
+        # Expressions must be parsed in the context of a structure type:
+        protocol = Protocol()
+        protocol.define_struct({
+            "construct"   : "Struct",
+            "name"        : "TestStruct",
+            "fields"      : [],
+            "constraints" : [],
+            "actions"     : []
+        })
+        # Check we can parse This expressions:
+        json = {
+            "expression" : "Constant",
+            "type"       : "Size",
+            "value"      : 2
+        }
+        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        self.assertTrue(isinstance(expr, ConstantExpression))
+        self.assertTrue(expr.type(), protocol.type("Size"))
 
     # =============================================================================================
     # Test cases for the overall protocol:
