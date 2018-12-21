@@ -41,7 +41,7 @@ class Protocol:
     _types  : Dict[str,Type]
     _traits : Dict[str,Trait]
     _funcs  : Dict[str,Function]
-    _context: List[Field]
+    _context: List[ContextField]
 
     def __init__(self):
         # Define the primitive types:
@@ -95,6 +95,8 @@ class Protocol:
         self._types["Size"].implement_trait(self.trait("ArithmeticOps"))
         # Define the standards functions:
         self._funcs = {}
+        # Define the context:
+        self._context = []
 
     # =============================================================================================
     # Private helper functions:
@@ -160,7 +162,7 @@ class Protocol:
         else:
             return None
 
-    def _parse_fields(self, fields, this) -> List[Field]:
+    def _parse_fields(self, fields, this) -> List[StructField]:
         res = []
         for field in fields:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
@@ -169,7 +171,7 @@ class Protocol:
             _type       = self.type(field["type"])
             _is_present = self._parse_expression(field["is_present"], this)
             _transform  = self._parse_transform(field["transform"])
-            res.append(Field(_name, _type, _is_present, _transform))
+            res.append(StructField(_name, _type, _is_present, _transform))
         return res
 
     def _parse_constraints(self, constraints, this: Type) -> List[Expression]:
@@ -318,9 +320,19 @@ class Protocol:
         self._funcs[name] = Function(name, params, return_type)
 
     def define_context(self, irobj):
-        # FIXME: implement this
-        # FIXME: add trait implementations
-        raise TypeError("unimplemented (define_context)")
+        """
+        Define the context for this protocol.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          irobj - a dict representing the JSON type constructor
+        """
+        if irobj["construct"] != "Context":
+            raise TypeError("Cannot create Context from {} object".format(kind, irobj["construct"]))
+        for field in irobj["fields"]:
+            _name = field["name"]
+            _type = self.type(field["type"])
+            self._context.append(ContextField(_name, _type))
 
     def type(self, type_name):
         return self._types[type_name]

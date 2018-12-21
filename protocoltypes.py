@@ -171,7 +171,7 @@ class Transform:
         self.into_type = into_type
         self.using     = using
 
-class Field:
+class StructField:
     def __init__(self, name_, type_, is_present_: Optional[Expression], transform_: Optional[Transform]) -> None:
         self.name       = name_
         self.type       = type_
@@ -179,7 +179,15 @@ class Field:
         self.transform  = transform_
 
     def __str__(self):
-        return "Field<{},{},{},{}>".format(self.name, self.type, self.is_present, self.transform)
+        return "StructField<{},{},{},{}>".format(self.name, self.type, self.is_present, self.transform)
+
+class ContextField:
+    def __init__(self, name_, type_) -> None:
+        self.name       = name_
+        self.type       = type_
+
+    def __str__(self):
+        return "ContextField<{},{}>".format(self.name, self.type)
 
 # =================================================================================================
 # Types:
@@ -257,7 +265,7 @@ class Array(Type):
 class Struct(Type):
     kind:        str
     name:        str
-    fields:      List[Field]
+    fields:      List[StructField]
     constraints: List[Expression]
     actions:     List[Expression]
 
@@ -269,7 +277,7 @@ class Struct(Type):
         self.constraints = []
         self.actions     = []
 
-    def add_field(self, field: Field):
+    def add_field(self, field: StructField):
         self.fields.append(field)
 
     def add_constraint(self, constraint: Expression):
@@ -278,7 +286,7 @@ class Struct(Type):
     def add_action(self, action: Expression):
         self.actions.append(action)
 
-    def get_field(self, field_name) -> Optional[Field]:
+    def get_field(self, field_name) -> Optional[StructField]:
         for field in self.fields:
             if field.name == field_name:
                 return field
