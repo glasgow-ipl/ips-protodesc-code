@@ -61,6 +61,9 @@ class Parameter:
         self.name = name_
         self.type = type_
 
+    def __eq__(self, other):
+        return (self.name == other.name) and (self.type == other.type)
+
 class Argument:
     def __init__(self, name_, type_, value_):
         self.name  = name_
@@ -68,9 +71,14 @@ class Argument:
         self.value = value_
 
 class Trait:
+    name    : str
+    methods : Dict[str,Function]
+
     def __init__(self, name, methods: List[Function]) -> None:
         self.name    = name
-        self.methods = methods
+        self.methods = {}
+        for method in methods:
+            self.methods[method.name] = method
 
     def __str__(self):
         print("Trait<{}>".format(self.name))
@@ -216,11 +224,8 @@ class Type:
             raise TypeError("Cannot implement trait {} for type {}: already implemented".format(trait.name, self.name))
         else:
             self.traits[trait.name] = trait
-            for method in trait.methods:
-                if method.name in self.methods:
-                    raise TypeError("Cannot add method {} for type {}: already implemented".format(method.name, self.name))
-                else:
-                    self.methods[method.name] = method
+            for method_name in trait.methods:
+                self.methods[method_name] = trait.methods[method_name]
 
     def get_method(self, method_name) -> Function:
         return self.methods[method_name]

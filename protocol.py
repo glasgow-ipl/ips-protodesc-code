@@ -53,14 +53,14 @@ class Protocol:
         self._traits = {}
         self._traits["Value"] = Trait("Value", [
             Function("get", [Parameter("self", None)], None),
-            Function("set", [Parameter("self", None), Parameter("value", None)], None)
+            Function("set", [Parameter("self", None), Parameter("value", None)], self.type("Nothing"))
         ])
         self._traits["Sized"] = Trait("Sized", [
             Function("size", [Parameter("self", None)], self.type("Size"))
         ])
         self._traits["IndexCollection"] = Trait("IndexCollection", [
             Function("get",    [Parameter("self", None), Parameter("index", self.type("Size"))], None),
-            Function("set",    [Parameter("self", None), Parameter("index", self.type("Size")), Parameter("value", None)], None),
+            Function("set",    [Parameter("self", None), Parameter("index", self.type("Size")), Parameter("value", None)], self.type("Nothing")),
             Function("length", [Parameter("self", None)], self.type("Size"))
         ])
         self._traits["Equality"] = Trait("Equality", [
@@ -81,9 +81,9 @@ class Protocol:
         self._traits["ArithmeticOps"] = Trait("ArithmeticOps", [
             Function("plus",    [Parameter("self", None), Parameter("other", None)], None),
             Function("minus",   [Parameter("self", None), Parameter("other", None)], None),
-            Function("multiply",[Parameter("self", None)], None),
-            Function("divide",  [Parameter("self", None)], None),
-            Function("modulo",  [Parameter("self", None)], None)
+            Function("multiply",[Parameter("self", None), Parameter("other", None)], None),
+            Function("divide",  [Parameter("self", None), Parameter("other", None)], None),
+            Function("modulo",  [Parameter("self", None), Parameter("other", None)], None)
         ])
         # Implement standard traits:
         self._types["Boolean"].implement_trait(self.trait("Value"))
@@ -333,6 +333,10 @@ class Protocol:
             _name = field["name"]
             _type = self.type(field["type"])
             self._context[_name] = ContextField(_name, _type)
+
+    def load(self, protocol_json):
+        # FIXME: implement this
+        pass
 
     def type(self, type_name):
         return self._types[type_name]
@@ -853,10 +857,102 @@ class TestProtocol(unittest.TestCase):
     # =============================================================================================
     # Test cases for the overall protocol:
 
-    @unittest.skip("test case not yet implemented")
     def test_protocol(self):
-        # FIXME: add test for overall protocol definition
-        pass
+        protocol = Protocol()
+        # Check the number of built-in types:
+        self.assertEqual(len(protocol._types), 3)
+        # Check the built-in Nothing type:
+        self.assertEqual(protocol.type("Nothing").kind, "Nothing")
+        self.assertEqual(protocol.type("Nothing").name, "Nothing")
+        # Check the built-in Boolean type:
+        self.assertEqual(protocol.type("Boolean").kind, "Boolean")
+        self.assertEqual(protocol.type("Boolean").name, "Boolean")
+        # Check the built-in Size type:
+        self.assertEqual(protocol.type("Size").kind, "Size")
+        self.assertEqual(protocol.type("Size").name, "Size")
+        # Check the number of built-in traits:
+        self.assertEqual(len(protocol._traits), 7)
+        # Check the built-in Arithmetic trait:
+        self.assertEqual(protocol.trait("ArithmeticOps").name, "ArithmeticOps")
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["plus"    ].name,        "plus")
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["plus"    ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["plus"    ].return_type, None)
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["minus"   ].name,        "minus")
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["minus"   ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["minus"   ].return_type, None)
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["multiply"].name,        "multiply")
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["multiply"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["multiply"].return_type, None)
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["divide"  ].name,        "divide")
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["divide"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["divide"  ].return_type, None)
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["modulo"  ].name,        "modulo")
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["modulo"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("ArithmeticOps").methods["modulo"  ].return_type, None)
+        self.assertEqual(len(protocol.trait("ArithmeticOps").methods), 5)
+        # Check the built-in Boolean trait:
+        self.assertEqual(protocol.trait("BooleanOps").name, "BooleanOps")
+        self.assertEqual(protocol.trait("BooleanOps").methods["and"].name,        "and")
+        self.assertEqual(protocol.trait("BooleanOps").methods["and"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("BooleanOps").methods["and"].return_type, protocol.type("Boolean"))
+        self.assertEqual(protocol.trait("BooleanOps").methods["or" ].name,        "or")
+        self.assertEqual(protocol.trait("BooleanOps").methods["or" ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("BooleanOps").methods["or" ].return_type, protocol.type("Boolean"))
+        self.assertEqual(protocol.trait("BooleanOps").methods["not"].name,        "not")
+        self.assertEqual(protocol.trait("BooleanOps").methods["not"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.trait("BooleanOps").methods["not"].return_type, protocol.type("Boolean"))
+        self.assertEqual(len(protocol.trait("BooleanOps").methods), 3)
+        # Check the built-in Equality trait:
+        self.assertEqual(protocol.trait("Equality").name, "Equality")
+        self.assertEqual(protocol.trait("Equality").methods["eq"].name,        "eq")
+        self.assertEqual(protocol.trait("Equality").methods["eq"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("Equality").methods["eq"].return_type, protocol.type("Boolean"))
+        self.assertEqual(protocol.trait("Equality").methods["ne"].name,        "ne")
+        self.assertEqual(protocol.trait("Equality").methods["ne"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("Equality").methods["ne"].return_type, protocol.type("Boolean"))
+        self.assertEqual(len(protocol.trait("Equality").methods), 2)
+        # Check the built-in Ordinal trait:
+        self.assertEqual(protocol.trait("Ordinal").name, "Ordinal")
+        self.assertEqual(protocol.trait("Ordinal").methods["lt"].name,        "lt")
+        self.assertEqual(protocol.trait("Ordinal").methods["lt"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("Ordinal").methods["lt"].return_type, protocol.type("Boolean"))
+        self.assertEqual(protocol.trait("Ordinal").methods["le"].name,        "le")
+        self.assertEqual(protocol.trait("Ordinal").methods["le"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("Ordinal").methods["le"].return_type, protocol.type("Boolean"))
+        self.assertEqual(protocol.trait("Ordinal").methods["gt"].name,        "gt")
+        self.assertEqual(protocol.trait("Ordinal").methods["gt"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("Ordinal").methods["gt"].return_type, protocol.type("Boolean"))
+        self.assertEqual(protocol.trait("Ordinal").methods["ge"].name,        "ge")
+        self.assertEqual(protocol.trait("Ordinal").methods["ge"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.trait("Ordinal").methods["ge"].return_type, protocol.type("Boolean"))
+        self.assertEqual(len(protocol.trait("Ordinal").methods), 4)
+        # Check the built-in Value trait:
+        self.assertEqual(protocol.trait("Value").name, "Value")
+        self.assertEqual(protocol.trait("Value").methods["get"].name,        "get")
+        self.assertEqual(protocol.trait("Value").methods["get"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.trait("Value").methods["get"].return_type, None)
+        self.assertEqual(protocol.trait("Value").methods["set"].name,        "set")
+        self.assertEqual(protocol.trait("Value").methods["set"].parameters,  [Parameter("self", None), Parameter("value", None)])
+        self.assertEqual(protocol.trait("Value").methods["set"].return_type, protocol.type("Nothing"))
+        self.assertEqual(len(protocol.trait("Value").methods), 2)
+        # Check the built-in Sized trait:
+        self.assertEqual(protocol.trait("Sized").name, "Sized")
+        self.assertEqual(protocol.trait("Sized").methods["size"].name,        "size")
+        self.assertEqual(protocol.trait("Sized").methods["size"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.trait("Sized").methods["size"].return_type, protocol.type("Size"))
+        self.assertEqual(len(protocol.trait("Sized").methods), 1)
+        # Check the built-in IndexCollection trait:
+        self.assertEqual(protocol.trait("IndexCollection").name, "IndexCollection")
+        self.assertEqual(protocol.trait("IndexCollection").methods["get"].name,           "get")
+        self.assertEqual(protocol.trait("IndexCollection").methods["get"].parameters,     [Parameter("self", None), Parameter("index", protocol.type("Size"))])
+        self.assertEqual(protocol.trait("IndexCollection").methods["get"].return_type,    None)
+        self.assertEqual(protocol.trait("IndexCollection").methods["set"].name,           "set")
+        self.assertEqual(protocol.trait("IndexCollection").methods["set"].parameters,     [Parameter("self", None), Parameter("index", protocol.type("Size")), Parameter("value", None)])
+        self.assertEqual(protocol.trait("IndexCollection").methods["set"].return_type,    protocol.type("Nothing"))
+        self.assertEqual(protocol.trait("IndexCollection").methods["length"].name,        "length")
+        self.assertEqual(protocol.trait("IndexCollection").methods["length"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.trait("IndexCollection").methods["length"].return_type, protocol.type("Size"))
+        self.assertEqual(len(protocol.trait("IndexCollection").methods), 3)
 
 # =================================================================================================
 if __name__ == "__main__":
