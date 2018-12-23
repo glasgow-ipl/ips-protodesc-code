@@ -350,10 +350,6 @@ class Protocol:
     def context(self):
         return self._context
 
-    def typecheck(self):
-        # FIXME: implement this
-        raise TypeError("unimplemented (typecheck)")
-
 # =================================================================================================
 # Unit tests:
 
