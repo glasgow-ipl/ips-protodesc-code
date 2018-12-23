@@ -38,6 +38,7 @@ import re
 # =================================================================================================
 
 class Protocol:
+    _name   : str
     _types  : Dict[str,Type]
     _traits : Dict[str,Trait]
     _funcs  : Dict[str,Function]
@@ -45,6 +46,8 @@ class Protocol:
     _pdus   : Dict[str,Type]
 
     def __init__(self):
+        # The protocol is initially unnammed:
+        self._name  = None
         # Define the primitive types:
         self._types = {}
         self._types["Nothing"] = Nothing()
@@ -210,6 +213,18 @@ class Protocol:
     # =============================================================================================
     # Public API:
 
+    def define_protocol_name(self, name):
+        """
+        Define the name of the protocol.
+
+        Parameters:
+            self - the protocol in which the new type is defined
+            name - the name of the protocol
+        """
+        if self._name != None:
+            raise TypeError("Cannot redefine protocol name")
+        self._name = name
+
     def define_bitstring(self, irobj):
         """
         Define a new bit string type for this protocol. 
@@ -349,7 +364,10 @@ class Protocol:
 
     def load(self, protocol_json):
         """
-        Load the JSON-formatted representation of a protocol object.
+        Load the JSON-formatted representation of a protocol object from a
+        string. It might be easier to create a protocol by calling the API
+        functions ("define_...()") directly, than by creating a JSON file
+        and loading it.
 
         Arguments:
           protocol_json -- A string containing the JSON form of a protocol object
@@ -362,7 +380,7 @@ class Protocol:
             raise IRError("Not a protocol object")
         if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
             raise IRError("Invalid protocol name: {}".format(name))
-        self.protocol_name = protocol["name"]
+        self.define_protocol_name(protocol["name"])
         for obj in protocol["definitions"]:
             if   obj["construct"] == "BitString":
                 self.define_bitstring(obj)
@@ -383,17 +401,38 @@ class Protocol:
         for pdu in protocol["pdus"]:
             self.define_pdu(pdu["type"])
 
+    def name(self):
+        """
+        Return the protocol name
+        """
+        return self._name
+
     def type(self, type_name):
+        """
+        Return a reference to the corresponding Type object, given a type name
+        """
         return self._types[type_name]
 
     def func(self, func_name):
+        """
+        Return a reference to the corresponding Function object, given a function name
+        """
         return self._funcs[func_name]
 
     def trait(self, trait_name):
+        """
+        Return a reference to the corresponding Trait object, givem a Trait name
+        """
         return self._traits[trait_name]
 
     def context(self):
+        """
+        Return a reference to the Context
+        """
         return self._context
+
+    def pdu(self, pdu_name):
+        return self._pdu[pdu_name]
 
 # =================================================================================================
 # Unit tests:
