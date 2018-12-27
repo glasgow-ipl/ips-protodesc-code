@@ -55,7 +55,7 @@ class Parameter:
         return (self.name == other.name) and (self.type == other.type)
 
 class Function:
-    def __init__(self, name, parameters, return_type):
+    def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
         self.name        = name
         self.parameters  = parameters
         self.return_type = return_type
@@ -65,7 +65,7 @@ class Function:
         return self.parameters[0].type == None
 
 class Argument:
-    def __init__(self, name_, type_, value_):
+    def __init__(self, name_: str, type_: "Type", value_) -> None:
         self.name  = name_
         self.type  = type_
         self.value = value_
@@ -74,7 +74,7 @@ class Trait:
     name    : str
     methods : Dict[str,Function]
 
-    def __init__(self, name, methods: List[Function]) -> None:
+    def __init__(self, name: str, methods: List[Function]) -> None:
         self.name    = name
         self.methods = {}
         for method in methods:
