@@ -119,26 +119,24 @@ class FieldAccessExpression(Expression):
     The `target` must be a structure type.
     """
     target : Expression
-    field  : str
+    field_name : str
 
-    def __init__(self, target, field):
+    def __init__(self, target: Expression, field_name: str) -> None:
         if target.type().kind != "Struct":
             raise TypeError("Cannot access field of object with type {}".format(target.type()))
         self.target = target
-        self.field  = field
+        self.field_name = field_name
 
     def type(self):
-        target = self.target.type()
-        field  = target.get_field(self.field)
-        return field.type
+        return self.target.type().get_field(self.field_name).type
 
 class ContextAccessExpression(Expression):
-    def __init__(self, context, field):
+    def __init__(self, context, field_name: str) -> None:
         self.context = context
-        self.field   = field
+        self.field_name   = field_name
 
     def type(self):
-        return self.context[self.field].type
+        return self.context[self.field_name].type
 
 class IfElseExpression(Expression):
     condition : Expression

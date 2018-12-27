@@ -821,7 +821,7 @@ class TestProtocol(unittest.TestCase):
         self.assertTrue(isinstance(expr, FieldAccessExpression))
         self.assertEqual(expr.type(), protocol.type("TestField"))
         self.assertEqual(expr.target.type(), protocol.type("TestStruct"))
-        self.assertEqual(expr.field, "test")
+        self.assertEqual(expr.field_name, "test")
 
     def test_parse_expression_ContextAccess(self):
         # Expressions must be parsed in the context of a structure type:
@@ -859,6 +859,7 @@ class TestProtocol(unittest.TestCase):
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, ContextAccessExpression))
         self.assertEqual(expr.type(), protocol.type("Bits16"))
+        self.assertEqual(expr.field_name, "foo")
 
     def test_parse_expression_IfElse(self):
         # Expressions must be parsed in the context of a structure type:
