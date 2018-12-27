@@ -28,6 +28,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+from abc    import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Optional
 
 import re
@@ -47,12 +48,21 @@ class TypeError(Exception):
 # Functions, parameters, arguments, traits:
 
 class Parameter:
-    def __init__(self, name_: str, type_: "Type") -> None:
-        self.name = name_
-        self.type = type_
+    def __init__(self, param_name: str, param_type: "Type") -> None:
+        self.name = param_name
+        self.type = param_type
 
-    def __eq__(self, other):
-        return (self.name == other.name) and (self.type == other.type)
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Parameter):
+            return False
+        if self.name != other.name:
+            return False
+        if self.type != other.type:
+            return False
+        return True
+
+    def is_self_param(self) -> bool:
+        return (self.name == "self") and (self.type == None)
 
 class Function:
     def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
@@ -61,14 +71,13 @@ class Function:
         self.return_type = return_type
 
     def is_method_compatible(self):
-        return self.parameters[0].name == "self"
-        return self.parameters[0].type == None
+        return self.parameters[0].is_self_param()
 
 class Argument:
-    def __init__(self, name_: str, type_: "Type", value_) -> None:
-        self.name  = name_
-        self.type  = type_
-        self.value = value_
+    def __init__(self, arg_name: str, arg_type: "Type", arg_value) -> None:
+        self.name  = arg_name
+        self.type  = arg_type
+        self.value = arg_value
 
 class Trait:
     name    : str
@@ -86,9 +95,10 @@ class Trait:
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
 
-class Expression:
+class Expression(metaclass=ABCMeta):
+    @abstractmethod
     def type(self):
-        raise TypeError("Expression::type() must be implemented by subclasses")
+        pass
 
 class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method, args: List[Argument]) -> None:
@@ -124,7 +134,7 @@ class FieldAccessExpression(Expression):
     def __init__(self, target: Expression, field_name: str) -> None:
         if target.type().kind != "Struct":
             raise TypeError("Cannot access field of object with type {}".format(target.type()))
-        self.target = target
+        self.target     = target
         self.field_name = field_name
 
     def type(self):
@@ -132,8 +142,8 @@ class FieldAccessExpression(Expression):
 
 class ContextAccessExpression(Expression):
     def __init__(self, context, field_name: str) -> None:
-        self.context = context
-        self.field_name   = field_name
+        self.context    = context
+        self.field_name = field_name
 
     def type(self):
         return self.context[self.field_name].type
@@ -144,53 +154,55 @@ class IfElseExpression(Expression):
     if_false  : Expression
 
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
+        if condition.type().kind != "Boolean":
+            raise TypeError("Cannot create IfElseExpression: condition is not boolean")
+        if if_true.type() != if_false.type():
+            raise TypeError("Cannot create IfElseExpression: branch types differ")
         self.condition = condition
         self.if_true   = if_true
         self.if_false  = if_false
-        if if_true.type() != if_false.type():
-            raise TypeError("Cannot create expression: IfElse branch types differ")
 
     def type(self):
         return self.if_true.type()
 
 class ThisExpression(Expression):
     def __init__(self, this):
-        self._this = this
+        self.this = this
 
     def type(self):
-        return self._this
+        return self.this
 
 class ConstantExpression(Expression):
-    def __init__(self, type_, value):
-        self.type_ = type_
-        self.value = value
+    def __init__(self, constant_type, constant_value):
+        self._type = constant_type
+        self.value = constant_value
 
     def type(self):
-        return self.type_
+        return self._type
 
 # =================================================================================================
 # Fields in a structure or the context:
 
 class Transform:
-    def __init__(self, into_name, into_type, using):
+    def __init__(self, into_name: str, into_type: "Type", using: Function) -> None:
         self.into_name = into_name
         self.into_type = into_type
         self.using     = using
 
 class StructField:
-    def __init__(self, name_, type_, is_present_: Optional[Expression], transform_: Optional[Transform]) -> None:
-        self.name       = name_
-        self.type       = type_
-        self.is_present = is_present_
-        self.transform  = transform_
+    def __init__(self, field_name: str, field_type: "Type", is_present: Optional[Expression], transform: Optional[Transform]) -> None:
+        self.name       = field_name
+        self.type       = field_type
+        self.is_present = is_present
+        self.transform  = transform
 
     def __str__(self):
         return "StructField<{},{},{},{}>".format(self.name, self.type, self.is_present, self.transform)
 
 class ContextField:
-    def __init__(self, name_, type_) -> None:
-        self.name       = name_
-        self.type       = type_
+    def __init__(self, field_name: str, field_type: "Type") -> None:
+        self.name       = field_name
+        self.type       = field_type
 
     def __str__(self):
         return "ContextField<{},{}>".format(self.name, self.type)
