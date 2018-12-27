@@ -46,6 +46,14 @@ class TypeError(Exception):
 # =================================================================================================
 # Functions, parameters, arguments, traits:
 
+class Parameter:
+    def __init__(self, name_: str, type_: "Type") -> None:
+        self.name = name_
+        self.type = type_
+
+    def __eq__(self, other):
+        return (self.name == other.name) and (self.type == other.type)
+
 class Function:
     def __init__(self, name, parameters, return_type):
         self.name        = name
@@ -55,14 +63,6 @@ class Function:
     def is_method_compatible(self):
         return self.parameters[0].name == "self"
         return self.parameters[0].type == None
-
-class Parameter:
-    def __init__(self, name_, type_):
-        self.name = name_
-        self.type = type_
-
-    def __eq__(self, other):
-        return (self.name == other.name) and (self.type == other.type)
 
 class Argument:
     def __init__(self, name_, type_, value_):
