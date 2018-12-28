@@ -29,7 +29,7 @@
 # =================================================================================================
 
 from abc    import ABCMeta, abstractmethod
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 
 import re
 
@@ -77,10 +77,14 @@ class Function:
         return self.parameters[0].is_self_param()
 
 class Argument:
+    arg_name  : str
+    arg_type  : "Type"
+    arg_value : Any
+
     def __init__(self, arg_name: str, arg_type: "Type", arg_value) -> None:
-        self.name  = arg_name
-        self.type  = arg_type
-        self.value = arg_value
+        self.arg_name  = arg_name
+        self.arg_type  = arg_type
+        self.arg_value = arg_value
 
 class Trait:
     name    : str
