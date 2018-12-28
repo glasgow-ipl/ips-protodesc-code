@@ -106,10 +106,8 @@ class Trait:
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
 
-class Expression(metaclass=ABCMeta):
-    @abstractmethod
-    def type(self):
-        pass
+class Expression:
+    expr_type : "Type"
 
 class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method, args: List[Argument]) -> None:
@@ -118,11 +116,7 @@ class MethodInvocationExpression(Expression):
         self.target = target
         self.method = method
         self.args   = args
-
-    def type(self):
-        target = self.target.type()
-        method = target.get_method(self.method)
-        return method.return_type
+        self.expr_type = target.expr_type.get_method(method).return_type
 
 class FunctionInvocationExpression(Expression):
     def __init__(self, func: Function, args: List[Argument]) -> None:
@@ -130,9 +124,7 @@ class FunctionInvocationExpression(Expression):
             raise TypeError("Cannot create FunctionInvocationExpression {}: malformed name".format(func.name))
         self.func   = func
         self.args   = args
-
-    def type(self):
-        return self.func.return_type
+        self.expr_type = func.return_type
 
 class FieldAccessExpression(Expression):
     """
@@ -143,21 +135,18 @@ class FieldAccessExpression(Expression):
     field_name : str
 
     def __init__(self, target: Expression, field_name: str) -> None:
-        if target.type().kind != "Struct":
-            raise TypeError("Cannot access fields in object of type {}".format(target.type()))
-        self.target     = target
-        self.field_name = field_name
-
-    def type(self):
-        return self.target.type().get_field(self.field_name).type
+        if isinstance(target.expr_type, Struct):
+            self.target     = target
+            self.field_name = field_name
+            self.expr_type  = target.expr_type.get_field(self.field_name).type
+        else:
+            raise TypeError("Cannot access fields in object of type {}".format(target.expr_type))
 
 class ContextAccessExpression(Expression):
     def __init__(self, context, field_name: str) -> None:
         self.context    = context
         self.field_name = field_name
-
-    def type(self):
-        return self.context[self.field_name].type
+        self.expr_type = self.context[self.field_name].type
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -165,31 +154,23 @@ class IfElseExpression(Expression):
     if_false  : Expression
 
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
-        if condition.type().kind != "Boolean":
+        if condition.expr_type.kind != "Boolean":
             raise TypeError("Cannot create IfElseExpression: condition is not boolean")
-        if if_true.type() != if_false.type():
+        if if_true.expr_type != if_false.expr_type:
             raise TypeError("Cannot create IfElseExpression: branch types differ")
         self.condition = condition
         self.if_true   = if_true
         self.if_false  = if_false
-
-    def type(self):
-        return self.if_true.type()
+        self.expr_type = if_true.expr_type
 
 class ThisExpression(Expression):
-    def __init__(self, this):
-        self.this = this
-
-    def type(self):
-        return self.this
+    def __init__(self, this_type: "Type") -> None:
+        self.expr_type = this_type
 
 class ConstantExpression(Expression):
-    def __init__(self, constant_type, constant_value):
-        self._type = constant_type
-        self.value = constant_value
-
-    def type(self):
-        return self._type
+    def __init__(self, constant_type: "Type", constant_value: Any) -> None:
+        self.expr_type = constant_type
+        self.value     = constant_value
 
 # =================================================================================================
 # Fields in a structure or the context:
@@ -312,11 +293,11 @@ class Struct(Type):
     def add_action(self, action: Expression):
         self.actions.append(action)
 
-    def get_field(self, field_name) -> Optional[StructField]:
+    def get_field(self, field_name) -> StructField:
         for field in self.fields:
             if field.name == field_name:
                 return field
-        return None
+        raise TypeError("{} has no field named {}".format(self.name, field_name))
 
 class Enum(Type):
     def __init__(self, name, variants):

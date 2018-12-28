@@ -120,7 +120,7 @@ class Protocol:
         for arg in args:
             name_  = arg["name"]
             expr_  = self._parse_expression(arg["value"], this)
-            type_  = expr_.type()
+            type_  = expr_.expr_type
             # FIXME: what is the value?
             value_ = None
             res.append(Argument(name_, type_, value_))
@@ -184,8 +184,8 @@ class Protocol:
         res = []
         for constraint in constraints:
             expr = self._parse_expression(constraint, this)
-            if expr.type() != self.type("Boolean"):
-                raise TypeError("Cannot parse constraint: {} != Boolean".format(expr.type()))
+            if expr.expr_type != self.type("Boolean"):
+                raise TypeError("Cannot parse constraint: {} != Boolean".format(expr.expr_type))
             res.append(expr)
         return res
 
@@ -193,8 +193,8 @@ class Protocol:
         res = []
         for action in actions:
             expr = self._parse_expression(action, this)
-            if expr.type() != self.type("Nothing"):
-                raise TypeError("Cannot parse actions: returns {} not Nothing".format(expr.type()))
+            if expr.expr_type != self.type("Nothing"):
+                raise TypeError("Cannot parse actions: returns {} not Nothing".format(expr.expr_type))
             res.append(expr)
         return res
 
@@ -729,7 +729,7 @@ class TestProtocol(unittest.TestCase):
         }
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, MethodInvocationExpression))
-        self.assertTrue(expr.type(), protocol.type("Boolean"))
+        self.assertTrue(expr.expr_type, protocol.type("Boolean"))
 
     def test_parse_expression_FunctionInvocation(self):
         # Expressions must be parsed in the context of a structure type:
@@ -785,7 +785,7 @@ class TestProtocol(unittest.TestCase):
         }
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, FunctionInvocationExpression))
-        self.assertTrue(expr.type(), protocol.type("Boolean"))
+        self.assertTrue(expr.expr_type, protocol.type("Boolean"))
 
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
@@ -819,8 +819,8 @@ class TestProtocol(unittest.TestCase):
         }
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, FieldAccessExpression))
-        self.assertEqual(expr.type(), protocol.type("TestField"))
-        self.assertEqual(expr.target.type(), protocol.type("TestStruct"))
+        self.assertEqual(expr.expr_type, protocol.type("TestField"))
+        self.assertEqual(expr.target.expr_type, protocol.type("TestStruct"))
         self.assertEqual(expr.field_name, "test")
 
     def test_parse_expression_ContextAccess(self):
@@ -858,7 +858,7 @@ class TestProtocol(unittest.TestCase):
         }
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, ContextAccessExpression))
-        self.assertEqual(expr.type(), protocol.type("Bits16"))
+        self.assertEqual(expr.expr_type, protocol.type("Bits16"))
         self.assertEqual(expr.field_name, "foo")
 
     def test_parse_expression_IfElse(self):
@@ -892,10 +892,10 @@ class TestProtocol(unittest.TestCase):
         }
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, IfElseExpression))
-        self.assertEqual(expr.type(), protocol.type("Boolean"))
-        self.assertEqual(expr.condition.type(), protocol.type("Boolean"))
-        self.assertEqual(expr.if_true.type(),   protocol.type("Boolean"))
-        self.assertEqual(expr.if_false.type(),  protocol.type("Boolean"))
+        self.assertEqual(expr.expr_type, protocol.type("Boolean"))
+        self.assertEqual(expr.condition.expr_type, protocol.type("Boolean"))
+        self.assertEqual(expr.if_true.expr_type,   protocol.type("Boolean"))
+        self.assertEqual(expr.if_false.expr_type,  protocol.type("Boolean"))
 
     def test_parse_expression_This(self):
         # Expressions must be parsed in the context of a structure type:
@@ -913,7 +913,7 @@ class TestProtocol(unittest.TestCase):
         }
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, ThisExpression))
-        self.assertEqual(expr.type(), protocol.type("TestStruct"))
+        self.assertEqual(expr.expr_type, protocol.type("TestStruct"))
 
     def test_parse_expression_Constant(self):
         # Expressions must be parsed in the context of a structure type:
@@ -933,7 +933,7 @@ class TestProtocol(unittest.TestCase):
         }
         expr = protocol._parse_expression(json, protocol.type("TestStruct"))
         self.assertTrue(isinstance(expr, ConstantExpression))
-        self.assertTrue(expr.type(), protocol.type("Size"))
+        self.assertTrue(expr.expr_type, protocol.type("Size"))
 
     # =============================================================================================
     # Test cases for the overall protocol:
