@@ -665,10 +665,10 @@ class TestProtocol(unittest.TestCase):
         })
         res = protocol.func("testFunction")
         self.assertEqual(res.name, "testFunction")
-        self.assertEqual(res.parameters[0].name, "foo")
-        self.assertEqual(res.parameters[0].type, protocol.type("Bits16"))
-        self.assertEqual(res.parameters[1].name, "bar")
-        self.assertEqual(res.parameters[1].type, protocol.type("Boolean"))
+        self.assertEqual(res.parameters[0].param_name, "foo")
+        self.assertEqual(res.parameters[0].param_type, protocol.type("Bits16"))
+        self.assertEqual(res.parameters[1].param_name, "bar")
+        self.assertEqual(res.parameters[1].param_type, protocol.type("Boolean"))
         self.assertEqual(res.return_type, protocol.type("Boolean"))
 
     def test_define_context(self):

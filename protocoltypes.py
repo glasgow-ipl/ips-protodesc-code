@@ -48,21 +48,24 @@ class TypeError(Exception):
 # Functions, parameters, arguments, traits:
 
 class Parameter:
+    param_name : str
+    param_type : "Type"
+
     def __init__(self, param_name: str, param_type: "Type") -> None:
-        self.name = param_name
-        self.type = param_type
+        self.param_name = param_name
+        self.param_type = param_type
 
     def __eq__(self, other) -> bool:
         if not isinstance(other, Parameter):
             return False
-        if self.name != other.name:
+        if self.param_name != other.param_name:
             return False
-        if self.type != other.type:
+        if self.param_type != other.param_type:
             return False
         return True
 
     def is_self_param(self) -> bool:
-        return (self.name == "self") and (self.type == None)
+        return (self.param_name == "self") and (self.param_type == None)
 
 class Function:
     def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
