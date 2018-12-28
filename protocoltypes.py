@@ -110,15 +110,22 @@ class Expression:
     result_type : "Type"
 
 class MethodInvocationExpression(Expression):
-    def __init__(self, target: Expression, method, args: List[Argument]) -> None:
-        if re.search(FUNC_NAME_REGEX, method) == None:
-            raise TypeError("Cannot create MethodInvocationExpression {}: malformed name".format(method))
+    target      : Expression
+    method_name : str
+    args        : List[Argument]
+
+    def __init__(self, target: Expression, method_name, args: List[Argument]) -> None:
+        if re.search(FUNC_NAME_REGEX, method_name) == None:
+            raise TypeError("Cannot create MethodInvocationExpression {}: malformed name".format(method_name))
         self.target      = target
-        self.method      = method
+        self.method_name = method_name
         self.args        = args
-        self.result_type = target.result_type.get_method(method).return_type
+        self.result_type = target.result_type.get_method(method_name).return_type
 
 class FunctionInvocationExpression(Expression):
+    func : Function
+    args : List[Argument]
+
     def __init__(self, func: Function, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
             raise TypeError("Cannot create FunctionInvocationExpression {}: malformed name".format(func.name))
@@ -131,7 +138,7 @@ class FieldAccessExpression(Expression):
     An expression representing access to `field` of `target`.
     The `target` must be a structure type.
     """
-    target : Expression
+    target     : Expression
     field_name : str
 
     def __init__(self, target: Expression, field_name: str) -> None:
@@ -143,7 +150,11 @@ class FieldAccessExpression(Expression):
             raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
 
 class ContextAccessExpression(Expression):
-    def __init__(self, context, field_name: str) -> None:
+    # FIXME: we need a Context object
+    context    : Dict[str, "ContextField"]
+    field_name : str
+
+    def __init__(self, context: Dict[str, "ContextField"], field_name: str) -> None:
         self.context     = context
         self.field_name  = field_name
         self.result_type = self.context[self.field_name].type
@@ -168,6 +179,8 @@ class ThisExpression(Expression):
         self.result_type = this_type
 
 class ConstantExpression(Expression):
+    value : Any
+
     def __init__(self, constant_type: "Type", constant_value: Any) -> None:
         self.result_type = constant_type
         self.value       = constant_value
