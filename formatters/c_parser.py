@@ -30,6 +30,7 @@
 
 import sys
 import json
+import math
 
 class Formatter:
 	def __init__(self):
@@ -175,8 +176,8 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 			width = 8
 			name = "Bits"
 		typedef = """typedef struct %s {
-    unsigned int value : %d;
-} %s;""" % (name, width, name)
+	uint8_t value[%d];
+} %s;""" % (name, math.ceil(width/8), name)
 		self.type_lengths[name] = width
 		self.type_defs.append(typedef)
 		
@@ -209,7 +210,7 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 				cumulative_len += length
 			else:
 				length = "len-%d" % (cumulative_len)
-			field_memcpys.append("read_bits(bbuf, &%s->%s, %s);" % (name.lower(), field["name"], length))
+			field_memcpys.append("read_bits(bbuf, %s->%s.value, %s);" % (name.lower(), field["name"], length))
 			self.field_lengths[name.lower() + "->" + field["name"].lower()] = length
 		
 		# constraints
