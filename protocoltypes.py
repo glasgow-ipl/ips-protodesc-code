@@ -115,7 +115,7 @@ class MethodInvocationExpression(Expression):
 
     def __init__(self, target: Expression, method_name, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
-            raise TypeError("Cannot create MethodInvocationExpression {}: malformed name".format(method_name))
+            raise TypeError("Invalid method name {}".format(method_name))
         self.target      = target
         self.method_name = method_name
         self.args        = args
@@ -127,7 +127,7 @@ class FunctionInvocationExpression(Expression):
 
     def __init__(self, func: Function, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
-            raise TypeError("Cannot create FunctionInvocationExpression {}: malformed name".format(func.name))
+            raise TypeError("Invalid function name {}".format(func.name))
         self.func        = func
         self.args        = args
         self.result_type = func.return_type
@@ -144,7 +144,7 @@ class FieldAccessExpression(Expression):
         if isinstance(target.result_type, Struct):
             self.target     = target
             self.field_name = field_name
-            self.result_type  = target.result_type.get_field(self.field_name).type
+            self.result_type  = target.result_type.field(field_name).type
         else:
             raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
 
@@ -194,22 +194,20 @@ class Transform:
         self.using     = using
 
 class StructField:
-    def __init__(self, field_name: str, field_type: "Type", is_present: Optional[Expression], transform: Optional[Transform]) -> None:
+    def __init__(self, 
+                 field_name: str, 
+                 field_type: "Type", 
+                 is_present: Optional[Expression], 
+                 transform : Optional[Transform]) -> None:
         self.name       = field_name
         self.type       = field_type
         self.is_present = is_present
         self.transform  = transform
 
-    def __str__(self):
-        return "StructField<{},{},{},{}>".format(self.name, self.type, self.is_present, self.transform)
-
 class ContextField:
     def __init__(self, field_name: str, field_type: "Type") -> None:
         self.name       = field_name
         self.type       = field_type
-
-    def __str__(self):
-        return "ContextField<{},{}>".format(self.name, self.type)
 
 # =================================================================================================
 # Types:
@@ -235,7 +233,7 @@ class Type:
 
     def implement_trait(self, trait: Trait):
         if trait in self.traits:
-            raise TypeError("Cannot implement trait {} for type {}: already implemented".format(trait.name, self.name))
+            raise TypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
             self.traits[trait.name] = trait
             for method_name in trait.methods:
@@ -305,7 +303,7 @@ class Struct(Type):
     def add_action(self, action: Expression):
         self.actions.append(action)
 
-    def get_field(self, field_name) -> StructField:
+    def field(self, field_name) -> StructField:
         for field in self.fields:
             if field.name == field_name:
                 return field
