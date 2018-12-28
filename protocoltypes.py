@@ -103,7 +103,7 @@ class Expression(metaclass=ABCMeta):
 class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method) == None:
-            raise TypeError("Cannot create expression {}: malformed method name".format(method))
+            raise TypeError("Cannot create MethodInvocationExpression {}: malformed name".format(method))
         self.target = target
         self.method = method
         self.args   = args
@@ -116,7 +116,7 @@ class MethodInvocationExpression(Expression):
 class FunctionInvocationExpression(Expression):
     def __init__(self, func: Function, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
-            raise TypeError("Cannot create expression {}: malformed function name".format(func.name))
+            raise TypeError("Cannot create FunctionInvocationExpression {}: malformed name".format(func.name))
         self.func   = func
         self.args   = args
 
@@ -133,7 +133,7 @@ class FieldAccessExpression(Expression):
 
     def __init__(self, target: Expression, field_name: str) -> None:
         if target.type().kind != "Struct":
-            raise TypeError("Cannot access field of object with type {}".format(target.type()))
+            raise TypeError("Cannot access fields in object of type {}".format(target.type()))
         self.target     = target
         self.field_name = field_name
 
