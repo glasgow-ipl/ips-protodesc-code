@@ -28,7 +28,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from abc    import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Optional, Any
 
 import re
