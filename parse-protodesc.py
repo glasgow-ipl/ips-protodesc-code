@@ -43,9 +43,9 @@ def load_output_formatter(name):
 def dfs_array(formatter, type_constructors, defined, array_name):
 	array = type_constructors[array_name]
 	print("dfs array %s" % array_name)
-	dfs(formatter, type_constructors, defined, array["type"])
+	dfs(formatter, type_constructors, defined, array["element_type"])
 	if array_name not in defined:
-		formatter.array(array_name, array["type"], array["length"])
+		formatter.array(array_name, array["element_type"], array["length"])
 		defined.append(array_name)
 		
 def dfs_struct(formatter, type_constructors, defined, struct_name):
@@ -62,11 +62,14 @@ def dfs_enum(formatter, type_constructors, defined, enum_name):
 	enum = type_constructors[enum_name]
 	print("dfs enum %s" % enum_name)
 	for variant in enum["variants"]:
-	
 		dfs(formatter, type_constructors, defined, variant["type"])
 	if enum_name not in defined:
 		formatter.enum(enum_name, enum["variants"])
 		defined.append(enum_name)
+
+def dfs_newtype(formatter, type_constructors, defined, newtype_name):
+	newtype = type_constructors[newtype_name]
+	print("dfs newtype %s" % newtype_name)
 	
 def dfs(formatter, type_constructors, defined, type_name):
 	print("dfs %s" % type_constructors[type_name]["construct"])
@@ -81,6 +84,8 @@ def dfs(formatter, type_constructors, defined, type_name):
 		dfs_array(formatter, type_constructors, defined, type_name)
 	if type_constructors[type_name]["construct"] == "Enum":
 		dfs_enum(formatter, type_constructors, defined, type_name)
+	if type_constructors[type_name]["construct"] == "NewType":
+		dfs_newtype(formatter, type_constructors, defined, type_name)
 		
 	
 def main():
@@ -130,6 +135,7 @@ def main():
 		formatter.protocol(proto["name"], proto["pdus"])
 		output = formatter.output()
 	except Exception as e:
+		raise e
 		print(e)
 		print("Could not format output with specified formatter (%s)" % args.output_format)
 

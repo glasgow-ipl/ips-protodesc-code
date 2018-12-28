@@ -41,6 +41,7 @@ def new_protocol(protocol_name, type_namespace):
 
 
 def check_typename(name, type_namespace, should_be_defined):
+	print("hej")
     if name in type_namespace and not should_be_defined:
         raise Exception("Name '%s' has already been defined" % name)
     elif name not in type_namespace and should_be_defined:
@@ -90,6 +91,8 @@ def new_array(name, type_name, type_namespace):
     # generate a name if necessary
     if name is None:
         name = type_name + "$" + str(length)
+
+	print("hello! %s" % type_name)
 
     if length == -1:
         length = None

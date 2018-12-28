@@ -183,7 +183,7 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 		
 	def array(self, name, type, length):
 		#TODO
-		self.type_defs.append("array %s %s %d" % (name, type, length))
+		self.type_defs.append("array %s" % (name))
 
 	def struct(self, name, fields, constraints):
 		# get field definitions
