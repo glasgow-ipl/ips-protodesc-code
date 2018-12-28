@@ -107,24 +107,24 @@ class Trait:
 # Expressions as defined in Section 3.4 of the IR specification:
 
 class Expression:
-    expr_type : "Type"
+    result_type : "Type"
 
 class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method) == None:
             raise TypeError("Cannot create MethodInvocationExpression {}: malformed name".format(method))
-        self.target = target
-        self.method = method
-        self.args   = args
-        self.expr_type = target.expr_type.get_method(method).return_type
+        self.target      = target
+        self.method      = method
+        self.args        = args
+        self.result_type = target.result_type.get_method(method).return_type
 
 class FunctionInvocationExpression(Expression):
     def __init__(self, func: Function, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
             raise TypeError("Cannot create FunctionInvocationExpression {}: malformed name".format(func.name))
-        self.func   = func
-        self.args   = args
-        self.expr_type = func.return_type
+        self.func        = func
+        self.args        = args
+        self.result_type = func.return_type
 
 class FieldAccessExpression(Expression):
     """
@@ -135,18 +135,18 @@ class FieldAccessExpression(Expression):
     field_name : str
 
     def __init__(self, target: Expression, field_name: str) -> None:
-        if isinstance(target.expr_type, Struct):
+        if isinstance(target.result_type, Struct):
             self.target     = target
             self.field_name = field_name
-            self.expr_type  = target.expr_type.get_field(self.field_name).type
+            self.result_type  = target.result_type.get_field(self.field_name).type
         else:
-            raise TypeError("Cannot access fields in object of type {}".format(target.expr_type))
+            raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
 
 class ContextAccessExpression(Expression):
     def __init__(self, context, field_name: str) -> None:
-        self.context    = context
-        self.field_name = field_name
-        self.expr_type = self.context[self.field_name].type
+        self.context     = context
+        self.field_name  = field_name
+        self.result_type = self.context[self.field_name].type
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -154,23 +154,23 @@ class IfElseExpression(Expression):
     if_false  : Expression
 
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
-        if condition.expr_type.kind != "Boolean":
+        if condition.result_type.kind != "Boolean":
             raise TypeError("Cannot create IfElseExpression: condition is not boolean")
-        if if_true.expr_type != if_false.expr_type:
+        if if_true.result_type != if_false.result_type:
             raise TypeError("Cannot create IfElseExpression: branch types differ")
-        self.condition = condition
-        self.if_true   = if_true
-        self.if_false  = if_false
-        self.expr_type = if_true.expr_type
+        self.condition   = condition
+        self.if_true     = if_true
+        self.if_false    = if_false
+        self.result_type = if_true.result_type
 
 class ThisExpression(Expression):
     def __init__(self, this_type: "Type") -> None:
-        self.expr_type = this_type
+        self.result_type = this_type
 
 class ConstantExpression(Expression):
     def __init__(self, constant_type: "Type", constant_value: Any) -> None:
-        self.expr_type = constant_type
-        self.value     = constant_value
+        self.result_type = constant_type
+        self.value       = constant_value
 
 # =================================================================================================
 # Fields in a structure or the context:
