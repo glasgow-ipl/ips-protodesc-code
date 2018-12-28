@@ -28,7 +28,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Any
 
 import re
 
@@ -46,31 +46,58 @@ class TypeError(Exception):
 # =================================================================================================
 # Functions, parameters, arguments, traits:
 
+class Parameter:
+    param_name : str
+    param_type : "Type"
+
+    def __init__(self, param_name: str, param_type: "Type") -> None:
+        self.param_name = param_name
+        self.param_type = param_type
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Parameter):
+            return False
+        if self.param_name != other.param_name:
+            return False
+        if self.param_type != other.param_type:
+            return False
+        return True
+
+    def is_self_param(self) -> bool:
+        return (self.param_name == "self") and (self.param_type == None)
+
 class Function:
-    def __init__(self, name, parameters, return_type):
+    name        : str
+    parameters  : List[Parameter]
+    return_type : "Type"
+
+    def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
         self.name        = name
         self.parameters  = parameters
         self.return_type = return_type
 
-    def is_method_compatible(self):
-        return self.parameters[0].name == "self"
-        return self.parameters[0].type == None
-
-class Parameter:
-    def __init__(self, name_, type_):
-        self.name = name_
-        self.type = type_
+    def is_method_compatible(self) -> bool:
+        return self.parameters[0].is_self_param()
 
 class Argument:
-    def __init__(self, name_, type_, value_):
-        self.name  = name_
-        self.type  = type_
-        self.value = value_
+    arg_name  : str
+    arg_type  : "Type"
+    arg_value : Any
+
+    def __init__(self, arg_name: str, arg_type: "Type", arg_value: Any) -> None:
+        self.arg_name  = arg_name
+        self.arg_type  = arg_type
+        self.arg_value = arg_value
 
 class Trait:
-    def __init__(self, name, methods: List[Function]) -> None:
+    name    : str
+    methods : Dict[str,Function]
+
+    def __init__(self, name: str, methods: List[Function]) -> None:
         self.name    = name
-        self.methods = methods
+        self.methods = {}
+        for method in methods:
+            self.methods[method.name] = method
 
     def __str__(self):
         print("Trait<{}>".format(self.name))
@@ -79,58 +106,57 @@ class Trait:
 # Expressions as defined in Section 3.4 of the IR specification:
 
 class Expression:
-    def type(self):
-        raise TypeError("Expression::type() must be implemented by subclasses")
+    result_type : "Type"
 
 class MethodInvocationExpression(Expression):
-    def __init__(self, target: Expression, method, args: List[Argument]) -> None:
-        if re.search(FUNC_NAME_REGEX, method) == None:
-            raise TypeError("Cannot create expression {}: malformed method name".format(method))
-        self.target = target
-        self.method = method
-        self.args   = args
+    target      : Expression
+    method_name : str
+    args        : List[Argument]
 
-    def type(self):
-        target = self.target.type()
-        method = target.get_method(self.method)
-        return method.return_type
+    def __init__(self, target: Expression, method_name, args: List[Argument]) -> None:
+        if re.search(FUNC_NAME_REGEX, method_name) == None:
+            raise TypeError("Invalid method name {}".format(method_name))
+        self.target      = target
+        self.method_name = method_name
+        self.args        = args
+        self.result_type = target.result_type.get_method(method_name).return_type
 
 class FunctionInvocationExpression(Expression):
+    func : Function
+    args : List[Argument]
+
     def __init__(self, func: Function, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
-            raise TypeError("Cannot create expression {}: malformed function name".format(func.name))
-        self.func   = func
-        self.args   = args
-
-    def type(self):
-        return self.func.return_type
+            raise TypeError("Invalid function name {}".format(func.name))
+        self.func        = func
+        self.args        = args
+        self.result_type = func.return_type
 
 class FieldAccessExpression(Expression):
     """
     An expression representing access to `field` of `target`.
     The `target` must be a structure type.
     """
-    target : Expression
-    field  : str
+    target     : Expression
+    field_name : str
 
-    def __init__(self, target, field):
-        if target.type().kind != "Struct":
-            raise TypeError("Cannot access field of object with type {}".format(target.type()))
-        self.target = target
-        self.field  = field
-
-    def type(self):
-        target = self.target.type()
-        field  = target.get_field(self.field)
-        return field.type
+    def __init__(self, target: Expression, field_name: str) -> None:
+        if isinstance(target.result_type, Struct):
+            self.target     = target
+            self.field_name = field_name
+            self.result_type  = target.result_type.field(field_name).type
+        else:
+            raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
 
 class ContextAccessExpression(Expression):
-    def __init__(self, field):
-        self.field = field
+    # FIXME: we need a Context object
+    context    : Dict[str, "ContextField"]
+    field_name : str
 
-    def type(self):
-        # FIXME: implement this
-        raise TypeError("unimplemented (ContextAccessExpression::type)")
+    def __init__(self, context: Dict[str, "ContextField"], field_name: str) -> None:
+        self.context     = context
+        self.field_name  = field_name
+        self.result_type = self.context[self.field_name].type
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -138,48 +164,50 @@ class IfElseExpression(Expression):
     if_false  : Expression
 
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
-        self.condition = condition
-        self.if_true   = if_true
-        self.if_false  = if_false
-        if if_true.type() != if_false.type():
-            raise TypeError("Cannot create expression: IfElse branch types differ")
-
-    def type(self):
-        return self.if_true.type()
+        if condition.result_type.kind != "Boolean":
+            raise TypeError("Cannot create IfElseExpression: condition is not boolean")
+        if if_true.result_type != if_false.result_type:
+            raise TypeError("Cannot create IfElseExpression: branch types differ")
+        self.condition   = condition
+        self.if_true     = if_true
+        self.if_false    = if_false
+        self.result_type = if_true.result_type
 
 class ThisExpression(Expression):
-    def __init__(self, this):
-        self._this = this
-
-    def type(self):
-        return self._this
+    def __init__(self, this_type: "Type") -> None:
+        self.result_type = this_type
 
 class ConstantExpression(Expression):
-    def __init__(self, type_, value):
-        self.type_ = type_
-        self.value = value
+    value : Any
 
-    def type(self):
-        return self.type_
+    def __init__(self, constant_type: "Type", constant_value: Any) -> None:
+        self.result_type = constant_type
+        self.value       = constant_value
 
 # =================================================================================================
 # Fields in a structure or the context:
 
 class Transform:
-    def __init__(self, into_name, into_type, using):
+    def __init__(self, into_name: str, into_type: "Type", using: Function) -> None:
         self.into_name = into_name
         self.into_type = into_type
         self.using     = using
 
-class Field:
-    def __init__(self, name_, type_, is_present_: Optional[Expression], transform_: Optional[Transform]) -> None:
-        self.name       = name_
-        self.type       = type_
-        self.is_present = is_present_
-        self.transform  = transform_
+class StructField:
+    def __init__(self, 
+                 field_name: str, 
+                 field_type: "Type", 
+                 is_present: Optional[Expression], 
+                 transform : Optional[Transform]) -> None:
+        self.name       = field_name
+        self.type       = field_type
+        self.is_present = is_present
+        self.transform  = transform
 
-    def __str__(self):
-        return "Field<{},{},{},{}>".format(self.name, self.type, self.is_present, self.transform)
+class ContextField:
+    def __init__(self, field_name: str, field_type: "Type") -> None:
+        self.name       = field_name
+        self.type       = field_type
 
 # =================================================================================================
 # Types:
@@ -205,14 +233,11 @@ class Type:
 
     def implement_trait(self, trait: Trait):
         if trait in self.traits:
-            raise TypeError("Cannot implement trait {} for type {}: already implemented".format(trait.name, self.name))
+            raise TypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
             self.traits[trait.name] = trait
-            for method in trait.methods:
-                if method.name in self.methods:
-                    raise TypeError("Cannot add method {} for type {}: already implemented".format(method.name, self.name))
-                else:
-                    self.methods[method.name] = method
+            for method_name in trait.methods:
+                self.methods[method_name] = trait.methods[method_name]
 
     def get_method(self, method_name) -> Function:
         return self.methods[method_name]
@@ -257,7 +282,7 @@ class Array(Type):
 class Struct(Type):
     kind:        str
     name:        str
-    fields:      List[Field]
+    fields:      List[StructField]
     constraints: List[Expression]
     actions:     List[Expression]
 
@@ -269,7 +294,7 @@ class Struct(Type):
         self.constraints = []
         self.actions     = []
 
-    def add_field(self, field: Field):
+    def add_field(self, field: StructField):
         self.fields.append(field)
 
     def add_constraint(self, constraint: Expression):
@@ -278,11 +303,11 @@ class Struct(Type):
     def add_action(self, action: Expression):
         self.actions.append(action)
 
-    def get_field(self, field_name) -> Optional[Field]:
+    def field(self, field_name) -> StructField:
         for field in self.fields:
             if field.name == field_name:
                 return field
-        return None
+        raise TypeError("{} has no field named {}".format(self.name, field_name))
 
 class Enum(Type):
     def __init__(self, name, variants):
