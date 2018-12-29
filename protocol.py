@@ -573,12 +573,12 @@ class TestProtocol(unittest.TestCase):
         res = protocol.type("TestStruct")
         self.assertEqual(res.kind, "Struct")
         self.assertEqual(res.name, "TestStruct")
-        self.assertEqual(res.fields[0].name, "seq")
-        self.assertEqual(res.fields[0].type, protocol.type("SeqNum"))
+        self.assertEqual(res.fields[0].field_name, "seq")
+        self.assertEqual(res.fields[0].field_type, protocol.type("SeqNum"))
         # FIXME: add test for fields[0].is_present
         # FIXME: add test for fields[0].transform
-        self.assertEqual(res.fields[1].name, "ts")
-        self.assertEqual(res.fields[1].type, protocol.type("Timestamp"))
+        self.assertEqual(res.fields[1].field_name, "ts")
+        self.assertEqual(res.fields[1].field_type, protocol.type("Timestamp"))
         # FIXME: add test for fields[1].is_present
         # FIXME: add test for fields[1].transform
         # FIXME: add test for constraints
@@ -691,10 +691,10 @@ class TestProtocol(unittest.TestCase):
                 }
             ]
         })
-        self.assertEqual(protocol.context()["foo"].name, "foo")
-        self.assertEqual(protocol.context()["foo"].type, protocol.type("Bits16"))
-        self.assertEqual(protocol.context()["bar"].name, "bar")
-        self.assertEqual(protocol.context()["bar"].type, protocol.type("Boolean"))
+        self.assertEqual(protocol.context()["foo"].field_name, "foo")
+        self.assertEqual(protocol.context()["foo"].field_type, protocol.type("Bits16"))
+        self.assertEqual(protocol.context()["bar"].field_name, "bar")
+        self.assertEqual(protocol.context()["bar"].field_type, protocol.type("Boolean"))
 
     # =============================================================================================
     # Test cases for expressions:

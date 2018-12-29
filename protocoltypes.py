@@ -144,7 +144,7 @@ class FieldAccessExpression(Expression):
         if isinstance(target.result_type, Struct):
             self.target     = target
             self.field_name = field_name
-            self.result_type  = target.result_type.field(field_name).type
+            self.result_type  = target.result_type.field(field_name).field_type
         else:
             raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
 
@@ -156,7 +156,7 @@ class ContextAccessExpression(Expression):
     def __init__(self, context: Dict[str, "ContextField"], field_name: str) -> None:
         self.context     = context
         self.field_name  = field_name
-        self.result_type = self.context[self.field_name].type
+        self.result_type = self.context[self.field_name].field_type
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -199,15 +199,15 @@ class StructField:
                  field_type: "Type", 
                  is_present: Optional[Expression], 
                  transform : Optional[Transform]) -> None:
-        self.name       = field_name
-        self.type       = field_type
+        self.field_name = field_name
+        self.field_type = field_type
         self.is_present = is_present
         self.transform  = transform
 
 class ContextField:
     def __init__(self, field_name: str, field_type: "Type") -> None:
-        self.name       = field_name
-        self.type       = field_type
+        self.field_name = field_name
+        self.field_type = field_type
 
 # =================================================================================================
 # Types:
@@ -305,7 +305,7 @@ class Struct(Type):
 
     def field(self, field_name) -> StructField:
         for field in self.fields:
-            if field.name == field_name:
+            if field.field_name == field_name:
                 return field
         raise TypeError("{} has no field named {}".format(self.name, field_name))
 
