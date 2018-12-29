@@ -57,30 +57,30 @@ class Protocol:
         self._traits = {}
         self._traits["Value"] = Trait("Value", [
             Function("get", [Parameter("self", None)], None),
-            Function("set", [Parameter("self", None), Parameter("value", None)], self.type("Nothing"))
+            Function("set", [Parameter("self", None), Parameter("value", None)], self.get_type("Nothing"))
         ])
         self._traits["Sized"] = Trait("Sized", [
-            Function("size", [Parameter("self", None)], self.type("Size"))
+            Function("size", [Parameter("self", None)], self.get_type("Size"))
         ])
         self._traits["IndexCollection"] = Trait("IndexCollection", [
-            Function("get",    [Parameter("self", None), Parameter("index", self.type("Size"))], None),
-            Function("set",    [Parameter("self", None), Parameter("index", self.type("Size")), Parameter("value", None)], self.type("Nothing")),
-            Function("length", [Parameter("self", None)], self.type("Size"))
+            Function("get",    [Parameter("self", None), Parameter("index", self.get_type("Size"))], None),
+            Function("set",    [Parameter("self", None), Parameter("index", self.get_type("Size")), Parameter("value", None)], self.get_type("Nothing")),
+            Function("length", [Parameter("self", None)], self.get_type("Size"))
         ])
         self._traits["Equality"] = Trait("Equality", [
-            Function("eq", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
-            Function("ne", [Parameter("self", None), Parameter("other", None)], self.type("Boolean"))
+            Function("eq", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean")),
+            Function("ne", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean"))
         ])
         self._traits["Ordinal"] = Trait("Ordinal", [
-            Function("lt", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
-            Function("le", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
-            Function("gt", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
-            Function("ge", [Parameter("self", None), Parameter("other", None)], self.type("Boolean"))
+            Function("lt", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean")),
+            Function("le", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean")),
+            Function("gt", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean")),
+            Function("ge", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean"))
         ])
         self._traits["BooleanOps"] = Trait("BooleanOps", [
-            Function("and", [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
-            Function("or",  [Parameter("self", None), Parameter("other", None)], self.type("Boolean")),
-            Function("not", [Parameter("self", None)], self.type("Boolean"))
+            Function("and", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean")),
+            Function("or",  [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean")),
+            Function("not", [Parameter("self", None)], self.get_type("Boolean"))
         ])
         self._traits["ArithmeticOps"] = Trait("ArithmeticOps", [
             Function("plus",    [Parameter("self", None), Parameter("other", None)], None),
@@ -90,13 +90,13 @@ class Protocol:
             Function("modulo",  [Parameter("self", None), Parameter("other", None)], None)
         ])
         # Implement standard traits:
-        self._types["Boolean"].implement_trait(self.trait("Value"))
-        self._types["Boolean"].implement_trait(self.trait("Equality"))
-        self._types["Boolean"].implement_trait(self.trait("BooleanOps"))
-        self._types["Size"].implement_trait(self.trait("Value"))
-        self._types["Size"].implement_trait(self.trait("Equality"))
-        self._types["Size"].implement_trait(self.trait("Ordinal"))
-        self._types["Size"].implement_trait(self.trait("ArithmeticOps"))
+        self._types["Boolean"].implement_trait(self.get_trait("Value"))
+        self._types["Boolean"].implement_trait(self.get_trait("Equality"))
+        self._types["Boolean"].implement_trait(self.get_trait("BooleanOps"))
+        self._types["Size"].implement_trait(self.get_trait("Value"))
+        self._types["Size"].implement_trait(self.get_trait("Equality"))
+        self._types["Size"].implement_trait(self.get_trait("Ordinal"))
+        self._types["Size"].implement_trait(self.get_trait("ArithmeticOps"))
         # Define the standards functions:
         self._funcs = {}
         # Define the context:
@@ -135,7 +135,7 @@ class Protocol:
             args   = self._parse_arguments(expr["arguments"], this)
             return MethodInvocationExpression(target, method, args)
         elif expr["expression"] == "FunctionInvocation":
-            func   = self.func(expr["name"])
+            func   = self.get_func(expr["name"])
             args   = self._parse_arguments(expr["arguments"], this)
             return FunctionInvocationExpression(func, args)
         elif expr["expression"] == "FieldAccess":
@@ -153,7 +153,7 @@ class Protocol:
         elif expr["expression"] == "This":
             return ThisExpression(this)
         elif expr["expression"] == "Constant":
-            type_ = self.type(expr["type"])
+            type_ = self.get_type(expr["type"])
             value = expr["value"]
             return ConstantExpression(type_, value)
         else:
@@ -162,8 +162,8 @@ class Protocol:
     def _parse_transform(self, transform) -> Optional[Transform]:
         if transform != None:
             into_name = transform["into_name"]
-            into_type = self.type(transform["into_type"])
-            using     = self.func(transform["using"])
+            into_type = self.get_type(transform["into_type"])
+            using     = self.get_func(transform["using"])
             return Transform(into_name, into_type, using)
         else:
             return None
@@ -174,7 +174,7 @@ class Protocol:
             if re.search(FUNC_NAME_REGEX, field["name"]) == None:
                 raise TypeError("Cannot parse field {}: malformed name".format(field["name"]))
             _name       = field["name"]
-            _type       = self.type(field["type"])
+            _type       = self.get_type(field["type"])
             _is_present = self._parse_expression(field["is_present"], this)
             _transform  = self._parse_transform(field["transform"])
             res.append(StructField(_name, _type, _is_present, _transform))
@@ -184,7 +184,7 @@ class Protocol:
         res = []
         for constraint in constraints:
             expr = self._parse_expression(constraint, this)
-            if expr.result_type != self.type("Boolean"):
+            if expr.result_type != self.get_type("Boolean"):
                 raise TypeError("Cannot parse constraint: {} != Boolean".format(expr.result_type))
             res.append(expr)
         return res
@@ -193,7 +193,7 @@ class Protocol:
         res = []
         for action in actions:
             expr = self._parse_expression(action, this)
-            if expr.result_type != self.type("Nothing"):
+            if expr.result_type != self.get_type("Nothing"):
                 raise TypeError("Cannot parse actions: returns {} not Nothing".format(expr.result_type))
             res.append(expr)
         return res
@@ -201,19 +201,19 @@ class Protocol:
     def _parse_variants(self, variants) -> List[Type]:
         res = []
         for v in variants:
-            res.append(self.type(v["type"]))
+            res.append(self.get_type(v["type"]))
         return res
 
     def _parse_parameters(self, parameters) -> List[Parameter]:
         res = []
         for p in parameters:
-            res.append(Parameter(p["name"], self.type(p["type"])))
+            res.append(Parameter(p["name"], self.get_type(p["type"])))
         return res
 
     # =============================================================================================
     # Public API:
 
-    def define_protocol_name(self, name):
+    def set_protocol_name(self, name: str):
         """
         Define the name of the protocol.
 
@@ -238,9 +238,9 @@ class Protocol:
         name         = irobj["name"]
         size         = irobj["size"]
         self._types[name] = BitString(name, size)
-        self._types[name].implement_trait(self.trait("Sized"))
-        self._types[name].implement_trait(self.trait("Value"))
-        self._types[name].implement_trait(self.trait("Equality"))
+        self._types[name].implement_trait(self.get_trait("Sized"))
+        self._types[name].implement_trait(self.get_trait("Value"))
+        self._types[name].implement_trait(self.get_trait("Equality"))
 
     def define_array(self, irobj):
         """
@@ -256,9 +256,9 @@ class Protocol:
         element_type = self._types[irobj["element_type"]]
         length       = irobj["length"]
         self._types[name] = Array(name, element_type, length)
-        self._types[name].implement_trait(self.trait("Sized"))
-        self._types[name].implement_trait(self.trait("Equality"))
-        self._types[name].implement_trait(self.trait("IndexCollection"))
+        self._types[name].implement_trait(self.get_trait("Sized"))
+        self._types[name].implement_trait(self.get_trait("Equality"))
+        self._types[name].implement_trait(self.get_trait("IndexCollection"))
 
     def define_struct(self, irobj):
         """
@@ -278,8 +278,8 @@ class Protocol:
             self._types[name].add_constraint(constraint)
         for action in self._parse_actions(irobj["actions"], self._types[name]):
             self._types[name].add_action(action)
-        self._types[name].implement_trait(self.trait("Sized"))
-        self._types[name].implement_trait(self.trait("Equality"))
+        self._types[name].implement_trait(self.get_trait("Sized"))
+        self._types[name].implement_trait(self.get_trait("Equality"))
 
     def define_enum(self, irobj):
         """
@@ -294,7 +294,7 @@ class Protocol:
         name         = irobj["name"]
         variants     = self._parse_variants(irobj["variants"])
         self._types[name] = Enum(name, variants)
-        self._types[name].implement_trait(self.trait("Sized"))
+        self._types[name].implement_trait(self.get_trait("Sized"))
 
     def derive_type(self, irobj):
         """
@@ -309,13 +309,13 @@ class Protocol:
         name         = irobj["name"]
         derived_from = irobj["derived_from"]
         implements   = irobj["implements"]
-        orig_type    = self.type(derived_from)
+        orig_type    = self.get_type(derived_from)
         self._types[name] = copy(orig_type)
         self._types[name].name    = name
         self._types[name].traits  = copy(orig_type.traits)
         self._types[name].methods = copy(orig_type.methods)
         for impl in irobj["implements"]:
-            self._types[name].implement_trait(self.trait(impl["trait"]))
+            self._types[name].implement_trait(self.get_trait(impl["trait"]))
 
     def define_function(self, irobj):
         """
@@ -334,7 +334,7 @@ class Protocol:
             raise TypeError("Cannot create Function {}: malformed name".format(irobj["name"]))
         name        = irobj["name"]
         params      = self._parse_parameters(irobj["parameters"])
-        return_type = self.type(irobj["return_type"])
+        return_type = self.get_type(irobj["return_type"])
         self._funcs[name] = Function(name, params, return_type)
 
     def define_context(self, irobj):
@@ -349,7 +349,7 @@ class Protocol:
             raise TypeError("Cannot create Context from {} object".format(kind, irobj["construct"]))
         for field in irobj["fields"]:
             _name = field["name"]
-            _type = self.type(field["type"])
+            _type = self.get_type(field["type"])
             self._context[_name] = ContextField(_name, _type)
 
     def define_pdu(self, pdu: str):
@@ -360,7 +360,7 @@ class Protocol:
           self  - the protocol in which the new type is defined
           pdu   - the name of a pre-existing type that is a PDU
         """
-        self._pdus[pdu] = self.type(pdu)
+        self._pdus[pdu] = self.get_type(pdu)
 
     def load(self, protocol_json):
         """
@@ -380,7 +380,7 @@ class Protocol:
             raise IRError("Not a protocol object")
         if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
             raise IRError("Invalid protocol name: {}".format(name))
-        self.define_protocol_name(protocol["name"])
+        self.set_protocol_name(protocol["name"])
         for obj in protocol["definitions"]:
             if   obj["construct"] == "BitString":
                 self.define_bitstring(obj)
@@ -401,38 +401,23 @@ class Protocol:
         for pdu in protocol["pdus"]:
             self.define_pdu(pdu["type"])
 
-    def name(self):
-        """
-        Return the protocol name
-        """
+    def get_protocol_name(self) -> str:
         return self._name
 
-    def type(self, type_name):
-        """
-        Return a reference to the corresponding Type object, given a type name
-        """
+    def get_type(self, type_name: str) -> Type:
         return self._types[type_name]
 
-    def func(self, func_name):
-        """
-        Return a reference to the corresponding Function object, given a function name
-        """
+    def get_func(self, func_name: str) -> Function:
         return self._funcs[func_name]
 
-    def trait(self, trait_name):
-        """
-        Return a reference to the corresponding Trait object, givem a Trait name
-        """
+    def get_trait(self, trait_name: str) -> Trait:
         return self._traits[trait_name]
 
-    def context(self):
-        """
-        Return a reference to the Context
-        """
+    def get_context(self):
         return self._context
 
-    def pdu(self, pdu_name):
-        return self._pdu[pdu_name]
+    def get_pdu(self, pdu_name: str) -> Type:
+        return self._pdus[pdu_name]
 
 # =================================================================================================
 # Unit tests:
@@ -450,7 +435,7 @@ class TestProtocol(unittest.TestCase):
             "name"         : "Timestamp",
             "size"         : 32
         })
-        res = protocol.type("Timestamp")
+        res = protocol.get_type("Timestamp")
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "Timestamp")
         self.assertEqual(res.size, 32)
@@ -474,10 +459,10 @@ class TestProtocol(unittest.TestCase):
             "element_type" : "SSRC",
             "length"       : 4
         })
-        res = protocol.type("CSRCList")
+        res = protocol.get_type("CSRCList")
         self.assertEqual(res.kind, "Array")
         self.assertEqual(res.name, "CSRCList")
-        self.assertEqual(res.element_type, protocol.type("SSRC"))
+        self.assertEqual(res.element_type, protocol.get_type("SSRC"))
         self.assertEqual(res.length, 4)
         self.assertEqual(res.size, 128)
         # Check trait implementations:
@@ -570,15 +555,15 @@ class TestProtocol(unittest.TestCase):
             "actions" : [
             ]
         })
-        res = protocol.type("TestStruct")
+        res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
         self.assertEqual(res.name, "TestStruct")
-        self.assertEqual(res.fields[0].name, "seq")
-        self.assertEqual(res.fields[0].type, protocol.type("SeqNum"))
+        self.assertEqual(res.fields[0].field_name, "seq")
+        self.assertEqual(res.fields[0].field_type, protocol.get_type("SeqNum"))
         # FIXME: add test for fields[0].is_present
         # FIXME: add test for fields[0].transform
-        self.assertEqual(res.fields[1].name, "ts")
-        self.assertEqual(res.fields[1].type, protocol.type("Timestamp"))
+        self.assertEqual(res.fields[1].field_name, "ts")
+        self.assertEqual(res.fields[1].field_type, protocol.get_type("Timestamp"))
         # FIXME: add test for fields[1].is_present
         # FIXME: add test for fields[1].transform
         # FIXME: add test for constraints
@@ -609,9 +594,9 @@ class TestProtocol(unittest.TestCase):
                 {"type" : "TypeB"}
             ]
         })
-        res = protocol.type("TestEnum")
-        self.assertEqual(res.variants[0], protocol.type("TypeA"))
-        self.assertEqual(res.variants[1], protocol.type("TypeB"))
+        res = protocol.get_type("TestEnum")
+        self.assertEqual(res.variants[0], protocol.get_type("TypeA"))
+        self.assertEqual(res.variants[1], protocol.get_type("TypeB"))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 1)
         self.assertIn("Sized", res.traits)
@@ -630,7 +615,7 @@ class TestProtocol(unittest.TestCase):
             "derived_from" : "Bits16",
             "implements"   : [{"trait" : "Ordinal"}]
         })
-        res = protocol.type("SeqNum")
+        res = protocol.get_type("SeqNum")
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "SeqNum")
         # Check trait implementations:
@@ -663,13 +648,13 @@ class TestProtocol(unittest.TestCase):
             ],
             "return_type" : "Boolean"
         })
-        res = protocol.func("testFunction")
+        res = protocol.get_func("testFunction")
         self.assertEqual(res.name, "testFunction")
         self.assertEqual(res.parameters[0].param_name, "foo")
-        self.assertEqual(res.parameters[0].param_type, protocol.type("Bits16"))
+        self.assertEqual(res.parameters[0].param_type, protocol.get_type("Bits16"))
         self.assertEqual(res.parameters[1].param_name, "bar")
-        self.assertEqual(res.parameters[1].param_type, protocol.type("Boolean"))
-        self.assertEqual(res.return_type, protocol.type("Boolean"))
+        self.assertEqual(res.parameters[1].param_type, protocol.get_type("Boolean"))
+        self.assertEqual(res.return_type, protocol.get_type("Boolean"))
 
     def test_define_context(self):
         protocol = Protocol()
@@ -691,10 +676,10 @@ class TestProtocol(unittest.TestCase):
                 }
             ]
         })
-        self.assertEqual(protocol.context()["foo"].name, "foo")
-        self.assertEqual(protocol.context()["foo"].type, protocol.type("Bits16"))
-        self.assertEqual(protocol.context()["bar"].name, "bar")
-        self.assertEqual(protocol.context()["bar"].type, protocol.type("Boolean"))
+        self.assertEqual(protocol.get_context()["foo"].field_name, "foo")
+        self.assertEqual(protocol.get_context()["foo"].field_type, protocol.get_type("Bits16"))
+        self.assertEqual(protocol.get_context()["bar"].field_name, "bar")
+        self.assertEqual(protocol.get_context()["bar"].field_type, protocol.get_type("Boolean"))
 
     # =============================================================================================
     # Test cases for expressions:
@@ -727,9 +712,9 @@ class TestProtocol(unittest.TestCase):
                 }
             ]
         }
-        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
         self.assertTrue(isinstance(expr, MethodInvocationExpression))
-        self.assertTrue(expr.result_type, protocol.type("Boolean"))
+        self.assertTrue(expr.result_type, protocol.get_type("Boolean"))
 
     def test_parse_expression_FunctionInvocation(self):
         # Expressions must be parsed in the context of a structure type:
@@ -783,9 +768,9 @@ class TestProtocol(unittest.TestCase):
                 }
             ]
         }
-        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
         self.assertTrue(isinstance(expr, FunctionInvocationExpression))
-        self.assertTrue(expr.result_type, protocol.type("Boolean"))
+        self.assertTrue(expr.result_type, protocol.get_type("Boolean"))
 
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
@@ -817,10 +802,10 @@ class TestProtocol(unittest.TestCase):
             "target"     : {"expression" : "This"},
             "field"      : "test"
         }
-        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
         self.assertTrue(isinstance(expr, FieldAccessExpression))
-        self.assertEqual(expr.result_type, protocol.type("TestField"))
-        self.assertEqual(expr.target.result_type, protocol.type("TestStruct"))
+        self.assertEqual(expr.result_type, protocol.get_type("TestField"))
+        self.assertEqual(expr.target.result_type, protocol.get_type("TestStruct"))
         self.assertEqual(expr.field_name, "test")
 
     def test_parse_expression_ContextAccess(self):
@@ -856,9 +841,9 @@ class TestProtocol(unittest.TestCase):
             "expression" : "ContextAccess",
             "field"      : "foo"
         }
-        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
         self.assertTrue(isinstance(expr, ContextAccessExpression))
-        self.assertEqual(expr.result_type, protocol.type("Bits16"))
+        self.assertEqual(expr.result_type, protocol.get_type("Bits16"))
         self.assertEqual(expr.field_name, "foo")
 
     def test_parse_expression_IfElse(self):
@@ -890,12 +875,12 @@ class TestProtocol(unittest.TestCase):
                   "value"      : "False"
             },
         }
-        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
         self.assertTrue(isinstance(expr, IfElseExpression))
-        self.assertEqual(expr.result_type, protocol.type("Boolean"))
-        self.assertEqual(expr.condition.result_type, protocol.type("Boolean"))
-        self.assertEqual(expr.if_true.result_type,   protocol.type("Boolean"))
-        self.assertEqual(expr.if_false.result_type,  protocol.type("Boolean"))
+        self.assertEqual(expr.result_type, protocol.get_type("Boolean"))
+        self.assertEqual(expr.condition.result_type, protocol.get_type("Boolean"))
+        self.assertEqual(expr.if_true.result_type,   protocol.get_type("Boolean"))
+        self.assertEqual(expr.if_false.result_type,  protocol.get_type("Boolean"))
 
     def test_parse_expression_This(self):
         # Expressions must be parsed in the context of a structure type:
@@ -911,9 +896,9 @@ class TestProtocol(unittest.TestCase):
         json = {
             "expression" : "This"
         }
-        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
         self.assertTrue(isinstance(expr, ThisExpression))
-        self.assertEqual(expr.result_type, protocol.type("TestStruct"))
+        self.assertEqual(expr.result_type, protocol.get_type("TestStruct"))
 
     def test_parse_expression_Constant(self):
         # Expressions must be parsed in the context of a structure type:
@@ -931,9 +916,9 @@ class TestProtocol(unittest.TestCase):
             "type"       : "Size",
             "value"      : 2
         }
-        expr = protocol._parse_expression(json, protocol.type("TestStruct"))
+        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
         self.assertTrue(isinstance(expr, ConstantExpression))
-        self.assertTrue(expr.result_type, protocol.type("Size"))
+        self.assertTrue(expr.result_type, protocol.get_type("Size"))
 
     # =============================================================================================
     # Test cases for the overall protocol:
@@ -943,97 +928,97 @@ class TestProtocol(unittest.TestCase):
         # Check the number of built-in types:
         self.assertEqual(len(protocol._types), 3)
         # Check the built-in Nothing type:
-        self.assertEqual(protocol.type("Nothing").kind, "Nothing")
-        self.assertEqual(protocol.type("Nothing").name, "Nothing")
+        self.assertEqual(protocol.get_type("Nothing").kind, "Nothing")
+        self.assertEqual(protocol.get_type("Nothing").name, "Nothing")
         # Check the built-in Boolean type:
-        self.assertEqual(protocol.type("Boolean").kind, "Boolean")
-        self.assertEqual(protocol.type("Boolean").name, "Boolean")
+        self.assertEqual(protocol.get_type("Boolean").kind, "Boolean")
+        self.assertEqual(protocol.get_type("Boolean").name, "Boolean")
         # Check the built-in Size type:
-        self.assertEqual(protocol.type("Size").kind, "Size")
-        self.assertEqual(protocol.type("Size").name, "Size")
+        self.assertEqual(protocol.get_type("Size").kind, "Size")
+        self.assertEqual(protocol.get_type("Size").name, "Size")
         # Check the number of built-in traits:
         self.assertEqual(len(protocol._traits), 7)
         # Check the built-in Arithmetic trait:
-        self.assertEqual(protocol.trait("ArithmeticOps").name, "ArithmeticOps")
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["plus"    ].name,        "plus")
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["plus"    ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["plus"    ].return_type, None)
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["minus"   ].name,        "minus")
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["minus"   ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["minus"   ].return_type, None)
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["multiply"].name,        "multiply")
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["multiply"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["multiply"].return_type, None)
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["divide"  ].name,        "divide")
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["divide"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["divide"  ].return_type, None)
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["modulo"  ].name,        "modulo")
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["modulo"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("ArithmeticOps").methods["modulo"  ].return_type, None)
-        self.assertEqual(len(protocol.trait("ArithmeticOps").methods), 5)
+        self.assertEqual(protocol.get_trait("ArithmeticOps").name, "ArithmeticOps")
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["plus"    ].name,        "plus")
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["plus"    ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["plus"    ].return_type, None)
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["minus"   ].name,        "minus")
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["minus"   ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["minus"   ].return_type, None)
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["multiply"].name,        "multiply")
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["multiply"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["multiply"].return_type, None)
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["divide"  ].name,        "divide")
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["divide"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["divide"  ].return_type, None)
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["modulo"  ].name,        "modulo")
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["modulo"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["modulo"  ].return_type, None)
+        self.assertEqual(len(protocol.get_trait("ArithmeticOps").methods), 5)
         # Check the built-in Boolean trait:
-        self.assertEqual(protocol.trait("BooleanOps").name, "BooleanOps")
-        self.assertEqual(protocol.trait("BooleanOps").methods["and"].name,        "and")
-        self.assertEqual(protocol.trait("BooleanOps").methods["and"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("BooleanOps").methods["and"].return_type, protocol.type("Boolean"))
-        self.assertEqual(protocol.trait("BooleanOps").methods["or" ].name,        "or")
-        self.assertEqual(protocol.trait("BooleanOps").methods["or" ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("BooleanOps").methods["or" ].return_type, protocol.type("Boolean"))
-        self.assertEqual(protocol.trait("BooleanOps").methods["not"].name,        "not")
-        self.assertEqual(protocol.trait("BooleanOps").methods["not"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.trait("BooleanOps").methods["not"].return_type, protocol.type("Boolean"))
-        self.assertEqual(len(protocol.trait("BooleanOps").methods), 3)
+        self.assertEqual(protocol.get_trait("BooleanOps").name, "BooleanOps")
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["and"].name,        "and")
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["and"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["and"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["or" ].name,        "or")
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["or" ].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["or" ].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["not"].name,        "not")
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["not"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.get_trait("BooleanOps").methods["not"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(len(protocol.get_trait("BooleanOps").methods), 3)
         # Check the built-in Equality trait:
-        self.assertEqual(protocol.trait("Equality").name, "Equality")
-        self.assertEqual(protocol.trait("Equality").methods["eq"].name,        "eq")
-        self.assertEqual(protocol.trait("Equality").methods["eq"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("Equality").methods["eq"].return_type, protocol.type("Boolean"))
-        self.assertEqual(protocol.trait("Equality").methods["ne"].name,        "ne")
-        self.assertEqual(protocol.trait("Equality").methods["ne"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("Equality").methods["ne"].return_type, protocol.type("Boolean"))
-        self.assertEqual(len(protocol.trait("Equality").methods), 2)
+        self.assertEqual(protocol.get_trait("Equality").name, "Equality")
+        self.assertEqual(protocol.get_trait("Equality").methods["eq"].name,        "eq")
+        self.assertEqual(protocol.get_trait("Equality").methods["eq"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("Equality").methods["eq"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(protocol.get_trait("Equality").methods["ne"].name,        "ne")
+        self.assertEqual(protocol.get_trait("Equality").methods["ne"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("Equality").methods["ne"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(len(protocol.get_trait("Equality").methods), 2)
         # Check the built-in Ordinal trait:
-        self.assertEqual(protocol.trait("Ordinal").name, "Ordinal")
-        self.assertEqual(protocol.trait("Ordinal").methods["lt"].name,        "lt")
-        self.assertEqual(protocol.trait("Ordinal").methods["lt"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("Ordinal").methods["lt"].return_type, protocol.type("Boolean"))
-        self.assertEqual(protocol.trait("Ordinal").methods["le"].name,        "le")
-        self.assertEqual(protocol.trait("Ordinal").methods["le"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("Ordinal").methods["le"].return_type, protocol.type("Boolean"))
-        self.assertEqual(protocol.trait("Ordinal").methods["gt"].name,        "gt")
-        self.assertEqual(protocol.trait("Ordinal").methods["gt"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("Ordinal").methods["gt"].return_type, protocol.type("Boolean"))
-        self.assertEqual(protocol.trait("Ordinal").methods["ge"].name,        "ge")
-        self.assertEqual(protocol.trait("Ordinal").methods["ge"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.trait("Ordinal").methods["ge"].return_type, protocol.type("Boolean"))
-        self.assertEqual(len(protocol.trait("Ordinal").methods), 4)
+        self.assertEqual(protocol.get_trait("Ordinal").name, "Ordinal")
+        self.assertEqual(protocol.get_trait("Ordinal").methods["lt"].name,        "lt")
+        self.assertEqual(protocol.get_trait("Ordinal").methods["lt"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("Ordinal").methods["lt"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(protocol.get_trait("Ordinal").methods["le"].name,        "le")
+        self.assertEqual(protocol.get_trait("Ordinal").methods["le"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("Ordinal").methods["le"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(protocol.get_trait("Ordinal").methods["gt"].name,        "gt")
+        self.assertEqual(protocol.get_trait("Ordinal").methods["gt"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("Ordinal").methods["gt"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(protocol.get_trait("Ordinal").methods["ge"].name,        "ge")
+        self.assertEqual(protocol.get_trait("Ordinal").methods["ge"].parameters,  [Parameter("self", None), Parameter("other", None)])
+        self.assertEqual(protocol.get_trait("Ordinal").methods["ge"].return_type, protocol.get_type("Boolean"))
+        self.assertEqual(len(protocol.get_trait("Ordinal").methods), 4)
         # Check the built-in Value trait:
-        self.assertEqual(protocol.trait("Value").name, "Value")
-        self.assertEqual(protocol.trait("Value").methods["get"].name,        "get")
-        self.assertEqual(protocol.trait("Value").methods["get"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.trait("Value").methods["get"].return_type, None)
-        self.assertEqual(protocol.trait("Value").methods["set"].name,        "set")
-        self.assertEqual(protocol.trait("Value").methods["set"].parameters,  [Parameter("self", None), Parameter("value", None)])
-        self.assertEqual(protocol.trait("Value").methods["set"].return_type, protocol.type("Nothing"))
-        self.assertEqual(len(protocol.trait("Value").methods), 2)
+        self.assertEqual(protocol.get_trait("Value").name, "Value")
+        self.assertEqual(protocol.get_trait("Value").methods["get"].name,        "get")
+        self.assertEqual(protocol.get_trait("Value").methods["get"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.get_trait("Value").methods["get"].return_type, None)
+        self.assertEqual(protocol.get_trait("Value").methods["set"].name,        "set")
+        self.assertEqual(protocol.get_trait("Value").methods["set"].parameters,  [Parameter("self", None), Parameter("value", None)])
+        self.assertEqual(protocol.get_trait("Value").methods["set"].return_type, protocol.get_type("Nothing"))
+        self.assertEqual(len(protocol.get_trait("Value").methods), 2)
         # Check the built-in Sized trait:
-        self.assertEqual(protocol.trait("Sized").name, "Sized")
-        self.assertEqual(protocol.trait("Sized").methods["size"].name,        "size")
-        self.assertEqual(protocol.trait("Sized").methods["size"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.trait("Sized").methods["size"].return_type, protocol.type("Size"))
-        self.assertEqual(len(protocol.trait("Sized").methods), 1)
+        self.assertEqual(protocol.get_trait("Sized").name, "Sized")
+        self.assertEqual(protocol.get_trait("Sized").methods["size"].name,        "size")
+        self.assertEqual(protocol.get_trait("Sized").methods["size"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.get_trait("Sized").methods["size"].return_type, protocol.get_type("Size"))
+        self.assertEqual(len(protocol.get_trait("Sized").methods), 1)
         # Check the built-in IndexCollection trait:
-        self.assertEqual(protocol.trait("IndexCollection").name, "IndexCollection")
-        self.assertEqual(protocol.trait("IndexCollection").methods["get"].name,           "get")
-        self.assertEqual(protocol.trait("IndexCollection").methods["get"].parameters,     [Parameter("self", None), Parameter("index", protocol.type("Size"))])
-        self.assertEqual(protocol.trait("IndexCollection").methods["get"].return_type,    None)
-        self.assertEqual(protocol.trait("IndexCollection").methods["set"].name,           "set")
-        self.assertEqual(protocol.trait("IndexCollection").methods["set"].parameters,     [Parameter("self", None), Parameter("index", protocol.type("Size")), Parameter("value", None)])
-        self.assertEqual(protocol.trait("IndexCollection").methods["set"].return_type,    protocol.type("Nothing"))
-        self.assertEqual(protocol.trait("IndexCollection").methods["length"].name,        "length")
-        self.assertEqual(protocol.trait("IndexCollection").methods["length"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.trait("IndexCollection").methods["length"].return_type, protocol.type("Size"))
-        self.assertEqual(len(protocol.trait("IndexCollection").methods), 3)
+        self.assertEqual(protocol.get_trait("IndexCollection").name, "IndexCollection")
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["get"].name,           "get")
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["get"].parameters,     [Parameter("self", None), Parameter("index", protocol.get_type("Size"))])
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["get"].return_type,    None)
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["set"].name,           "set")
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["set"].parameters,     [Parameter("self", None), Parameter("index", protocol.get_type("Size")), Parameter("value", None)])
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["set"].return_type,    protocol.get_type("Nothing"))
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].name,        "length")
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].return_type, protocol.get_type("Size"))
+        self.assertEqual(len(protocol.get_trait("IndexCollection").methods), 3)
 
     def test_load(self):
         json = """
