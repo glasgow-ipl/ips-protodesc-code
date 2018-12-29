@@ -30,6 +30,7 @@
 
 import sys
 import json
+import math
 
 class Formatter:
 	def __init__(self):
@@ -175,14 +176,18 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 			width = 8
 			name = "Bits"
 		typedef = """typedef struct %s {
-    unsigned int value : %d;
-} %s;""" % (name, width, name)
+	uint8_t value[%d];
+} %s;""" % (name, math.ceil(width/8), name)
 		self.type_lengths[name] = width
 		self.type_defs.append(typedef)
 		
 	def array(self, name, type, length):
-		#TODO
-		self.type_defs.append("array %s %s %d" % (name, type, length))
+		if length is None:
+			length = ""
+		typedef = """typedef struct %s {
+	%s value[%s];
+} %s;""" % (name, type, str(length), name)
+		self.type_defs.append(typedef)
 
 	def struct(self, name, fields, constraints):
 		# get field definitions
@@ -209,7 +214,7 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 				cumulative_len += length
 			else:
 				length = "len-%d" % (cumulative_len)
-			field_memcpys.append("read_bits(bbuf, &%s->%s, %s);" % (name.lower(), field["name"], length))
+			field_memcpys.append("read_bits(bbuf, %s->%s.value, %s);" % (name.lower(), field["name"], length))
 			self.field_lengths[name.lower() + "->" + field["name"].lower()] = length
 		
 		# constraints
@@ -238,8 +243,22 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 		self.parse_funcs.append(parser_func)
 		
 	def enum(self, name, variants):
-		#TODO
-		self.type_defs.append("enum %s %s" % (name, str(variants)))
+		typedef = """typedef enum %s {%s} %s;""" % (name, ", ".join("%s_%s" % (name.upper(), variant["type"].upper()) for variant in variants), name)
+		
+		funcs = []
+		for variant in variants:
+			func = """if (parse_%s(bbuf, len, parsed_%s)) {
+		return %s_%s;
+	}""" % (variant["type"].lower(), name.lower(), name.upper(), variant["type"].upper())
+			funcs.append(func)
+
+		parser_func = """int parse_%s(BitBuffer *bbuf, size_t len, %s **parsed_%s) {
+	%s
+	return -1;
+}""" % (name.lower(), name, name.lower(), "\n\telse ".join(funcs))
+
+		self.type_defs.append(typedef)
+		self.parse_funcs.append(parser_func)
 		
 	def protocol(self, name, pdus):
 		pdu_parsers = []
