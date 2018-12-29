@@ -213,7 +213,7 @@ class Protocol:
     # =============================================================================================
     # Public API:
 
-    def define_protocol_name(self, name):
+    def set_protocol_name(self, name):
         """
         Define the name of the protocol.
 
@@ -380,7 +380,7 @@ class Protocol:
             raise IRError("Not a protocol object")
         if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
             raise IRError("Invalid protocol name: {}".format(name))
-        self.define_protocol_name(protocol["name"])
+        self.set_protocol_name(protocol["name"])
         for obj in protocol["definitions"]:
             if   obj["construct"] == "BitString":
                 self.define_bitstring(obj)
