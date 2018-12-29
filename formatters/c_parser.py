@@ -176,8 +176,9 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 			width = 8
 			name = "Bits"
 		typedef = """typedef struct %s {
-	uint8_t value[%d];
-} %s;""" % (name, math.ceil(width/8), name)
+	uint8_t *value;
+	int width = %d;
+} %s;""" % (name, width, name)
 		self.type_lengths[name] = width
 		self.type_defs.append(typedef)
 		
