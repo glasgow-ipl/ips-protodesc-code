@@ -177,8 +177,8 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 			name = "Bits"
 		typedef = """typedef struct %s {
 	uint8_t *value;
-	int width = %d;
-} %s;""" % (name, width, name)
+	int width;
+} %s;""" % (name, name)
 		self.type_lengths[name] = width
 		self.type_defs.append(typedef)
 		
@@ -186,8 +186,10 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 		if length is None:
 			length = ""
 		typedef = """typedef struct %s {
-	%s value[%s];
-} %s;""" % (name, type, str(length), name)
+	%s **value;
+	int length;
+} %s;""" % (name, type, name)
+		self.type_lengths[name] = "ArrayNone"
 		self.type_defs.append(typedef)
 
 	def struct(self, name, fields, constraints):
@@ -205,18 +207,29 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 %s
 } %s;""" % (name, "\n".join(field_defs), name)
 		self.type_defs.append(struct_def)
-		
+	
 		# construct parser function
 		field_memcpys = []
+		field_mallocs = []
 		cumulative_len = 0
 		for field in fields:
-			if field["type"] in self.type_lengths:
+			field_memcpys.append("/* %s */" % field["name"].lower())
+			if field["type"] in self.type_lengths and self.type_lengths[field["type"]] != "ArrayNone":
 				length = self.type_lengths[field["type"]]
+				field_memcpys.append("%s->%s.value = (uint8_t *) malloc(%d);" % (name.lower(), field["name"].lower(), math.ceil(length/8)))
+				field_memcpys.append("%s->%s.width = %d;" % (name.lower(), field["name"].lower(), length))
 				cumulative_len += length
+			elif field["type"] in self.type_lengths and self.type_lengths[field["type"]] == "ArrayNone":
+				field_memcpys.append("%s->%s.value = malloc(sizeof(void *));" % (name.lower(), field["name"]))
+				field_memcpys.append("%s->%s.length = 0;" % (name.lower(), field["name"]))
 			else:
+				print(field["type"])
+				print(self.type_lengths)
 				length = "len-%d" % (cumulative_len)
 			field_memcpys.append("read_bits(bbuf, %s->%s.value, %s);" % (name.lower(), field["name"], length))
 			self.field_lengths[name.lower() + "->" + field["name"].lower()] = length
+			field_memcpys.append("")
+		field_memcpys = field_memcpys[:-1]
 		
 		# constraints
 		constraint_checks = []
