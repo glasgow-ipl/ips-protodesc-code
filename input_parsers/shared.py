@@ -91,7 +91,7 @@ def new_array(name, type_name, type_namespace):
     if name is None:
         name = type_name + "$" + str(length)
 
-	print("hello! %s" % type_name)
+    print("hello! %s" % type_name)
 
     if length == -1:
         length = None
