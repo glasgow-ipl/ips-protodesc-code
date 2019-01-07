@@ -41,7 +41,6 @@ def new_protocol(protocol_name, type_namespace):
 
 
 def check_typename(name, type_namespace, should_be_defined):
-	print("hej")
     if name in type_namespace and not should_be_defined:
         raise Exception("Name '%s' has already been defined" % name)
     elif name not in type_namespace and should_be_defined:
