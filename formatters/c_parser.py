@@ -38,6 +38,7 @@ class Formatter:
 		self.parse_funcs = []
 		self.type_lengths = {}
 		self.field_lengths = {}
+		self.arrays = {}
 		
 	def output(self):
 		libs = """#include <stdint.h>
@@ -189,6 +190,7 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 	%s **value;
 	int length;
 } %s;""" % (name, type, name)
+		self.arrays[name] = type
 		self.type_lengths[name] = "ArrayNone"
 		self.type_defs.append(typedef)
 
@@ -221,12 +223,15 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 				cumulative_len += length
 			elif field["type"] in self.type_lengths and self.type_lengths[field["type"]] == "ArrayNone":
 				field_memcpys.append("%s->%s.value = malloc(sizeof(void *));" % (name.lower(), field["name"]))
-				field_memcpys.append("%s->%s.length = 0;" % (name.lower(), field["name"]))
+				field_memcpys.append("%s->%s.length = 1;" % (name.lower(), field["name"]))
+				field_memcpys.append("while (parse_%s(bbuf, len, &%s->%s.value[%s->%s.length-1]) > 0) {" % (self.arrays[field["type"]].lower(), name.lower(), field["name"], name.lower(), field["name"]))
+				field_memcpys.append("    %s->%s.length++;" % (name.lower(), field["name"]))
+				field_memcpys.append("    %s->%s.value = realloc(%s->%s.value, sizeof(void *) * %s->%s.length);" % (name.lower(), field["name"], name.lower(), field["name"], name.lower(), field["name"]))
+				field_memcpys.append("}")
 			else:
-				print(field["type"])
-				print(self.type_lengths)
 				length = "len-%d" % (cumulative_len)
-			field_memcpys.append("read_bits(bbuf, %s->%s.value, %s);" % (name.lower(), field["name"], length))
+			if not (field["type"] in self.type_lengths and self.type_lengths[field["type"]] == "ArrayNone"):
+				field_memcpys.append("read_bits(bbuf, %s->%s.value, %s);" % (name.lower(), field["name"], length))
 			self.field_lengths[name.lower() + "->" + field["name"].lower()] = length
 			field_memcpys.append("")
 		field_memcpys = field_memcpys[:-1]
@@ -261,9 +266,9 @@ size_t read_bits(BitBuffer *bbuf, uint8_t *dest, size_t num_bits) {
 		
 		funcs = []
 		for variant in variants:
-			func = """if (parse_%s(bbuf, len, parsed_%s)) {
+			func = """if (parse_%s(bbuf, len, (%s **) parsed_%s)) {
 		return %s_%s;
-	}""" % (variant["type"].lower(), name.lower(), name.upper(), variant["type"].upper())
+	}""" % (variant["type"].lower(), variant["type"], name.lower(), name.upper(), variant["type"].upper())
 			funcs.append(func)
 
 		parser_func = """int parse_%s(BitBuffer *bbuf, size_t len, %s **parsed_%s) {
