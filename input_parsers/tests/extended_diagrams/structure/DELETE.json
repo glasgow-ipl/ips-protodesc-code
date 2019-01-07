@@ -1,0 +1,41 @@
+{
+    "construct": "Protocol",
+    "name": "Protocol",
+    "definitions": [
+        {
+            "construct": "BitString",
+            "name": "BitString$2",
+            "width": 2
+        },
+        {
+            "construct": "BitString",
+            "name": "BitString$None",
+            "width": null
+        },
+        {
+            "construct": "Struct",
+            "name": "Packet",
+            "fields": [
+                {
+                    "name": "length",
+                    "type": "BitString$2",
+                    "is_present": true,
+                    "transform": null
+                },
+                {
+                    "name": "usable_bits",
+                    "type": "BitString$None",
+                    "is_present": true,
+                    "transform": null
+                }
+            ],
+            "constraints": [],
+            "actions": []
+        }
+    ],
+    "pdus": [
+        {
+            "type": "Packet"
+        }
+    ]
+}

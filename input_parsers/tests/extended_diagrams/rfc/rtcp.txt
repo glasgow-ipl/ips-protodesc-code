@@ -254,12 +254,13 @@ Internet-Draft                     RTP                         July 2003
 
    report blocks: variable
 
-      The third section contains zero or more reception report blocks
-      depending on the number of other sources heard by this sender
-      since the last report.  Each reception report block conveys
-      statistics on the reception of RTP packets from a single
-      synchronization source. Receivers SHOULD NOT carry over statistics
-      when a source changes its SSRC identifier due to a collision.
+      Array consisting of zero or more reception report blocks (as
+      defined in Section 6.4.1.2) depending on the number of other
+      sources heard by this sender since the last report.  Each
+      reception report block conveys statistics on the reception of RTP
+      packets from a single synchronization source. Receivers SHOULD NOT
+      carry over statistics when a source changes its SSRC identifier
+      due to a collision.
 
 6.4.1.1.  Sender Info
 

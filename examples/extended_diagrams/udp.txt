@@ -14,14 +14,14 @@
 
                    Figure 1: User Datagram Header Format
 
-   Source Port: 16 bits
+   Source Port: 16 bits [Port]
 
       Source Port is an optional field, when meaningful, it indicates
       the port of the sending process, and may be assumed to be the port
       to which a reply should be addressed in the absence of any other
       information.  If not used, a value of zero is inserted.
 
-   Destination Port: 16 bits
+   Destination Port: 16 bits [Port]
 
       Destination Port has a meaning within the context of a particular
       internet destination address.
