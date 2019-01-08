@@ -1,11 +1,10 @@
 from . import NewType
-from ..trait import Trait
+from input_parsers.extended_diagrams.ir.trait import Trait
 
 
 class Int(NewType):
     name = "Int"
     width = 32
-    derivedFrom = "BitString"
     implements = [
         Trait("Ordinal"),
         Trait("ArithmeticOps")

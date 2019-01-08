@@ -47,7 +47,7 @@ page_separator                  = page_footer ff lf page_header_footer lf
 page_footer                     = lf:a page_header_footer:b lf:c
 page_header_footer              = chars_visible_space_separated spaces chars_visible_space_separated spaces chars_visible_space_separated
 
-rfc                             = section*:sections -> rfc(Dom(sections))
+rfc                             = section*:sections -> ExtendedDiagrams.rfc(Dom(sections))
 
 ########################################################################
 # Section
@@ -133,7 +133,7 @@ fields                          = field+:fields -> Fields(fields=fields)
 
 field                           = (field_control | field_regular)
 field_regular                   = field_heading:a field_body -> Field(name=a["name"], abbrv=a["abbrv"], width=a["width"],
-                                                                    expressions=([Eq(FieldAccess(ExtendedDiagrams.string_to_field_id(a["name"])).width(), [a["expression"]])] if a["expression"] else None),
+                                                                    expressions=([Eq(a["expression"], [Other(FieldAccess(ExtendedDiagrams.string_to_field_id(a["name"])).width())])] if a["expression"] else None),
                                                                     type=a["type"])
 
 field_heading                   = indent field_heading_name_abbrv:a field_heading_width:b field_heading_type:type crlf*
@@ -167,28 +167,28 @@ expression                      = expression_conditional
 expression_conditional          = expression_equality:cond ' '* '?' ' '* expression_conditional:true ' '* ':' ' '* expression_conditional:false -> IfElse(cond, true, false)
                                 | expression_equality
 
-expression_equality             = expression_boolean:left     ' '* '==' ' '*    expression_boolean:right        -> Eq(left, [right])
-                                | expression_boolean:left     ' '* '!=' ' '*    expression_boolean:right        -> Neq(left, [right])
+expression_equality             = expression_equality:left     ' '* '==' ' '*    expression_equality:right        -> Eq(left, [Other(right)])
+                                | expression_equality:left     ' '* '!=' ' '*    expression_equality:right        -> Neq(left, [Other(right)])
                                 | expression_boolean
 
-expression_boolean              = expression_ordinal:left     ' '* '&&' ' '*    expression_ordinal:right        -> And(left, [right])
-                                | expression_ordinal:left     ' '* '||' ' '*    expression_ordinal:right        -> Or(left, [right])
+expression_boolean              = expression_boolean:left     ' '* '&&' ' '*    expression_boolean:right        -> And(left, [Other(right)])
+                                | expression_boolean:left     ' '* '||' ' '*    expression_boolean:right        -> Or(left, [Other(right)])
                                 | expression_ordinal
 
-expression_ordinal              = expression_additive:left    ' '* '<=' ' '*    expression_additive:right       -> Lte(left, [right])
-                                | expression_additive:left    ' '* '<'  ' '*    expression_additive:right       -> Lt(left, [right])
-                                | expression_additive:left    ' '* '>=' ' '*    expression_additive:right       -> Gte(left, [right])
-                                | expression_additive:left    ' '* '>'  ' '*    expression_additive:right       -> Gt(left, [right])
+expression_ordinal              = expression_ordinal:left    ' '* '<=' ' '*    expression_ordinal:right       -> Lte(left, [Other(right)])
+                                | expression_ordinal:left    ' '* '<'  ' '*    expression_ordinal:right       -> Lt(left, [Other(right)])
+                                | expression_ordinal:left    ' '* '>=' ' '*    expression_ordinal:right       -> Gte(left, [Other(right)])
+                                | expression_ordinal:left    ' '* '>'  ' '*    expression_ordinal:right       -> Gt(left, [Other(right)])
                                 | expression_additive
 
-expression_additive             = expression_multiplicative:left ' '* '+' ' '*  expression_multiplicative:right -> Plus(left, [right])
-                                | expression_multiplicative:left ' '* '-' ' '*  expression_multiplicative:right -> Minus(left, [right])
-                                | expression_multiplicative
-
-expression_multiplicative       = expression_primary:left     ' '* '*' ' '*     expression_additive:right       -> Multiply(left, [right])
-                                | expression_primary:left     ' '* '/' ' '*     expression_additive:right       -> Divide(left, [right])
-                                | expression_primary:left     ' '* '%' ' '*     expression_additive:right       -> Modulo(left, [right])
+expression_multiplicative       = expression_multiplicative:left     ' '* '*' ' '*     expression_multiplicative:right        -> Multiply(left, [Other(right)])
+                                | expression_multiplicative:left     ' '* '/' ' '*     expression_multiplicative:right        -> Divide(left, [Other(right)])
+                                | expression_multiplicative:left     ' '* '%' ' '*     expression_multiplicative:right        -> Modulo(left, [Other(right)])
                                 | expression_primary
+
+expression_additive             = expression_additive:left ' '* '+' ' '*  expression_additive:right -> Plus(left, [Other(right)])
+                                | expression_additive:left ' '* '-' ' '*  expression_additive:right -> Minus(left, [Other(right)])
+                                | expression_multiplicative
 
 expression_primary              = number:n  -> Constant(n)
                                 | true      -> Constant(True)
