@@ -1,4 +1,4 @@
 from .dom import Dom
-from .dictionarable import Dictionarable
+from input_parsers.extended_diagrams.dictionarable import Dictionarable
 
 __all__ = ['Dom', 'Dictionarable']

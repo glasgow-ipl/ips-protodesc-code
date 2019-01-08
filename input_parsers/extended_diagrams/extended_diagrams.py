@@ -1,16 +1,48 @@
-from shared import *
+#!/usr/bin/env python3
+import string
+import os
+import itertools
+import parsley
 from typing import List, Dict, Tuple
-import re
-import json
+from ..shared import *
+from .names import Names
 from .dom.element.art import Art
 from .dom.element.field import Field
 from .dom.element.fields import Fields
 from .dom.section.section import Section
-from .dom.expression import FieldAccess, Constant, Expression
-from .dom.expression.method_invocation import Eq
+from input_parsers.extended_diagrams.ir.expression import FieldAccess, Constant, Expression
+from input_parsers.extended_diagrams.ir.expression.method_invocation import Eq
+from input_parsers.extended_diagrams.ir.expression.other import Other
+from input_parsers.extended_diagrams.__bindings__ import bindings as bindings_dom
 
 
 class ExtendedDiagrams:
+
+    @staticmethod
+    def get_parser_file(filename="extended_diagrams.txt"):
+        with open(filename) as fp:
+            grammar = fp.read()
+        return ExtendedDiagrams.get_parser(grammar)
+
+    @staticmethod
+    def get_parser(grammar):
+        return parsley.makeGrammar(grammar, {
+            'punctuation': string.punctuation,
+            'itertools': itertools,
+            'ExtendedDiagrams': ExtendedDiagrams,
+            'Names': Names,
+            **bindings_dom()
+        })
+
+    @staticmethod
+    def parse_file(filename):
+        with open(filename) as fp:
+            contents = fp.read()
+
+        parser = ExtendedDiagrams.get_parser_file(
+            filename=os.path.dirname(os.path.realpath(__file__)) + "/extended_diagrams.txt"
+        )
+        return parser(contents).rfc()
 
     @staticmethod
     def new_generic_named_bitstring(type_namespace, name, size):
@@ -111,7 +143,7 @@ class ExtendedDiagrams:
 
                 expression = Eq(
                     Constant(field.value),
-                    [FieldAccess(field.name)]
+                    [Other(FieldAccess(field.name))]
                 )
 
                 where.append(expression.to_dict())
@@ -136,6 +168,8 @@ class ExtendedDiagrams:
 
     @staticmethod
     def rfc(dom):
+        #return dom.to_dict()
+
         self = ExtendedDiagrams()
 
         type_namespace = {}
@@ -149,7 +183,7 @@ class ExtendedDiagrams:
 
                     # If this item has already been defined
                     if definition["name"] in type_namespace:
-                        if type_namespace[definition["name"]] is not definition:
+                        if type_namespace[definition["name"]] != definition:
                             raise Exception(definition["name"] + " has been defined elsewhere")
 
                     # Otherwise, add it to the type namespace
@@ -162,4 +196,4 @@ class ExtendedDiagrams:
                 pdus.append((title, None))
 
         new_enum("PDUs", pdus, type_namespace)
-        return new_protocol("TODO Protocol Name", type_namespace)
+        return new_protocol("TODOProtocolName", type_namespace)

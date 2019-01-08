@@ -1,5 +1,5 @@
 from typing import List
-from ..dictionarable import Dictionarable
+from input_parsers.extended_diagrams.dictionarable import Dictionarable
 
 
 class Element(Dictionarable):

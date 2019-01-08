@@ -196,7 +196,7 @@ Internet-Draft                     RTP                         July 2003
       address, it must also choose a new SSRC identifier to avoid being
       interpreted as a looped source (see Section 8.2).
 
-   contributing source identifiers (CSRC): 32*4*(CSRC count) bits
+   contributing source identifiers (CSRC): (CSRC count)==0 ? 0 : 10 bits
 
       The CSRC list identifies the contributing sources for the payload
       contained in this packet.  The number of identifiers is given by
@@ -216,6 +216,10 @@ Internet-Draft                     RTP                         July 2003
 
       packet are listed, allowing correct talker indication at the
       receiver.
+
+   payload: variable
+
+      THE PAYLOAD
 
 5.1.1.  RTP Payload Padding
 

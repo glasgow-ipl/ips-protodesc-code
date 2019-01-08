@@ -1,4 +1,4 @@
-from ..expression import Expression
+from input_parsers.extended_diagrams.ir.expression import Expression
 from . import Element
 from .exception import InconsistentData
 from typing import List, Dict
@@ -84,7 +84,7 @@ class Field(Element):
         definitions = []
         for expression in self.expressions:
             for definition in expression.get_definitions():
-                definition_dict = definition.to_dict()
-                if definition_dict not in definitions:
-                    definitions.append(definition_dict)
+                for d in definition.to_dict():
+                    if d not in definitions:
+                        definitions.append(d)
         return definitions

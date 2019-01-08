@@ -1,5 +1,5 @@
 from . import Expression
-from ..construct import Int, Construct
+from input_parsers.extended_diagrams.ir.construct import Int, Construct
 from typing import List
 
 

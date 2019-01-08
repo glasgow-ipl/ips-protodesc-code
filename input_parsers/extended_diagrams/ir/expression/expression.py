@@ -1,6 +1,6 @@
 from typing import List
-from ..construct import Construct
-from ..dictionarable import Dictionarable
+from input_parsers.extended_diagrams.ir.construct import Construct
+from input_parsers.extended_diagrams.dictionarable import Dictionarable
 
 
 class Expression(Dictionarable):
@@ -15,6 +15,8 @@ class Expression(Dictionarable):
     @staticmethod
     def list_to_dict(elements: List['Expression']):
         out = []
+        if elements is None:
+            return out
         for element in elements:
             out.append(element.to_dict())
         return out

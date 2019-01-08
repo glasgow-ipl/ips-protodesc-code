@@ -1,6 +1,6 @@
 from ..empty import *
 from typing import List
-from ...construct import Construct
+from input_parsers.extended_diagrams.ir.construct import Construct
 
 
 class MethodInvocation(Expression):
