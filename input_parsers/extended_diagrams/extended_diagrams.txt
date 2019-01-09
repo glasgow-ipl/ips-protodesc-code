@@ -152,7 +152,22 @@ field_heading_width_formula     = expression:x ' '* bits -> {"width": None, "exp
 
 field_heading_type              = ' [' type_name:a ']' crlf -> a
                                 | crlf -> None
-field_body                      = (indent{2} char_no_crlf* crlf+)+ crlf* -> {}
+
+field_body_ws                   = (' '+ | crlf+ indent{2})
+field_body_rel_loc              = (('precede' -> -1) | ('follow' -> 1))
+
+field_body_a                    = indent{2} 'If' field_body_ws field_name:field_this field_body_ws 'is' field_body_ws number:value ',' field_body_ws field_name:field_new field_body_ws 'should' field_body_ws field_body_rel_loc:rel_loc field_body_ws field_name:field_loc field_body_ws '(format' field_body_ws 'defined' field_body_ws 'in' field_body_ws 'Section' field_body_ws section_number:section_number ').'
+                                -> {
+                                    "field_this": field_this,
+                                    "value": value,
+                                    "field_new": field_new,
+                                    "rel_loc": rel_loc,
+                                    "field_loc": field_loc,
+                                    "section_number": section_number
+                                }
+
+field_body                      = field_body_a:a -> print(str(a))
+                                | (indent{2} char_no_crlf* crlf+)+ crlf* -> {}
 
 field_control                   = field_control_heading field_control_bit+:a crlf -> a
 field_control_heading           = indent field_heading_name ': ' field_heading_width_static ' (from left to right):' crlf crlf
@@ -214,7 +229,6 @@ field_name_main                 = word:a field_name_word*:b -> Names.field_name_
 
 
 
-### field_heading_name_punctuation  = punctuation:x ?(x not in ":()") -> x
 ### field_heading_name_char         = (letterOrDigit|field_heading_name_punctuation)
 ### field_heading_name_char_space   = (field_heading_name_char|' ')
 ### field_heading_name              = field_heading_name_char:a field_heading_name_char_space*:b -> {"name": a + "".join(b), "abbrv": None}
