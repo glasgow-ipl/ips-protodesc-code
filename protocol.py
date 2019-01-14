@@ -119,10 +119,8 @@ class Protocol:
         res = []
         for arg in args:
             name_  = arg["name"]
-            expr_  = self._parse_expression(arg["value"], this)
-            type_  = expr_.result_type
-            # FIXME: what is the value?
-            value_ = None
+            value_ = self._parse_expression(arg["value"], this)
+            type_  = value_.result_type
             res.append(Argument(name_, type_, value_))
         return res
 
@@ -305,15 +303,15 @@ class Protocol:
           self  - the protocol in which the new type is defined
           irobj - a dict representing the JSON type constructor
         """
-        self._validate_irtype(irobj, "NewType")
         name         = irobj["name"]
         derived_from = irobj["derived_from"]
         implements   = irobj["implements"]
         orig_type    = self.get_type(derived_from)
         self._types[name] = copy(orig_type)
         self._types[name].name    = name
-        self._types[name].traits  = copy(orig_type.traits)
         self._types[name].methods = copy(orig_type.methods)
+        for trait_name in orig_type.traits:
+        	self._types[name].implement_trait(self.get_trait(trait_name))
         for impl in irobj["implements"]:
             self._types[name].implement_trait(self.get_trait(impl["trait"]))
 
@@ -418,6 +416,9 @@ class Protocol:
 
     def get_pdu(self, pdu_name: str) -> Type:
         return self._pdus[pdu_name]
+        
+    def get_pdu_names(self) -> Dict[str, Type]:
+    	return self._pdus.keys()
 
 # =================================================================================================
 # Unit tests:
@@ -698,7 +699,9 @@ class TestProtocol(unittest.TestCase):
         json = {
             "expression" : "MethodInvocation",
             "target"     : {
-                "expression" : "This"
+                "expression" : "Constant",
+                "type"       : "Boolean",
+                "value"      : "True"
             },
             "method"     : "eq",
             "arguments"  : [

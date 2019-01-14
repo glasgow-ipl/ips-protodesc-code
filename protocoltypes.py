@@ -29,6 +29,7 @@
 # =================================================================================================
 
 from typing import Dict, List, Tuple, Optional, Any
+from copy import deepcopy
 
 import re
 
@@ -116,11 +117,19 @@ class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method_name, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
             raise TypeError("Invalid method name {}".format(method_name))
+        if not self.is_invocation_valid(args, target, method_name):
+        	raise TypeError("Invalid method invocation {}".format(method_name))        
         self.target      = target
         self.method_name = method_name
         self.args        = args
         self.result_type = target.result_type.get_method(method_name).return_type
-
+        
+    def is_invocation_valid(self, args: List[Argument], target: Expression, method_name: str) -> bool:
+    	arg_types = {"self": target.result_type}
+    	arg_types.update({arg.arg_name:arg.arg_type for arg in args})
+    	param_types = {param.param_name:param.param_type for param in target.result_type.get_method(method_name).parameters}
+    	return arg_types == param_types
+		
 class FunctionInvocationExpression(Expression):
     func : Function
     args : List[Argument]
@@ -231,13 +240,24 @@ class Type:
         res += ">"
         return res
 
+    def __eq__(self, obj):
+    	#FIXME: this is probably OK for now, but a deeper notion of equality would be better
+        return self.name == obj.name
+
     def implement_trait(self, trait: Trait):
         if trait in self.traits:
             raise TypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
             self.traits[trait.name] = trait
             for method_name in trait.methods:
-                self.methods[method_name] = trait.methods[method_name]
+                self.methods[method_name] = deepcopy(trait.methods[method_name])
+            	# When a type implements a trait, any unspecified (None) types are set to
+            	# the implementing type
+                for parameter in self.methods[method_name].parameters:
+                	if parameter.param_type is None:
+                		parameter.param_type = self
+                if self.methods[method_name].return_type is None:
+                	self.methods[method_name].return_type = self
 
     def get_method(self, method_name) -> Function:
         return self.methods[method_name]
