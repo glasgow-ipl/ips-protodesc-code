@@ -416,9 +416,9 @@ class Protocol:
 
     def get_pdu(self, pdu_name: str) -> Type:
         return self._pdus[pdu_name]
-        
-    def get_pdu_names(self) -> Dict[str, Type]:
-    	return self._pdus.keys()
+
+    def get_pdu_names(self) -> List[str]:
+        return list(self._pdus.keys())
 
 # =================================================================================================
 # Unit tests:
