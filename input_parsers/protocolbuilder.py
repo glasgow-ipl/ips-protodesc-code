@@ -30,206 +30,161 @@
 
 from typing import Dict, List, Tuple, Optional, Any
 import json
+from protocol import Protocol
 
-class Type:
-    name: str
+#--------------------------------------------------------------------------------------------------
+# Expressions
+#--------------------------------------------------------------------------------------------------
 
-class BitString:
-    name: str
-    size: int
+class Expression:
+    kind: str
 
-    def __init__(self, name=None, size=None):
-        # if name is None, generate a name
-        if name is None:
-            name = "BitString$%s" % (str(size))
+    def __init__(self, kind: str):
+        self.kind = kind
+
+class ConstantExpression(Expression):
+    type: str
+    value: Any
+
+    def __init__(self, type: str, value: Any):
+        super().__init__("Constant")
+        self.type = type
+        self.value = value
         
-        self.name = name
-        self.size = size
+    def json_repr(self):
+        return {"expression" : self.kind,
+                "type"       : self.type,
+                "value"      : self.value}
+
+#--------------------------------------------------------------------------------------------------
+# Types
+#--------------------------------------------------------------------------------------------------
+
+class TypeConstructor:
+    name: str
     
-    def json_repr(self: 'BitString'):
+    def __init__(self, name):
+        self.name = name
+        
+    def typecheck(self, defined_types: List[str]):
+        pass
+        
+class BitStringConstructor(TypeConstructor):
+    size: int
+    
+    def __init__(self, name=None, size=None):
+        # if name is None, generate one
+        if name is None:
+            name = "BitString${}".format(size)
+
+        super().__init__(name)
+        self.size = size
+        
+    def json_repr(self):
         return {"construct" : "BitString",
                 "name"      : self.name,
                 "size"      : self.size}
-                
-class Array:
-    name: str
+
+class ArrayConstructor(TypeConstructor):
     element_type: str
     length: int
     
     def __init__(self, element_type, name=None, length=None):
-        # if name is None, generate a name
+        # if name is None, generate one
         if name is None:
-            name = "%s$%s" % (element_type, str(length))
-        
-        self.name = name
+            name = "{}${}".format(element_type, length)
+            
+        super().__init__(name)
         self.element_type = element_type
         self.length = length
-    
+        
+    def typecheck(self, defined_types: List[str]):
+        if self.element_type not in defined_types:
+            raise Exception("{} has not been defined".format(self.element_type))
+
     def json_repr(self):
         return {"construct"    : "Array",
                 "name"         : self.name,
                 "element_type" : self.element_type,
                 "length"       : self.length}
-
-class Transform:
-    into_name: str
-    into_type: str 
-    using: str 
-    
-    def __init__(self, into_name, into_type, using):
-        self.into_name = into_name
-        self.into_type = into_type
-        self.using = using
         
-    def json_repr(self):
-        return {"into_name" : self.into_name,
-                "into_type" : self.into_type,
-                "using"     : self.using}
-
-class Expression:
-    type: str
-    
-    def __init__(self, type):
-        self.type = type
-
-class Argument:
-    name: str
-    value: Expression
-    
-    def __init__(self, name, value):
-        self.name = name
-        self.value = value
-        
-    def json_repr(self):
-        return {"name"  : self.name,
-                "value" : self.value}
-
-class MethodInvocation(Expression):
-    target: Expression  
-    method: str
-    arguments: List[Argument]
-    
-    def __init__(self, target, method, arguments):
-        super(MethodInvocation, self).__init__("MethodInvocation")
-        self.target = target
-        self.method = method
-        self.arguments = arguments
-        
-    def json_repr(self):
-        return {"expression" : self.type,
-                "target"     : self.target,
-                "method"     : self.method,
-                "arguments"  : self.arguments}
-
-class FunctionInvocation(Expression):
-    name: str 
-    arguments: List[Argument]
-    
-    def __init__(self, name, arguments):
-        super(FunctionInvocation, self).__init__("FunctionInvocation")
-        self.name = name
-        self.arguments = arguments
-        
-    def json_repr(self):
-        return {"expression" : self.type,
-                "name"       : self.name,
-                "arguments"  : self.arguments}
-
-class FieldAccess(Expression):
-    target: Expression
-    field: str
-    
-    def __init__(self, target, field):
-        super(FieldAccess, self).__init__("FieldAccess")
-        self.target = target
-        self.field = field
-        
-    def json_repr(self):
-        return {"expression" : self.type,
-                "target"     : self.target,
-                "field"      : self.field}
-
-class ContextAccess(Expression):
-    field: str
-    
-    def __init__(self, field):
-        super(ContextAccess, self).__init__("ContextAccess")
-        self.field = field
-        
-    def json_repr(self):
-        return {"expression" : self.type,
-                "field"      : self.field}
-
-class IfElse(Expression):
-    condition: Expression
-    if_true: Expression
-    if_false: Expression
-    
-    def __init__(self, condition, if_true, if_false):
-        super(IfElse, self).__init__("IfElse")
-        self.condition = condition
-        self.if_true = if_true
-        self.if_false = if_false
-    
-    def json_repr(self):
-        return {"expression" : self.type,
-                "condition"  : self.condition,
-                "if_true"    : self.if_true,
-                "if_false"   : self.if_false}
-
-class This(Expression):
-    def __init__(self):
-        super(This, self).__init__("This")
-        
-    def json_repr(self):
-        return {"expression" : self.type}
-
-class Constant(Expression):
-    type_name: str 
-    value: Any 
-    
-    def __init__(self):
-        super(Constant, self).__init__("Constant")
-        
-    def json_repr(self):
-        return {"expression" : self.type,
-                "type"       : self.type_name,
-                "value"      : self.value}
-
-class Field:
-    name: str
-    type: str
+class StructField:
+    field_name: str
+    field_type: str
     is_present: Expression
-    transform: Transform
+    transform: Expression 
     
-    def __init__(self, name, type, is_present, transform):
-        self.name = name
-        self.type = type
+    def __init__(self, field_name: str, field_type: str, is_present: Expression, transform: Expression):
+        self.field_name = field_name
+        self.field_type = field_type
         self.is_present = is_present
         self.transform = transform
         
     def json_repr(self):
-        return {"name"       : self.name,
-                "type"       : self.type,
+        return {"name"       : self.field_name,
+                "type"       : self.field_type,
                 "is_present" : self.is_present,
                 "transform"  : self.transform}
 
-class Structure:
-    name: str
-    fields: List[Field]
+class StructConstructor(TypeConstructor):
+    fields: List[StructField]
     constraints: List[Expression]
     actions: List[Expression]
     
     def __init__(self, name, fields, constraints, actions):
-        self.name = name
+        super().__init__(name)
         self.fields = fields
         self.constraints = constraints
         self.actions = actions
-        
+
     def json_repr(self):
         return {"construct"   : "Struct",
                 "name"        : self.name,
                 "fields"      : self.fields,
                 "constraints" : self.constraints,
                 "actions"     : self.actions}
+
+#--------------------------------------------------------------------------------------------------
+# ProtocolBuilder
+#--------------------------------------------------------------------------------------------------
+
+class ProtocolBuilder:
+    name: str
+    definitions: Dict[str, TypeConstructor]
+    pdus: List[str]
+
+    def __init__(self, name=None):
+        self.name = name
+        self.definitions = {}
+        self.pdus = []
         
+    def set_protocol_name(self, name):
+        self.name = name
+        
+    def add_definition(self, definition: TypeConstructor, warn_if_defined: bool = True):
+        definition.typecheck(list(self.definitions.keys()))
+        if warn_if_defined and definition.name in self.definitions:
+            raise Exception("{} has already been defined".format(definition.name))
+        else:
+            
+            self.definitions[definition.name] = definition
+        
+    def add_pdu(self, pdu_name: str):
+        if pdu_name not in self.definitions:
+            raise Exception("{} has not been defined".format(pdu_name))
+        else:
+            self.pdus.append(pdu_name)
+            
+    def json_repr(self):
+        return {"construct"   : "Protocol",
+                "name"        : self.name,
+                "definitions" : list(self.definitions.values()),
+                "pdus"        : [{"type" : pdu_name for pdu_name in self.pdus}]}
+    
+    def get_json_constructor(self):
+        return json.dumps(self, default=lambda obj: obj.json_repr(), indent=4)
+
+    def build_protocol(self) -> Protocol:
+        protocol = Protocol()
+        protocol.load(self.get_json_constructor())
+        return protocol
