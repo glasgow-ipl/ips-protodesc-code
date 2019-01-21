@@ -18,7 +18,7 @@ type      = array|bitstring|type_name
 structfield = field_name:name ":" type:constructor -> new_structfield(name, constructor)
 
 typedef = "type" type_name:name "=" type:constructor ";" -> new_typedef(name, constructor)
-struct  = "struct" type_name:struct_name "{" structfield:field "};" -> new_struct(struct_name, [field])
+struct  = "struct" type_name:struct_name "{" structfield:field ("," structfield:next_field -> next_field)*:fields "};" -> new_struct(struct_name, [field] + fields)
 pdus    = "pdus={" type_name:name ("," type_name:name -> name)*:names "};" -> set_pdus([name] + names)
 
 protocol = (typedef|struct)+ pdus
