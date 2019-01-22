@@ -62,12 +62,23 @@ class ConstantExpression(Expression):
 
 class TypeConstructor:
     name: str
+    types_used: List[str]
     
     def __init__(self, name):
         self.name = name
+        self.types_used = []
         
     def typecheck(self, defined_types: List[str]):
-        pass
+        builtin_types = ["Nothing", "Boolean", "Size"]
+        
+        # check if name already defined
+        if self.name in self.types_used or self.name in builtin_types:
+            raise Exception("{} already defined".format(self.name))
+            
+        # check if any types used have not been defined
+        for type_name in self.types_used:
+            if type_name not in defined_types and type_name not in builtin_types:
+                raise Exception("{} has not been defined".format(type_name))
         
 class BitStringConstructor(TypeConstructor):
     size: int
@@ -97,17 +108,44 @@ class ArrayConstructor(TypeConstructor):
         super().__init__(name)
         self.element_type = element_type
         self.length = length
-        
-    def typecheck(self, defined_types: List[str]):
-        if self.element_type not in defined_types:
-            raise Exception("{} has not been defined".format(self.element_type))
+        self.types_used.append(element_type)
 
     def json_repr(self):
         return {"construct"    : "Array",
                 "name"         : self.name,
                 "element_type" : self.element_type,
                 "length"       : self.length}
+  
+class Parameter:
+    parameter_name: str
+    parameter_type: str
+    
+    def __init__(self, parameter_name: str, parameter_type: str):
+        self.parameter_name = parameter_name;
+        self.parameter_type = parameter_type;
         
+    def json_repr(self):
+        return {"name" : self.parameter_name,
+                "type" : self.parameter_type}
+                
+class Function(TypeConstructor):
+    parameters: List[Parameter]
+    return_type: str
+    
+    def __init__(self, name: str, parameters: List[Parameter], return_type: str):
+        super().__init__(name)
+        self.parameters = parameters
+        self.return_type = return_type
+        self.types_used.append(return_type)
+        for parameter in parameters:
+            self.types_used.append(parameter.parameter_type)
+    
+    def json_repr(self):
+        return {"construct"   : "Function",
+                "name"        : self.name,
+                "parameters"  : self.parameters,
+                "return_type" : self.return_type}
+      
 class StructField:
     field_name: str
     field_type: str

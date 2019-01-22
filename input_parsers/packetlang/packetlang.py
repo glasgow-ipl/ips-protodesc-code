@@ -64,6 +64,13 @@ class PacketLangParser(InputParser):
     def new_structfield(self, field_name: str, field_type: str, is_present: Expression = None, transform: Expression = None):
         return StructField(field_name, field_type, ConstantExpression("Boolean", "True"), transform)
 
+    def new_parameter(self, parameter_name: str, parameter_type: str):
+        return Parameter(parameter_name, parameter_type)
+
+    def new_func(self, func_name: str, parameters: List[Parameter], return_type: str):
+        func_def = Function(func_name, parameters, return_type)
+        self.pb.add_definition(func_def)
+
     def set_pdus(self, pdu_names):
         for pdu_name in pdu_names:
             self.pb.add_pdu(pdu_name)
@@ -84,6 +91,8 @@ class PacketLangParser(InputParser):
                                                "new_array"       : self.new_array,
                                                "new_structfield" : self.new_structfield,
                                                "new_struct"      : self.new_struct,
+                                               "new_parameter"   : self.new_parameter,
+                                               "new_func"        : self.new_func,
                                                "set_pdus"        : self.set_pdus})
         
         # parse input
