@@ -56,6 +56,56 @@ class ConstantExpression(Expression):
                 "type"       : self.type,
                 "value"      : self.value}
 
+class Argument:
+    arg_name: str
+    arg_value: Expression 
+    
+    def __init__(self, arg_name: str, arg_value: Expression):
+        self.arg_name = arg_name
+        self.arg_value = arg_value
+        
+    def json_repr(self):
+        return {"name"  : self.arg_name,
+                "value" : self.arg_value}
+
+class MethodInvocationExpression(Expression):
+    target: Expression
+    method: str
+    arguments: List[Argument]
+
+    def __init__(self, target: Expression, method: str, arguments: List[Argument]):
+        super().__init__("MethodInvocation")
+        self.target = target
+        self.method = method
+        self.arguments = arguments
+        
+    def json_repr(self):
+        return {"expression" : self.kind,
+                "target"     : self.target,
+                "method"     : self.method,
+                "arguments"  : self.arguments}
+                
+class FieldAccessExpression(Expression):
+    target: Expression
+    field_name: str
+    
+    def __init__(self, target: Expression, field_name: str):
+        super().__init__("FieldAccess")
+        self.target = target
+        self.field_name = field_name
+    
+    def json_repr(self):
+        return {"expression" : self.kind,
+                "target"     : self.target,
+                "field"      : self.field_name}
+
+class ThisExpression(Expression):
+    def __init__(self):
+        super().__init__("This")
+        
+    def json_repr(self):
+        return {"expression" : "This"}
+
 #--------------------------------------------------------------------------------------------------
 # Types
 #--------------------------------------------------------------------------------------------------
@@ -182,6 +232,23 @@ class StructConstructor(TypeConstructor):
                 "constraints" : self.constraints,
                 "actions"     : self.actions}
 
+class NewTypeConstructor(TypeConstructor):
+    derived_from: str
+    implements: List[str]
+    
+    def __init__(self, name: str, derived_from: str, implements: List[str]):
+        super().__init__(name)
+        self.derived_from = derived_from
+        self.implements = implements
+        
+        self.types_used.append(derived_from)
+        
+    def json_repr(self):
+        return {"construct"    : "NewType",
+                "name"         : self.name,
+                "derived_from" : self.derived_from,
+                "implements"   : [{"trait" : trait_name} for trait_name in self.implements]}
+
 #--------------------------------------------------------------------------------------------------
 # ProtocolBuilder
 #--------------------------------------------------------------------------------------------------
@@ -212,7 +279,7 @@ class ProtocolBuilder:
             raise Exception("{} has not been defined".format(pdu_name))
         else:
             self.pdus.append(pdu_name)
-            
+    
     def json_repr(self):
         return {"construct"   : "Protocol",
                 "name"        : self.name,
