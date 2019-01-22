@@ -245,8 +245,17 @@ class Type:
         return res
 
     def __eq__(self, obj):
-    	#FIXME: this is probably OK for now, but a deeper notion of equality would be better
-        return self.name == obj.name
+        if type(self) != type(obj):
+            return False
+        if self.name != obj.name:
+            return False
+        if self.kind != obj.kind:
+            return False
+        if self.traits != obj.traits:
+            return False
+        if self.methods != obj.methods:
+            return False
+        return True
 
     def implement_trait(self, trait: Trait):
         if trait in self.traits:
