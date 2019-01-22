@@ -309,7 +309,7 @@ class Array(Type):
         self.name         = name
         self.element_type = element_type
         self.length       = length
-        if length == None:
+        if length == None or self.element_type.size == None:
             self.size = None
         else:
             self.size = self.length * self.element_type.size
