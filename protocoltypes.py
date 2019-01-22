@@ -261,16 +261,18 @@ class Type:
         if trait in self.traits:
             raise TypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
+            # FIXME: how should we handle instantiation of unspecified types?
+            # We could instantiate the here, replacing unspecified types with
+            # self references. Alternatively, we could leave them unspecified,
+            # and dynamically look-up the type when needed. The latter may be
+            # better, once we start thinking about whether derived types are
+            # proper subclasses...
             self.traits[trait.name] = trait
             for method_name in trait.methods:
-                self.methods[method_name] = deepcopy(trait.methods[method_name])
-            	# When a type implements a trait, any unspecified (None) types are set to
-            	# the implementing type
-                for parameter in self.methods[method_name].parameters:
-                	if parameter.param_type is None:
-                		parameter.param_type = self
-                if self.methods[method_name].return_type is None:
-                	self.methods[method_name].return_type = self
+                if method_name in self.methods:
+                    raise TypeError("Type {} already implements method {}".format(self.name, method_name))
+                else:
+                    self.methods[method_name] = trait.methods[method_name]
 
     def get_method(self, method_name) -> Function:
         return self.methods[method_name]
