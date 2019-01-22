@@ -83,12 +83,6 @@ class PacketLangParser(InputParser):
         self.pb.add_definition(func_def)
 
     def new_constant(self, type_name: str, value: Any):
-        if type_name == "int":
-            int_bitstring = self.new_bitstring(size=32)
-            int_derivedtype = self.new_derivedtype("Integer$32", int_bitstring.name, ["ArithmeticOps", "Ordinal"])
-            self.pb.add_definition(int_bitstring, warn_if_defined=False)
-            self.pb.add_definition(int_derivedtype, warn_if_defined=False)
-            type_name = int_derivedtype.name
         return ConstantExpression(type_name, value)
 
     def new_fieldaccess(self, target, field_name: str):

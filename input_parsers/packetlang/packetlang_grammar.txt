@@ -15,7 +15,7 @@ field_name = <lowercase_letter>:x <(letter|'_')+>:xs -> x + "".join(xs)
 field_access = field_name:name -> new_fieldaccess(new_this(), name)
 argument = field_name:name "=" cond_expr:value -> new_argument(name, value)
 
-primary_expr = number:n -> new_constant("int", n)
+primary_expr = number:n -> new_constant("Size", n)
              | field_access:target "." field_name:method_name "(" (argument:arg ("," argument:next_arg -> next_arg)*:args -> [arg] + args)?:arguments ")" -> new_methodinvocation(target, method_name, arguments)
              | field_access
 				
