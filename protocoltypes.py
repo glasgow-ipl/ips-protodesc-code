@@ -31,6 +31,8 @@
 from typing import Dict, List, Tuple, Optional, Any
 from copy import deepcopy
 
+from protocoltypeelements import *
+
 import re
 
 # Type names begin with an upper case letter, function names do not:
@@ -49,7 +51,7 @@ class TypeError(Exception):
 
 class Trait:
     name    : str
-    methods : Dict[str,Function]
+    methods : Dict[str, Function]
 
     def __init__(self, name: str, methods: List[Function]) -> None:
         self.name    = name
@@ -59,31 +61,6 @@ class Trait:
 
     def __str__(self):
         print("Trait<{}>".format(self.name))
-
-# =================================================================================================
-# Fields in a structure or the context:
-
-class Transform:
-    def __init__(self, into_name: str, into_type: "Type", using: Function) -> None:
-        self.into_name = into_name
-        self.into_type = into_type
-        self.using     = using
-
-class StructField:
-    def __init__(self, 
-                 field_name: str, 
-                 field_type: "Type", 
-                 is_present: Optional[Expression], 
-                 transform : Optional[Transform]) -> None:
-        self.field_name = field_name
-        self.field_type = field_type
-        self.is_present = is_present
-        self.transform  = transform
-
-class ContextField:
-    def __init__(self, field_name: str, field_type: "Type") -> None:
-        self.field_name = field_name
-        self.field_type = field_type
 
 # =================================================================================================
 # Types:

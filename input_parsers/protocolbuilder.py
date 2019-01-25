@@ -31,36 +31,23 @@
 from typing import Dict, List, Tuple, Optional, Any
 import json
 from protocol import Protocol
-from protocoltypeelements import JSONRepresentable
+from protocoltypes import *
+from protocoltypeelements import *
 
-#--------------------------------------------------------------------------------------------------
-# Expressions
-#--------------------------------------------------------------------------------------------------
-
-class Argument:
-    arg_name: str
-    arg_value: Expression 
-    
-    def __init__(self, arg_name: str, arg_value: Expression):
-        self.arg_name = arg_name
-        self.arg_value = arg_value
-        
-    def json_repr(self):
-        return {"name"  : self.arg_name,
-                "value" : self.arg_value}
+import abc
 
 #--------------------------------------------------------------------------------------------------
 # Type Constructors
 #--------------------------------------------------------------------------------------------------
 
-class TypeConstructor(JSONRepresentable):
+class TypeConstructor(JSONRepresentable, abc.ABC):
     name: str
     types_used: List[str]
     
     def __init__(self, name):
         self.name = name
         self.types_used = []
-        
+
     def typecheck(self, defined_types: List[str]):
         builtin_types = ["Nothing", "Boolean", "Size"]
         
@@ -73,15 +60,22 @@ class TypeConstructor(JSONRepresentable):
             if type_name not in defined_types and type_name not in builtin_types:
                 raise Exception("{} has not been defined".format(type_name))
 
+    @abc.abstractmethod     
+    def build_protocol_type(self) -> "Type":
+        pass
+
 class TraitConstructor(TypeConstructor):
-    methods : Dict[str,Function]
+    methods : Dict[str, Function]
 
     def __init__(self, name: str, methods: List[Function]) -> None:
         self.name    = name
         self.methods = {}
         for method in methods:
             self.methods[method.name] = method
-            
+    
+    def build_protocol_type(self) -> Trait:
+        return Trait(self.name, self.methods)
+
     def json_repr(self) -> Dict:
         return {"construct" : "Trait",
                 "name"      : self.name,
@@ -97,12 +91,15 @@ class BitStringConstructor(TypeConstructor):
 
         super().__init__(name)
         self.size = size
+    
+    def build_protocol_type(self) -> BitString:
+        return BitString(self.name, self.size)
         
     def json_repr(self):
         return {"construct" : "BitString",
                 "name"      : self.name,
                 "size"      : self.size}
-
+        
 class ArrayConstructor(TypeConstructor):
     element_type: str
     length: int
@@ -116,60 +113,15 @@ class ArrayConstructor(TypeConstructor):
         self.element_type = element_type
         self.length = length
         self.types_used.append(element_type)
+    
+    def build_protocol_type(self) -> Array:
+        return Array(self.name, self.element_type, self.length)
 
     def json_repr(self):
         return {"construct"    : "Array",
                 "name"         : self.name,
-                "element_type" : self.element_type,
+                "element_type" : self.element_type.name,
                 "length"       : self.length}
-  
-class Parameter:
-    parameter_name: str
-    parameter_type: str
-    
-    def __init__(self, parameter_name: str, parameter_type: str):
-        self.parameter_name = parameter_name;
-        self.parameter_type = parameter_type;
-        
-    def json_repr(self):
-        return {"name" : self.parameter_name,
-                "type" : self.parameter_type}
-                
-class Function(TypeConstructor):
-    parameters: List[Parameter]
-    return_type: str
-    
-    def __init__(self, name: str, parameters: List[Parameter], return_type: str):
-        super().__init__(name)
-        self.parameters = parameters
-        self.return_type = return_type
-        self.types_used.append(return_type)
-        for parameter in parameters:
-            self.types_used.append(parameter.parameter_type)
-    
-    def json_repr(self):
-        return {"construct"   : "Function",
-                "name"        : self.name,
-                "parameters"  : self.parameters,
-                "return_type" : self.return_type}
-      
-class StructField:
-    field_name: str
-    field_type: str
-    is_present: Expression
-    transform: Expression 
-    
-    def __init__(self, field_name: str, field_type: str, is_present: Expression, transform: Expression):
-        self.field_name = field_name
-        self.field_type = field_type
-        self.is_present = is_present
-        self.transform = transform
-        
-    def json_repr(self):
-        return {"name"       : self.field_name,
-                "type"       : self.field_type,
-                "is_present" : self.is_present,
-                "transform"  : self.transform}
 
 class StructConstructor(TypeConstructor):
     fields: List[StructField]
@@ -181,6 +133,9 @@ class StructConstructor(TypeConstructor):
         self.fields = fields
         self.constraints = constraints
         self.actions = actions
+    
+    def build_protocol_type(self) -> Array:
+        return Struct(self.name)
 
     def json_repr(self):
         return {"construct"   : "Struct",
@@ -214,11 +169,13 @@ class ProtocolBuilder:
     name: str
     definitions: Dict[str, TypeConstructor]
     pdus: List[str]
+    protocol: Protocol
 
     def __init__(self, name=None):
         self.name = name
         self.definitions = {}
         self.pdus = []
+        self.protocol = Protocol()
         
     def set_protocol_name(self, name):
         self.name = name
@@ -228,7 +185,6 @@ class ProtocolBuilder:
         if warn_if_defined and definition.name in self.definitions:
             raise Exception("{} has already been defined".format(definition.name))
         else:
-            
             self.definitions[definition.name] = definition
         
     def add_pdu(self, pdu_name: str):
