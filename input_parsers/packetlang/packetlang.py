@@ -35,9 +35,14 @@ import parsley
 import string
 from input_parsers.protocolbuilder import *
 
+from protocoltypes import *
+from protocoltypeelements import *
+from expressions import * 
+
 class PacketLangParser(InputParser):
     pb: ProtocolBuilder
-    
+    types: Dict[str,"Type"]
+
     def __init__(self):
         self.pb = ProtocolBuilder()
 
@@ -65,11 +70,13 @@ class PacketLangParser(InputParser):
         struct_constructor = StructConstructor(name, fields, constraints, [])
         self.pb.add_definition(struct_constructor)
         
-    def new_structfield(self, field_name: str, field_type: str, is_present: Expression = None, transform: Expression = None):
+    def new_structfield(self, field_name: str, field_type, is_present: Expression = None, transform: Expression = None):
+        print(field_type)
         if type(field_type) == BitStringConstructor:
             self.pb.add_definition(field_type, warn_if_defined=False)
             field_type = field_type.name
 
+        field_type = self.pb.definitions[field_type].build_protocol_type()
         return StructField(field_name, field_type, ConstantExpression("Boolean", "True"), transform)
 
     def new_parameter(self, parameter_name: str, parameter_type: str):
@@ -89,7 +96,7 @@ class PacketLangParser(InputParser):
         return FieldAccessExpression(target, field_name)
 
     def new_this(self):
-        return ThisExpression()
+        return ThisExpression(Struct(None)) # FIXME
 
     def new_methodinvocation(self, target, method, arguments):
         arguments = [] if arguments == None else arguments
