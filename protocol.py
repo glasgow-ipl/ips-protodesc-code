@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018 University of Glasgow
+# Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
