@@ -30,11 +30,12 @@
 
 from typing import Dict, List, Tuple, Optional, Any
 from protocoltypes import *
+from protocoltypeelements import JSONRepresentable
 
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
 
-class Expression:
+class Expression(JSONRepresentable):
     result_type : "Type"
 
 class MethodInvocationExpression(Expression):
@@ -57,6 +58,12 @@ class MethodInvocationExpression(Expression):
     	arg_types.update({arg.arg_name:arg.arg_type for arg in args})
     	param_types = {param.param_name:param.param_type for param in target.result_type.get_method(method_name).parameters}
     	return arg_types == param_types
+    	
+    def json_repr(self) -> Dict:
+        return {"expression" : "MethodInvocation",
+                "target"     : self.target,
+                "method"     : self.method_name,
+                "arguments"  : self.args}
 		
 class FunctionInvocationExpression(Expression):
     func : Function
@@ -68,6 +75,11 @@ class FunctionInvocationExpression(Expression):
         self.func        = func
         self.args        = args
         self.result_type = func.return_type
+        
+    def json_repr(self) -> Dict:
+        return {"expression" : "FunctionInvocation",
+                "name"       : self.func.name,
+                "arguments"  : self.args}
 
 class FieldAccessExpression(Expression):
     """
@@ -84,6 +96,11 @@ class FieldAccessExpression(Expression):
             self.result_type  = target.result_type.field(field_name).field_type
         else:
             raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
+            
+    def json_repr(self) -> Dict:
+        return {"expression" : "FieldAccess",
+                "target"     : self.target,
+                "field"      : self.field}
 
 class ContextAccessExpression(Expression):
     # FIXME: we need a Context object
@@ -94,6 +111,10 @@ class ContextAccessExpression(Expression):
         self.context     = context
         self.field_name  = field_name
         self.result_type = self.context[self.field_name].field_type
+        
+    def json_repr(self) -> Dict:
+        return {"expression" : "ContextAccess",
+                "field"      : field_name}
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -109,10 +130,19 @@ class IfElseExpression(Expression):
         self.if_true     = if_true
         self.if_false    = if_false
         self.result_type = if_true.result_type
+        
+    def json_repr(self) -> Dict:
+        return {"expression" : "IfElse",
+                "condition"  : self.condition,
+                "if_true"    : self.if_true,
+                "if_false"   : self.if_false}
 
 class ThisExpression(Expression):
     def __init__(self, this_type: "Type") -> None:
         self.result_type = this_type
+        
+    def json_repr(self) -> Dict:
+        return {"expression" : This}
 
 class ConstantExpression(Expression):
     value : Any
@@ -120,3 +150,9 @@ class ConstantExpression(Expression):
     def __init__(self, constant_type: "Type", constant_value: Any) -> None:
         self.result_type = constant_type
         self.value       = constant_value
+    
+    def json_repr(self) -> Dict:
+        return {"expression" : "Constant",
+                "type"       : self.result_type,
+                "value"      : self.value}
+    
