@@ -118,7 +118,7 @@ class ContextAccessExpression(Expression):
 
 class IfElseExpression(Expression):
     condition : Expression
-    if_else   : Expression
+    if_true   : Expression
     if_false  : Expression
 
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
