@@ -31,30 +31,11 @@
 from typing import Dict, List, Tuple, Optional, Any
 import json
 from protocol import Protocol
+from protocoltypeelements import JSONRepresentable
 
 #--------------------------------------------------------------------------------------------------
 # Expressions
 #--------------------------------------------------------------------------------------------------
-
-class Expression:
-    kind: str
-
-    def __init__(self, kind: str):
-        self.kind = kind
-
-class ConstantExpression(Expression):
-    type: str
-    value: Any
-
-    def __init__(self, type: str, value: Any):
-        super().__init__("Constant")
-        self.type = type
-        self.value = value
-        
-    def json_repr(self):
-        return {"expression" : self.kind,
-                "type"       : self.type,
-                "value"      : self.value}
 
 class Argument:
     arg_name: str
@@ -68,49 +49,11 @@ class Argument:
         return {"name"  : self.arg_name,
                 "value" : self.arg_value}
 
-class MethodInvocationExpression(Expression):
-    target: Expression
-    method: str
-    arguments: List[Argument]
-
-    def __init__(self, target: Expression, method: str, arguments: List[Argument]):
-        super().__init__("MethodInvocation")
-        self.target = target
-        self.method = method
-        self.arguments = arguments
-        
-    def json_repr(self):
-        return {"expression" : self.kind,
-                "target"     : self.target,
-                "method"     : self.method,
-                "arguments"  : self.arguments}
-                
-class FieldAccessExpression(Expression):
-    target: Expression
-    field_name: str
-    
-    def __init__(self, target: Expression, field_name: str):
-        super().__init__("FieldAccess")
-        self.target = target
-        self.field_name = field_name
-    
-    def json_repr(self):
-        return {"expression" : self.kind,
-                "target"     : self.target,
-                "field"      : self.field_name}
-
-class ThisExpression(Expression):
-    def __init__(self):
-        super().__init__("This")
-        
-    def json_repr(self):
-        return {"expression" : "This"}
-
 #--------------------------------------------------------------------------------------------------
-# Types
+# Type Constructors
 #--------------------------------------------------------------------------------------------------
 
-class TypeConstructor:
+class TypeConstructor(JSONRepresentable):
     name: str
     types_used: List[str]
     
@@ -129,6 +72,20 @@ class TypeConstructor:
         for type_name in self.types_used:
             if type_name not in defined_types and type_name not in builtin_types:
                 raise Exception("{} has not been defined".format(type_name))
+
+class TraitConstructor(TypeConstructor):
+    methods : Dict[str,Function]
+
+    def __init__(self, name: str, methods: List[Function]) -> None:
+        self.name    = name
+        self.methods = {}
+        for method in methods:
+            self.methods[method.name] = method
+            
+    def json_repr(self) -> Dict:
+        return {"construct" : "Trait",
+                "name"      : self.name,
+                "methods"   : self.methods}
         
 class BitStringConstructor(TypeConstructor):
     size: int
