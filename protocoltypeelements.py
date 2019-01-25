@@ -31,8 +31,70 @@
 from typing import Dict, List, Tuple, Optional, Any, Union
 import abc
 
+# =================================================================================================
+# JSONRepresentable abstract class
+
 class JSONRepresentable(abc.ABC):
 
     @abc.abstractmethod
-    def json_repr(self) -> Union[Dict, List, str, int, float, bool, None]:
+    def json_repr(self) -> Union[Dict, List, str, int, float, bool, None, "JSONRepresentable"]:
         pass
+        
+# =================================================================================================
+# Functions, parameters, arguments:
+
+class Parameter(JSONRepresentable):
+    param_name : str
+    param_type : "Type"
+
+    def __init__(self, param_name: str, param_type: "Type") -> None:
+        self.param_name = param_name
+        self.param_type = param_type
+
+    def __eq__(self, other) -> bool:
+        if not isinstance(other, Parameter):
+            return False
+        if self.param_name != other.param_name:
+            return False
+        if self.param_type != other.param_type:
+            return False
+        return True
+
+    def is_self_param(self) -> bool:
+        return (self.param_name == "self") and (self.param_type == None)
+        
+    def json_repr(self) -> Dict:
+        return {"name" : self.param_name,
+                "type" : self.param_type}
+
+class Function(JSONRepresentable):
+    name        : str
+    parameters  : List[Parameter]
+    return_type : "Type"
+
+    def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
+        self.name        = name
+        self.parameters  = parameters
+        self.return_type = return_type
+
+    def is_method_compatible(self) -> bool:
+        return self.parameters[0].is_self_param()
+        
+    def json_repr(self) -> Dict:
+        return {"name"        : self.name,
+                "parameters"  : self.parameters,
+                "return_type" : self.return_type.name}
+
+class Argument(JSONRepresentable):
+    arg_name  : str
+    arg_type  : "Type"
+    arg_value : Any
+
+    def __init__(self, arg_name: str, arg_type: "Type", arg_value: Any) -> None:
+        self.arg_name  = arg_name
+        self.arg_type  = arg_type
+        self.arg_value = arg_value
+        
+    def json_repr(self) -> Dict:
+        return {"name"  : self.arg_name,
+                "value" : self.arg_value}

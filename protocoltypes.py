@@ -45,50 +45,7 @@ class TypeError(Exception):
         self.reason = reason
 
 # =================================================================================================
-# Functions, parameters, arguments, traits:
-
-class Parameter:
-    param_name : str
-    param_type : "Type"
-
-    def __init__(self, param_name: str, param_type: "Type") -> None:
-        self.param_name = param_name
-        self.param_type = param_type
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, Parameter):
-            return False
-        if self.param_name != other.param_name:
-            return False
-        if self.param_type != other.param_type:
-            return False
-        return True
-
-    def is_self_param(self) -> bool:
-        return (self.param_name == "self") and (self.param_type == None)
-
-class Function:
-    name        : str
-    parameters  : List[Parameter]
-    return_type : "Type"
-
-    def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
-        self.name        = name
-        self.parameters  = parameters
-        self.return_type = return_type
-
-    def is_method_compatible(self) -> bool:
-        return self.parameters[0].is_self_param()
-
-class Argument:
-    arg_name  : str
-    arg_type  : "Type"
-    arg_value : Any
-
-    def __init__(self, arg_name: str, arg_type: "Type", arg_value: Any) -> None:
-        self.arg_name  = arg_name
-        self.arg_type  = arg_type
-        self.arg_value = arg_value
+# Traits:
 
 class Trait:
     name    : str
