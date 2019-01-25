@@ -100,7 +100,7 @@ class FieldAccessExpression(Expression):
     def json_repr(self) -> Dict:
         return {"expression" : "FieldAccess",
                 "target"     : self.target,
-                "field"      : self.field}
+                "field"      : self.field_name}
 
 class ContextAccessExpression(Expression):
     # FIXME: we need a Context object
@@ -114,7 +114,7 @@ class ContextAccessExpression(Expression):
         
     def json_repr(self) -> Dict:
         return {"expression" : "ContextAccess",
-                "field"      : field_name}
+                "field"      : self.field_name}
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -142,7 +142,7 @@ class ThisExpression(Expression):
         self.result_type = this_type
         
     def json_repr(self) -> Dict:
-        return {"expression" : This}
+        return {"expression" : "This"}
 
 class ConstantExpression(Expression):
     result_type : "Type"
