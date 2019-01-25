@@ -145,7 +145,8 @@ class ThisExpression(Expression):
         return {"expression" : This}
 
 class ConstantExpression(Expression):
-    value : Any
+    result_type : "Type"
+    value       : Any
 
     def __init__(self, constant_type: "Type", constant_value: Any) -> None:
         self.result_type = constant_type
