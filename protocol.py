@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018 University of Glasgow
+# Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -30,6 +30,9 @@
 
 from typing import Dict, List, Tuple, Optional
 from protocoltypes import *
+from expressions import *
+from protocoltypeelements import *
+
 from copy import copy
 
 import json
@@ -223,7 +226,7 @@ class Protocol:
             raise TypeError("Cannot redefine protocol name")
         self._name = name
 
-    def define_bitstring(self, irobj):
+    def define_bitstring(self, irobj) -> BitString:
         """
         Define a new bit string type for this protocol. 
         The type constructor is described in Section 3.2.1 of the IR specification.
@@ -239,8 +242,10 @@ class Protocol:
         self._types[name].implement_trait(self.get_trait("Sized"))
         self._types[name].implement_trait(self.get_trait("Value"))
         self._types[name].implement_trait(self.get_trait("Equality"))
+        
+        return self._types[name]
 
-    def define_array(self, irobj):
+    def define_array(self, irobj) -> Array:
         """
         Define a new array type for this protocol. 
         The type constructor is described in Section 3.2.2 of the IR specification.
@@ -257,8 +262,10 @@ class Protocol:
         self._types[name].implement_trait(self.get_trait("Sized"))
         self._types[name].implement_trait(self.get_trait("Equality"))
         self._types[name].implement_trait(self.get_trait("IndexCollection"))
+        
+        return self._types[name]
 
-    def define_struct(self, irobj):
+    def define_struct(self, irobj) -> Struct:
         """
         Define a new structure type for this protocol. 
         The type constructor is described in Section 3.2.3 of the IR specification.
@@ -278,8 +285,10 @@ class Protocol:
             self._types[name].add_action(action)
         self._types[name].implement_trait(self.get_trait("Sized"))
         self._types[name].implement_trait(self.get_trait("Equality"))
+        
+        return self._types[name]
 
-    def define_enum(self, irobj):
+    def define_enum(self, irobj) -> Enum:
         """
         Define a new enumerated type for this protocol. 
         The type constructor is described in Section 3.2.4 of the IR specification.
@@ -293,8 +302,10 @@ class Protocol:
         variants     = self._parse_variants(irobj["variants"])
         self._types[name] = Enum(name, variants)
         self._types[name].implement_trait(self.get_trait("Sized"))
+        
+        return self._types[name]
 
-    def derive_type(self, irobj):
+    def derive_type(self, irobj) -> "Type":
         """
         Define a new derived type for this protocol. 
         The type constructor is described in Section 3.2.5 of the IR specification.
@@ -314,8 +325,10 @@ class Protocol:
         	self._types[name].implement_trait(self.get_trait(trait_name))
         for impl in irobj["implements"]:
             self._types[name].implement_trait(self.get_trait(impl["trait"]))
+            
+        return self._types[name]
 
-    def define_function(self, irobj):
+    def define_function(self, irobj) -> Function:
         """
         Define a new function type for this protocol. 
         The type constructor is described in Section 3.2.6 of the IR specification.
@@ -334,6 +347,8 @@ class Protocol:
         params      = self._parse_parameters(irobj["parameters"])
         return_type = self.get_type(irobj["return_type"])
         self._funcs[name] = Function(name, params, return_type)
+        
+        return self._funcs[name]
 
     def define_context(self, irobj):
         """

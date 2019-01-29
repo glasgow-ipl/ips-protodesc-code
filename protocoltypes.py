@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018 University of Glasgow
+# Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -31,6 +31,8 @@
 from typing import Dict, List, Tuple, Optional, Any
 from copy import deepcopy
 
+from protocoltypeelements import *
+
 import re
 
 # Type names begin with an upper case letter, function names do not:
@@ -45,64 +47,11 @@ class TypeError(Exception):
         self.reason = reason
 
 # =================================================================================================
-# Functions, parameters, arguments, traits:
-
-class Parameter:
-    param_name : str
-    param_type : "Type"
-
-    def __init__(self, param_name: str, param_type: "Type") -> None:
-        self.param_name = param_name
-        self.param_type = param_type
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, Parameter):
-            return False
-        if self.param_name != other.param_name:
-            return False
-        if self.param_type != other.param_type:
-            return False
-        return True
-
-    def is_self_param(self) -> bool:
-        return (self.param_name == "self") and (self.param_type == None)
-
-class Function:
-    name        : str
-    parameters  : List[Parameter]
-    return_type : "Type"
-
-    def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
-        self.name        = name
-        self.parameters  = parameters
-        self.return_type = return_type
-
-    def is_method_compatible(self) -> bool:
-        return self.parameters[0].is_self_param()
-
-    def accepts_arguments(self, arguments : List["Argument"]) -> bool:
-        # Returns True if the arguments math the parameters of this function
-        # FIXME: skips the first parameter, which makes sense for methods but not plain functions
-        for (p, a) in zip(self.parameters[1:], arguments):
-            if p.param_name != a.arg_name:
-                return False
-            if p.param_type != a.arg_type:
-                return False
-        return True
-
-class Argument:
-    arg_name  : str
-    arg_type  : "Type"
-    arg_value : Any
-
-    def __init__(self, arg_name: str, arg_type: "Type", arg_value: Any) -> None:
-        self.arg_name  = arg_name
-        self.arg_type  = arg_type
-        self.arg_value = arg_value
+# Traits:
 
 class Trait:
     name    : str
-    methods : Dict[str,Function]
+    methods : Dict[str, Function]
 
     def __init__(self, name: str, methods: List[Function]) -> None:
         self.name    = name
@@ -112,115 +61,6 @@ class Trait:
 
     def __str__(self):
         print("Trait<{}>".format(self.name))
-
-# =================================================================================================
-# Expressions as defined in Section 3.4 of the IR specification:
-
-class Expression:
-    result_type : "Type"
-
-class MethodInvocationExpression(Expression):
-    target      : Expression
-    method_name : str
-    args        : List[Argument]
-
-    def __init__(self, target: Expression, method_name: str, args: List[Argument]) -> None:
-        if re.search(FUNC_NAME_REGEX, method_name) == None:
-            raise TypeError("Invalid method name {}".format(method_name))
-        if not target.result_type.get_method(method_name).accepts_arguments(args):
-        	raise TypeError("Invalid method invocation {}".format(method_name))        
-        self.target      = target
-        self.method_name = method_name
-        self.args        = args
-        self.result_type = target.result_type.get_method(method_name).return_type
-
-class FunctionInvocationExpression(Expression):
-    func : Function
-    args : List[Argument]
-
-    def __init__(self, func: Function, args: List[Argument]) -> None:
-        if re.search(FUNC_NAME_REGEX, func.name) == None:
-            raise TypeError("Invalid function name {}".format(func.name))
-        self.func        = func
-        self.args        = args
-        self.result_type = func.return_type
-
-class FieldAccessExpression(Expression):
-    """
-    An expression representing access to `field` of `target`.
-    The `target` must be a structure type.
-    """
-    target     : Expression
-    field_name : str
-
-    def __init__(self, target: Expression, field_name: str) -> None:
-        if isinstance(target.result_type, Struct):
-            self.target     = target
-            self.field_name = field_name
-            self.result_type  = target.result_type.field(field_name).field_type
-        else:
-            raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
-
-class ContextAccessExpression(Expression):
-    # FIXME: we need a Context object
-    context    : Dict[str, "ContextField"]
-    field_name : str
-
-    def __init__(self, context: Dict[str, "ContextField"], field_name: str) -> None:
-        self.context     = context
-        self.field_name  = field_name
-        self.result_type = self.context[self.field_name].field_type
-
-class IfElseExpression(Expression):
-    condition : Expression
-    if_else   : Expression
-    if_false  : Expression
-
-    def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
-        if condition.result_type.kind != "Boolean":
-            raise TypeError("Cannot create IfElseExpression: condition is not boolean")
-        if if_true.result_type != if_false.result_type:
-            raise TypeError("Cannot create IfElseExpression: branch types differ")
-        self.condition   = condition
-        self.if_true     = if_true
-        self.if_false    = if_false
-        self.result_type = if_true.result_type
-
-class ThisExpression(Expression):
-    def __init__(self, this_type: "Type") -> None:
-        self.result_type = this_type
-
-class ConstantExpression(Expression):
-    value : Any
-
-    def __init__(self, constant_type: "Type", constant_value: Any) -> None:
-        self.result_type = constant_type
-        self.value       = constant_value
-
-# =================================================================================================
-# Fields in a structure or the context:
-
-class Transform:
-    def __init__(self, into_name: str, into_type: "Type", using: Function) -> None:
-        self.into_name = into_name
-        self.into_type = into_type
-        self.using     = using
-
-class StructField:
-    def __init__(self, 
-                 field_name: str, 
-                 field_type: "Type", 
-                 is_present: Optional[Expression], 
-                 transform : Optional[Transform]) -> None:
-        self.field_name = field_name
-        self.field_type = field_type
-        self.is_present = is_present
-        self.transform  = transform
-
-class ContextField:
-    def __init__(self, field_name: str, field_type: "Type") -> None:
-        self.field_name = field_name
-        self.field_type = field_type
 
 # =================================================================================================
 # Types:

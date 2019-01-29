@@ -1,0 +1,13 @@
+type Port = Bits16;
+type Length = Bits16;
+type Checksum = Bits16;
+
+struct Datagram {
+    src: Port,
+    dst: Port,
+    length: Length,
+    checksum: Checksum,
+    payload: Bits
+};
+
+pdus = {Datagram};
