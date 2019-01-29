@@ -33,11 +33,10 @@ from protocol import Protocol
 from typing import Dict, List, Tuple, Optional, Any
 import parsley
 import string
-from input_parsers.protocolbuilder import *
 
+from input_parsers.protocolbuilder import *
 from protocoltypes import *
 from protocoltypeelements import *
-from expressions import * 
 
 class PacketLangParser(InputParser):
     pb: ProtocolBuilder
@@ -71,7 +70,6 @@ class PacketLangParser(InputParser):
         self.pb.add_definition(struct_constructor)
         
     def new_structfield(self, field_name: str, field_type, is_present: Expression = None, transform: Expression = None):
-        print(field_type)
         if type(field_type) == BitStringConstructor:
             self.pb.add_definition(field_type, warn_if_defined=False)
             field_type = field_type.name

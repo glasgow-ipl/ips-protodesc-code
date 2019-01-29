@@ -30,11 +30,11 @@
 
 from typing import Dict, List, Tuple, Optional, Any
 import json
+import abc
+
 from protocol import Protocol
 from protocoltypes import *
 from protocoltypeelements import *
-
-import abc
 
 #--------------------------------------------------------------------------------------------------
 # Type Constructors
@@ -134,7 +134,7 @@ class StructConstructor(TypeConstructor):
         self.constraints = constraints
         self.actions = actions
     
-    def build_protocol_type(self) -> Array:
+    def build_protocol_type(self) -> Struct:
         return Struct(self.name)
 
     def json_repr(self):
