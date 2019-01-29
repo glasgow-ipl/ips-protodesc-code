@@ -176,6 +176,24 @@ class NewTypeConstructor(TypeConstructor):
                 "derived_from" : self.derived_from,
                 "implements"   : [{"trait" : trait_name} for trait_name in self.implements]}
 
+class FunctionConstructor(TypeConstructor):
+    parameters: List[Parameter]
+    return_type: str
+    
+    def __init__(self, name: str, parameters: List[Parameter], return_type: str):
+        super().__init__(name)
+        self.parameters = parameters
+        self.return_type = return_type
+        
+    def build_protocol_type(self) -> Function:
+        return Function(self.name)
+        
+    def json_repr(self):
+        return {"construct"   : "Function",
+                "name"        : self.name,
+                "parameters"  : self.parameters,
+                "return_type" : self.return_type}
+
 #--------------------------------------------------------------------------------------------------
 # ProtocolBuilder
 #--------------------------------------------------------------------------------------------------
