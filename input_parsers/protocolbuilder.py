@@ -144,6 +144,21 @@ class StructConstructor(TypeConstructor):
                 "constraints" : self.constraints,
                 "actions"     : self.actions}
 
+class EnumConstructor(TypeConstructor):
+    variants: List["Type"]
+    
+    def __init__(self, name, variants):
+        super().__init__(name)
+        self.variants = variants
+    
+    def build_protocol_type(self) -> Enum:
+        return Enum(self.name)
+        
+    def json_repr(self):
+        return {"construct" : "Enum",
+                "name"      : self.name,
+                "variants"  : [{"type" : variant.name} for variant in variants]}
+
 class NewTypeConstructor(TypeConstructor):
     derived_from: str
     implements: List[str]
