@@ -30,11 +30,11 @@
 
 from typing import Dict, List, Tuple, Optional, Any
 import json
+import abc
+
 from protocol import Protocol
 from protocoltypes import *
 from protocoltypeelements import *
-
-import abc
 
 #--------------------------------------------------------------------------------------------------
 # Type Constructors
@@ -134,7 +134,7 @@ class StructConstructor(TypeConstructor):
         self.constraints = constraints
         self.actions = actions
     
-    def build_protocol_type(self) -> Array:
+    def build_protocol_type(self) -> Struct:
         return Struct(self.name)
 
     def json_repr(self):
@@ -143,6 +143,21 @@ class StructConstructor(TypeConstructor):
                 "fields"      : self.fields,
                 "constraints" : self.constraints,
                 "actions"     : self.actions}
+
+class EnumConstructor(TypeConstructor):
+    variants: List["Type"]
+    
+    def __init__(self, name, variants):
+        super().__init__(name)
+        self.variants = variants
+    
+    def build_protocol_type(self) -> Enum:
+        return Enum(self.name)
+        
+    def json_repr(self):
+        return {"construct" : "Enum",
+                "name"      : self.name,
+                "variants"  : [{"type" : variant.name} for variant in variants]}
 
 class NewTypeConstructor(TypeConstructor):
     derived_from: str
@@ -160,6 +175,35 @@ class NewTypeConstructor(TypeConstructor):
                 "name"         : self.name,
                 "derived_from" : self.derived_from,
                 "implements"   : [{"trait" : trait_name} for trait_name in self.implements]}
+
+class FunctionConstructor(TypeConstructor):
+    parameters: List[Parameter]
+    return_type: str
+    
+    def __init__(self, name: str, parameters: List[Parameter], return_type: str):
+        super().__init__(name)
+        self.parameters = parameters
+        self.return_type = return_type
+        
+    def build_protocol_type(self) -> Function:
+        return Function(self.name)
+        
+    def json_repr(self):
+        return {"construct"   : "Function",
+                "name"        : self.name,
+                "parameters"  : self.parameters,
+                "return_type" : self.return_type}
+
+class ContextConstructor(TypeConstructor):
+    fields: List[StructField]
+    
+    def __init__(self, fields: List[StructField]):
+        super().__init__()
+        self.fields = fields
+        
+    def json_repr(self):
+        return {"construct" : "Context",
+                "fields"    : self.fields}
 
 #--------------------------------------------------------------------------------------------------
 # ProtocolBuilder
