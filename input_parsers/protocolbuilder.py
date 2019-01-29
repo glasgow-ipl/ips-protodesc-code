@@ -194,6 +194,17 @@ class FunctionConstructor(TypeConstructor):
                 "parameters"  : self.parameters,
                 "return_type" : self.return_type}
 
+class ContextConstructor(TypeConstructor):
+    fields: List[StructField]
+    
+    def __init__(self, fields: List[StructField]):
+        super().__init__()
+        self.fields = fields
+        
+    def json_repr(self):
+        return {"construct" : "Context",
+                "fields"    : self.fields}
+
 #--------------------------------------------------------------------------------------------------
 # ProtocolBuilder
 #--------------------------------------------------------------------------------------------------
