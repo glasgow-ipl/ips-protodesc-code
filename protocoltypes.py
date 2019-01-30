@@ -94,7 +94,17 @@ class Function(JSONRepresentable):
 
     def is_method_compatible(self) -> bool:
         return self.parameters[0].is_self_param()
-        
+
+    def accepts_arguments(self, arguments : List["Argument"]) -> bool:
+        # Returns True if the arguments math the parameters of this function
+        # FIXME: skips the first parameter, which makes sense for methods but not plain functions
+        for (p, a) in zip(self.parameters[1:], arguments):
+            if p.param_name != a.arg_name:
+                return False
+            if p.param_type != a.arg_type:
+                return False
+        return True
+
     def json_repr(self) -> Dict:
         return {"name"        : self.name,
                 "parameters"  : self.parameters,
@@ -138,22 +148,16 @@ class MethodInvocationExpression(Expression):
     method_name : str
     args        : List[Argument]
 
-    def __init__(self, target: Expression, method_name, args: List[Argument]) -> None:
+    def __init__(self, target: Expression, method_name:str, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
             raise TypeError("Invalid method name {}".format(method_name))
-        if not self.is_invocation_valid(args, target, method_name):
-        	raise TypeError("Invalid method invocation {}".format(method_name))        
+        if not target.result_type.get_method(method_name).accepts_arguments(args):
+            raise TypeError("Invalid method invocation {}".format(method_name))
         self.target      = target
         self.method_name = method_name
         self.args        = args
         self.result_type = target.result_type.get_method(method_name).return_type
         
-    def is_invocation_valid(self, args: List[Argument], target: Expression, method_name: str) -> bool:
-    	arg_types = {"self": target.result_type}
-    	arg_types.update({arg.arg_name:arg.arg_type for arg in args})
-    	param_types = {param.param_name:param.param_type for param in target.result_type.get_method(method_name).parameters}
-    	return arg_types == param_types
-    	
     def json_repr(self) -> Dict:
         return {"expression" : "MethodInvocation",
                 "target"     : self.target,
