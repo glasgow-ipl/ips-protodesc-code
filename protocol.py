@@ -230,68 +230,71 @@ class Protocol:
             raise TypeError("Cannot redefine protocol name")
         self._name = name
 
-    def define_bitstring(self, bitstring: BitString):
+    def define_bitstring(self, tcons:BitStringConstructor) -> BitString:
         """
         Define a new bit string type for this protocol. 
 
         Parameters:
-            self      - the protocol in which the new type is defined
-            bitstring - the BitString object to add to the protocol
+          self  - the protocol in which the new type is defined
+          tcons - the type constructor
         """
-        self._validate_protocoltype(bitstring)
-        self._types[bitstring.name] = bitstring
-        
-        # FIXME: implementing the built-in traits might make more sense when initialising BitString
-        bitstring.implement_trait(self.get_trait("Sized"))
-        bitstring.implement_trait(self.get_trait("Value"))
-        bitstring.implement_trait(self.get_trait("Equality"))
+        newtype = BitString(tcons.name, tcons.size)
+        newtype.implement_trait(self.get_trait("Sized"))
+        newtype.implement_trait(self.get_trait("Value"))
+        newtype.implement_trait(self.get_trait("Equality"))
+        self._types[tcons.name] = newtype
+        return newtype
 
-    def define_array(self, array: Array):
+    def define_array(self, tcons:ArrayConstructor) -> Array:
         """
         Define a new array type for this protocol. 
 
         Parameters:
           self  - the protocol in which the new type is defined
-          array - the Array object to add to the protocol
+          tcons - the type constructor
         """
-        self._validate_protocoltype(array)
-        self._types[array.name] = array
+        newtype = Array(tcons.name, tcons.element_type, tcons.length)
+        newtype.implement_trait(self.get_trait("Sized"))
+        newtype.implement_trait(self.get_trait("Equality"))
+        newtype.implement_trait(self.get_trait("IndexCollection"))
+        self._types[tcons.name] = newtype
+        return newtype
 
-        # FIXME: implementing the built-in traits might make more sense when initialising Array
-        array.implement_trait(self.get_trait("Sized"))
-        array.implement_trait(self.get_trait("Equality"))
-        array.implement_trait(self.get_trait("IndexCollection"))
-
-    def define_struct(self, struct: Struct):
+    def define_struct(self, tcons:StructConstructor) -> Struct:
         """
         Define a new structure type for this protocol. 
 
         Parameters:
           self   - the protocol in which the new type is defined
-          struct - the Struct object to add to the protocol
+          tcons - the type constructor
         """
-        self._validate_protocoltype(struct)
-        self._types[struct.name] = struct
-            
-        # FIXME: implementing the built-in traits might make more sense when initialising Struct
-        struct.implement_trait(self.get_trait("Sized"))
-        struct.implement_trait(self.get_trait("Equality"))
+        newtype = Struct(tcons.name)
+        for field in self._parse_fields(tcons.fields, self._types[tcons.name]):
+            newtype.add_field(field)
+        for constraint in self._parse_constraints(tcons.constraints, self._types[tcons.name]):
+            newtype.add_constraint(constraint)
+        for action in self._parse_actions(tcons.actions, self._types[tcons.name]):
+            newtype.add_action(action)
+        newtype.implement_trait(self.get_trait("Sized"))
+        newtype.implement_trait(self.get_trait("Equality"))
+        self._types[tcons.name] = newtype
+        return newtype
 
-    def define_enum(self, enum: Enum):
+    def define_enum(self, tcons:EnumConstructor) -> Enum:
         """
         Define a new enumerated type for this protocol. 
 
         Parameters:
           self  - the protocol in which the new type is defined
-          enum  - the Enum object to add to the protocol
+          tcons - the type constructor
         """
-        self._validate_protocoltype(enum)
-        self._types[enum.name] = enum
-        
-        # FIXME: implementing the built-in traits might make more sense when initialising Enum
-        enum.implement_trait(self.get_trait("Sized"))
+        newtype = Enum(tcons.name, self._parse_variants(tcons.variants))
+        newtype.implement_trait(self.get_trait("Sized"))
+        self._types[tcons.name] = newtype
+        return newtype
 
-    def derive_type(self, irobj) -> "Type":
+    def derive_type(self, irobj):
+        # FIXME: change to type constructor rather than irobj
         """
         Define a new derived type for this protocol. 
         The type constructor is described in Section 3.2.5 of the IR specification.
@@ -311,10 +314,9 @@ class Protocol:
         	self._types[name].implement_trait(self.get_trait(trait_name))
         for impl in irobj["implements"]:
             self._types[name].implement_trait(self.get_trait(impl["trait"]))
-            
-        return self._types[name]
 
-    def define_function(self, irobj) -> Function:
+    def define_function(self, irobj):
+        # FIXME: change to type constructor rather than irobj
         """
         Define a new function type for this protocol. 
         The type constructor is described in Section 3.2.6 of the IR specification.
@@ -333,10 +335,9 @@ class Protocol:
         params      = self._parse_parameters(irobj["parameters"])
         return_type = self.get_type(irobj["return_type"])
         self._funcs[name] = Function(name, params, return_type)
-        
-        return self._funcs[name]
 
     def define_context(self, irobj):
+        # FIXME: change to type constructor rather than irobj
         """
         Define the context for this protocol.
 
