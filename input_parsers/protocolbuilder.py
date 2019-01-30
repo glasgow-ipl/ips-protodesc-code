@@ -34,7 +34,6 @@ import abc
 
 from protocol import Protocol
 from protocoltypes import *
-from protocoltypeelements import *
 
 #--------------------------------------------------------------------------------------------------
 # Type Constructors

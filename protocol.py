@@ -30,7 +30,6 @@
 
 from typing import Dict, List, Tuple, Optional
 from protocoltypes import *
-from protocoltypeelements import *
 
 from copy import copy
 
@@ -116,6 +115,12 @@ class Protocol:
             raise TypeError("Cannot create type {}: already exists".format(irobj["name"]))
         if re.search(TYPE_NAME_REGEX, irobj["name"]) == None:
             raise TypeError("Cannot create type {}: malformed name".format(irobj["name"]))
+
+    def _validate_protocoltype(self, ptobj: "Type"):
+        if ptobj.name in self._types:
+            raise TypeError("Cannot create type {}: already exists".format(ptobj.name))
+        if re.search(TYPE_NAME_REGEX, ptobj.name) == None:
+            raise TypeError("Cannot create type {}: malformed name".format(ptobj.name))
 
     def _parse_arguments(self, args, this: Type) -> List[Argument]:
         res = []
@@ -225,84 +230,66 @@ class Protocol:
             raise TypeError("Cannot redefine protocol name")
         self._name = name
 
-    def define_bitstring(self, irobj) -> BitString:
+    def define_bitstring(self, bitstring: BitString):
         """
         Define a new bit string type for this protocol. 
-        The type constructor is described in Section 3.2.1 of the IR specification.
 
         Parameters:
-            self  - the protocol in which the new type is defined
-            irobj - a dict representing the JSON type constructor
+            self      - the protocol in which the new type is defined
+            bitstring - the BitString object to add to the protocol
         """
-        self._validate_irtype(irobj, "BitString")
-        name         = irobj["name"]
-        size         = irobj["size"]
-        self._types[name] = BitString(name, size)
-        self._types[name].implement_trait(self.get_trait("Sized"))
-        self._types[name].implement_trait(self.get_trait("Value"))
-        self._types[name].implement_trait(self.get_trait("Equality"))
+        self._validate_protocoltype(bitstring)
+        self._types[bitstring.name] = bitstring
         
-        return self._types[name]
+        # FIXME: implementing the built-in traits might make more sense when initialising BitString
+        bitstring.implement_trait(self.get_trait("Sized"))
+        bitstring.implement_trait(self.get_trait("Value"))
+        bitstring.implement_trait(self.get_trait("Equality"))
 
-    def define_array(self, irobj) -> Array:
+    def define_array(self, array: Array):
         """
         Define a new array type for this protocol. 
-        The type constructor is described in Section 3.2.2 of the IR specification.
 
         Parameters:
           self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          array - the Array object to add to the protocol
         """
-        self._validate_irtype(irobj, "Array")
-        name         = irobj["name"]
-        element_type = self._types[irobj["element_type"]]
-        length       = irobj["length"]
-        self._types[name] = Array(name, element_type, length)
-        self._types[name].implement_trait(self.get_trait("Sized"))
-        self._types[name].implement_trait(self.get_trait("Equality"))
-        self._types[name].implement_trait(self.get_trait("IndexCollection"))
-        
-        return self._types[name]
+        self._validate_protocoltype(array)
+        self._types[array.name] = array
 
-    def define_struct(self, irobj) -> Struct:
+        # FIXME: implementing the built-in traits might make more sense when initialising Array
+        array.implement_trait(self.get_trait("Sized"))
+        array.implement_trait(self.get_trait("Equality"))
+        array.implement_trait(self.get_trait("IndexCollection"))
+
+    def define_struct(self, struct: Struct):
         """
         Define a new structure type for this protocol. 
-        The type constructor is described in Section 3.2.3 of the IR specification.
 
         Parameters:
-          self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          self   - the protocol in which the new type is defined
+          struct - the Struct object to add to the protocol
         """
-        self._validate_irtype(irobj, "Struct")
-        name         = irobj["name"]
-        self._types[name] = Struct(irobj["name"])
-        for field in self._parse_fields(irobj["fields"], self._types[name]):
-            self._types[name].add_field(field)
-        for constraint in self._parse_constraints(irobj["constraints"], self._types[name]):
-            self._types[name].add_constraint(constraint)
-        for action in self._parse_actions(irobj["actions"], self._types[name]):
-            self._types[name].add_action(action)
-        self._types[name].implement_trait(self.get_trait("Sized"))
-        self._types[name].implement_trait(self.get_trait("Equality"))
-        
-        return self._types[name]
+        self._validate_protocoltype(struct)
+        self._types[struct.name] = struct
+            
+        # FIXME: implementing the built-in traits might make more sense when initialising Struct
+        struct.implement_trait(self.get_trait("Sized"))
+        struct.implement_trait(self.get_trait("Equality"))
 
-    def define_enum(self, irobj) -> Enum:
+    def define_enum(self, enum: Enum):
         """
         Define a new enumerated type for this protocol. 
-        The type constructor is described in Section 3.2.4 of the IR specification.
 
         Parameters:
           self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          enum  - the Enum object to add to the protocol
         """
-        self._validate_irtype(irobj, "Enum")
-        name         = irobj["name"]
-        variants     = self._parse_variants(irobj["variants"])
-        self._types[name] = Enum(name, variants)
-        self._types[name].implement_trait(self.get_trait("Sized"))
+        self._validate_protocoltype(enum)
+        self._types[enum.name] = enum
         
-        return self._types[name]
+        # FIXME: implementing the built-in traits might make more sense when initialising Enum
+        enum.implement_trait(self.get_trait("Sized"))
 
     def derive_type(self, irobj) -> "Type":
         """
@@ -374,45 +361,6 @@ class Protocol:
         """
         self._pdus[pdu] = self.get_type(pdu)
 
-    def load(self, protocol_json):
-        """
-        Load the JSON-formatted representation of a protocol object from a
-        string. It might be easier to create a protocol by calling the API
-        functions ("define_...()") directly, than by creating a JSON file
-        and loading it.
-
-        Arguments:
-          protocol_json -- A string containing the JSON form of a protocol object
-
-        Returns:
-          Nothing (but updates self to contain the loaded and type-checked IR)
-        """
-        protocol = json.loads(protocol_json)
-        if protocol["construct"] != "Protocol":
-            raise IRError("Not a protocol object")
-        if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
-            raise IRError("Invalid protocol name: {}".format(name))
-        self.set_protocol_name(protocol["name"])
-        for obj in protocol["definitions"]:
-            if   obj["construct"] == "BitString":
-                self.define_bitstring(obj)
-            elif obj["construct"] == "Array":
-                self.define_array(obj)
-            elif obj["construct"] == "Struct":
-                self.define_struct(obj)
-            elif obj["construct"] == "Enum":
-                self.define_enum(obj)
-            elif obj["construct"] == "NewType":
-                self.derive_type(obj)
-            elif obj["construct"] == "Function":
-                self.define_function(obj)
-            elif obj["construct"] == "Context":
-                self.define_context(obj)
-            else:
-                raise IRError("Cannot load protocol: unknown type constructor " + obj["construct"])
-        for pdu in protocol["pdus"]:
-            self.define_pdu(pdu["type"])
-
     def get_protocol_name(self) -> str:
         return self._name
 
@@ -445,11 +393,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_bitstring(self):
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct"    : "BitString",
-            "name"         : "Timestamp",
-            "size"         : 32
-        })
+        protocol.define_bitstring(BitString("Timestamp", 32))
         res = protocol.get_type("Timestamp")
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "Timestamp")
@@ -463,17 +407,9 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_array(self):
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct"    : "BitString",
-            "name"         : "SSRC",
-            "size"         : 32
-        })
-        protocol.define_array({
-            "construct"    : "Array",
-            "name"         : "CSRCList",
-            "element_type" : "SSRC",
-            "length"       : 4
-        })
+        ssrc = BitString("SSRC", 32)
+        protocol.define_bitstring(ssrc)
+        protocol.define_array(Array("CSRCList", ssrc, 4))
         res = protocol.get_type("CSRCList")
         self.assertEqual(res.kind, "Array")
         self.assertEqual(res.name, "CSRCList")
@@ -489,21 +425,18 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_struct(self):
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "SeqNumTrans",
-            "size"      : 16
-        })
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "SeqNum",
-            "size"      : 16
-        })
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "Timestamp",
-            "size"      : 32
-        })
+        
+        # define types
+        seqnum_trans = BitString("SeqNumTrans", 16)
+        seqnum = BitString("SeqNum", 16)
+        timestamp = BitString("Timestamp", 32)
+        transform_seq = Function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
+
+        # add to protocol
+        protocol.define_bitstring(seqnum_trans)
+        protocol.define_bitstring(seqnum)
+        protocol.define_bitstring(timestamp)
+        
         protocol.define_function({
             "construct"   : "Function",
             "name"        : "transform_seq",
@@ -514,62 +447,26 @@ class TestProtocol(unittest.TestCase):
             }],
             "return_type" : "SeqNumTrans"
         })
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [
-                {
-                    "name"       : "seq",
-                    "type"       : "SeqNum",
-                    "is_present" : {
-                        "expression" : "Constant",
-                        "type"       : "Boolean",
-                        "value"      : "True"
-                    },
-                    "transform"  : {
-                        "into_name" : "ext_seq",
-                        "into_type" : "SeqNumTrans",
-                        "using"     : "transform_seq"
-                    }
-                },
-                {
-                    "name"       : "ts",
-                    "type"       : "Timestamp",
-                    "is_present" : {
-                        "expression" : "Constant",
-                        "type"       : "Boolean",
-                        "value"      : "True"
-                    },
-                    "transform"  : None
-                }
-            ],
-            "constraints" : [
-                {
-                    "expression" : "MethodInvocation",
-                    "target"     : {
-                        "expression" : "FieldAccess",
-                        "target"     : {
-                            "expression" : "This"
-                        },
-                        "field"     : "seq"
-                    },
-                    "method"     : "eq",
-                    "arguments"  : [
-                        {
-                            "name"  : "other",
-                            "value" : {
-                                "expression" : "Constant",
-                                "type"       : "SeqNum",
-                                "value"      : 47
-                            }
-                        }
-                    ]
-                }
-            ],
-            # FIXME: add tests for actions
-            "actions" : [
-            ]
-        })
+        
+        # construct TestStruct
+        teststruct = Struct("TestStruct")
+        
+        # add fields
+        teststruct.add_field(StructField("seq", 
+                                         seqnum,
+                                         Transform("ext_seq", seqnum_trans, transform_seq),
+                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        teststruct.add_field(StructField("ts",
+                                         timestamp,
+                                         None,
+                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        
+        # add constraints
+        teststruct.add_constraint(MethodInvocationExpression(FieldAccessExpression(ThisExpression(teststruct), "seq"),
+                                                             "eq",
+                                                             [Argument("other", seqnum, ConstantExpression(seqnum, 47))]))
+        protocol.define_struct(teststruct)
+        
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
         self.assertEqual(res.name, "TestStruct")
@@ -591,24 +488,12 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_enum(self):
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "TypeA",
-            "size"      : 32
-        })
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "TypeB",
-            "size"      : 32
-        })
-        protocol.define_enum({
-            "construct"   : "Enum",
-            "name"        : "TestEnum",
-            "variants"    : [
-                {"type" : "TypeA"},
-                {"type" : "TypeB"}
-            ]
-        })
+        typea = BitString("TypeA", 32)
+        typeb = BitString("TypeB", 32)
+        protocol.define_bitstring(typea)
+        protocol.define_bitstring(typeb)
+        protocol.define_enum(Enum("TestEnum", [typea, typeb]))
+
         res = protocol.get_type("TestEnum")
         self.assertEqual(res.variants[0], protocol.get_type("TypeA"))
         self.assertEqual(res.variants[1], protocol.get_type("TypeB"))
@@ -619,11 +504,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_derive_type(self):
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "Bits16",
-            "size"      : 16
-        })
+        protocol.define_bitstring(BitString("Bits16", 16))
         protocol.derive_type({
             "construct"    : "NewType",
             "name"         : "SeqNum",
@@ -643,11 +524,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_function(self):
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "Bits16",
-            "size"      : 16
-        })
+        protocol.define_bitstring(BitString("Bits16", 16))
         protocol.define_function({
             "construct"   : "Function",
             "name"        : "testFunction",
@@ -673,11 +550,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_context(self):
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "Bits16",
-            "size"      : 16
-        })
+        protocol.define_bitstring(BitString("Bits16", 16))
         protocol.define_context({
             "construct"   : "Context",
             "fields"  : [
@@ -702,13 +575,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_MethodInvocation(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
+
         # Check we can parse MethodInvocation expressions:
         json = {
             "expression" : "MethodInvocation",
@@ -736,18 +604,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_FunctionInvocation(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "Bits16",
-            "size"      : 16
-        })
+        protocol.define_struct(Struct("TestStruct"))
+        protocol.define_bitstring(BitString("Bits16", 16))
         protocol.define_function({
             "construct"   : "Function",
             "name"        : "testFunction",
@@ -792,27 +650,20 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "TestField",
-            "size"      : 32
-        })
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [{
-                "name"       : "test",
-                "type"       : "TestField",
-                "is_present" : {
-                    "expression" : "Constant",
-                    "type"       : "Boolean",
-                    "value"      : "True"
-                },
-                "transform"  : None
-            }],
-            "constraints" : [],
-            "actions"     : []
-        })
+        
+        testfield = BitString("TestField", 32)
+        protocol.define_bitstring(testfield)
+        
+        teststruct = Struct("TestStruct")
+        
+        # add fields
+        teststruct.add_field(StructField("test", 
+                                         testfield,
+                                         None,
+                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        
+        protocol.define_struct(teststruct)
+
         # Check that we can parse FieldAccess expressions
         json = {
             "expression" : "FieldAccess",
@@ -828,18 +679,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_ContextAccess(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
-        protocol.define_bitstring({
-            "construct" : "BitString",
-            "name"      : "Bits16",
-            "size"      : 16
-        })
+        protocol.define_struct(Struct("TestStruct"))
+        protocol.define_bitstring(BitString("Bits16", 16))
         protocol.define_context({
             "construct"   : "Context",
             "fields"  : [
@@ -866,13 +707,7 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_IfElse(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
         # Check we can parse IfElse expressions:
         json = {
             "expression" : "IfElse",
@@ -902,13 +737,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_This(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
+
         # Check we can parse This expressions:
         json = {
             "expression" : "This"
@@ -920,13 +750,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_Constant(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
+
         # Check we can parse This expressions:
         json = {
             "expression" : "Constant",
@@ -1036,58 +861,6 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].parameters,  [Parameter("self", None)])
         self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].return_type, protocol.get_type("Size"))
         self.assertEqual(len(protocol.get_trait("IndexCollection").methods), 3)
-
-    def test_load(self):
-        json = """
-            {
-                "construct" : "Protocol",
-                "name"      : "TestProtocol",
-                "definitions" : [
-                    {
-                        "construct" : "BitString",
-                        "name"      : "TypeA",
-                        "size"      : 32
-                    },
-                    {
-                        "construct" : "BitString",
-                        "name"      : "TypeB",
-                        "size"      : 32
-                    },
-                    {
-                        "construct"    : "Array",
-                        "name"         : "ArrayTest",
-                        "element_type" : "TypeA",
-                        "length"       : 4
-                    },
-                    {
-                        "construct"   : "Struct",
-                        "name"        : "TestStruct",
-                        "fields"      : [],
-                        "constraints" : [],
-                        "actions"     : []
-                    },
-                    {
-                        "construct"   : "Enum",
-                        "name"        : "TestEnum",
-                        "variants"    : [
-                            {"type" : "TypeA"},
-                            {"type" : "TypeB"}
-                        ]
-                    },
-                    {
-                        "construct"    : "NewType",
-                        "name"         : "FooType",
-                        "derived_from" : "TypeA",
-                        "implements"   : [{"trait" : "Ordinal"}]
-                    }
-                ],
-                "pdus" : [
-                    {"type" : "TestStruct"}
-                ]
-            }
-        """
-        protocol = Protocol()
-        protocol.load(json)
 
 # =================================================================================================
 if __name__ == "__main__":
