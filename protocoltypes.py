@@ -150,9 +150,9 @@ class MethodInvocationExpression(Expression):
 
     def __init__(self, target: Expression, method_name:str, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
-            raise TypeError("Invalid method name {}".format(method_name))
+            raise TypeError("Method {}: invalid name".format(method_name))
         if not target.result_type.get_method(method_name).accepts_arguments(args):
-            raise TypeError("Invalid method invocation {}".format(method_name))
+            raise TypeError("Method {}: invalid arguments".format(method_name))
         self.target      = target
         self.method_name = method_name
         self.args        = args
