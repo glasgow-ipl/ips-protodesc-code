@@ -377,45 +377,6 @@ class Protocol:
         """
         self._pdus[pdu] = self.get_type(pdu)
 
-    def load(self, protocol_json):
-        """
-        Load the JSON-formatted representation of a protocol object from a
-        string. It might be easier to create a protocol by calling the API
-        functions ("define_...()") directly, than by creating a JSON file
-        and loading it.
-
-        Arguments:
-          protocol_json -- A string containing the JSON form of a protocol object
-
-        Returns:
-          Nothing (but updates self to contain the loaded and type-checked IR)
-        """
-        protocol = json.loads(protocol_json)
-        if protocol["construct"] != "Protocol":
-            raise IRError("Not a protocol object")
-        if re.search(TYPE_NAME_REGEX, protocol["name"]) == None:
-            raise IRError("Invalid protocol name: {}".format(name))
-        self.set_protocol_name(protocol["name"])
-        for obj in protocol["definitions"]:
-            if   obj["construct"] == "BitString":
-                self.define_bitstring(BitString(obj["name"], obj["size"]))
-            elif obj["construct"] == "Array":
-                self.define_array(obj)
-            elif obj["construct"] == "Struct":
-                self.define_struct(obj)
-            elif obj["construct"] == "Enum":
-                self.define_enum(obj)
-            elif obj["construct"] == "NewType":
-                self.derive_type(obj)
-            elif obj["construct"] == "Function":
-                self.define_function(obj)
-            elif obj["construct"] == "Context":
-                self.define_context(obj)
-            else:
-                raise IRError("Cannot load protocol: unknown type constructor " + obj["construct"])
-        for pdu in protocol["pdus"]:
-            self.define_pdu(pdu["type"])
-
     def get_protocol_name(self) -> str:
         return self._name
 
@@ -987,58 +948,6 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].parameters,  [Parameter("self", None)])
         self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].return_type, protocol.get_type("Size"))
         self.assertEqual(len(protocol.get_trait("IndexCollection").methods), 3)
-
-    def test_load(self):
-        json = """
-            {
-                "construct" : "Protocol",
-                "name"      : "TestProtocol",
-                "definitions" : [
-                    {
-                        "construct" : "BitString",
-                        "name"      : "TypeA",
-                        "size"      : 32
-                    },
-                    {
-                        "construct" : "BitString",
-                        "name"      : "TypeB",
-                        "size"      : 32
-                    },
-                    {
-                        "construct"    : "Array",
-                        "name"         : "ArrayTest",
-                        "element_type" : "TypeA",
-                        "length"       : 4
-                    },
-                    {
-                        "construct"   : "Struct",
-                        "name"        : "TestStruct",
-                        "fields"      : [],
-                        "constraints" : [],
-                        "actions"     : []
-                    },
-                    {
-                        "construct"   : "Enum",
-                        "name"        : "TestEnum",
-                        "variants"    : [
-                            {"type" : "TypeA"},
-                            {"type" : "TypeB"}
-                        ]
-                    },
-                    {
-                        "construct"    : "NewType",
-                        "name"         : "FooType",
-                        "derived_from" : "TypeA",
-                        "implements"   : [{"trait" : "Ordinal"}]
-                    }
-                ],
-                "pdus" : [
-                    {"type" : "TestStruct"}
-                ]
-            }
-        """
-        protocol = Protocol()
-        protocol.load(json)
 
 # =================================================================================================
 if __name__ == "__main__":
