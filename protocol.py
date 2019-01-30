@@ -262,28 +262,20 @@ class Protocol:
         array.implement_trait(self.get_trait("Equality"))
         array.implement_trait(self.get_trait("IndexCollection"))
 
-    def define_struct(self, irobj) -> Struct:
+    def define_struct(self, struct: Struct):
         """
         Define a new structure type for this protocol. 
-        The type constructor is described in Section 3.2.3 of the IR specification.
 
         Parameters:
           self  - the protocol in which the new type is defined
           irobj - a dict representing the JSON type constructor
         """
-        self._validate_irtype(irobj, "Struct")
-        name         = irobj["name"]
-        self._types[name] = Struct(irobj["name"])
-        for field in self._parse_fields(irobj["fields"], self._types[name]):
-            self._types[name].add_field(field)
-        for constraint in self._parse_constraints(irobj["constraints"], self._types[name]):
-            self._types[name].add_constraint(constraint)
-        for action in self._parse_actions(irobj["actions"], self._types[name]):
-            self._types[name].add_action(action)
-        self._types[name].implement_trait(self.get_trait("Sized"))
-        self._types[name].implement_trait(self.get_trait("Equality"))
-        
-        return self._types[name]
+        self._validate_protocoltype(struct)
+        self._types[struct.name] = struct
+            
+        # FIXME: implementing the built-in traits might make more sense when initialising Struct
+        struct.implement_trait(self.get_trait("Sized"))
+        struct.implement_trait(self.get_trait("Equality"))
 
     def define_enum(self, irobj) -> Enum:
         """
@@ -436,9 +428,18 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_struct(self):
         protocol = Protocol()
-        protocol.define_bitstring(BitString("SeqNumTrans", 16))
-        protocol.define_bitstring(BitString("SeqNum", 16))
-        protocol.define_bitstring(BitString("Timestamp", 32))
+        
+        # define types
+        seqnum_trans = BitString("SeqNumTrans", 16)
+        seqnum = BitString("SeqNum", 16)
+        timestamp = BitString("Timestamp", 32)
+        transform_seq = Function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
+
+        # add to protocol
+        protocol.define_bitstring(seqnum_trans)
+        protocol.define_bitstring(seqnum)
+        protocol.define_bitstring(timestamp)
+        
         protocol.define_function({
             "construct"   : "Function",
             "name"        : "transform_seq",
@@ -449,62 +450,26 @@ class TestProtocol(unittest.TestCase):
             }],
             "return_type" : "SeqNumTrans"
         })
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [
-                {
-                    "name"       : "seq",
-                    "type"       : "SeqNum",
-                    "is_present" : {
-                        "expression" : "Constant",
-                        "type"       : "Boolean",
-                        "value"      : "True"
-                    },
-                    "transform"  : {
-                        "into_name" : "ext_seq",
-                        "into_type" : "SeqNumTrans",
-                        "using"     : "transform_seq"
-                    }
-                },
-                {
-                    "name"       : "ts",
-                    "type"       : "Timestamp",
-                    "is_present" : {
-                        "expression" : "Constant",
-                        "type"       : "Boolean",
-                        "value"      : "True"
-                    },
-                    "transform"  : None
-                }
-            ],
-            "constraints" : [
-                {
-                    "expression" : "MethodInvocation",
-                    "target"     : {
-                        "expression" : "FieldAccess",
-                        "target"     : {
-                            "expression" : "This"
-                        },
-                        "field"     : "seq"
-                    },
-                    "method"     : "eq",
-                    "arguments"  : [
-                        {
-                            "name"  : "other",
-                            "value" : {
-                                "expression" : "Constant",
-                                "type"       : "SeqNum",
-                                "value"      : 47
-                            }
-                        }
-                    ]
-                }
-            ],
-            # FIXME: add tests for actions
-            "actions" : [
-            ]
-        })
+        
+        # construct TestStruct
+        teststruct = Struct("TestStruct")
+        
+        # add fields
+        teststruct.add_field(StructField("seq", 
+                                         seqnum,
+                                         Transform("ext_seq", seqnum_trans, transform_seq),
+                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        teststruct.add_field(StructField("ts",
+                                         timestamp,
+                                         None,
+                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        
+        # add constraints
+        teststruct.add_constraint(MethodInvocationExpression(FieldAccessExpression(ThisExpression(teststruct), "seq"),
+                                                             "eq",
+                                                             [Argument("other", seqnum, ConstantExpression(seqnum, 47))]))
+        protocol.define_struct(teststruct)
+        
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
         self.assertEqual(res.name, "TestStruct")
@@ -617,13 +582,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_MethodInvocation(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
+
         # Check we can parse MethodInvocation expressions:
         json = {
             "expression" : "MethodInvocation",
@@ -651,13 +611,7 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_FunctionInvocation(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
         protocol.define_bitstring(BitString("Bits16", 16))
         protocol.define_function({
             "construct"   : "Function",
@@ -703,23 +657,20 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_bitstring(BitString("TestField", 32))
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [{
-                "name"       : "test",
-                "type"       : "TestField",
-                "is_present" : {
-                    "expression" : "Constant",
-                    "type"       : "Boolean",
-                    "value"      : "True"
-                },
-                "transform"  : None
-            }],
-            "constraints" : [],
-            "actions"     : []
-        })
+        
+        testfield = BitString("TestField", 32)
+        protocol.define_bitstring(testfield)
+        
+        teststruct = Struct("TestStruct")
+        
+        # add fields
+        teststruct.add_field(StructField("test", 
+                                         testfield,
+                                         None,
+                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        
+        protocol.define_struct(teststruct)
+
         # Check that we can parse FieldAccess expressions
         json = {
             "expression" : "FieldAccess",
@@ -735,13 +686,7 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_ContextAccess(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
         protocol.define_bitstring(BitString("Bits16", 16))
         protocol.define_context({
             "construct"   : "Context",
@@ -769,13 +714,7 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_IfElse(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
         # Check we can parse IfElse expressions:
         json = {
             "expression" : "IfElse",
@@ -805,13 +744,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_This(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
+
         # Check we can parse This expressions:
         json = {
             "expression" : "This"
@@ -823,13 +757,8 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_Constant(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct({
-            "construct"   : "Struct",
-            "name"        : "TestStruct",
-            "fields"      : [],
-            "constraints" : [],
-            "actions"     : []
-        })
+        protocol.define_struct(Struct("TestStruct"))
+
         # Check we can parse This expressions:
         json = {
             "expression" : "Constant",
