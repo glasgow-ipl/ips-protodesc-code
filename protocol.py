@@ -30,7 +30,6 @@
 
 from typing import Dict, List, Tuple, Optional
 from protocoltypes import *
-from protocoltypeelements import *
 
 from copy import copy
 

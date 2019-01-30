@@ -36,7 +36,6 @@ import string
 
 from input_parsers.protocolbuilder import *
 from protocoltypes import *
-from protocoltypeelements import *
 
 class PacketLangParser(InputParser):
     pb: ProtocolBuilder
