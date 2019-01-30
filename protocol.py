@@ -233,7 +233,6 @@ class Protocol:
     def define_bitstring(self, bitstring: BitString):
         """
         Define a new bit string type for this protocol. 
-        The type constructor is described in Section 3.2.1 of the IR specification.
 
         Parameters:
             self      - the protocol in which the new type is defined
@@ -247,25 +246,21 @@ class Protocol:
         bitstring.implement_trait(self.get_trait("Value"))
         bitstring.implement_trait(self.get_trait("Equality"))
 
-    def define_array(self, irobj) -> Array:
+    def define_array(self, array: Array):
         """
         Define a new array type for this protocol. 
-        The type constructor is described in Section 3.2.2 of the IR specification.
 
         Parameters:
           self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          array - the Array object to add to the protocol
         """
-        self._validate_irtype(irobj, "Array")
-        name         = irobj["name"]
-        element_type = self._types[irobj["element_type"]]
-        length       = irobj["length"]
-        self._types[name] = Array(name, element_type, length)
-        self._types[name].implement_trait(self.get_trait("Sized"))
-        self._types[name].implement_trait(self.get_trait("Equality"))
-        self._types[name].implement_trait(self.get_trait("IndexCollection"))
-        
-        return self._types[name]
+        self._validate_protocoltype(array)
+        self._types[array.name] = array
+
+        # FIXME: implementing the built-in traits might make more sense when initialising Array
+        array.implement_trait(self.get_trait("Sized"))
+        array.implement_trait(self.get_trait("Equality"))
+        array.implement_trait(self.get_trait("IndexCollection"))
 
     def define_struct(self, irobj) -> Struct:
         """
@@ -423,13 +418,9 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_array(self):
         protocol = Protocol()
-        protocol.define_bitstring(BitString("SSRC", 32))
-        protocol.define_array({
-            "construct"    : "Array",
-            "name"         : "CSRCList",
-            "element_type" : "SSRC",
-            "length"       : 4
-        })
+        ssrc = BitString("SSRC", 32)
+        protocol.define_bitstring(ssrc)
+        protocol.define_array(Array("CSRCList", ssrc, 4))
         res = protocol.get_type("CSRCList")
         self.assertEqual(res.kind, "Array")
         self.assertEqual(res.name, "CSRCList")
