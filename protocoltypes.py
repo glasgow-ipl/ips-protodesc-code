@@ -95,13 +95,17 @@ class Function(JSONRepresentable):
     def is_method_compatible(self) -> bool:
         return self.parameters[0].is_self_param()
 
-    def accepts_arguments(self, arguments : List["Argument"]) -> bool:
-        # Returns True if the arguments math the parameters of this function
-        # FIXME: skips the first parameter, which makes sense for methods but not plain functions
+    def method_accepts_arguments(self, arguments : List["Argument"]) -> bool:
+        # Returns True if the arguments match the parameters of this function,
+        # and this function is method compatible.
+        if not self.is_method_compatible():
+            return False
         for (p, a) in zip(self.parameters[1:], arguments):
             if p.param_name != a.arg_name:
+                print("accepts_arguments: name mismatch {} vs {}".format(p.param_name, a.arg_name))
                 return False
             if p.param_type != a.arg_type:
+                print("accepts_arguments: type mismatch {} vs {}".format(p.param_type, a.arg_type))
                 return False
         return True
 
@@ -151,7 +155,7 @@ class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method_name:str, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
             raise TypeError("Method {}: invalid name".format(method_name))
-        if not target.result_type.get_method(method_name).accepts_arguments(args):
+        if not target.result_type.get_method(method_name).method_accepts_arguments(args):
             raise TypeError("Method {}: invalid arguments".format(method_name))
         self.target      = target
         self.method_name = method_name
