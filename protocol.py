@@ -267,8 +267,8 @@ class Protocol:
         Define a new structure type for this protocol. 
 
         Parameters:
-          self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          self   - the protocol in which the new type is defined
+          struct - the Struct object to add to the protocol
         """
         self._validate_protocoltype(struct)
         self._types[struct.name] = struct
@@ -277,22 +277,19 @@ class Protocol:
         struct.implement_trait(self.get_trait("Sized"))
         struct.implement_trait(self.get_trait("Equality"))
 
-    def define_enum(self, irobj) -> Enum:
+    def define_enum(self, enum: Enum):
         """
         Define a new enumerated type for this protocol. 
-        The type constructor is described in Section 3.2.4 of the IR specification.
 
         Parameters:
           self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          enum  - the Enum object to add to the protocol
         """
-        self._validate_irtype(irobj, "Enum")
-        name         = irobj["name"]
-        variants     = self._parse_variants(irobj["variants"])
-        self._types[name] = Enum(name, variants)
-        self._types[name].implement_trait(self.get_trait("Sized"))
+        self._validate_protocoltype(enum)
+        self._types[enum.name] = enum
         
-        return self._types[name]
+        # FIXME: implementing the built-in traits might make more sense when initialising Enum
+        enum.implement_trait(self.get_trait("Sized"))
 
     def derive_type(self, irobj) -> "Type":
         """
@@ -491,16 +488,12 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_enum(self):
         protocol = Protocol()
-        protocol.define_bitstring(BitString("TypeA", 32))
-        protocol.define_bitstring(BitString("TypeB", 32))
-        protocol.define_enum({
-            "construct"   : "Enum",
-            "name"        : "TestEnum",
-            "variants"    : [
-                {"type" : "TypeA"},
-                {"type" : "TypeB"}
-            ]
-        })
+        typea = BitString("TypeA", 32)
+        typeb = BitString("TypeB", 32)
+        protocol.define_bitstring(typea)
+        protocol.define_bitstring(typeb)
+        protocol.define_enum(Enum("TestEnum", [typea, typeb]))
+
         res = protocol.get_type("TestEnum")
         self.assertEqual(res.variants[0], protocol.get_type("TypeA"))
         self.assertEqual(res.variants[1], protocol.get_type("TypeB"))
