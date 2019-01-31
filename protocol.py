@@ -299,7 +299,7 @@ class Protocol:
           name     - the name of the new type
           variants - the variant fields of the enum
         """
-        newtype = Enum(name, self._parse_variants(variants))
+        newtype = Enum(name, variants)
         newtype.implement_trait(self.get_trait("Sized"))
         self._types[name] = newtype
         return newtype
@@ -318,8 +318,9 @@ class Protocol:
         self._types[name] = copy(derived_from)
         self._types[name].name    = name
         self._types[name].methods = copy(derived_from.methods)
-        for trait_name in derived_from.traits:
-            self._types[name].implement_trait(self.get_trait(trait_name))
+        #FIXME: traits are already copied above
+        #for trait_name in derived_from.traits:
+        #    self._types[name].implement_trait(self.get_trait(trait_name))
         for trait in also_implements:
             self._types[name].implement_trait(trait)
         return self._types[name]
@@ -477,11 +478,9 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_enum(self):
         protocol = Protocol()
-        typea = BitString("TypeA", 32)
-        typeb = BitString("TypeB", 32)
-        protocol.define_bitstring(typea)
-        protocol.define_bitstring(typeb)
-        protocol.define_enum(Enum("TestEnum", [typea, typeb]))
+        typea = protocol.define_bitstring("TypeA", 32)
+        typeb = protocol.define_bitstring("TypeB", 32)
+        protocol.define_enum("TestEnum", [typea, typeb])
 
         res = protocol.get_type("TestEnum")
         self.assertEqual(res.variants[0], protocol.get_type("TypeA"))
@@ -493,13 +492,9 @@ class TestProtocol(unittest.TestCase):
 
     def test_derive_type(self):
         protocol = Protocol()
-        protocol.define_bitstring(BitString("Bits16", 16))
-        protocol.derive_type({
-            "construct"    : "NewType",
-            "name"         : "SeqNum",
-            "derived_from" : "Bits16",
-            "implements"   : [{"trait" : "Ordinal"}]
-        })
+        bits16 = protocol.define_bitstring("Bits16", 16)
+        protocol.derive_type("SeqNum", bits16, [protocol.get_trait("Ordinal")])
+        
         res = protocol.get_type("SeqNum")
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "SeqNum")
