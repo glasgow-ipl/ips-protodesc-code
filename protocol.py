@@ -324,26 +324,22 @@ class Protocol:
             self._types[name].implement_trait(trait)
         return self._types[name]
 
-    def define_function(self, irobj):
-        # FIXME: change to parameters rather than irobj
+    def define_function(self, name:str, parameters:List[Parameter], return_type:Type) -> Function:
         """
         Define a new function type for this protocol. 
-        The type constructor is described in Section 3.2.6 of the IR specification.
 
         Parameters:
-          self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          self        - the protocol in which the new type is defined
+          name        - the name of the new function
+          return_type - the type that the function returns
         """
-        if irobj["construct"] != "Function":
-            raise TypeError("Cannot create Function from {} object".format(irobj["construct"]))
-        if irobj["name"] in self._funcs:
-            raise TypeError("Cannot create Function {}: already exists".format(irobj["name"]))
-        if re.search(FUNC_NAME_REGEX, irobj["name"]) == None:
-            raise TypeError("Cannot create Function {}: malformed name".format(irobj["name"]))
-        name        = irobj["name"]
-        params      = self._parse_parameters(irobj["parameters"])
-        return_type = self.get_type(irobj["return_type"])
-        self._funcs[name] = Function(name, params, return_type)
+        if name in self._funcs:
+            raise TypeError("Cannot create Function {}: already exists".format(name))
+        if re.search(FUNC_NAME_REGEX, name) == None:
+            raise TypeError("Cannot create Function {}: malformed name".format(name))
+        newfunc = Function(name, parameters, return_type)
+        self._funcs[name] = newfunc
+        return newfunc
 
     def define_context(self, irobj):
         # FIXME: change to parameters rather than irobj
@@ -439,18 +435,7 @@ class TestProtocol(unittest.TestCase):
         seqnum_trans = protocol.define_bitstring("SeqNumTrans", 16)
         seqnum = protocol.define_bitstring("SeqNum", 16)
         timestamp = protocol.define_bitstring("Timestamp", 32)
-        transform_seq = Function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
-
-        protocol.define_function({
-            "construct"   : "Function",
-            "name"        : "transform_seq",
-            "parameters"  : [
-            {
-                "name" : "seq",
-                "type" : "SeqNum"
-            }],
-            "return_type" : "SeqNumTrans"
-        })
+        transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
         
         # construct TestStruct
         teststruct = Struct("TestStruct")
@@ -528,22 +513,11 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_function(self):
         protocol = Protocol()
-        protocol.define_bitstring(BitString("Bits16", 16))
-        protocol.define_function({
-            "construct"   : "Function",
-            "name"        : "testFunction",
-            "parameters"  : [
-                {
-                    "name" : "foo",
-                    "type" : "Bits16"
-                },
-                {
-                    "name" : "bar",
-                    "type" : "Boolean"
-                }
-            ],
-            "return_type" : "Boolean"
-        })
+        bits16 = protocol.define_bitstring("Bits16", 16)
+        protocol.define_function("testFunction", 
+                                 [Parameter("foo", bits16), Parameter("bar", protocol.get_type("Boolean"))], 
+                                 protocol.get_type("Boolean"))
+
         res = protocol.get_func("testFunction")
         self.assertEqual(res.name, "testFunction")
         self.assertEqual(res.parameters[0].param_name, "foo")
