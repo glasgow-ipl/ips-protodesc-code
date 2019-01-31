@@ -403,7 +403,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_bitstring(self):
         protocol = Protocol()
-        protocol.define_bitstring(BitString("Timestamp", 32))
+        protocol.define_bitstring("Timestamp", 32)
         res = protocol.get_type("Timestamp")
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "Timestamp")
@@ -417,9 +417,8 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_array(self):
         protocol = Protocol()
-        ssrc = BitString("SSRC", 32)
-        protocol.define_bitstring(ssrc)
-        protocol.define_array(Array("CSRCList", ssrc, 4))
+        ssrc = protocol.define_bitstring("SSRC", 32)
+        protocol.define_array("CSRCList", ssrc, 4)
         res = protocol.get_type("CSRCList")
         self.assertEqual(res.kind, "Array")
         self.assertEqual(res.name, "CSRCList")
@@ -437,16 +436,11 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
         
         # define types
-        seqnum_trans = BitString("SeqNumTrans", 16)
-        seqnum = BitString("SeqNum", 16)
-        timestamp = BitString("Timestamp", 32)
+        seqnum_trans = protocol.define_bitstring("SeqNumTrans", 16)
+        seqnum = protocol.define_bitstring("SeqNum", 16)
+        timestamp = protocol.define_bitstring("Timestamp", 32)
         transform_seq = Function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
 
-        # add to protocol
-        protocol.define_bitstring(seqnum_trans)
-        protocol.define_bitstring(seqnum)
-        protocol.define_bitstring(timestamp)
-        
         protocol.define_function({
             "construct"   : "Function",
             "name"        : "transform_seq",
