@@ -297,7 +297,7 @@ class Protocol:
         Parameters:
           self     - the protocol in which the new type is defined
           name     - the name of the new type
-          variants - the variant fields of the enum
+          variants - the variant types of the enum
         """
         newtype = Enum(name, variants)
         newtype.implement_trait(self.get_trait("Sized"))
@@ -312,7 +312,7 @@ class Protocol:
         Parameters:
           self            - the protocol in which the new type is defined
           name            - the name of the new type
-          derived_from    - the name of the type that the new type is derived from
+          derived_from    - the type that the new type is derived from
           also_implements - additional traits that are implemented
         """
         self._types[name] = copy(derived_from)
