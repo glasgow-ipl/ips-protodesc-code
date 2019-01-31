@@ -29,9 +29,7 @@
 # =================================================================================================
 
 from typing import Dict, List, Tuple, Optional, Any, Union
-from copy import deepcopy
-
-import abc
+from abc import ABC
 
 import re
 
@@ -40,25 +38,17 @@ TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$_]+$"
 FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
 
 # =================================================================================================
-# JSONRepresentable abstract class
-
-class JSONRepresentable(abc.ABC):
-
-    @abc.abstractmethod
-    def json_repr(self) -> Union[Dict, List, str, int, float, bool, None, "JSONRepresentable"]:
-        pass
-
-# =================================================================================================
 # Type errors:
 
 class TypeError(Exception):
     def __init__(self, reason):
         self.reason = reason
 
-# =================================================================================================
-# Functions, parameters, arguments, traits:
 
-class Parameter(JSONRepresentable):
+# =================================================================================================
+# Parameters, arguments, functions, and traits:
+
+class Parameter():
     param_name : str
     param_type : "Type"
 
@@ -77,12 +67,20 @@ class Parameter(JSONRepresentable):
 
     def is_self_param(self) -> bool:
         return (self.param_name == "self") and (self.param_type == None)
-        
-    def json_repr(self) -> Dict:
-        return {"name" : self.param_name,
-                "type" : self.param_type}
 
-class Function(JSONRepresentable):
+
+class Argument():
+    arg_name  : str
+    arg_type  : "Type"
+    arg_value : Any
+
+    def __init__(self, arg_name: str, arg_type: "Type", arg_value: Any) -> None:
+        self.arg_name  = arg_name
+        self.arg_type  = arg_type
+        self.arg_value = arg_value
+
+
+class Function():
     name        : str
     parameters  : List[Parameter]
     return_type : "Type"
@@ -109,24 +107,6 @@ class Function(JSONRepresentable):
                 return False
         return True
 
-    def json_repr(self) -> Dict:
-        return {"name"        : self.name,
-                "parameters"  : self.parameters,
-                "return_type" : self.return_type.name}
-
-class Argument(JSONRepresentable):
-    arg_name  : str
-    arg_type  : "Type"
-    arg_value : Any
-
-    def __init__(self, arg_name: str, arg_type: "Type", arg_value: Any) -> None:
-        self.arg_name  = arg_name
-        self.arg_type  = arg_type
-        self.arg_value = arg_value
-        
-    def json_repr(self) -> Dict:
-        return {"name"  : self.arg_name,
-                "value" : self.arg_value}
 
 class Trait:
     name    : str
@@ -141,11 +121,13 @@ class Trait:
     def __str__(self):
         print("Trait<{}>".format(self.name))
 
+
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
 
-class Expression(JSONRepresentable):
+class Expression():
     result_type : "Type"
+
 
 class MethodInvocationExpression(Expression):
     target      : Expression
@@ -161,13 +143,8 @@ class MethodInvocationExpression(Expression):
         self.method_name = method_name
         self.args        = args
         self.result_type = target.result_type.get_method(method_name).return_type
-        
-    def json_repr(self) -> Dict:
-        return {"expression" : "MethodInvocation",
-                "target"     : self.target,
-                "method"     : self.method_name,
-                "arguments"  : self.args}
-		
+
+
 class FunctionInvocationExpression(Expression):
     func : Function
     args : List[Argument]
@@ -178,11 +155,7 @@ class FunctionInvocationExpression(Expression):
         self.func        = func
         self.args        = args
         self.result_type = func.return_type
-        
-    def json_repr(self) -> Dict:
-        return {"expression" : "FunctionInvocation",
-                "name"       : self.func.name,
-                "arguments"  : self.args}
+
 
 class FieldAccessExpression(Expression):
     """
@@ -200,10 +173,6 @@ class FieldAccessExpression(Expression):
         else:
             raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
             
-    def json_repr(self) -> Dict:
-        return {"expression" : "FieldAccess",
-                "target"     : self.target,
-                "field"      : self.field_name}
 
 class ContextAccessExpression(Expression):
     # FIXME: we need a Context object
@@ -214,10 +183,7 @@ class ContextAccessExpression(Expression):
         self.context     = context
         self.field_name  = field_name
         self.result_type = self.context[self.field_name].field_type
-        
-    def json_repr(self) -> Dict:
-        return {"expression" : "ContextAccess",
-                "field"      : self.field_name}
+
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -234,18 +200,11 @@ class IfElseExpression(Expression):
         self.if_false    = if_false
         self.result_type = if_true.result_type
         
-    def json_repr(self) -> Dict:
-        return {"expression" : "IfElse",
-                "condition"  : self.condition,
-                "if_true"    : self.if_true,
-                "if_false"   : self.if_false}
 
 class ThisExpression(Expression):
     def __init__(self, this_type: "Type") -> None:
         self.result_type = this_type
         
-    def json_repr(self) -> Dict:
-        return {"expression" : "This"}
 
 class ConstantExpression(Expression):
     result_type : "Type"
@@ -255,26 +214,18 @@ class ConstantExpression(Expression):
         self.result_type = constant_type
         self.value       = constant_value
     
-    def json_repr(self) -> Dict:
-        return {"expression" : "Constant",
-                "type"       : self.result_type,
-                "value"      : self.value}
 
 # =================================================================================================
 # Fields in a structure or the context:
 
-class Transform(JSONRepresentable):
+class Transform():
     def __init__(self, into_name: str, into_type: "Type", using: Function) -> None:
         self.into_name = into_name
         self.into_type = into_type
         self.using     = using
         
-    def json_repr(self) -> Dict:
-        return {"into_name" : self.into_name,
-                "into_type" : self.into_type.name,
-                "using"     : self.using.name}
 
-class StructField(JSONRepresentable):
+class StructField():
     def __init__(self, 
                  field_name: str, 
                  field_type: "Type", 
@@ -285,33 +236,37 @@ class StructField(JSONRepresentable):
         self.is_present = is_present
         self.transform  = transform
 
-    def json_repr(self) -> Dict:
-        return {"name"       : self.field_name,
-                "type"       : self.field_type.name,
-                "is_present" : self.is_present,
-                "transform"  : self.transform}
 
-class ContextField(JSONRepresentable):
+class ContextField():
     def __init__(self, field_name: str, field_type: "Type") -> None:
         self.field_name = field_name
         self.field_type = field_type
         
-    def json_repr(self) -> Dict:
-        return {"name" : self.field_name,
-                "type" : self.field_type.name}
 
 # =================================================================================================
 # Types:
 
-class Type:
+class Type(ABC):
+    """
+    Types exist in the context of a Protocol. 
+    The only valid way to create an object of class Type, or one of its subclasses,
+    is by calling one of the following methods on a Protocol object:
+     - define_bitstring()
+     - define_array()
+     - define_struct()
+     - define_enum()
+     - derive_type()
+    The get_type() method of the Protocol object can be used to retrieve a reference
+    to a pre-existing Type, given the type name.
+    """
+
     kind:    str
     name:    str
     traits:  Dict[str,Trait]
     methods: Dict[str,Function]
 
-    def __init__(self):
-        self.kind    = None
-        self.name    = None
+    def __init__(self) -> None:
+        # self.kind and self.name are initialised by subtypes
         self.traits  = {}
         self.methods = {}
 
@@ -335,7 +290,7 @@ class Type:
             return False
         return True
 
-    def implement_trait(self, trait: Trait):
+    def implement_trait(self, trait: Trait) -> None:
         if trait in self.traits:
             raise TypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
@@ -355,33 +310,38 @@ class Type:
     def get_method(self, method_name) -> Function:
         return self.methods[method_name]
 
+
 class Nothing(Type):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.kind  = "Nothing"
         self.name  = "Nothing"
 
+
 class Boolean(Type):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.kind  = "Boolean"
         self.name  = "Boolean"
 
+
 class Size(Type):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.kind  = "Size"
         self.name  = "Size"
 
+
 class BitString(Type):
-    def __init__(self, name, size):
+    def __init__(self, name: str, size: Size) -> None:
         super().__init__()
         self.kind = "BitString"
         self.name = name
         self.size = size
 
+
 class Array(Type):
-    def __init__(self, name, element_type, length):
+    def __init__(self, name: str, element_type: Type, length: Size) -> None:
         super().__init__()
         self.kind         = "Array"
         self.name         = name
@@ -392,6 +352,7 @@ class Array(Type):
         else:
             self.size = self.length * self.element_type.size
 
+
 class Struct(Type):
     kind:        str
     name:        str
@@ -399,7 +360,7 @@ class Struct(Type):
     constraints: List[Expression]
     actions:     List[Expression]
 
-    def __init__(self, name):
+    def __init__(self, name: str) -> None:
         super().__init__()
         self.kind        = "Struct"
         self.name        = name
@@ -407,27 +368,29 @@ class Struct(Type):
         self.constraints = []
         self.actions     = []
 
-    def add_field(self, field: StructField):
+    def add_field(self, field: StructField) -> None:
         self.fields.append(field)
 
-    def add_constraint(self, constraint: Expression):
+    def add_constraint(self, constraint: Expression) -> None:
         self.constraints.append(constraint)
 
-    def add_action(self, action: Expression):
+    def add_action(self, action: Expression) -> None:
         self.actions.append(action)
 
-    def field(self, field_name) -> StructField:
+    def field(self, field_name: str) -> StructField:
         for field in self.fields:
             if field.field_name == field_name:
                 return field
         raise TypeError("{} has no field named {}".format(self.name, field_name))
 
+
 class Enum(Type):
-    def __init__(self, name, variants):
+    def __init__(self, name: str, variants: List[Type]) -> None:
         super().__init__()
         self.kind     = "Enum"
         self.name     = name
         self.variants = variants
+
 
 # =================================================================================================
 # vim: set tw=0 ai:

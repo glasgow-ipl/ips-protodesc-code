@@ -218,7 +218,7 @@ class Protocol:
     # =============================================================================================
     # Public API:
 
-    def set_protocol_name(self, name: str):
+    def set_protocol_name(self, name: str) -> None:
         """
         Define the name of the protocol.
 
@@ -236,7 +236,8 @@ class Protocol:
 
         Parameters:
           self  - the protocol in which the new type is defined
-          tcons - the type constructor
+          name  - the name of the new type
+          size  - the size of the new type, in bits
         """
         newtype = BitString(name, size)
         newtype.implement_trait(self.get_trait("Sized"))
@@ -251,7 +252,9 @@ class Protocol:
 
         Parameters:
           self  - the protocol in which the new type is defined
-          tcons - the type constructor
+          name  - the name of the new type
+          element_type - a Type object, representing the element type
+          length - the number of elements in the array
         """
         newtype = Array(name, element_type, length)
         newtype.implement_trait(self.get_trait("Sized"))
@@ -260,63 +263,69 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def define_struct(self, tcons:StructConstructor) -> Struct:
+    def define_struct(self, 
+                      name: str, 
+                      fields: List[StructField], 
+                      constraints: List[Expression], 
+                      actions: List[Expression]) -> Struct:
         """
         Define a new structure type for this protocol. 
 
         Parameters:
-          self   - the protocol in which the new type is defined
-          tcons - the type constructor
+          self        - the protocol in which the new type is defined
+          name        - the name of the new type
+          fields      - the fields
+          constraints - the constraints
+          actions     - the actions
         """
-        newtype = Struct(tcons.name)
-        for field in self._parse_fields(tcons.fields, self._types[tcons.name]):
+        newtype = Struct(name)
+        for field in self._parse_fields(fields, self._types[name]):
             newtype.add_field(field)
-        for constraint in self._parse_constraints(tcons.constraints, self._types[tcons.name]):
+        for constraint in self._parse_constraints(constraints, self._types[name]):
             newtype.add_constraint(constraint)
-        for action in self._parse_actions(tcons.actions, self._types[tcons.name]):
+        for action in self._parse_actions(actions, self._types[name]):
             newtype.add_action(action)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Equality"))
-        self._types[tcons.name] = newtype
+        self._types[name] = newtype
         return newtype
 
-    def define_enum(self, tcons:EnumConstructor) -> Enum:
+    def define_enum(self, name:str, variants: List[Type]) -> Enum:
         """
         Define a new enumerated type for this protocol. 
 
         Parameters:
-          self  - the protocol in which the new type is defined
-          tcons - the type constructor
+          self     - the protocol in which the new type is defined
+          name     - the name of the new type
+          variants - the variant fields of the enum
         """
-        newtype = Enum(tcons.name, self._parse_variants(tcons.variants))
+        newtype = Enum(name, self._parse_variants(variants))
         newtype.implement_trait(self.get_trait("Sized"))
-        self._types[tcons.name] = newtype
+        self._types[name] = newtype
         return newtype
 
-    def derive_type(self, irobj):
-        # FIXME: change to type constructor rather than irobj
+    def derive_type(self, name: str, derived_from: Type, also_implements: List[Trait]) -> Type:
         """
         Define a new derived type for this protocol. 
         The type constructor is described in Section 3.2.5 of the IR specification.
 
         Parameters:
-          self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          self            - the protocol in which the new type is defined
+          name            - the name of the new type
+          derived_from    - the name of the type that the new type is derived from
+          also_implements - additional traits that are implemented
         """
-        name         = irobj["name"]
-        derived_from = irobj["derived_from"]
-        implements   = irobj["implements"]
-        orig_type    = self.get_type(derived_from)
-        self._types[name] = copy(orig_type)
+        self._types[name] = copy(derived_from)
         self._types[name].name    = name
-        self._types[name].methods = copy(orig_type.methods)
-        for trait_name in orig_type.traits:
-        	self._types[name].implement_trait(self.get_trait(trait_name))
-        for impl in irobj["implements"]:
-            self._types[name].implement_trait(self.get_trait(impl["trait"]))
+        self._types[name].methods = copy(derived_from.methods)
+        for trait_name in derived_from.traits:
+            self._types[name].implement_trait(self.get_trait(trait_name))
+        for trait in also_implements:
+            self._types[name].implement_trait(trait)
+        return self._types[name]
 
     def define_function(self, irobj):
-        # FIXME: change to type constructor rather than irobj
+        # FIXME: change to parameters rather than irobj
         """
         Define a new function type for this protocol. 
         The type constructor is described in Section 3.2.6 of the IR specification.
@@ -337,7 +346,7 @@ class Protocol:
         self._funcs[name] = Function(name, params, return_type)
 
     def define_context(self, irobj):
-        # FIXME: change to type constructor rather than irobj
+        # FIXME: change to parameters rather than irobj
         """
         Define the context for this protocol.
 
@@ -352,7 +361,7 @@ class Protocol:
             _type = self.get_type(field["type"])
             self._context[_name] = ContextField(_name, _type)
 
-    def define_pdu(self, pdu: str):
+    def define_pdu(self, pdu: str) -> None:
         """
         Define a PDU for this protocol.
 
