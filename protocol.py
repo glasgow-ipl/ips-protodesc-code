@@ -230,7 +230,7 @@ class Protocol:
             raise TypeError("Cannot redefine protocol name")
         self._name = name
 
-    def define_bitstring(self, tcons:BitStringConstructor) -> BitString:
+    def define_bitstring(self, name:str, size:Size) -> BitString:
         """
         Define a new bit string type for this protocol. 
 
@@ -238,14 +238,14 @@ class Protocol:
           self  - the protocol in which the new type is defined
           tcons - the type constructor
         """
-        newtype = BitString(tcons.name, tcons.size)
+        newtype = BitString(name, size)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Value"))
         newtype.implement_trait(self.get_trait("Equality"))
-        self._types[tcons.name] = newtype
+        self._types[name] = newtype
         return newtype
 
-    def define_array(self, tcons:ArrayConstructor) -> Array:
+    def define_array(self, name:str, element_type: Type, length: Size) -> Array:
         """
         Define a new array type for this protocol. 
 
@@ -253,11 +253,11 @@ class Protocol:
           self  - the protocol in which the new type is defined
           tcons - the type constructor
         """
-        newtype = Array(tcons.name, tcons.element_type, tcons.length)
+        newtype = Array(name, element_type, length)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Equality"))
         newtype.implement_trait(self.get_trait("IndexCollection"))
-        self._types[tcons.name] = newtype
+        self._types[name] = newtype
         return newtype
 
     def define_struct(self, tcons:StructConstructor) -> Struct:

@@ -301,19 +301,6 @@ class ContextField(JSONRepresentable):
                 "type" : self.field_type.name}
 
 # =================================================================================================
-# Type constructors:
-
-class TypeConstructor():
-    name: str
-
-class BitStringConstructor(TypeConstructor):
-    size: int
-
-class ArrayConstructor(TypeConstructor):
-    element_type: "Type"
-    length: Size
-
-# =================================================================================================
 # Types:
 
 class Type:
