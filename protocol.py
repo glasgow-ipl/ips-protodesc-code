@@ -318,9 +318,6 @@ class Protocol:
         self._types[name] = copy(derived_from)
         self._types[name].name    = name
         self._types[name].methods = copy(derived_from.methods)
-        #FIXME: traits are already copied above
-        #for trait_name in derived_from.traits:
-        #    self._types[name].implement_trait(self.get_trait(trait_name))
         for trait in also_implements:
             self._types[name].implement_trait(trait)
         return self._types[name]
@@ -433,7 +430,7 @@ class TestProtocol(unittest.TestCase):
         transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
         
         # construct TestStruct
-        teststruct = Struct("TestStruct")
+        teststruct = protocol.define_struct("TestStruct", [], [], [])
         
         # add fields
         teststruct.add_field(StructField("seq", 
@@ -449,7 +446,6 @@ class TestProtocol(unittest.TestCase):
         teststruct.add_constraint(MethodInvocationExpression(FieldAccessExpression(ThisExpression(teststruct), "seq"),
                                                              "eq",
                                                              [Argument("other", seqnum, ConstantExpression(seqnum, 47))]))
-        protocol.define_struct(teststruct)
         
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")

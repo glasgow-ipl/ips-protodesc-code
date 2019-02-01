@@ -93,17 +93,24 @@ class Function():
     def is_method_compatible(self) -> bool:
         return self.parameters[0].is_self_param()
 
-    def method_accepts_arguments(self, arguments : List["Argument"]) -> bool:
+    def method_accepts_arguments(self, self_type, arguments:List["Argument"]) -> bool:
         # Returns True if the arguments match the parameters of this function,
         # and this function is method compatible.
         if not self.is_method_compatible():
             return False
         for (p, a) in zip(self.parameters[1:], arguments):
+            # if the method's parameter's type is None, then substitute it for the type of `self`
+            if p.param_type is None:
+                param_type = self_type
+            else:
+                param_type = p.param_type
+            
+            # check parameter names/types match argument names/types
             if p.param_name != a.arg_name:
                 print("accepts_arguments: name mismatch {} vs {}".format(p.param_name, a.arg_name))
                 return False
-            if p.param_type != a.arg_type:
-                print("accepts_arguments: type mismatch {} vs {}".format(p.param_type, a.arg_type))
+            if param_type != a.arg_type:
+                print("accepts_arguments: type mismatch {} vs {}".format(param_type, a.arg_type))
                 return False
         return True
 
@@ -137,7 +144,7 @@ class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method_name:str, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
             raise TypeError("Method {}: invalid name".format(method_name))
-        if not target.result_type.get_method(method_name).method_accepts_arguments(args):
+        if not target.result_type.get_method(method_name).method_accepts_arguments(target.result_type, args):
             raise TypeError("Method {}: invalid arguments".format(method_name))
         self.target      = target
         self.method_name = method_name
@@ -293,12 +300,6 @@ class Type(ABC):
         if trait in self.traits:
             raise TypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
-            # FIXME: how should we handle instantiation of unspecified types?
-            # We could instantiate the here, replacing unspecified types with
-            # self references. Alternatively, we could leave them unspecified,
-            # and dynamically look-up the type when needed. The latter may be
-            # better, once we start thinking about whether derived types are
-            # proper subclasses...
             self.traits[trait.name] = trait
             for method_name in trait.methods:
                 if method_name in self.methods:
