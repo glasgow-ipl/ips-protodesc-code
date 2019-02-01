@@ -182,32 +182,55 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def define_struct(self, 
-                      name: str, 
-                      fields: List[StructField], 
-                      constraints: List[Expression], 
-                      actions: List[Expression]) -> Struct:
+    def define_struct(self, name:str) -> Struct:
         """
         Define a new structure type for this protocol. 
 
         Parameters:
           self        - the protocol in which the new type is defined
           name        - the name of the new type
-          fields      - the fields
-          constraints - the constraints
-          actions     - the actions
         """
         newtype = Struct(name)
         self._types[name] = newtype
-        for field in self._validate_fields(fields):
-            newtype.add_field(field)
-        for constraint in self._validate_constraints(constraints):
-            newtype.add_constraint(constraint, self.get_type("Boolean"))
-        for action in self._validate_actions(actions):
-            newtype.add_action(action)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Equality"))
         return newtype
+
+    def define_struct_fields(self, struct:Struct, fields:List[StructField]):
+        """
+        Define the fields of a previously defined Struct.
+        
+        Parameters:
+            self    - the protocol that contains the struct
+            struct  - the struct to define the fields for
+            fields  - the fields to define in the struct
+        """
+        for field in self._validate_fields(fields):
+            struct.add_field(field)
+
+    def define_struct_constraints(self, struct:Struct, constraints:List[Expression]):
+        """
+        Define the constraints of a previously defined Struct.
+        
+        Parameters:
+            self         - the protocol that contains the struct
+            struct       - the struct to define the constraints for
+            constraints  - the constraints to define in the struct
+        """
+        for constraint in self._validate_constraints(constraints):
+            struct.add_constraint(constraint)
+            
+    def define_struct_actions(self, struct:Struct, actions:List[Expression]):
+        """
+        Define the actions of a previously defined Struct.
+        
+        Parameters:
+            self     - the protocol that contains the struct
+            struct   - the struct to define the actions for
+            actions  - the actions to define in the struct
+        """
+        for action in self._validate_actions(actions):
+            struct.add_action(action)
 
     def define_enum(self, name:str, variants: List[Type]) -> Enum:
         """
@@ -351,22 +374,24 @@ class TestProtocol(unittest.TestCase):
         transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
         
         # construct TestStruct
-        teststruct = protocol.define_struct("TestStruct", [], [], [])
+        teststruct = protocol.define_struct("TestStruct")
         
         # add fields
-        teststruct.add_field(StructField("seq", 
-                                         seqnum,
-                                         Transform("ext_seq", seqnum_trans, transform_seq),
-                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
-        teststruct.add_field(StructField("ts",
-                                         timestamp,
-                                         None,
-                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        seq = StructField("seq", 
+                          seqnum,
+                          Transform("ext_seq", seqnum_trans, transform_seq),
+                          ConstantExpression(protocol.get_type("Boolean"), "True"))
+        ts  = StructField("ts",
+                          timestamp,
+                          None,
+                          ConstantExpression(protocol.get_type("Boolean"), "True"))
+        protocol.define_struct_fields(teststruct, [seq, ts])
         
         # add constraints
-        teststruct.add_constraint(MethodInvocationExpression(FieldAccessExpression(ThisExpression(teststruct), "seq"),
-                                                             "eq",
-                                                             [Argument("other", seqnum, ConstantExpression(seqnum, 47))]))
+        seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(teststruct), "seq"),
+                                                    "eq",
+                                                    [Argument("other", seqnum, ConstantExpression(seqnum, 47))])
+        protocol.define_struct_constraints(teststruct, [seq_constraint])
         
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
@@ -478,13 +503,14 @@ class TestProtocol(unittest.TestCase):
         
         testfield = protocol.define_bitstring("TestField", 32)
         
-        teststruct = protocol.define_struct("TestStruct", [], [], [])
+        teststruct = protocol.define_struct("TestStruct")
 
         # add fields
-        teststruct.add_field(StructField("test", 
-                                         testfield,
-                                         None,
-                                         ConstantExpression(protocol.get_type("Boolean"), "True")))
+        test = StructField("test", 
+                           testfield,
+                           None,
+                           ConstantExpression(protocol.get_type("Boolean"), "True"))
+        protocol.define_struct_fields(teststruct, [test])
         
 
         # Check that we can parse FieldAccess expressions
@@ -528,7 +554,7 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
 
         # Check we can parse This expressions:
-        teststruct = protocol.define_struct("TestStruct", [], [], [])
+        teststruct = protocol.define_struct("TestStruct")
         this_expr = ThisExpression(teststruct)
 
         self.assertTrue(isinstance(this_expr, ThisExpression))
