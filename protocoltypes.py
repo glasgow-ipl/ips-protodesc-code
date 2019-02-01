@@ -175,11 +175,10 @@ class FieldAccessExpression(Expression):
             
 
 class ContextAccessExpression(Expression):
-    # FIXME: we need a Context object
-    context    : Dict[str, "ContextField"]
+    context    : "Context"
     field_name : str
 
-    def __init__(self, context: Dict[str, "ContextField"], field_name: str) -> None:
+    def __init__(self, context:"Context", field_name: str) -> None:
         self.context     = context
         self.field_name  = field_name
         self.result_type = self.context[self.field_name].field_type
@@ -392,5 +391,23 @@ class Enum(Type):
         self.variants = variants
 
 
+class Context(Type):
+    kind:   str
+    fields: List[ContextField]
+    
+    def __init__(self) -> None:
+        super().__init__()
+        self.kind   = "Context"
+        self.fields = []
+        
+    def add_field(self, field: ContextField) -> None:
+        self.fields.append(field)
+        
+    def field(self, field_name:str) -> ContextField:
+        for field in self.fields:
+            if field.field_name == field_name:
+                return field
+        raise TypeError("Context has no field named {}".format(field_name))
+        
 # =================================================================================================
 # vim: set tw=0 ai:

@@ -43,7 +43,7 @@ class Protocol:
     _types  : Dict[str,Type]
     _traits : Dict[str,Trait]
     _funcs  : Dict[str,Function]
-    _context: Dict[str, ContextField]
+    _context: Context
     _pdus   : Dict[str,Type]
 
     def __init__(self):
@@ -101,7 +101,7 @@ class Protocol:
         # Define the standards functions:
         self._funcs = {}
         # Define the context:
-        self._context = {}
+        self._context = Context()
         # Define the PDUs:
         self._pdus = {}
 
@@ -342,21 +342,15 @@ class Protocol:
         self._funcs[name] = newfunc
         return newfunc
 
-    def define_context(self, irobj):
-        # FIXME: change to parameters rather than irobj
+    def define_context_field(self, field:ContextField):
         """
-        Define the context for this protocol.
+        Define a context field for this protocol.
 
         Parameters:
-          self  - the protocol in which the new type is defined
-          irobj - a dict representing the JSON type constructor
+          self   - the protocol whose context is to be added to
+          field  - the field to be added
         """
-        if irobj["construct"] != "Context":
-            raise TypeError("Cannot create Context from {} object".format(kind, irobj["construct"]))
-        for field in irobj["fields"]:
-            _name = field["name"]
-            _type = self.get_type(field["type"])
-            self._context[_name] = ContextField(_name, _type)
+        self._context.add_field(field)
 
     def define_pdu(self, pdu: str) -> None:
         """
@@ -521,26 +515,16 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.parameters[1].param_type, protocol.get_type("Boolean"))
         self.assertEqual(res.return_type, protocol.get_type("Boolean"))
 
-    def test_define_context(self):
+    def test_define_context_field(self):
         protocol = Protocol()
-        protocol.define_bitstring(BitString("Bits16", 16))
-        protocol.define_context({
-            "construct"   : "Context",
-            "fields"  : [
-                {
-                    "name" : "foo",
-                    "type" : "Bits16"
-                },
-                {
-                    "name" : "bar",
-                    "type" : "Boolean"
-                }
-            ]
-        })
-        self.assertEqual(protocol.get_context()["foo"].field_name, "foo")
-        self.assertEqual(protocol.get_context()["foo"].field_type, protocol.get_type("Bits16"))
-        self.assertEqual(protocol.get_context()["bar"].field_name, "bar")
-        self.assertEqual(protocol.get_context()["bar"].field_type, protocol.get_type("Boolean"))
+        bits16 = protocol.define_bitstring("Bits16", 16)
+        protocol.define_context_field(ContextField("foo", bits16))
+        protocol.define_context_field(ContextField("bar", protocol.get_type("Boolean")))
+
+        self.assertEqual(protocol.get_context().field("foo").field_name, "foo")
+        self.assertEqual(protocol.get_context().field("foo").field_type, protocol.get_type("Bits16"))
+        self.assertEqual(protocol.get_context().field("bar").field_name, "bar")
+        self.assertEqual(protocol.get_context().field("bar").field_type, protocol.get_type("Boolean"))
 
     # =============================================================================================
     # Test cases for expressions:
