@@ -279,6 +279,7 @@ class Protocol:
           actions     - the actions
         """
         newtype = Struct(name)
+        self._types[name] = newtype
         for field in self._parse_fields(fields, self._types[name]):
             newtype.add_field(field)
         for constraint in self._parse_constraints(constraints, self._types[name]):
@@ -287,7 +288,6 @@ class Protocol:
             newtype.add_action(action)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Equality"))
-        self._types[name] = newtype
         return newtype
 
     def define_enum(self, name:str, variants: List[Type]) -> Enum:
@@ -342,7 +342,7 @@ class Protocol:
         self._funcs[name] = newfunc
         return newfunc
 
-    def define_context_field(self, field:ContextField):
+    def define_context_field(self, name:str, type:Type):
         """
         Define a context field for this protocol.
 
@@ -350,7 +350,7 @@ class Protocol:
           self   - the protocol whose context is to be added to
           field  - the field to be added
         """
-        self._context.add_field(field)
+        self._context.add_field(ContextField(name, type))
 
     def define_pdu(self, pdu: str) -> None:
         """
@@ -518,8 +518,8 @@ class TestProtocol(unittest.TestCase):
     def test_define_context_field(self):
         protocol = Protocol()
         bits16 = protocol.define_bitstring("Bits16", 16)
-        protocol.define_context_field(ContextField("foo", bits16))
-        protocol.define_context_field(ContextField("bar", protocol.get_type("Boolean")))
+        protocol.define_context_field("foo", bits16)
+        protocol.define_context_field("bar", protocol.get_type("Boolean"))
 
         self.assertEqual(protocol.get_context().field("foo").field_name, "foo")
         self.assertEqual(protocol.get_context().field("foo").field_type, protocol.get_type("Bits16"))
@@ -530,194 +530,101 @@ class TestProtocol(unittest.TestCase):
     # Test cases for expressions:
 
     def test_parse_expression_MethodInvocation(self):
-        # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct(Struct("TestStruct"))
 
         # Check we can parse MethodInvocation expressions:
-        json = {
-            "expression" : "MethodInvocation",
-            "target"     : {
-                "expression" : "Constant",
-                "type"       : "Boolean",
-                "value"      : "True"
-            },
-            "method"     : "eq",
-            "arguments"  : [
-                {
-                    "name"  : "other",
-                    "value" : {
-                        "expression" : "Constant",
-                        "type"       : "Boolean",
-                        "value"      : "False"
-                    }
-                }
-            ]
-        }
-        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
-        self.assertTrue(isinstance(expr, MethodInvocationExpression))
-        self.assertTrue(expr.result_type, protocol.get_type("Boolean"))
+        methodinv_expr = MethodInvocationExpression(ConstantExpression(protocol.get_type("Boolean"), "False"),
+                                                    "eq",
+                                                    [Argument("other", protocol.get_type("Boolean"), "False")])
+
+        self.assertTrue(isinstance(methodinv_expr, MethodInvocationExpression))
+        self.assertTrue(methodinv_expr.result_type, protocol.get_type("Boolean"))
 
     def test_parse_expression_FunctionInvocation(self):
-        # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct(Struct("TestStruct"))
-        protocol.define_bitstring(BitString("Bits16", 16))
-        protocol.define_function({
-            "construct"   : "Function",
-            "name"        : "testFunction",
-            "parameters"  : [
-            {
-                "name" : "foo",
-                "type" : "Bits16"
-            },
-            {
-                "name" : "bar",
-                "type" : "Boolean"
-            }],
-            "return_type" : "Boolean"
-        })
+        bits16 = protocol.define_bitstring("Bits16", 16)
+        testfunc = protocol.define_function("testFunction",
+                                 [Parameter("foo", bits16), Parameter("bar", protocol.get_type("Boolean"))],
+                                 protocol.get_type("Boolean"))
+
         # Check we can parse FunctionInvocation expressions:
-        json = {
-            "expression" : "FunctionInvocation",
-            "name"       : "testFunction",
-            "arguments"  : [
-                {
-                    "name"  : "foo",
-                    "value" : {
-                        "expression" : "Constant",
-                        "type"       : "Bits16",
-                        "value"      : 12
-                    }
-                },
-                {
-                    "name"  : "bar",
-                    "value" : {
-                        "expression" : "Constant",
-                        "type"       : "Boolean",
-                        "value"      : "False"
-                    }
-                }
-            ]
-        }
-        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
-        self.assertTrue(isinstance(expr, FunctionInvocationExpression))
-        self.assertTrue(expr.result_type, protocol.get_type("Boolean"))
+        funcinv_expr = FunctionInvocationExpression(testfunc,
+                                         [Argument("foo", bits16, 12), 
+                                          Argument("bar", protocol.get_type("Boolean"), "False")])
+
+        self.assertTrue(isinstance(funcinv_expr, FunctionInvocationExpression))
+        self.assertTrue(funcinv_expr.result_type, protocol.get_type("Boolean"))
 
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
         
-        testfield = BitString("TestField", 32)
-        protocol.define_bitstring(testfield)
+        testfield = protocol.define_bitstring("TestField", 32)
         
-        teststruct = Struct("TestStruct")
-        
+        teststruct = protocol.define_struct("TestStruct", [], [], [])
+
         # add fields
         teststruct.add_field(StructField("test", 
                                          testfield,
                                          None,
                                          ConstantExpression(protocol.get_type("Boolean"), "True")))
         
-        protocol.define_struct(teststruct)
 
         # Check that we can parse FieldAccess expressions
-        json = {
-            "expression" : "FieldAccess",
-            "target"     : {"expression" : "This"},
-            "field"      : "test"
-        }
-        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
-        self.assertTrue(isinstance(expr, FieldAccessExpression))
-        self.assertEqual(expr.result_type, protocol.get_type("TestField"))
-        self.assertEqual(expr.target.result_type, protocol.get_type("TestStruct"))
-        self.assertEqual(expr.field_name, "test")
+        fieldaccess_expr = FieldAccessExpression(ThisExpression(teststruct), "test")
+        
+        self.assertTrue(isinstance(fieldaccess_expr, FieldAccessExpression))
+        self.assertEqual(fieldaccess_expr.result_type, protocol.get_type("TestField"))
+        self.assertEqual(fieldaccess_expr.target.result_type, protocol.get_type("TestStruct"))
+        self.assertEqual(fieldaccess_expr.field_name, "test")
 
     def test_parse_expression_ContextAccess(self):
-        # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct(Struct("TestStruct"))
-        protocol.define_bitstring(BitString("Bits16", 16))
-        protocol.define_context({
-            "construct"   : "Context",
-            "fields"  : [
-                {
-                    "name" : "foo",
-                    "type" : "Bits16"
-                },
-                {
-                    "name" : "bar",
-                    "type" : "Boolean"
-                }
-            ]
-        })
+
+        bits16 = protocol.define_bitstring("Bits16", 16)
+        protocol.define_context_field("foo", bits16)
+        protocol.define_context_field("bar", protocol.get_type("Boolean"))
+        
         # Check that we can parse ContextAccess expressions
-        json = {
-            "expression" : "ContextAccess",
-            "field"      : "foo"
-        }
-        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
-        self.assertTrue(isinstance(expr, ContextAccessExpression))
-        self.assertEqual(expr.result_type, protocol.get_type("Bits16"))
-        self.assertEqual(expr.field_name, "foo")
+        contextaccess_expr = ContextAccessExpression(protocol.get_context(), "foo")
+        
+        self.assertTrue(isinstance(contextaccess_expr, ContextAccessExpression))
+        self.assertEqual(contextaccess_expr.result_type, protocol.get_type("Bits16"))
+        self.assertEqual(contextaccess_expr.field_name, "foo")
 
     def test_parse_expression_IfElse(self):
-        # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct(Struct("TestStruct"))
+
         # Check we can parse IfElse expressions:
-        json = {
-            "expression" : "IfElse",
-            "condition"  : {
-                  "expression" : "Constant",
-                  "type"       : "Boolean",
-                  "value"      : "True"
-            },
-            "if_true"    : {
-                  "expression" : "Constant",
-                  "type"       : "Boolean",
-                  "value"      : "True"
-            },
-            "if_false"   : {
-                  "expression" : "Constant",
-                  "type"       : "Boolean",
-                  "value"      : "False"
-            },
-        }
-        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
-        self.assertTrue(isinstance(expr, IfElseExpression))
-        self.assertEqual(expr.result_type, protocol.get_type("Boolean"))
-        self.assertEqual(expr.condition.result_type, protocol.get_type("Boolean"))
-        self.assertEqual(expr.if_true.result_type,   protocol.get_type("Boolean"))
-        self.assertEqual(expr.if_false.result_type,  protocol.get_type("Boolean"))
+        condition = ConstantExpression(protocol.get_type("Boolean"), "True")
+        if_true = ConstantExpression(protocol.get_type("Boolean"), "True")
+        if_false = ConstantExpression(protocol.get_type("Boolean"), "False")
+        ifelse_expr = IfElseExpression(condition, if_true, if_false)
+        
+        self.assertTrue(isinstance(ifelse_expr, IfElseExpression))
+        self.assertEqual(ifelse_expr.result_type, protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.condition.result_type, protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.if_true.result_type,   protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.if_false.result_type,  protocol.get_type("Boolean"))
 
     def test_parse_expression_This(self):
-        # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct(Struct("TestStruct"))
 
         # Check we can parse This expressions:
-        json = {
-            "expression" : "This"
-        }
-        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
-        self.assertTrue(isinstance(expr, ThisExpression))
-        self.assertEqual(expr.result_type, protocol.get_type("TestStruct"))
+        teststruct = protocol.define_struct("TestStruct", [], [], [])
+        this_expr = ThisExpression(teststruct)
+
+        self.assertTrue(isinstance(this_expr, ThisExpression))
+        self.assertEqual(this_expr.result_type, protocol.get_type("TestStruct"))
 
     def test_parse_expression_Constant(self):
-        # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
-        protocol.define_struct(Struct("TestStruct"))
 
         # Check we can parse This expressions:
-        json = {
-            "expression" : "Constant",
-            "type"       : "Size",
-            "value"      : 2
-        }
-        expr = protocol._parse_expression(json, protocol.get_type("TestStruct"))
-        self.assertTrue(isinstance(expr, ConstantExpression))
-        self.assertTrue(expr.result_type, protocol.get_type("Size"))
+        const_expr = ConstantExpression(protocol.get_type("Size"), 2)
+
+        self.assertTrue(isinstance(const_expr, ConstantExpression))
+        self.assertTrue(const_expr.result_type, protocol.get_type("Size"))
 
     # =============================================================================================
     # Test cases for the overall protocol:

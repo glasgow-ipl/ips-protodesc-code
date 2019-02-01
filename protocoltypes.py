@@ -181,7 +181,7 @@ class ContextAccessExpression(Expression):
     def __init__(self, context:"Context", field_name: str) -> None:
         self.context     = context
         self.field_name  = field_name
-        self.result_type = self.context[self.field_name].field_type
+        self.result_type = self.context.field(field_name).field_type
 
 
 class IfElseExpression(Expression):
