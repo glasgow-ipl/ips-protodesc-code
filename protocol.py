@@ -108,112 +108,29 @@ class Protocol:
     # =============================================================================================
     # Private helper functions:
 
-    def _validate_irtype(self, irobj, kind):
-        if irobj["construct"] != kind:
-            raise TypeError("Cannot create {} from {} object".format(kind, irobj["construct"]))
-        if irobj["name"] in self._types:
-            raise TypeError("Cannot create type {}: already exists".format(irobj["name"]))
-        if re.search(TYPE_NAME_REGEX, irobj["name"]) == None:
-            raise TypeError("Cannot create type {}: malformed name".format(irobj["name"]))
+    def _validate_typename(self, name:str):
+        if name in self._types:
+            raise TypeError("Cannot create type {}: already exists".format(name))
+        if re.search(TYPE_NAME_REGEX, name) == None:
+            raise TypeError("Cannot create type {}: malformed name".format(name))
 
-    def _validate_protocoltype(self, ptobj: "Type"):
-        if ptobj.name in self._types:
-            raise TypeError("Cannot create type {}: already exists".format(ptobj.name))
-        if re.search(TYPE_NAME_REGEX, ptobj.name) == None:
-            raise TypeError("Cannot create type {}: malformed name".format(ptobj.name))
-
-    def _parse_arguments(self, args, this: Type) -> List[Argument]:
-        res = []
-        for arg in args:
-            name_  = arg["name"]
-            value_ = self._parse_expression(arg["value"], this)
-            type_  = value_.result_type
-            res.append(Argument(name_, type_, value_))
-        return res
-
-    def _parse_expression(self, expr, this: Type) -> Expression:
-        if not this.kind == "Struct":
-            raise TypeError("Expressions can only be evaluated in context of structure types")
-        if   expr["expression"] == "MethodInvocation":
-            target = self._parse_expression(expr["target"], this)
-            method = expr["method"]
-            args   = self._parse_arguments(expr["arguments"], this)
-            return MethodInvocationExpression(target, method, args)
-        elif expr["expression"] == "FunctionInvocation":
-            func   = self.get_func(expr["name"])
-            args   = self._parse_arguments(expr["arguments"], this)
-            return FunctionInvocationExpression(func, args)
-        elif expr["expression"] == "FieldAccess":
-            target = self._parse_expression(expr["target"], this)
-            field  = expr["field"]
-            return FieldAccessExpression(target, field)
-        elif expr["expression"] == "ContextAccess":
-            field  = expr["field"]
-            return ContextAccessExpression(self._context, field)
-        elif expr["expression"] == "IfElse":
-            condition = self._parse_expression(expr["condition"], this)
-            if_true   = self._parse_expression(expr["if_true"  ], this)
-            if_false  = self._parse_expression(expr["if_false" ], this)
-            return IfElseExpression(condition, if_true, if_false)
-        elif expr["expression"] == "This":
-            return ThisExpression(this)
-        elif expr["expression"] == "Constant":
-            type_ = self.get_type(expr["type"])
-            value = expr["value"]
-            return ConstantExpression(type_, value)
-        else:
-            raise TypeError("Cannot parse expression: {}".format(expr["expression"]))
-
-    def _parse_transform(self, transform) -> Optional[Transform]:
-        if transform != None:
-            into_name = transform["into_name"]
-            into_type = self.get_type(transform["into_type"])
-            using     = self.get_func(transform["using"])
-            return Transform(into_name, into_type, using)
-        else:
-            return None
-
-    def _parse_fields(self, fields, this) -> List[StructField]:
-        res = []
+    def _validate_fields(self, fields:List[StructField]):
         for field in fields:
-            if re.search(FUNC_NAME_REGEX, field["name"]) == None:
+            if re.search(FUNC_NAME_REGEX, field.field_name) == None:
                 raise TypeError("Cannot parse field {}: malformed name".format(field["name"]))
-            _name       = field["name"]
-            _type       = self.get_type(field["type"])
-            _is_present = self._parse_expression(field["is_present"], this)
-            _transform  = self._parse_transform(field["transform"])
-            res.append(StructField(_name, _type, _is_present, _transform))
-        return res
+        return fields
 
-    def _parse_constraints(self, constraints, this: Type) -> List[Expression]:
-        res = []
+    def _validate_constraints(self, constraints:List[Expression]):
         for constraint in constraints:
-            expr = self._parse_expression(constraint, this)
-            if expr.result_type != self.get_type("Boolean"):
-                raise TypeError("Cannot parse constraint: {} != Boolean".format(expr.result_type))
-            res.append(expr)
-        return res
+            if constraint.result_type != self.get_type("Boolean"):
+                raise TypeError("Cannot parse constraint: {} != Boolean".format(constraint.result_type))
+        return constraints
 
-    def _parse_actions(self, actions, this: Type) -> List[Expression]:
-        res = []
+    def _validate_actions(self, actions:List[Expression]):
         for action in actions:
-            expr = self._parse_expression(action, this)
-            if expr.result_type != self.get_type("Nothing"):
-                raise TypeError("Cannot parse actions: returns {} not Nothing".format(expr.result_type))
-            res.append(expr)
-        return res
-
-    def _parse_variants(self, variants) -> List[Type]:
-        res = []
-        for v in variants:
-            res.append(self.get_type(v["type"]))
-        return res
-
-    def _parse_parameters(self, parameters) -> List[Parameter]:
-        res = []
-        for p in parameters:
-            res.append(Parameter(p["name"], self.get_type(p["type"])))
-        return res
+            if action.result_type != self.get_type("Nothing"):
+                raise TypeError("Cannot parse actions: returns {} not Nothing".format(action.result_type))
+        return actions
 
     # =============================================================================================
     # Public API:
@@ -239,6 +156,7 @@ class Protocol:
           name  - the name of the new type
           size  - the size of the new type, in bits
         """
+        self._validate_typename(name)
         newtype = BitString(name, size)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Value"))
@@ -256,6 +174,7 @@ class Protocol:
           element_type - a Type object, representing the element type
           length - the number of elements in the array
         """
+        self._validate_typename(name)
         newtype = Array(name, element_type, length)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Equality"))
@@ -280,11 +199,11 @@ class Protocol:
         """
         newtype = Struct(name)
         self._types[name] = newtype
-        for field in self._parse_fields(fields, self._types[name]):
+        for field in self._validate_fields(fields):
             newtype.add_field(field)
-        for constraint in self._parse_constraints(constraints, self._types[name]):
-            newtype.add_constraint(constraint)
-        for action in self._parse_actions(actions, self._types[name]):
+        for constraint in self._validate_constraints(constraints):
+            newtype.add_constraint(constraint, self.get_type("Boolean"))
+        for action in self._validate_actions(actions):
             newtype.add_action(action)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Equality"))
@@ -299,6 +218,7 @@ class Protocol:
           name     - the name of the new type
           variants - the variant types of the enum
         """
+        self._validate_typename(name)
         newtype = Enum(name, variants)
         newtype.implement_trait(self.get_trait("Sized"))
         self._types[name] = newtype
@@ -315,6 +235,7 @@ class Protocol:
           derived_from    - the type that the new type is derived from
           also_implements - additional traits that are implemented
         """
+        self._validate_typename(name)
         self._types[name] = copy(derived_from)
         self._types[name].name    = name
         self._types[name].methods = copy(derived_from.methods)
