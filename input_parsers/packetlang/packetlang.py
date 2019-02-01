@@ -33,20 +33,21 @@ from protocol import Protocol
 from typing import Dict, List, Tuple, Optional, Any
 import parsley
 import string
-
-from input_parsers.protocolbuilder import *
 from protocoltypes import *
 
 class PacketLangParser(InputParser):
-    pb: ProtocolBuilder
-    types: Dict[str,"Type"]
+    protocol: Protocol
 
     def __init__(self):
-        self.pb = ProtocolBuilder()
+        self.protocol = Protocol()
 
-    def new_bitstring(self, name: str = None, size: int = None) -> BitStringConstructor:
-        bitstring_constructor = BitStringConstructor(name=name, size=size)
-        return bitstring_constructor
+    def new_bitstring(self, name: str = None, size: int = None) -> BitString:
+        if name is None:
+            name = "BitString${}".format(size)
+        if self.protocol.is_type(name):
+            return self.protocol.get_type(name)
+        else:
+            return self.protocol.define_bitstring(name, size)
 
     def new_derivedtype(self, type_name: str, derived_from: str, implements: List[str]):
         return NewTypeConstructor(type_name, derived_from, implements)
@@ -59,21 +60,17 @@ class PacketLangParser(InputParser):
         array_constructor = ArrayConstructor(element_type, name=name, length=length)
         return array_constructor
 
-    def new_typedef(self, name, type_constructor: TypeConstructor):
-        type_constructor.name = name
-        self.pb.add_definition(type_constructor)
+    def new_typedef(self, name, type:"Type"):
+        type.name = name
 
     def new_struct(self, name, fields, constraints):
         constraints = [] if constraints == None else constraints
-        struct_constructor = StructConstructor(name, fields, constraints, [])
-        self.pb.add_definition(struct_constructor)
+        struct = self.protocol.define_struct(name)
+        self.protocol.define_struct_fields(struct, fields)
+        self.protocol.define_struct_constraints(struct, constraints)
+        return struct
         
     def new_structfield(self, field_name: str, field_type, is_present: Expression = None, transform: Expression = None):
-        if type(field_type) == BitStringConstructor:
-            self.pb.add_definition(field_type, warn_if_defined=False)
-            field_type = field_type.name
-
-        field_type = self.pb.definitions[field_type].build_protocol_type()
         return StructField(field_name, field_type, ConstantExpression("Boolean", "True"), transform)
 
     def new_parameter(self, parameter_name: str, parameter_type: str):
@@ -113,10 +110,10 @@ class PacketLangParser(InputParser):
 
     def set_pdus(self, pdu_names):
         for pdu_name in pdu_names:
-            self.pb.add_pdu(pdu_name)
+            self.protocol.define_pdu(pdu_name)
 
     def build_protocol(self, input_str: str, name: str = None) -> Protocol:
-        self.pb.set_protocol_name(name)
+        self.protocol.set_protocol_name(name)
              
         # load grammar
         with open("input_parsers/packetlang/packetlang_grammar.txt", "r+") as grammarFile:
@@ -143,10 +140,4 @@ class PacketLangParser(InputParser):
         # parse input
         parser(input_str.replace(" ", "").replace("\n", "").replace("\t", "")).protocol()
 
-        return self.pb.build_protocol()
- 
-    def get_json_constructors(self) -> str:
-        return self.pb.get_json_constructor()
-        
-def get_parser() -> PacketLangParser:
-    return PacketLangParser()
+        return self.protocol

@@ -306,6 +306,9 @@ class Protocol:
     def get_protocol_name(self) -> str:
         return self._name
 
+    def is_type(self, type_name: str) -> Boolean:
+        return type_name in self._types
+
     def get_type(self, type_name: str) -> Type:
         return self._types[type_name]
 

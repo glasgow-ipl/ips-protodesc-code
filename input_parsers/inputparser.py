@@ -46,20 +46,3 @@ class InputParser(abc.ABC):
             A Protocol object
         """
         pass
-
-    @abc.abstractmethod
-    def get_json_constructors(self) -> List[Dict]:
-        """
-        As part of build_protocol() the input parser can optionally buffer the JSON
-        constructors used to build the Protocol object. This method returns a list of
-        the JSON constructors, for debugging.
-        
-        Arguments:
-            None
-        
-        Returns:
-            A list of JSON constructors for the Protocol constructed by the input parser
-            or None, if the input parser has not buffered the constructors
-        """
-        pass
-            
