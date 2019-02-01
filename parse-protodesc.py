@@ -30,37 +30,33 @@
 
 import argparse
 import importlib
-import input_parsers
-import formatters
 import json
+import re    
+
+# Input parsers
 import input_parsers.inputparser
-from protocoljson import *
-import re
-
-def load_input_parser(name):
-    return importlib.import_module("." + name, "input_parsers")
-
-def load_output_formatter(name):
-    return importlib.import_module("." + name, "formatters")        
+import input_parsers.packetlang.packetlang
 
 def filename_to_protocol_name(filename):
     split = re.split('[\./\\\]+', filename)
     return split[len(split)-2].title()
    
 def main():
-    parser = argparse.ArgumentParser(description='Parse a packet description into a specified output format')
-    parser.add_argument('--input-format', type=str, required=True, help='Input format name')
-    parser.add_argument('--input-file', type=str, required=True, help='Input filename')
-    parser.add_argument('--output-format', type=str, required=True, help='Output format name')
-    parser.add_argument('--output-file', type=str, required=True, help='Output filename')
-    parser.add_argument('--json-output-file', type=str, required=False, help="Intermediate JSON representation output filename")
-    args = parser.parse_args()
+    ######################################################################################
+    # Argument parsing
+    ######################################################################################
+    argparser = argparse.ArgumentParser(description='Parse a packet description into a specified output format')
+    argparser.add_argument('--input-format', type=str, required=True, help='Input format name')
+    argparser.add_argument('--input-file', type=str, required=True, help='Input filename')
+    argparser.add_argument('--output-format', type=str, required=True, help='Output format name')
+    argparser.add_argument('--output-file', type=str, required=True, help='Output filename')
+    args = argparser.parse_args()
 
-    # Import the specified input parser
-    try:
-        input_parser = importlib.import_module("." + args.input_format, "input_parsers.{}".format(args.input_format)).get_parser()
-    except ModuleNotFoundError as e:
-        print("Could not load input parser (%s)" % args.input_format)
+    ######################################################################################
+    # Input parsing
+    ######################################################################################
+    construct_input_parser = {"packetlang" : input_parsers.packetlang.packetlang.PacketLangParser()}
+    input_parser = construct_input_parser[args.input_format]
     
     # Load the input file into a string
     with open(args.input_file, "r+") as inputFile:
@@ -71,13 +67,11 @@ def main():
         protocol = input_parser.build_protocol(inputString, name=filename_to_protocol_name(args.input_file))
     except Exception as e:
         print("Could not parse input file (%s) with specified parser (%s)" % (args.input_file, args.input_format))
-    
-    # Write JSON protocol constructors to file
-    try:
-        with open(args.json_output_file, "w+") as outputFile:
-            outputFile.write(input_parser.get_json_constructors())
-    except:
-        print("Could not JSON constructors to file (%s)" % args.json_output_file)
-    
+
+    ######################################################################################
+    # Output formatting
+    ######################################################################################
+    #TODO
+
 if __name__ == "__main__":
     main()
