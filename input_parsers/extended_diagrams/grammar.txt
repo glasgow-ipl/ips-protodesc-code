@@ -1,0 +1,44 @@
+uppercase_letter    = anything:x ?(x in ascii_uppercase) -> x
+lowercase_letter    = anything:x ?(x in ascii_lowercase) -> x
+lf                  = '\n'
+crlf                = '\n'
+binary              = ('0'|'1')
+number              = <digit+>:ds -> int(ds)
+bits                = ('bits'|'bit')
+true                = ('True' | 'true')
+false               = ('False' | 'false')
+
+word                = (letterOrDigit)+:x -> "".join(x)
+spaces_word = spaces word:x -> ' ' + x
+
+punctuation                         = anything:x ?(x in punctuation) -> x
+punctuation_no_bracket              = punctuation:a ?(a != '(' and a != ')') -> a
+punctuation_no_bracket_colon        = punctuation:a ?(a != ':' and a != '(' and a != ')') -> a
+
+char_regular                        = (char_visible|' ')
+char_visible                        = (letter|digit|punctuation)
+char_visible_no_bracket             = (letter|digit|punctuation_no_bracket)
+char_regular_no_bracket             = (char_visible_no_bracket|' ')
+char_visible_no_bracket_colon       = (letter|digit|punctuation_no_bracket_colon)
+char_regular_no_bracket_colon       = (char_visible_no_bracket_colon|' ')
+
+abbrv                               = letterOrDigit+:x -> "".join(x)
+abbrv_bracket                       = '(' abbrv:x ')' -> x
+
+########################################################################
+# DOM
+########################################################################
+
+dom_type                            = dom_type_name:a <dom_type_children{0,1}>:b "," -> a
+dom_type_name                       = uppercase_letter:a <letter*>:b -> a+b
+dom_type_children                   = '[' dom_type+:a ']' -> a
+
+dom_t                               = 'T':a <dom_type_children{0,1}>:b "," -> a
+dom_t_childless                     = 'T,'
+dom_figure_artwork_childless        = 'Figure[Artwork,],'
+dom_t_list                          = 'T[List':a <dom_type_children{0,1}>:b ",]," -> a
+
+dom_fields_pre                      = dom_t ~dom_t_list
+dom_field                           = dom_t_childless dom_t_list
+
+dom_structure                       = dom_t*:a dom_figure_artwork_childless+:b dom_fields_pre*:c dom_field+:d dom_type*:e -> (len(a), len(b), len(c), len(d)*2, len(e))

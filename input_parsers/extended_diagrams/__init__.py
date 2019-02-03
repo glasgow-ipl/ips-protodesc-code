@@ -1,9 +1,6 @@
 from .extended_diagrams import ExtendedDiagrams
-from .names import Names
+from .parse import Parse
 from .dictionarable import Dictionarable
+from .rel_loc import RelLoc
 
-__all__ = ['ExtendedDiagrams', 'Names', 'Dictionarable']
-
-
-def parse_file(filename):
-    return ExtendedDiagrams.parse_file(filename)
+__all__ = ["ExtendedDiagrams", "Parse", "Dictionarable", "RelLoc"]

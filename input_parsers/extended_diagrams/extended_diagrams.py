@@ -1,199 +1,155 @@
-#!/usr/bin/env python3
-import string
-import os
-import itertools
-import parsley
-from typing import List, Dict, Tuple
-from ..shared import *
-from .names import Names
-from .dom.element.art import Art
-from .dom.element.field import Field
-from .dom.element.fields import Fields
-from .dom.section.section import Section
-from input_parsers.extended_diagrams.ir.expression import FieldAccess, Constant, Expression
-from input_parsers.extended_diagrams.ir.expression.method_invocation import Eq
-from input_parsers.extended_diagrams.ir.expression.other import Other
-from input_parsers.extended_diagrams.__bindings__ import bindings as bindings_dom
+import sys
+import re
+from .elements import SectionStruct
+from rfc2xml.elements import Rfc, Artwork, T
+from rfc2xml.elements.section import Section
+from ometa.runtime import ParseError
+from .parse import Parse
+from typing import Dict, Tuple
+from .elements import Field, FieldRef
+from protocoltypes import ConstantExpression, FieldAccessExpression, ProtocolType, Boolean
+from protocol import Protocol
+from .rel_loc import RelLoc
 
 
 class ExtendedDiagrams:
+    dom: Rfc
+
+    def __init__(self, filename: str):
+        self.dom = Parse.parse_file(filename)
 
     @staticmethod
-    def get_parser_file(filename="extended_diagrams.txt"):
-        with open(filename) as fp:
-            grammar = fp.read()
-        return ExtendedDiagrams.get_parser(grammar)
+    def section(section: Section, args: Dict = None):
+        #if args is None or "extended_diagrams" not in args:
+        #    raise Exception("self not passed to section")
+        #self = args["extended_diagrams"]s
+
+        parse = Parse()
+
+        child_types = section.get_child_types()
+
+        # TODO: Replace with representation that doesn't convert to string to parse
+        # Get the indexes of the items in this section we care about
+        try:
+            ids = parse.parser(child_types).dom_structure()
+        except ParseError:
+            return section
+
+        #art = ExtendedDiagrams.section_art(section, ids, parse)
+        fields = ExtendedDiagrams.section_fields(section, ids, parse)
+
+        return SectionStruct.from_section(section, fields)
 
     @staticmethod
-    def get_parser(grammar):
-        return parsley.makeGrammar(grammar, {
-            'punctuation': string.punctuation,
-            'itertools': itertools,
-            'ExtendedDiagrams': ExtendedDiagrams,
-            'Names': Names,
-            **bindings_dom()
-        })
+    def strip_double_underscore(s: str):
+        while s.count("__") > 0:
+            s = s.replace("__", "_")
+        return s
 
     @staticmethod
-    def parse_file(filename):
-        with open(filename) as fp:
-            contents = fp.read()
-
-        parser = ExtendedDiagrams.get_parser_file(
-            filename=os.path.dirname(os.path.realpath(__file__)) + "/extended_diagrams.txt"
-        )
-        return parser(contents).rfc()
-
-    @staticmethod
-    def new_generic_named_bitstring(type_namespace, name, size):
-        type_name = str(name) + "$"
-        if size is None:
-            type_name += "None"
-            bits = None
-        elif size < 0:
-            type_name += "Variable"
-            bits = None
-        else:
-            type_name += str(size)
-            bits = ('Bits', size)
-
-        if type_name not in type_namespace:
-            new_bitstring(type_name, bits, type_namespace)
-        return type_name
+    def type_name_formatter(name: str):
+        name = re.sub(r'[^.a-zA-Z0-9]', "_", name)
+        while name.count("__") > 0:
+            name = name.replace("__", "_")
+        name = name.strip("_")
+        name = name[0].upper() + name[1:]
+        return name
 
     @staticmethod
-    def new_generic_bitstring(type_namespace, size):
+    def section_art(section: Section, ids: Tuple, parse: Parse):
         """
-        Creates a generic bitstring for a given length
-        :param type_namespace:
-        :param size:
+        Get art from a section and parse it
+        :param section:
+        :param ids:
+        :param parse:
         :return:
         """
-        return ExtendedDiagrams.new_generic_named_bitstring(
-            type_namespace, "BitString", size
-        )
+
+        art = []
+        for i in range(0, ids[1]):
+            figure = section.children[ids[0] + i]
+            if len(figure.children) <= 0:
+                raise Exception("Figure doesn't have enough children\n\n" + figure.__str__())
+            artwork = figure.children[0]
+            if not isinstance(artwork, Artwork):
+                raise Exception("Figure does not contain expected artwork\n\n" + artwork.__str__())
+            art.append(parse.parser(artwork.text).packet_artwork())
+        return art
 
     @staticmethod
-    def string_to_field_id(x):
-        if x is None:
-            return ""
-        x = x.lower()
-        x = re.sub('[^0-9a-z]+', '_', x)
-        return x.strip('_')
-
-    @staticmethod
-    def string_to_type_id(xs):
-        o = ""
-        xs = re.sub('[^0-9a-zA-Z]+', ' ', xs)
-        for x in xs.split(" "):
-            o += x.capitalize()
-        return o
-
-    def pdu_section(self, section: Section, type_namespace: Dict) -> Tuple[List[Dict], List[Dict], List[Dict]]:
-        names = []
-        for element in section.elements:
-            names.append(element.get_name())
-
-        if names != ['Art', 'Fields']:
-            raise Exception("PDU does not have the correct elements")
-
-        pdu_fields, where = self.pdu(section.elements[0], section.elements[1])
+    def section_fields(section: Section, ids: Tuple, parse: Parse):
+        """
+        Get text fields from a section and parse it
+        :param section:
+        :param ids:
+        :param parse:
+        :return:
+        """
+        start_index = ExtendedDiagrams.art_ids_to_fields_start_index(ids)
+        end_index = ExtendedDiagrams.art_start_index_and_ids_to_fields_end_index(start_index, ids)
 
         fields = []
-        definitions = []
-        for field in pdu_fields:
-            field_id = self.string_to_field_id(field.name)
-            if field.type is None:
-                type_name = self.new_generic_bitstring(type_namespace, field.width)
+        refs = []
+
+        for i in range(start_index, end_index, 2):
+            (field, attributes) = parse.parser(section.children[i].get_str()).field_title(Field())
+
+            # If field is a list of control bits
+            if "control" in attributes and attributes["control"]:
+                try:
+                    text = section.children[i + 1].children[0].children[0].children[0]
+                except IndexError:
+                    raise Exception("Control structure did not contain expected structure")
+                fields += parse.parser(text).field_control()
+                continue
+
             else:
-                type_name = self.new_generic_named_bitstring(type_namespace, field.type, field.width)
-            fields.append(new_field(field_id, (type_name, None), None, type_namespace))
 
-            if field.expressions is not None:
-                where += Expression.list_to_dict(field.expressions)
-                definitions += field.get_definitions_dict()
+                # Get the array of paragraph objects
+                try:
+                    ts = section.children[i+1].children[0].children
+                except IndexError:
+                    raise Exception("Field item body did not contain expected structure")
 
-        return fields, where, definitions
+                # Get array of text for every paragraph in field description
+                paragraphs = []
+                for t in ts:
+                    paragraphs.append(t.get_str())
 
-    @staticmethod
-    def process_field(field: 'Field', items: Dict, order: List):
-        if field.abbrv in items:
-            items[field.name] = items.pop(field.abbrv)
-            items[field.name].name = field.name
-            order[order.index(field.abbrv)] = field.name
+                # Get single piece of text representing description
+                text = "\n".join(paragraphs)
 
-        if field.name in items:
-            items[field.name].merge(field)
+                refs += parse.parser(text).field_body()
+                fields.append(field)
 
-        else:
-            raise Exception(
-                "Item in field list that is not in ASCII diagram"
-            )
+        for ref in refs:
+            if isinstance(ref, RelLoc):
+                for i in range(0, len(fields)):
+                    field = fields[i]
+                    if field.name == ref.field_loc:
+                        fields.insert(
+                            i + ref.rel_loc,
+                            FieldRef(name=ref.field_new, value=ref.value, section_number=ref.section_number)
+                        )
+                        break
 
-    @staticmethod
-    def pdu(art: Art, fields: Fields) -> Tuple[List['Field'], List[Dict]]:
-        order = []
-        items = {}
-        where = []
-
-        static_index = 1
-        for field in art.fields:
-            if field.name is None:
-                field.name = "Static$" + str(static_index)
-
-                expression = Eq(
-                    Constant(field.value),
-                    [Other(FieldAccess(field.name))]
-                )
-
-                where.append(expression.to_dict())
-
-                static_index += 1
-
-            order.append(field.name)
-            items[field.name] = field.to_field()
-
-        for field in fields.fields:
-            if isinstance(field, (list,)):
-                for f in field:
-                    ExtendedDiagrams.process_field(f, items, order)
-            else:
-                ExtendedDiagrams.process_field(field, items, order)
-
-        output = []
-        for name in order:
-            output.append(items[name])
-
-        return output, where
+        return fields
 
     @staticmethod
-    def rfc(dom):
-        #return dom.to_dict()
+    def art_ids_to_fields_start_index(ids: Tuple):
+        return ids[0]+ids[1]+ids[2]
 
-        self = ExtendedDiagrams()
+    @staticmethod
+    def art_start_index_and_ids_to_fields_end_index(start_index: int, ids: Tuple):
+        return start_index+ids[3]
 
-        type_namespace = {}
-        pdus = []
+    def traverse_dom(self):
+        self.dom.middle.children = self.dom.middle.traverse_sections(ExtendedDiagrams.section, {"extended_diagrams": self})
 
-        for section in dom.sections:
-            if section.type == "pdu":
-                fields, where, definitions_section = self.pdu_section(section, type_namespace)
+    def protocol(self):
+        protocol = Protocol()
+        protocol.set_protocol_name(ExtendedDiagrams.type_name_formatter(self.dom.front.title.get_str()))
 
-                for definition in definitions_section:
+        struct = protocol.define_struct("AAAAABBBBBBBCCCCCCCCC")
 
-                    # If this item has already been defined
-                    if definition["name"] in type_namespace:
-                        if type_namespace[definition["name"]] != definition:
-                            raise Exception(definition["name"] + " has been defined elsewhere")
-
-                    # Otherwise, add it to the type namespace
-                    else:
-                        type_namespace[definition["name"]] = definition
-
-                title = self.string_to_type_id(section.title)
-
-                new_struct(title, fields, where, type_namespace, [], [])
-                pdus.append((title, None))
-
-        new_enum("PDUs", pdus, type_namespace)
-        return new_protocol("TODOProtocolName", type_namespace)
+        return protocol
