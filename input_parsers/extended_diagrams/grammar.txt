@@ -42,3 +42,38 @@ dom_fields_pre                      = dom_t ~dom_t_list
 dom_field                           = dom_t_childless dom_t_list
 
 dom_structure                       = dom_t*:a dom_figure_artwork_childless+:b dom_fields_pre*:c dom_field+:d dom_type*:e -> (len(a), len(b), len(c), len(d)*2, len(e))
+
+########################################################################
+# ASCII Art Packet Diagram
+########################################################################
+
+packet_artwork                      = packet_artwork_indent packet_artwork_header packet_artwork_body
+packet_artwork_indent               = ' '{0,8}
+packet_artwork_crlf                 = ' '* (crlf crlf | crlf packet_artwork_indent)
+
+packet_artwork_field_body_punct     = punctuation:x ?(x not in "|.=[]()") -> x
+packet_artwork_field_body_char      = (letterOrDigit|packet_artwork_field_body_punct|' ')
+packet_artwork_field_body_chars     = packet_artwork_field_body_char+:x packet_artwork_field_body_abbrv:y packet_artwork_field_body_char*:z -> {'body': "".join(x)+y["body"]+"".join(z), 'name': "".join(x), 'abbrv': y["abbrv"]}
+packet_artwork_field_body_abbrv     = abbrv_bracket:x -> {"body": '(' + x + ')', "abbrv": x}
+                                    | -> {"body": "", "abbrv": None}
+
+packet_artwork_header               = packet_artwork_header_a packet_artwork_crlf packet_artwork_header_b packet_artwork_crlf packet_artwork_separator_full packet_artwork_crlf
+packet_artwork_header_a             = '0                   1                   2                   3'
+packet_artwork_header_b             = '0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1'
+packet_artwork_separator_full       = '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
+
+packet_artwork_body                 = packet_artwork_line+:x -> Art(fields=list(itertools.chain.from_iterable(x)))
+packet_artwork_line                 = '|' (packet_artwork_line_regular | packet_artwork_line_variable):x packet_artwork_crlf packet_artwork_separator_full packet_artwork_crlf -> x
+packet_artwork_line_regular         = packet_artwork_field+
+packet_artwork_line_variable        = (packet_artwork_field_variable_array | packet_artwork_field_variable):x -> [x]
+
+packet_artwork_field                = (packet_artwork_field_variable_array | packet_artwork_field_value | packet_artwork_field_variable | packet_artwork_field_regular):x '|'{0,1} -> x
+packet_artwork_field_regular        = packet_artwork_field_body_chars:a packet_artwork_field_regular_width:b -> ArtField().parse(a['body']+b['body'], name=a['name'], width=b["width"], abbrv=b['abbrv'])
+                                    | packet_artwork_field_body_chars:x -> ArtField().parse(x['body'], name=x['name'], abbrv=x['abbrv'])
+packet_artwork_field_regular_width  = '(':a number:b ' '+:c bits:d ')':e packet_artwork_field_body_chars:f -> {"body": a+str(b)+"".join(c)+d+e+f["body"], "width": b, "abbrv": f["abbrv"]}
+
+packet_artwork_field_variable       = packet_artwork_field_body_chars:x '...' -> ArtField().parse(x['body'], variable=True, name=x['name'])
+packet_artwork_field_variable_array = ' '* '[' packet_artwork_field_body_chars:x ']' ' '* '...' -> ArtField().parse(x['body'], variable=True, array=True, name=x['name'], abbrv=x['abbrv'])
+
+packet_artwork_field_value          = binary:a (' ' binary)*:b -> ArtField(value=int(a+"".join(b), 2), width=len(a+"".join(b)))
+                                    | ' '*:a packet_artwork_field_body_chars:b '=':c number:d ' '*:e -> ArtField().parse("".join(a+e)+b["body"]+c+str(d), name=b["name"], value=d, abbrv=b['abbrv'])
