@@ -28,7 +28,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from typing import Dict, List, Tuple, Optional, Any, Union
+from typing import Dict, List, Any, Optional, cast
+
 from abc import ABC
 
 import re
@@ -40,7 +41,7 @@ FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
 # =================================================================================================
 # Type errors:
 
-class TypeError(Exception):
+class ProtocolTypeError(Exception):
     def __init__(self, reason):
         self.reason = reason
 
@@ -50,9 +51,9 @@ class TypeError(Exception):
 
 class Parameter():
     param_name : str
-    param_type : "Type"
+    param_type : "ProtocolType"
 
-    def __init__(self, param_name: str, param_type: "Type") -> None:
+    def __init__(self, param_name: str, param_type: "ProtocolType") -> None:
         self.param_name = param_name
         self.param_type = param_type
 
@@ -71,10 +72,10 @@ class Parameter():
 
 class Argument():
     arg_name  : str
-    arg_type  : "Type"
+    arg_type  : "ProtocolType"
     arg_value : Any
 
-    def __init__(self, arg_name: str, arg_type: "Type", arg_value: Any) -> None:
+    def __init__(self, arg_name: str, arg_type: "ProtocolType", arg_value: Any) -> None:
         self.arg_name  = arg_name
         self.arg_type  = arg_type
         self.arg_value = arg_value
@@ -83,9 +84,9 @@ class Argument():
 class Function():
     name        : str
     parameters  : List[Parameter]
-    return_type : "Type"
+    return_type : "ProtocolType"
 
-    def __init__(self, name: str, parameters: List[Parameter], return_type: "Type") -> None:
+    def __init__(self, name: str, parameters: List[Parameter], return_type: "ProtocolType") -> None:
         self.name        = name
         self.parameters  = parameters
         self.return_type = return_type
@@ -133,7 +134,7 @@ class Trait:
 # Expressions as defined in Section 3.4 of the IR specification:
 
 class Expression():
-    result_type : "Type"
+    result_type : "ProtocolType"
 
 
 class MethodInvocationExpression(Expression):
@@ -143,9 +144,9 @@ class MethodInvocationExpression(Expression):
 
     def __init__(self, target: Expression, method_name:str, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
-            raise TypeError("Method {}: invalid name".format(method_name))
+            raise ProtocolTypeError("Method {}: invalid name".format(method_name))
         if not target.result_type.get_method(method_name).method_accepts_arguments(target.result_type, args):
-            raise TypeError("Method {}: invalid arguments".format(method_name))
+            raise ProtocolTypeError("Method {}: invalid arguments".format(method_name))
         self.target      = target
         self.method_name = method_name
         self.args        = args
@@ -158,7 +159,7 @@ class FunctionInvocationExpression(Expression):
 
     def __init__(self, func: Function, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
-            raise TypeError("Invalid function name {}".format(func.name))
+            raise ProtocolTypeError("Invalid function name {}".format(func.name))
         self.func        = func
         self.args        = args
         self.result_type = func.return_type
@@ -178,7 +179,7 @@ class FieldAccessExpression(Expression):
             self.field_name = field_name
             self.result_type  = target.result_type.field(field_name).field_type
         else:
-            raise TypeError("Cannot access fields in object of type {}".format(target.result_type))
+            raise ProtocolTypeError("Cannot access fields in object of type {}".format(target.result_type))
             
 
 class ContextAccessExpression(Expression):
@@ -198,9 +199,9 @@ class IfElseExpression(Expression):
 
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
         if condition.result_type.kind != "Boolean":
-            raise TypeError("Cannot create IfElseExpression: condition is not boolean")
+            raise ProtocolTypeError("Cannot create IfElseExpression: condition is not boolean")
         if if_true.result_type != if_false.result_type:
-            raise TypeError("Cannot create IfElseExpression: branch types differ")
+            raise ProtocolTypeError("Cannot create IfElseExpression: branch types differ")
         self.condition   = condition
         self.if_true     = if_true
         self.if_false    = if_false
@@ -208,15 +209,15 @@ class IfElseExpression(Expression):
         
 
 class ThisExpression(Expression):
-    def __init__(self, this_type: "Type") -> None:
+    def __init__(self, this_type: "ProtocolType") -> None:
         self.result_type = this_type
         
 
 class ConstantExpression(Expression):
-    result_type : "Type"
+    result_type : "ProtocolType"
     value       : Any
 
-    def __init__(self, constant_type: "Type", constant_value: Any) -> None:
+    def __init__(self, constant_type: "ProtocolType", constant_value: Any) -> None:
         self.result_type = constant_type
         self.value       = constant_value
     
@@ -225,7 +226,7 @@ class ConstantExpression(Expression):
 # Fields in a structure or the context:
 
 class Transform():
-    def __init__(self, into_name: str, into_type: "Type", using: Function) -> None:
+    def __init__(self, into_name: str, into_type: "ProtocolType", using: Function) -> None:
         self.into_name = into_name
         self.into_type = into_type
         self.using     = using
@@ -234,7 +235,7 @@ class Transform():
 class StructField():
     def __init__(self, 
                  field_name: str, 
-                 field_type: "Type", 
+                 field_type: "ProtocolType", 
                  is_present: Optional[Expression], 
                  transform : Optional[Transform]) -> None:
         self.field_name = field_name
@@ -244,7 +245,7 @@ class StructField():
 
 
 class ContextField():
-    def __init__(self, field_name: str, field_type: "Type") -> None:
+    def __init__(self, field_name: str, field_type: "ProtocolType") -> None:
         self.field_name = field_name
         self.field_type = field_type
         
@@ -252,7 +253,7 @@ class ContextField():
 # =================================================================================================
 # Types:
 
-class Type(ABC):
+class ProtocolType(ABC):
     """
     Types exist in the context of a Protocol. 
     The only valid way to create an object of class Type, or one of its subclasses,
@@ -298,62 +299,73 @@ class Type(ABC):
 
     def implement_trait(self, trait: Trait) -> None:
         if trait in self.traits:
-            raise TypeError("Type {} already implements trait {}".format(self.name, trait.name))
+            raise ProtocolTypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
             self.traits[trait.name] = trait
             for method_name in trait.methods:
                 if method_name in self.methods:
-                    raise TypeError("Type {} already implements method {}".format(self.name, method_name))
+                    raise ProtocolTypeError("Type {} already implements method {}".format(self.name, method_name))
                 else:
                     self.methods[method_name] = trait.methods[method_name]
 
     def get_method(self, method_name) -> Function:
         return self.methods[method_name]
 
-
-class Nothing(Type):
+#FIXME: need to think about the purpose of these types: should they hold values?
+class Nothing(ProtocolType):
     def __init__(self) -> None:
         super().__init__()
         self.kind  = "Nothing"
         self.name  = "Nothing"
 
 
-class Boolean(Type):
+class Boolean(ProtocolType):
     def __init__(self) -> None:
         super().__init__()
         self.kind  = "Boolean"
         self.name  = "Boolean"
 
 
-class Size(Type):
+class Size(ProtocolType):
     def __init__(self) -> None:
         super().__init__()
         self.kind  = "Size"
         self.name  = "Size"
 
 
-class BitString(Type):
-    def __init__(self, name: str, size: Size) -> None:
+class BitString(ProtocolType):
+    def __init__(self, name: str, size: int) -> None:
         super().__init__()
         self.kind = "BitString"
         self.name = name
         self.size = size
 
 
-class Array(Type):
-    def __init__(self, name: str, element_type: Type, length: Size) -> None:
+class Array(ProtocolType):
+    def __init__(self, name: str, element_type: ProtocolType, length: int) -> None:
         super().__init__()
         self.kind         = "Array"
         self.name         = name
         self.element_type = element_type
         self.length       = length
-        if length == None or self.element_type.size == None:
+
+        if length == None:
             self.size = None
-        else:
-            self.size = self.length * self.element_type.size
+        elif self.element_type is BitString:
+            element_bitstring = cast(BitString, self.element_type)
+            if element_bitstring.size is None:
+                self.size = None
+            else:
+                self.size = self.length * element_bitstring.size
+        elif self.element_type is Array:
+            element_array = cast(Array, self.element_type)
+            if element_array.size is None:
+                self.size = None
+            else:
+                self.size = self.length * element_array.size
 
 
-class Struct(Type):
+class Struct(ProtocolType):
     kind:        str
     name:        str
     fields:      List[StructField]
@@ -381,18 +393,18 @@ class Struct(Type):
         for field in self.fields:
             if field.field_name == field_name:
                 return field
-        raise TypeError("{} has no field named {}".format(self.name, field_name))
+        raise ProtocolTypeError("{} has no field named {}".format(self.name, field_name))
 
 
-class Enum(Type):
-    def __init__(self, name: str, variants: List[Type]) -> None:
+class Enum(ProtocolType):
+    def __init__(self, name: str, variants: List[ProtocolType]) -> None:
         super().__init__()
         self.kind     = "Enum"
         self.name     = name
         self.variants = variants
 
 
-class Context(Type):
+class Context(ProtocolType):
     kind:   str
     fields: List[ContextField]
     
@@ -408,7 +420,7 @@ class Context(Type):
         for field in self.fields:
             if field.field_name == field_name:
                 return field
-        raise TypeError("Context has no field named {}".format(field_name))
+        raise ProtocolTypeError("Context has no field named {}".format(field_name))
         
 # =================================================================================================
 # vim: set tw=0 ai:
