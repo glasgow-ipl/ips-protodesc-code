@@ -1,0 +1,177 @@
+lf          = '\n'
+ff          = '\f'
+space       = (' '|'	')
+spaces      = space+:a -> "".join(a)
+indent      = ' '{3}
+number      = <digit+>:ds -> int(ds)
+
+uppercase_letter                = anything:x ?(x in ascii_uppercase) -> x
+lowercase_letter                = anything:x ?(x in ascii_lowercase) -> x
+
+# TODO
+section_number                  = 'Appendix ':a letter+:b -> a+"".join(b)
+                                | (<letter+>|number):a (('.' number)*):b -> ".".join(list(map(lambda x: str(x), ([str(a)] + b))))
+
+section_number_level :level     = (<letter+>|number):a <('.' number){level}>:b -> str(a)+str(b)
+
+crlf                            = (page_separator|lf)
+s                               = (space|crlf indent)
+s_word                          = s word:a -> ' ' + a
+
+########################################################################
+# Punctuation/Char/Chars
+########################################################################
+
+punctuation = anything:x ?(x in punctuation) -> x
+punctuation_not_colon           = punctuation:b ?(b != ':') -> b
+punctuation_not_fullstop        = punctuation:b ?(b != '.') -> b
+punctuation_not_square_bracket  = punctuation:b ?(b != '[' and b != ']') -> b
+
+char                            = (digit|letter|punctuation|space)
+char_no_crlf                    = (digit|letter|punctuation|spaces)
+char_no_crlf_colon              = (digit|letter|punctuation_not_colon|spaces)
+char_no_crlf_fullstop           = (digit|letter|punctuation_not_fullstop|space)
+char_no_crlf_square_bracket     = (digit|letter|punctuation_not_square_bracket|spaces)
+char_no_digit                   = (letter|punctuation|space)
+char_visible                    = (digit|letter|punctuation)
+char_visible_no_fullstop        = (digit|letter|punctuation_not_fullstop)
+char_visible_no_square_bracket  = (digit|letter|punctuation_not_square_bracket)
+
+chars_visible                   = <char_visible+>:a -> a
+chars_visible_space_separated   = <(<chars_visible+>:x ' ':y -> x+y)*>:a <chars_visible*>:b -> a+b
+
+########################################################################
+# Date
+########################################################################
+
+month                           = ('January'|'February'|'March'|'April'|'May'|'June'|'July'|'August'|'September'|'October'|'November'|'December')
+year                            = <digit{4}>:a -> a
+day                             = <digit{1,2}>:a -> a
+
+date                            = month:month space+ year:year -> Date(year=year, month=month)
+                                | month:month space+ day:day ',' space+ year:year -> Date(year=year, month=month, day=day)
+
+########################################################################
+# Text
+########################################################################
+
+text                            = (text_bullets|text_hang|text_paragraph|text_indent|artwork)*
+
+text_bullets                    = text_bullet+:bullets -> List(style="symbols", children=bullets)
+
+text_bullet_contents            = char_visible:a <char_no_crlf*>:b crlf -> a+b
+
+text_bullet                     = text_bullet_1:a text_bullet_2+:b -> a.add_child(List(style="symbols", children=b))
+                                | text_bullet_1
+
+text_bullet_1                   = text_bullet_1_firstline:a text_bullet_1_multiline*:b crlf+ -> text_paragraph(a+"".join(b))
+text_bullet_1_firstline         = indent 'o  ' text_bullet_contents
+text_bullet_1_multiline         = indent{2} text_bullet_contents:a -> ' '+a
+
+text_bullet_2                   = text_bullet_2_firstline:a text_bullet_2_multiline*:b crlf+ -> text_paragraph(a+"".join(b))
+text_bullet_2_firstline         = indent{2} '*  ' text_bullet_contents
+text_bullet_2_multiline         = indent{3} text_bullet_contents:a -> ' '+a
+
+text_paragraph                  = indent text_paragraph_line+:a crlf+ -> text_paragraph([j for i in a for j in i])
+text_paragraph_line             = char_visible:a char_no_crlf*:b text_paragraph_line_end:c -> [a+"".join(b)+c]
+text_paragraph_line_end         = crlf indent -> ' '
+                                | crlf -> ''
+
+text_indent                     = text_indent_paragraph+:children -> T(children=[List(style="empty", children=children)])
+text_indent_paragraph           = indent{2} text_indent_line+:a crlf+ -> text_paragraph([j for i in a for j in i])
+text_indent_line                = char_visible:a char_no_crlf*:b text_indent_line_end:c -> [a+"".join(b)+c]
+text_indent_line_end            = crlf indent{2} -> ' '
+                                | crlf -> ''
+
+# TODO: Future Development
+text_ref                        = '[' char_visible_no_square_bracket+:a ']' -> Xref("".join(a))
+
+text_hang                       = text_hang_multi:a (text_hang_single | text_hang_multi)*:b -> List(style="hanging", children=[a]+b)
+text_hang_single                = indent text_hang_line_1:a crlf+ -> text_paragraph([j for i in [a["main"]] for j in i], hang_text=a["hang_text"])
+text_hang_multi                 = indent text_hang_line_1:a text_hang_line_2+:b crlf+ -> text_paragraph([j for i in [a["main"]]+b for j in i], hang_text=a["hang_text"])
+text_hang_line_1                = text_hang_text:hang_text char_visible:a char_no_crlf*:b text_hang_line_end:c -> {"hang_text": hang_text, "main": [a+"".join(b)+c]}
+text_hang_line_2                = char_visible:a char_no_crlf*:b text_hang_line_end:c -> [a+"".join(b)+c]
+text_hang_text_word             = <char_visible+>:a ' ':b -> a+b
+text_hang_text                  = <text_hang_text_word+>:a ' ' -> a.rstrip()
+
+text_hang_line_end              = crlf indent{2} -> ' '
+                                | crlf -> ''
+
+########################################################################
+# Artwork
+########################################################################
+
+artwork                         = artwork_body:body crlf* figure:title crlf* -> Figure(title=title, child=body)
+                                | artwork_body:body crlf* -> Figure(child=body)
+artwork_body                    = (indent <' '+>:b <char_no_crlf+>:c crlf:d -> b+c+d)+:b -> Artwork("".join(b))
+
+figure                          = indent ' '+ figure_TODO number ': ' <char_no_crlf+>:title crlf -> title
+
+# TODO: Don't treat Tables as figures
+figure_TODO                     = ('Table ' | 'Figure ')
+
+########################################################################
+# RFC
+########################################################################
+
+page_separator                  = page_footer ff lf page_header_footer:b lf -> rfc_title_abbrev(rfc, b[1].strip())
+page_footer                     = lf:a page_header_footer:b lf:c
+page_header_footer              = chars_visible_space_separated:a spaces chars_visible_space_separated:b spaces chars_visible_space_separated:c -> (a,b,c)
+
+rfc                             = front sections -> rfc
+
+# TODO: Table of contents parsing removed
+toc                             = toc_line+
+toc_line                        = indent ' '* char_visible char_no_crlf* crlf+
+#toc                             = toc_line+:children -> rfc.set_toc_children(children)
+#toc_line                        =
+#toc_line                        = indent ' '* section_number:section '.'{0,1} ' '+ char_no_crlf_fullstop+:title ('. ')* ' '* number:page crlf+ -> TocItem(section=section, title="".join(title).strip(), page=page)
+#                                | indent ' '* section_number:section '.'{0,1} ' '+ <char_visible+>:a (' ' <char_visible+>)*:b ' '* number:page crlf+ -> TocItem(section=section, title="".join(title).strip(), page=page)
+#                                | indent ' '* char_no_crlf_fullstop+:title ('. ')* ' '* number:page crlf+ -> TocItem(title="".join(title).strip(), page=page)
+
+########################################################################
+# RFC - Front
+########################################################################
+
+front                           = crlf+ front_names crlf+ front_title crlf+ front_sections
+
+fullstop_spaces                 = '.':a <space+>:b -> a+b
+front_names_text                = (<char_visible_no_fullstop+>:a (fullstop_spaces | <space{0,1}>):b -> a+b)+:c -> "".join(c)
+front_names_text_left           = front_names_text:a
+front_names_text_right          = date:a -> rfc.front.set_date(a)
+                                | uppercase_letter:initials '.' ' '+ (letter|' '|'-')+:surname (',' ' '+ letter+:a -> "".join(a)){0,1}:role -> {"type": "name", "initials": str(initials)+".", "surname": "".join(surname), "role": None if len(role)==0 else "".join(role)}
+                                | front_names_text:name -> {"type": "organization", "name": name}
+front_names                     = (front_names_text_left:l space+ front_names_text_right:r '.'{0,1} crlf -> (l,r) )+:a (space+ front_names_text_right:r '.'{0,1} crlf -> (None,r))+:b
+                                -> front_names(rfc,a+b)
+front_title                     = (char_no_crlf+:a -> "".join(a).strip()):title crlf ((char_no_crlf+:a -> "".join(a).strip()):a crlf -> a){0,1}:docName -> rfc_title_docname(rfc, title, "".join(docName))
+
+front_section                   = 'Abstract' crlf{2} front_section_body:b -> rfc.front.abstract.set_children(b)
+                                | ('Copyright Notice'|'Status of This Memo'|'Status of this Memo') crlf{2} front_section_body:b           # Ignore copyright notice and status of this memo
+                                | 'Table of Contents' crlf{2} toc
+                                | front_section_title:title crlf{2} front_section_body:children -> rfc.front.add_note(title, children)    # Notes
+front_section_body              = text:a crlf* -> a
+front_section_title             = letter:a char_no_crlf*:b -> a+"".join(b)
+front_sections                  = front_section+
+
+########################################################################
+# RFC - Middle
+########################################################################
+
+sections                        = (section(0))+:sections -> rfc.middle.add_children(sections)
+section :level                  = section_title(level):section section_body(section):body section(level+1)*:children
+                                -> section.add_children(body+children)
+section_body :section           = text:a section_body_trailing -> a
+section_title :level            = section_number_level(level):number '.'{0,1} ' '+ <char_no_crlf+>:title crlf+ -> Section(title=title, number=number)
+
+section_body_trailing           = <section_body_trailing_line*>:a -> a
+section_body_trailing_line      = indent <char_no_crlf+>:a <crlf+> -> a
+
+########################################################################
+# Authors' Addresses
+########################################################################
+
+# TODO: Future Development
+#authors_addresses               = "Authors' Addresses" crlf authors_addresses_line+
+#authors_addresses_line          = indent char_no_crlf+ authors_addresses_line_end
+#authors_addresses_line_end      = crlf indent
+#                                | crlf+
