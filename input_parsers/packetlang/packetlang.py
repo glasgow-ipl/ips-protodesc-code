@@ -60,8 +60,8 @@ class PacketLangParser(InputParser):
         array_constructor = ArrayConstructor(element_type, name=name, length=length)
         return array_constructor
 
-    def new_typedef(self, name, type:"Type"):
-        type.name = name
+    def new_typedef(self, name, type:"ProtocolType"):
+        self.protocol.derive_type(name, type, [])
 
     def new_struct(self, name, fields, constraints):
         constraints = [] if constraints == None else constraints
@@ -71,6 +71,8 @@ class PacketLangParser(InputParser):
         return struct
         
     def new_structfield(self, field_name: str, field_type, is_present: Expression = None, transform: Expression = None):
+        if type(field_type) is str:
+            field_type = self.protocol.get_type(field_type)
         return StructField(field_name, field_type, ConstantExpression("Boolean", "True"), transform)
 
     def new_parameter(self, parameter_name: str, parameter_type: str):
