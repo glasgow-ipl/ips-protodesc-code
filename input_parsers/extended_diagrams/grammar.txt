@@ -77,3 +77,28 @@ packet_artwork_field_variable_array = ' '* '[' packet_artwork_field_body_chars:x
 
 packet_artwork_field_value          = binary:a (' ' binary)*:b -> ArtField(value=int(a+"".join(b), 2), width=len(a+"".join(b)))
                                     | ' '*:a packet_artwork_field_body_chars:b '=':c number:d ' '*:e -> ArtField().parse("".join(a+e)+b["body"]+c+str(d), name=b["name"], value=d, abbrv=b['abbrv'])
+
+########################################################################
+# Field Title
+########################################################################
+
+field_title :field                  = field_title_main(field) ':' ' '+ field_title_width:width field_title_control -> (field.set_width(width), {"control": True})
+                                    | field_title_main(field) ':' ' '+ field_title_width:width -> (field.set_width(width), {})
+                                    | field_title_main(field) ':' ' '+ expression:expression ' '* bits -> (field.add_expression(expression), {})
+
+field_title_main :field             = <char_regular_no_bracket_colon+>:name field_title_abbrv(field)
+                                    -> field.set_name(name)
+field_title_abbrv :field            = field_title_abbrv_b(field){0,1}
+field_title_abbrv_b :field          = '(' <char_regular_no_bracket+>:abbrv ')' -> field.set_abbrv(abbrv)
+
+field_title_width                   = number:a ' ' bits -> a
+                                    | 'variable' -> None
+field_title_control                 = ' '+ '(from left to right):'
+
+########################################################################
+# Field Control
+########################################################################
+
+field_control                       = field_control_item+:a -> a
+field_control_item                  = char_visible_no_bracket:a <char_regular_no_bracket+>:b abbrv_bracket:c ' '*
+                                    -> Field(name=(a+b).strip(), abbrv=c, width=1)
