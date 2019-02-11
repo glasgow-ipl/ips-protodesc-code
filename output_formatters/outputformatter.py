@@ -30,6 +30,7 @@
 
 import abc
 from protocol import Protocol
+from protocoltypes import *
 
 class OutputFormatter(abc.ABC):
     """
@@ -38,6 +39,30 @@ class OutputFormatter(abc.ABC):
 
     @abc.abstractmethod
     def generate_output(self):
+        pass
+
+    @abc.abstractmethod
+    def format_bitstring(self, bitstring:BitString):
+        pass
+
+    @abc.abstractmethod
+    def format_struct(self, struct:Struct):
+        pass
+
+    @abc.abstractmethod
+    def format_array(self, array:Array):
+        pass
+
+    @abc.abstractmethod
+    def format_enum(self, enum:Enum):
+        pass
+
+    @abc.abstractmethod
+    def format_function(self, function:Function):
+        pass
+
+    @abc.abstractmethod
+    def format_context(self, context:Context):
         pass
 
     @abc.abstractmethod

@@ -124,33 +124,43 @@ def main():
     # Parse input string using input parser
     try:
         protocol = input_parser.build_protocol(inputString, name=filename_to_protocol_name(args.input_file))
-    except Exception as e:
-        raise e
+    except Exception:
         print("Could not parse input file (%s) with specified parser (%s)" % (args.input_file, args.input_format))
 
     ######################################################################################
     # Depth-first search processing
     ######################################################################################
     type_names = dfs_protocol(protocol)
-    print(type_names)
 
-#    ######################################################################################
-#    # Output formatting
-#    ######################################################################################
-#    construct_output_formatter = {"simpleprinter" : output_formatters.simpleprinter.SimplePrinter()}
-#    output_formatter = construct_output_formatter[args.output_format]
-#    
-#    # Format the protocol using output formatter
-#    try:
-#        #output_formatter.format_protocol(protocol)
-#    except:
-#        print("Could not format protocol with specified formatter (%s)" % (args.output_format))
-#
-#    #output_formatter.generate_output()
-#
-#    # Output to file
-#    with open(args.output_file, "w+") as outputFile:
-#        #outputFile.write(output_formatter.generate_output())
+    ######################################################################################
+    # Output formatting
+    ######################################################################################
+    construct_output_formatter = {"simpleprinter" : output_formatters.simpleprinter.SimplePrinter()}
+    output_formatter = construct_output_formatter[args.output_format]
+    
+    # Format the protocol using output formatter
+    try:
+        for type_name in type_names:
+            pt = protocol.get_type(type_name)
+            if type(pt) is BitString:
+                output_formatter.format_bitstring(pt)
+            elif type(pt) is Struct:
+                output_formatter.format_struct(pt)
+            elif type(pt) is Array:
+                output_formatter.format_array(pt)
+            elif type(pt) is Enum:
+                output_formatter.format_enum(pt)
+            elif type(pt) is Function:
+                output_formatter.format_function(pt)
+            elif type(pt) is Context:
+                output_formatter.format_context(pt)
+        output_formatter.format_protocol(protocol)
+    except:
+        print("Could not format protocol with specified formatter (%s)" % (args.output_format))
+
+    # Output to file
+    with open(args.output_file, "w+") as outputFile:
+        outputFile.write(output_formatter.generate_output())
 
 if __name__ == "__main__":
     main()

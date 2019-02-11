@@ -45,16 +45,22 @@ class SimplePrinter(OutputFormatter):
         return "\n".join(self.output)
 
     def format_bitstring(self, bitstring:BitString):
-        print("bitstring!")
+        self.output.append("BitString ({})".format(bitstring))
 
     def format_struct(self, struct:Struct):
-        # parse fields
-        for field in struct.fields:
-            print(field.field_type)
+        self.output.append("Struct ({})".format(struct))
+
+    def format_array(self, array:Array):
+        self.output.append("Array ({})".format(array))
+        
+    def format_enum(self, enum:Enum):
+        self.output.append("Enum ({})".format(enum))
+
+    def format_function(self, function:Function):
+        self.output.append("Function ({})".format(function))
+
+    def format_context(self, context:Context):
+        self.output.append("Context ({})".format(context))
 
     def format_protocol(self, protocol:Protocol):
-        for pdu_name in protocol.get_pdu_names():
-            self.output.append(pdu_name)
-            pdu = protocol.get_pdu(pdu_name)
-            if type(pdu) is Struct:
-                self.format_struct(pdu)
+        self.output.append("Protocol ({})\n".format(protocol.get_protocol_name()))
