@@ -30,8 +30,7 @@
 
 import abc
 from output_formatters.outputformatter import OutputFormatter
-from protocol import Protocol 
-from protocoltypes import *
+from protocol import * 
 
 class SimplePrinter(OutputFormatter):
     output: List[str]

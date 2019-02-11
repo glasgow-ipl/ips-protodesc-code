@@ -29,8 +29,7 @@
 # =================================================================================================
 
 import abc
-from protocol import Protocol
-from protocoltypes import *
+from protocol import *
 
 class OutputFormatter(abc.ABC):
     """

@@ -34,7 +34,6 @@ import json
 import re    
 
 from protocol import *
-from protocoltypes import *
 
 # Input parsers
 import input_parsers.inputparser

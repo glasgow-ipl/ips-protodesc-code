@@ -29,11 +29,10 @@
 # =================================================================================================
 
 from input_parsers.inputparser import InputParser
-from protocol import Protocol 
 from typing import Dict, List, Tuple, Optional, Any
 import parsley
 import string
-from protocoltypes import *
+from protocol import *
 
 class PacketLangParser(InputParser):
     protocol: Protocol
