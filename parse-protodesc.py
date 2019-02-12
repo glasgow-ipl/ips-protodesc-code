@@ -123,7 +123,7 @@ def main():
     # Parse input string using input parser
     try:
         protocol = input_parser.build_protocol(inputString, name=filename_to_protocol_name(args.input_file))
-    except Exception:
+    except:
         print("Could not parse input file (%s) with specified parser (%s)" % (args.input_file, args.input_format))
 
     ######################################################################################

@@ -64,9 +64,7 @@ class PacketLangParser(InputParser):
 
     def new_struct(self, name, fields, constraints):
         constraints = [] if constraints == None else constraints
-        struct = self.protocol.define_struct(name)
-        self.protocol.define_struct_fields(struct, fields)
-        self.protocol.define_struct_constraints(struct, constraints)
+        struct = self.protocol.define_struct(name, fields, constraints, [])
         return struct
         
     def new_structfield(self, field_name: str, field_type, is_present: Expression = None, transform: Expression = None):
