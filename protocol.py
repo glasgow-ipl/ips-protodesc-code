@@ -32,7 +32,7 @@ from typing import Dict, List, Any, Optional, cast
 from copy import copy
 import unittest
 import re
-from abc import ABC
+from abc import ABC, abstractmethod
 
 # Type names begin with an upper case letter, function names do not:
 TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$_]+$"
@@ -131,9 +131,11 @@ class Trait:
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
 
-class Expression():
-    result_type : "ProtocolType"
+class Expression(ABC):
 
+    @abstractmethod
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        pass
 
 class MethodInvocationExpression(Expression):
     target      : Expression
@@ -143,12 +145,14 @@ class MethodInvocationExpression(Expression):
     def __init__(self, target: Expression, method_name:str, args: List[Argument]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
             raise ProtocolTypeError("Method {}: invalid name".format(method_name))
-        if not target.result_type.get_method(method_name).method_accepts_arguments(target.result_type, args):
-            raise ProtocolTypeError("Method {}: invalid arguments".format(method_name))
         self.target      = target
         self.method_name = method_name
         self.args        = args
-        self.result_type = target.result_type.get_method(method_name).return_type
+        
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        if not self.target.get_result_type(containing_type).get_method(self.method_name).method_accepts_arguments(self.target.get_result_type(containing_type), self.args):
+            raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
+        return self.target.get_result_type(containing_type).get_method(self.method_name).return_type
 
 
 class FunctionInvocationExpression(Expression):
@@ -160,7 +164,9 @@ class FunctionInvocationExpression(Expression):
             raise ProtocolTypeError("Invalid function name {}".format(func.name))
         self.func        = func
         self.args        = args
-        self.result_type = func.return_type
+        
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        return self.func.return_type
 
 
 class FieldAccessExpression(Expression):
@@ -172,13 +178,16 @@ class FieldAccessExpression(Expression):
     field_name : str
 
     def __init__(self, target: Expression, field_name: str) -> None:
-        if isinstance(target.result_type, Struct):
-            self.target     = target
-            self.field_name = field_name
-            self.result_type  = target.result_type.field(field_name).field_type
-        else:
-            raise ProtocolTypeError("Cannot access fields in object of type {}".format(target.result_type))
+        self.target = target
+        self.field_name = field_name
             
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        if isinstance(self.target.get_result_type(containing_type), Struct):
+            struct = cast(Struct, self.target.get_result_type(containing_type))
+            return struct.field(self.field_name).field_type
+        else:
+            raise ProtocolTypeError("Cannot access fields in object of type {}".format(self.target.get_result_type(containing_type)))
+        
 
 class ContextAccessExpression(Expression):
     context    : "Context"
@@ -187,8 +196,9 @@ class ContextAccessExpression(Expression):
     def __init__(self, context:"Context", field_name: str) -> None:
         self.context     = context
         self.field_name  = field_name
-        self.result_type = self.context.field(field_name).field_type
 
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        return self.context.field(self.field_name).field_type
 
 class IfElseExpression(Expression):
     condition : Expression
@@ -196,28 +206,33 @@ class IfElseExpression(Expression):
     if_false  : Expression
 
     def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
-        if condition.result_type.kind != "Boolean":
-            raise ProtocolTypeError("Cannot create IfElseExpression: condition is not boolean")
-        if if_true.result_type != if_false.result_type:
-            raise ProtocolTypeError("Cannot create IfElseExpression: branch types differ")
         self.condition   = condition
         self.if_true     = if_true
         self.if_false    = if_false
-        self.result_type = if_true.result_type
+    
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        if self.condition.get_result_type(containing_type).kind != "Boolean":
+            raise ProtocolTypeError("Cannot create IfElseExpression: condition is not boolean")
+        if self.if_true.get_result_type(containing_type) != self.if_false.get_result_type(containing_type):
+            raise ProtocolTypeError("Cannot create IfElseExpression: branch types differ")
+        return self.if_true.get_result_type(containing_type)
         
 
 class ThisExpression(Expression):
-    def __init__(self, this_type: "ProtocolType") -> None:
-        self.result_type = this_type
         
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        return cast("ProtocolType", containing_type)
 
 class ConstantExpression(Expression):
-    result_type : "ProtocolType"
+    _result_type : "ProtocolType"
     value       : Any
 
     def __init__(self, constant_type: "ProtocolType", constant_value: Any) -> None:
-        self.result_type = constant_type
+        self._result_type = constant_type
         self.value       = constant_value
+        
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        return self._result_type
     
 
 # =================================================================================================
@@ -504,16 +519,16 @@ class Protocol:
                 raise ProtocolTypeError("Cannot parse field {}: malformed name".format(field.field_name))
         return fields
 
-    def _validate_constraints(self, constraints:List[Expression]):
+    def _validate_constraints(self, struct:Struct, constraints:List[Expression]):
         for constraint in constraints:
-            if constraint.result_type != self.get_type("Boolean"):
-                raise ProtocolTypeError("Cannot parse constraint: {} != Boolean".format(constraint.result_type))
+            if constraint.get_result_type(struct) != self.get_type("Boolean"):
+                raise ProtocolTypeError("Cannot parse constraint: {} != Boolean".format(constraint.get_result_type(struct)))
         return constraints
 
-    def _validate_actions(self, actions:List[Expression]):
+    def _validate_actions(self, struct:Struct, actions:List[Expression]):
         for action in actions:
-            if action.result_type != self.get_type("Nothing"):
-                raise ProtocolTypeError("Cannot parse actions: returns {} not Nothing".format(action.result_type))
+            if action.get_result_type(struct) != self.get_type("Nothing"):
+                raise ProtocolTypeError("Cannot parse actions: returns {} not Nothing".format(action.get_result_type(struct)))
         return actions
 
     # =============================================================================================
@@ -601,7 +616,7 @@ class Protocol:
             struct       - the struct to define the constraints for
             constraints  - the constraints to define in the struct
         """
-        for constraint in self._validate_constraints(constraints):
+        for constraint in self._validate_constraints(struct, constraints):
             struct.add_constraint(constraint)
 
     def define_struct_actions(self, struct:Struct, actions:List[Expression]):
@@ -613,7 +628,7 @@ class Protocol:
             struct   - the struct to define the actions for
             actions  - the actions to define in the struct
         """
-        for action in self._validate_actions(actions):
+        for action in self._validate_actions(struct, actions):
             struct.add_action(action)
 
     def define_enum(self, name:str, variants: List[ProtocolType]) -> Enum:
@@ -773,7 +788,7 @@ class TestProtocol(unittest.TestCase):
         protocol.define_struct_fields(teststruct, [seq, ts])
 
         # add constraints
-        seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(teststruct), "seq"),
+        seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(), "seq"),
                                                     "eq",
                                                     [Argument("other", seqnum, ConstantExpression(seqnum, 47))])
         protocol.define_struct_constraints(teststruct, [seq_constraint])
@@ -865,7 +880,7 @@ class TestProtocol(unittest.TestCase):
                                                     [Argument("other", protocol.get_type("Boolean"), "False")])
 
         self.assertTrue(isinstance(methodinv_expr, MethodInvocationExpression))
-        self.assertTrue(methodinv_expr.result_type, protocol.get_type("Boolean"))
+        self.assertTrue(methodinv_expr.get_result_type(None), protocol.get_type("Boolean"))
 
     def test_parse_expression_FunctionInvocation(self):
         protocol = Protocol()
@@ -880,7 +895,7 @@ class TestProtocol(unittest.TestCase):
                                                      Argument("bar", protocol.get_type("Boolean"), "False")])
 
         self.assertTrue(isinstance(funcinv_expr, FunctionInvocationExpression))
-        self.assertTrue(funcinv_expr.result_type, protocol.get_type("Boolean"))
+        self.assertTrue(funcinv_expr.get_result_type(None), protocol.get_type("Boolean"))
 
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
@@ -898,11 +913,11 @@ class TestProtocol(unittest.TestCase):
         protocol.define_struct_fields(teststruct, [test])
 
         # Check that we can parse FieldAccess expressions
-        fieldaccess_expr = FieldAccessExpression(ThisExpression(teststruct), "test")
+        fieldaccess_expr = FieldAccessExpression(ThisExpression(), "test")
 
         self.assertTrue(isinstance(fieldaccess_expr, FieldAccessExpression))
-        self.assertEqual(fieldaccess_expr.result_type, protocol.get_type("TestField"))
-        self.assertEqual(fieldaccess_expr.target.result_type, protocol.get_type("TestStruct"))
+        self.assertEqual(fieldaccess_expr.get_result_type(teststruct), protocol.get_type("TestField"))
+        self.assertEqual(fieldaccess_expr.target.get_result_type(teststruct), protocol.get_type("TestStruct"))
         self.assertEqual(fieldaccess_expr.field_name, "test")
 
     def test_parse_expression_ContextAccess(self):
@@ -916,7 +931,7 @@ class TestProtocol(unittest.TestCase):
         contextaccess_expr = ContextAccessExpression(protocol.get_context(), "foo")
 
         self.assertTrue(isinstance(contextaccess_expr, ContextAccessExpression))
-        self.assertEqual(contextaccess_expr.result_type, protocol.get_type("Bits16"))
+        self.assertEqual(contextaccess_expr.get_result_type(None), protocol.get_type("Bits16"))
         self.assertEqual(contextaccess_expr.field_name, "foo")
 
     def test_parse_expression_IfElse(self):
@@ -929,20 +944,20 @@ class TestProtocol(unittest.TestCase):
         ifelse_expr = IfElseExpression(condition, if_true, if_false)
 
         self.assertTrue(isinstance(ifelse_expr, IfElseExpression))
-        self.assertEqual(ifelse_expr.result_type, protocol.get_type("Boolean"))
-        self.assertEqual(ifelse_expr.condition.result_type, protocol.get_type("Boolean"))
-        self.assertEqual(ifelse_expr.if_true.result_type,   protocol.get_type("Boolean"))
-        self.assertEqual(ifelse_expr.if_false.result_type,  protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.get_result_type(None), protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.condition.get_result_type(None), protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.if_true.get_result_type(None),   protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.if_false.get_result_type(None),  protocol.get_type("Boolean"))
 
     def test_parse_expression_This(self):
         protocol = Protocol()
 
         # Check we can parse This expressions:
         teststruct = protocol.define_struct("TestStruct")
-        this_expr = ThisExpression(teststruct)
+        this_expr = ThisExpression()
 
         self.assertTrue(isinstance(this_expr, ThisExpression))
-        self.assertEqual(this_expr.result_type, protocol.get_type("TestStruct"))
+        self.assertEqual(this_expr.get_result_type(teststruct), protocol.get_type("TestStruct"))
 
     def test_parse_expression_Constant(self):
         protocol = Protocol()
@@ -951,7 +966,7 @@ class TestProtocol(unittest.TestCase):
         const_expr = ConstantExpression(protocol.get_type("Size"), 2)
 
         self.assertTrue(isinstance(const_expr, ConstantExpression))
-        self.assertTrue(const_expr.result_type, protocol.get_type("Size"))
+        self.assertTrue(const_expr.get_result_type(None), protocol.get_type("Size"))
 
     # =============================================================================================
     # Test cases for the overall protocol:
