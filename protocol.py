@@ -137,35 +137,49 @@ class Expression(ABC):
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         pass
 
+class ArgumentExpression(Expression):
+    arg_name: str
+    arg_value: Expression
+    
+    def __init__(self, arg_name: str, arg_value: Expression) -> None:
+        self.arg_name = arg_name
+        self.arg_value = arg_value
+
+    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        return self.arg_value.get_result_type(containing_type)
+
 class MethodInvocationExpression(Expression):
     target      : Expression
     method_name : str
-    args        : List[Argument]
+    arg_exprs   : List[ArgumentExpression]
 
-    def __init__(self, target: Expression, method_name:str, args: List[Argument]) -> None:
+    def __init__(self, target: Expression, method_name:str, arg_exprs: List[ArgumentExpression]) -> None:
         if re.search(FUNC_NAME_REGEX, method_name) == None:
             raise ProtocolTypeError("Method {}: invalid name".format(method_name))
         self.target      = target
         self.method_name = method_name
-        self.args        = args
+        self.arg_exprs   = arg_exprs
         
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
-        if not self.target.get_result_type(containing_type).get_method(self.method_name).method_accepts_arguments(self.target.get_result_type(containing_type), self.args):
+        # convert list of ArgumentExpressions to list of Arguments
+        args = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
+        if not self.target.get_result_type(containing_type).get_method(self.method_name).method_accepts_arguments(self.target.get_result_type(containing_type), args):
             raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
         return self.target.get_result_type(containing_type).get_method(self.method_name).return_type
 
 
 class FunctionInvocationExpression(Expression):
-    func : Function
-    args : List[Argument]
+    func       : Function
+    args_exprs : List[Argument]
 
-    def __init__(self, func: Function, args: List[Argument]) -> None:
+    def __init__(self, func: Function, arg_exprs: List[ArgumentExpression]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
             raise ProtocolTypeError("Invalid function name {}".format(func.name))
         self.func        = func
-        self.args        = args
+        self.arg_exprs   = arg_exprs
         
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        #TODO type checking
         return self.func.return_type
 
 
@@ -790,7 +804,7 @@ class TestProtocol(unittest.TestCase):
         # add constraints
         seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(), "seq"),
                                                     "eq",
-                                                    [Argument("other", seqnum, ConstantExpression(seqnum, 47))])
+                                                    [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
         protocol.define_struct_constraints(teststruct, [seq_constraint])
 
         res = protocol.get_type("TestStruct")
@@ -877,7 +891,7 @@ class TestProtocol(unittest.TestCase):
         # Check we can parse MethodInvocation expressions:
         methodinv_expr = MethodInvocationExpression(ConstantExpression(protocol.get_type("Boolean"), "False"),
                                                     "eq",
-                                                    [Argument("other", protocol.get_type("Boolean"), "False")])
+                                                    [ArgumentExpression("other", ConstantExpression(protocol.get_type("Boolean"), "False"))])
 
         self.assertTrue(isinstance(methodinv_expr, MethodInvocationExpression))
         self.assertTrue(methodinv_expr.get_result_type(None), protocol.get_type("Boolean"))
