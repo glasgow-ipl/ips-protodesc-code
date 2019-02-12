@@ -1,4 +1,5 @@
-from . import Element
+from .element import Element
+from typing import Callable, Dict, List
 
 
 class Section(Element):
@@ -6,10 +7,26 @@ class Section(Element):
     title: str = None
     number: str = None
 
+    def traverse_sections(self, func: Callable[[Element, Dict], 'Section'], args=None):
+        children = []
+        for child in self.children:
+            if isinstance(child, Section):
+                child = func(child, args)
+                child.children = child.traverse_sections(func)
+            children.append(child)
+        return children
+
     def __init__(self, title: str = None, number: str = None):
         super().__init__()
         self.title = title
         self.number = number
+
+    def get_sections(self) -> List['Section']:
+        o = []
+        for child in self.children:
+            if isinstance(child, Section):
+                o.append(child)
+        return o
 
     def get_attributes(self):
         attributes = {}

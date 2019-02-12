@@ -102,3 +102,66 @@ field_title_control                 = ' '+ '(from left to right):'
 field_control                       = field_control_item+:a -> a
 field_control_item                  = char_visible_no_bracket:a <char_regular_no_bracket+>:b abbrv_bracket:c ' '*
                                     -> Field(name=(a+b).strip(), abbrv=c, width=1)
+
+########################################################################
+# Field Body
+########################################################################
+
+field_name                          = '(' field_name_main:x ')' -> x
+                                    | field_name_main:x -> x
+field_name_word                     = spaces_word:b ?(b != ' bit' and b != ' bits' and b != ' is' and b != ' should') -> b
+field_name_main                     = word:a field_name_word*:b -> a + "".join(b)
+
+
+section_number                      = (<letter+>|number):a (('.' number)*):b -> ".".join(list(map(lambda x: str(x), ([str(a)] + b))))
+
+field_body_precede_follow           = (('precede' -> 0) | ('follow' -> 1))
+
+field_body                          = "If " field_name:field_this "is " number:value ", " field_name:field_new "should " field_body_precede_follow:rel_loc ' '
+                                      field_name:field_loc "(format defined in Section " section_number:section_number ")." field_body_regular
+                                    -> [RelLoc(field_this=field_this, value=value, field_new=field_new, rel_loc=rel_loc, field_loc=field_loc, section_number=section_number)]
+                                    | field_body_regular -> []
+field_body_regular                  = <char_regular*>:a (lf <char_regular*>)* -> a
+
+########################################################################
+# Expression
+########################################################################
+
+expression                      = expression_conditional
+
+expression_conditional          = expression_equality:cond ' '* '?' ' '* expression_conditional:true ' '* ':' ' '* expression_conditional:false -> IfElse(cond, true, false)
+                                | expression_equality
+
+expression_equality             = expression_equality:left     ' '* '==' ' '*    expression_equality:right        -> Eq(left, [Other(right)])
+                                | expression_equality:left     ' '* '!=' ' '*    expression_equality:right        -> Neq(left, [Other(right)])
+                                | expression_boolean
+
+expression_boolean              = expression_boolean:left     ' '* '&&' ' '*    expression_boolean:right        -> And(left, [Other(right)])
+                                | expression_boolean:left     ' '* '||' ' '*    expression_boolean:right        -> Or(left, [Other(right)])
+                                | expression_ordinal
+
+expression_ordinal              = expression_ordinal:left    ' '* '<=' ' '*    expression_ordinal:right       -> Lte(left, [Other(right)])
+                                | expression_ordinal:left    ' '* '<'  ' '*    expression_ordinal:right       -> Lt(left, [Other(right)])
+                                | expression_ordinal:left    ' '* '>=' ' '*    expression_ordinal:right       -> Gte(left, [Other(right)])
+                                | expression_ordinal:left    ' '* '>'  ' '*    expression_ordinal:right       -> Gt(left, [Other(right)])
+                                | expression_additive
+
+expression_multiplicative       = expression_multiplicative:left     ' '* '*' ' '*     expression_multiplicative:right        -> Multiply(left, [Other(right)])
+                                | expression_multiplicative:left     ' '* '/' ' '*     expression_multiplicative:right        -> Divide(left, [Other(right)])
+                                | expression_multiplicative:left     ' '* '%' ' '*     expression_multiplicative:right        -> Modulo(left, [Other(right)])
+                                | expression_primary
+
+expression_additive             = expression_additive:left ' '* '+' ' '*  expression_additive:right -> Plus(left, [Other(right)])
+                                | expression_additive:left ' '* '-' ' '*  expression_additive:right -> Minus(left, [Other(right)])
+                                | expression_multiplicative
+
+expression_primary              = number:n  -> Constant(n)
+                                | true      -> Constant(True)
+                                | false     -> Constant(False)
+							    | expression_field_accessor
+							    | ' '* '(' ' '* expression_conditional:expr ' '* ')' ' '* -> expr
+
+expression_field_accessor       = field_name:x '.width' -> FieldAccess(x).width()
+                                | field_name:x '.length' -> FieldAccess(x).width()
+                                | field_name:x '.value' -> FieldAccess(x).value()
+                                | field_name:x          -> FieldAccess(x)

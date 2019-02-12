@@ -27,3 +27,6 @@ class Artwork(Element):
         if self.text is not None:
             element.text = etree.CDATA("\n" + self.text)
         return element
+
+    def __str__(self):
+        return self.text

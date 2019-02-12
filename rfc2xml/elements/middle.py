@@ -1,10 +1,8 @@
-from lxml import etree
 from typing import List
-from . import Element
 from .section import Section
 
 
-class Middle(Element):
+class Middle(Section):
     tag_name: str = "middle"
     children: List['Section'] = []
 

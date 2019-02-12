@@ -11,6 +11,53 @@ from .elements import Date, Author, Organization, Workgroup, Xref, T, TocItem, S
 class Rfc2Xml:
 
     @staticmethod
+    def get_parser_file(filename):
+        with open(filename) as fp:
+            grammar = fp.read()
+        return Rfc2Xml.get_parser(grammar)
+
+    @staticmethod
+    def get_parser(grammar):
+        return parsley.makeGrammar(grammar, {
+            'punctuation': string.punctuation,
+            'ascii_uppercase': string.ascii_uppercase,
+            'ascii_lowercase': string.ascii_lowercase,
+            'itertools': itertools,
+            'ExtendedDiagrams': Rfc2Xml,
+
+            'rfc': Rfc(compliant=True),
+
+            'Date': Date,
+            'Xref': Xref,
+            'TocItem': TocItem,
+            'Section': Section,
+            'List': List,
+            'Figure': Figure,
+            'Artwork': Artwork,
+            'T': T,
+
+            'rfc_title_docname': Rfc2Xml.rfc_title_docname,
+            'rfc_title_abbrev': Rfc2Xml.rfc_title_abbrev,
+            'front_names': Rfc2Xml.front_names,
+            'text_paragraph': Rfc2Xml.text_paragraph,
+            'sections': Rfc2Xml.sections,
+            'printr': Rfc2Xml.printr
+        })
+
+    @staticmethod
+    def parse_file(filename) -> 'Rfc':
+        with open(filename) as fp:
+            contents = fp.read()
+        return Rfc2Xml.parse(contents)
+
+    @staticmethod
+    def parse(string):
+        parser = Rfc2Xml.get_parser_file(
+            filename=os.path.dirname(os.path.realpath(__file__)) + "/grammar.txt"
+        )
+        return parser(string).rfc()
+
+    @staticmethod
     def rfc_title_docname(rfc: 'Rfc', title: str, docname: str):
         if not docname:
             docname = None
@@ -106,57 +153,9 @@ class Rfc2Xml:
         return current + out
 
     @staticmethod
-    def get_parser_file(filename="grammar.txt"):
-        with open(filename) as fp:
-            grammar = fp.read()
-        return Rfc2Xml.get_parser(grammar)
-
-    @staticmethod
     def printr(x, v=None):
         print(str(x))
         if v is None:
             return x
         else:
             return v
-
-    @staticmethod
-    def get_parser(grammar):
-        return parsley.makeGrammar(grammar, {
-            'punctuation': string.punctuation,
-            'ascii_uppercase': string.ascii_uppercase,
-            'ascii_lowercase': string.ascii_lowercase,
-            'itertools': itertools,
-            'ExtendedDiagrams': Rfc2Xml,
-
-            'rfc': Rfc(compliant=True),
-
-            'Date': Date,
-            'Xref': Xref,
-            'TocItem': TocItem,
-            'Section': Section,
-            'List': List,
-            'Figure': Figure,
-            'Artwork': Artwork,
-            'T': T,
-
-            'rfc_title_docname': Rfc2Xml.rfc_title_docname,
-            'rfc_title_abbrev': Rfc2Xml.rfc_title_abbrev,
-            'front_names': Rfc2Xml.front_names,
-            'text_paragraph': Rfc2Xml.text_paragraph,
-            'sections': Rfc2Xml.sections,
-            'printr': Rfc2Xml.printr
-        })
-
-    @staticmethod
-    def parse_file(filename):
-        with open(filename) as fp:
-            contents = fp.read()
-        return Rfc2Xml.parse(contents)
-
-    @staticmethod
-    def parse(string):
-        parser = Rfc2Xml.get_parser_file(
-            filename=os.path.dirname(os.path.realpath(__file__)) + "/grammar.txt"
-        )
-        return parser(string).rfc()
-

@@ -17,3 +17,11 @@ class Figure(Element):
         if self.title is not None:
             attributes["title"] = self.title
         return attributes
+
+    def __str__(self):
+        o = ""
+        for child in self.children:
+            o += child.__str__()
+        if self.title is not None:
+            o += "\n\nFigure: " + str(self.title)
+        return o

@@ -7,7 +7,6 @@ from ometa.runtime import ParseError
 from .parse import Parse
 from typing import Dict, Tuple
 from .elements import Field, FieldRef
-from protocoltypes import ConstantExpression, FieldAccessExpression, ProtocolType, Boolean
 from protocol import Protocol
 from .rel_loc import RelLoc
 

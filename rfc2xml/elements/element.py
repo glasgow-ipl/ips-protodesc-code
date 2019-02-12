@@ -1,6 +1,5 @@
-import sys
 from lxml import etree
-from typing import List, Dict, Union
+from typing import List, Dict, Union, Callable
 from ..xmlable import Xmlable
 
 
@@ -10,6 +9,9 @@ class Element(Xmlable):
 
     def __init__(self):
         self.children = []
+
+    def __str__(self):
+        return etree.tostring(self.to_xml(), pretty_print=True).decode()
 
     def to_xml(self):
         element = etree.Element(str(self.tag_name), self.get_attributes())
@@ -22,6 +24,10 @@ class Element(Xmlable):
 
     def add_child(self, child: Union['Element', str]):
         self.children.append(child)
+        return self
+
+    def prepend_child(self, child: Union['Element', str]):
+        self.children = [child] + self.children
         return self
 
     def add_children(self, children: List[Union['Element', str]] = None):
@@ -50,3 +56,23 @@ class Element(Xmlable):
 
     def get_attributes(self) -> Dict[str, str]:
         return {}
+
+    def get_child_types(self, square_brackets: bool = False):
+        o = ""
+        for i in range(0, len(self.children)):
+            child = self.children[i]
+            if not isinstance(child, str):
+                o += child.__class__.__name__
+                if isinstance(child, Element) and len(child.children) > 0:
+                    o += child.get_child_types(True)
+                o += ","
+        if o == "":
+            return ""
+        return o if not square_brackets else "[" + o + "]"
+
+    def get_str(self):
+        o = ""
+        for child in self.children:
+            if isinstance(child, str):
+                o += child
+        return o

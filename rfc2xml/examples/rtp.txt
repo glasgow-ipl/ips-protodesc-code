@@ -52,9 +52,9 @@ Abstract
    minimize transmission in excess of the intended rate when many
    participants join a session simultaneously.
 
-1.  RTP Data Transfer Protocol
+5.  RTP Data Transfer Protocol
 
-1.1.  RTP Fixed Header Fields
+5.1.  RTP Fixed Header Fields
 
    An RTP packet is formatted as follows:
 
@@ -347,3 +347,4 @@ Internet-Draft                     RTP                         July 2003
    header extension: 32*length bits
 
       The payload of this header extension
+
