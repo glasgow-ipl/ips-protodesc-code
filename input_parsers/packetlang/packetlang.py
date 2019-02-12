@@ -85,13 +85,13 @@ class PacketLangParser(InputParser):
         self.pb.add_definition(func_def)
 
     def new_constant(self, type_name: str, value: Any):
-        return ConstantExpression(type_name, value)
+        return ConstantExpression(self.protocol.get_type(type_name), value)
 
     def new_fieldaccess(self, target, field_name: str):
         return FieldAccessExpression(target, field_name)
 
     def new_this(self):
-        return ThisExpression(Struct(None)) # FIXME
+        return ThisExpression()
 
     def new_methodinvocation(self, target, method, arguments):
         arguments = [] if arguments == None else arguments
@@ -104,9 +104,9 @@ class PacketLangParser(InputParser):
                "==": ("eq", "equality"), "!=": ("ne", "equality")}
         for pair in pairs:
             if expression_type == "IfElse":
-                start = {"expression": expression_type, "condition": start, "if_true": pair[1], "if_false": pair[2]}
+                start = IfElseExpression(start, pair[1], pair[2])
             else:
-                start = MethodInvocationExpression(pair[1], ops[pair[0]][0], [Argument("other", start)])
+                start = MethodInvocationExpression(pair[1], ops[pair[0]][0], [ArgumentExpression("other", start)])
         return start
 
     def set_pdus(self, pdu_names):
