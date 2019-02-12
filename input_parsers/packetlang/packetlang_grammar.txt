@@ -1,0 +1,42 @@
+# primitives
+
+letter      = anything:x ?(x in ascii_letters)
+digit       = anything:x ?(x in '0123456789')
+letterdigit = letter|digit
+
+uppercase_letter = anything:x ?(x in ascii_uppercase)
+lowercase_letter = anything:x ?(x in ascii_lowercase)
+number           = <digit+>:ds -> int(ds)
+
+type_name  = <uppercase_letter>:x <letterdigit+>:xs -> x + "".join(xs)
+field_name = <lowercase_letter>:x <(letter|'_')+>:xs -> x + "".join(xs)
+
+# expressions
+field_access = field_name:name -> new_fieldaccess(new_this(), name)
+argument = field_name:name "=" cond_expr:value -> new_argument(name, value)
+
+primary_expr = number:n -> new_constant("Size", n)
+             | field_access:target "." field_name:method_name "(" (argument:arg ("," argument:next_arg -> next_arg)*:args -> [arg] + args)?:arguments ")" -> new_methodinvocation(target, method_name, arguments)
+             | field_access
+				
+multiplicative_expr = primary_expr:left (('*'|'/'|'%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+additive_expr = multiplicative_expr:left (('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+			
+ordinal_expr = additive_expr:left (('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+boolean_expr = ordinal_expr:left (('&&'|'||'|'!'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+equality_expr = boolean_expr:left (('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+cond_expr = equality_expr:left ('?' cond_expr:operand1 ':' equality_expr:operand2 -> ('?:', operand1, operand2))*:rights -> build_tree(left, rights, "IfElse")
+
+bitstring = "Bits" number?:size -> new_bitstring(size=size)
+array     = (bitstring|type_name):element_type "[" number?:length "]" -> new_array(element_type=element_type, length=length)
+type      = array|bitstring|type_name
+
+structfield = field_name:name ":" type:constructor -> new_structfield(name, constructor)
+parameter = field_name:name ":" type:constructor -> new_parameter(name, constructor)
+
+typedef = "type" type_name:name "=" type:constructor ";" -> new_typedef(name, constructor)
+funcdef = "func" field_name:func_name "(" parameter:param ("," parameter:next_param -> next_param)*:params ")->" type_name:return_type ";" -> new_func(func_name, [param] + params, return_type)
+struct  = "struct" type_name:struct_name "{" structfield:field ("," structfield:next_field -> next_field)*:fields "}" ("where{" (cond_expr:expression ';' -> expression)+:constraints "}" -> constraints)?:constraints ";"-> new_struct(struct_name, [field] + fields, constraints)
+pdus    = "pdus={" type_name:name ("," type_name:name -> name)*:names "};" -> set_pdus([name] + names)
+
+protocol = (typedef|struct|funcdef)+ pdus

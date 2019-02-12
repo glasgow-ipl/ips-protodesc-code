@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018 University of Glasgow
+# Copyright (C) 2018-19 University of Glasgow
 # All rights reserved.
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -30,120 +30,136 @@
 
 import argparse
 import importlib
-import input_parsers
-import formatters
 import json
+import re    
 
-def load_input_parser(name):
-	return importlib.import_module("." + name, "input_parsers")
+from protocol import *
 
-def load_output_formatter(name):
-	return importlib.import_module("." + name, "formatters")
+# Input parsers
+import input_parsers.inputparser
+import input_parsers.packetlang.packetlang
 
-def dfs_array(formatter, type_constructors, defined, array_name):
-	array = type_constructors[array_name]
-	print("dfs array %s" % array_name)
-	dfs(formatter, type_constructors, defined, array["element_type"])
-	if array_name not in defined:
-		formatter.array(array_name, array["element_type"], array["length"])
-		defined.append(array_name)
-		
-def dfs_struct(formatter, type_constructors, defined, struct_name):
-	struct = type_constructors[struct_name]
-	print("dfs struct %s" % struct_name)
-	for field in struct["fields"]:
-		print("proc field %s" % field["name"])
-		dfs(formatter, type_constructors, defined, field["type"])
-	if struct_name not in defined:
-		formatter.struct(struct_name, struct["fields"], struct["constraints"])
-		defined.append(struct_name)
+# Output formatters
+import output_formatters.outputformatter
+import output_formatters.simpleprinter
 
-def dfs_enum(formatter, type_constructors, defined, enum_name):
-	enum = type_constructors[enum_name]
-	print("dfs enum %s" % enum_name)
-	for variant in enum["variants"]:
-		dfs(formatter, type_constructors, defined, variant["type"])
-	if enum_name not in defined:
-		formatter.enum(enum_name, enum["variants"])
-		defined.append(enum_name)
+# Protocol DFS
 
-def dfs_newtype(formatter, type_constructors, defined, newtype_name):
-	newtype = type_constructors[newtype_name]
-	print("dfs newtype %s" % newtype_name)
-	
-def dfs(formatter, type_constructors, defined, type_name):
-	print("dfs %s" % type_constructors[type_name]["construct"])
-	type_constructor = type_constructors[type_name]
-	if type_constructor["construct"] == "BitString":
-		if type_constructor["name"] not in defined:
-			formatter.bitstring(type_constructor["name"], type_constructor["width"])
-			defined.append(type_constructor["name"])
-	if type_constructors[type_name]["construct"] == "Struct":
-		dfs_struct(formatter, type_constructors, defined, type_name)
-	if type_constructors[type_name]["construct"] == "Array":
-		dfs_array(formatter, type_constructors, defined, type_name)
-	if type_constructors[type_name]["construct"] == "Enum":
-		dfs_enum(formatter, type_constructors, defined, type_name)
-	if type_constructors[type_name]["construct"] == "NewType":
-		dfs_newtype(formatter, type_constructors, defined, type_name)
-		
-	
+def dfs_struct(struct: Struct, type_names:List[str]):
+    for field in struct.fields:
+        dfs_protocoltype(field.field_type, type_names)
+        if field.transform is not None:
+            dfs_protocoltype(field.transform.into_type, type_names)
+            dfs_protocoltype(field.transform.using, type_names)
+            
+def dfs_array(array: Array, type_names:List[str]):
+    dfs_protocoltype(array.element_type)
+    
+def dfs_enum(enum: Enum, type_names:List[str]):
+    for variant in enum.variants:
+        dfs_protocoltype(variant)
+        
+def dfs_function(function: Function, type_names:List[str]):
+    for parameter in function.parameters:
+        dfs_protocoltype(parameter.param_type)
+    dfs_protocoltype(function.return_type)
+    
+def dfs_context(context: Context, type_names:List[str]):
+    for field in context.fields:
+        dfs_protocoltype(field.field_type)
+
+def dfs_protocoltype(pt: ProtocolType, type_names:List[str]):
+    if type(pt) is Struct:
+        dfs_struct(pt, type_names)
+    elif type(pt) is Array:
+        dfs_array(pt, type_names)
+    elif type(pt) is Enum:
+        dfs_enum(pt, type_names)
+    elif type(pt) is Function:
+        dfs_function(pt, type_names)
+    elif type(pt) is Context:
+        dfs_context(pt, type_names)
+    type_names.append(pt.name)
+
+def dfs_protocol(protocol: Protocol):
+    type_names = []
+
+    for pdu_name in protocol.get_pdu_names():
+        dfs_protocoltype(protocol.get_pdu(pdu_name), type_names)
+    
+    type_names_dedupe = []
+    
+    for type_name in type_names:
+        if type_name not in type_names_dedupe:
+            type_names_dedupe.append(type_name)
+            
+    return type_names_dedupe
+ 
+def filename_to_protocol_name(filename):
+    split = re.split('[\./\\\]+', filename)
+    return split[len(split)-2].title()
+
 def main():
-	parser = argparse.ArgumentParser(description='Parse a packet description into a specified output format')
-	parser.add_argument('--input-format', type=str, required=True, help='Input format name')
-	parser.add_argument('--input-file', type=str, required=True, help='Input filename')
-	parser.add_argument('--output-format', type=str, required=True, help='Output format name')
-	parser.add_argument('--output-file', type=str, required=True, help='Output filename')
-	parser.add_argument('--json-output-file', type=str, required=False, help="Intermediate JSON representation output filename")
-	args = parser.parse_args()
+    ######################################################################################
+    # Argument parsing
+    ######################################################################################
+    argparser = argparse.ArgumentParser(description='Parse a packet description into a specified output format')
+    argparser.add_argument('--input-format', type=str, required=True, help='Input format name')
+    argparser.add_argument('--input-file', type=str, required=True, help='Input filename')
+    argparser.add_argument('--output-format', type=str, required=True, help='Output format name')
+    argparser.add_argument('--output-file', type=str, required=True, help='Output filename')
+    args = argparser.parse_args()
 
-	try:
-		input_parser = load_input_parser(args.input_format)
-	except ModuleNotFoundError as e:
-		print(e)
-		print("Could not load input parser (%s)" % args.input_format)
-	
-	try:
-		proto = input_parser.parse_file(args.input_file)
-	except Exception as e:
-		print(e)
-		print("Could not parse input file (%s) with specified parser (%s)" % (args.input_file, args.input_format))
+    ######################################################################################
+    # Input parsing
+    ######################################################################################
+    construct_input_parser = {"packetlang" : input_parsers.packetlang.packetlang.PacketLangParser()}
+    input_parser = construct_input_parser[args.input_format]
+    
+    # Load the input file into a string
+    with open(args.input_file, "r+") as inputFile:
+        inputString = inputFile.read()
+    
+    # Parse input string using input parser
+    try:
+        protocol = input_parser.build_protocol(inputString, name=filename_to_protocol_name(args.input_file))
+    except:
+        print("Could not parse input file (%s) with specified parser (%s)" % (args.input_file, args.input_format))
 
-	if args.json_output_file is not None:
-		try:
-			with open(args.json_output_file, "w+") as jsonOutputFile:
-				jsonOutputFile.write(json.dumps(proto, indent=4))
-		except:
-			print("Could not write intermediate JSON representation output to file (%s)" % args.json_output_file)
+    ######################################################################################
+    # Depth-first search processing
+    ######################################################################################
+    type_names = dfs_protocol(protocol)
 
-	try:
-		output_formatter = load_output_formatter(args.output_format)
-	except ModuleNotFoundError:
-		print("Could not load output formatter: %s" % args.output_format)
+    ######################################################################################
+    # Output formatting
+    ######################################################################################
+    construct_output_formatter = {"simpleprinter" : output_formatters.simpleprinter.SimplePrinter()}
+    output_formatter = construct_output_formatter[args.output_format]
+    
+    # Format the protocol using output formatter
+    try:
+        for type_name in type_names:
+            pt = protocol.get_type(type_name)
+            if type(pt) is BitString:
+                output_formatter.format_bitstring(pt)
+            elif type(pt) is Struct:
+                output_formatter.format_struct(pt)
+            elif type(pt) is Array:
+                output_formatter.format_array(pt)
+            elif type(pt) is Enum:
+                output_formatter.format_enum(pt)
+            elif type(pt) is Function:
+                output_formatter.format_function(pt)
+            elif type(pt) is Context:
+                output_formatter.format_context(pt)
+        output_formatter.format_protocol(protocol)
+    except:
+        print("Could not format protocol with specified formatter (%s)" % (args.output_format))
 
-	try:
-		formatter = output_formatter.Formatter()
-		
-		# construct dictionary of type constructors
-		defined = []
-		type_constructors = {}
-		for constructor in proto["definitions"]:
-			type_constructors[constructor["name"]] = constructor
-		for variant in proto["pdus"]:
-			name = variant["type"]
-			dfs(formatter, type_constructors, defined, name)
-		formatter.protocol(proto["name"], proto["pdus"])
-		output = formatter.output()
-	except Exception as e:
-		raise e
-		print(e)
-		print("Could not format output with specified formatter (%s)" % args.output_format)
+    # Output to file
+    with open(args.output_file, "w+") as outputFile:
+        outputFile.write(output_formatter.generate_output())
 
-	try:
-		with open(args.output_file, "w+") as outputFile:
-			outputFile.write(output)
-	except:
-		print("Could not write output to file (%s)" % args.output_file)
-	
 if __name__ == "__main__":
-	main()
+    main()
