@@ -339,6 +339,7 @@ class ProtocolType(ABC):
     def get_method(self, method_name) -> Function:
         return self.methods[method_name]
 
+# Internal types follow:
 
 #FIXME: need to think about the purpose of these types: should they hold values?
 class Nothing(ProtocolType):
@@ -361,6 +362,7 @@ class Size(ProtocolType):
         self.kind  = "Size"
         self.name  = "Size"
 
+# Representable types follow:
 
 class BitString(ProtocolType):
     size : int
