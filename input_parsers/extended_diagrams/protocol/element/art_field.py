@@ -52,7 +52,7 @@ class ArtField(Element):
         }
 
     def to_field(self):
-        from . import Field
+        from ...elements.field import Field
         return Field(
             name=self.name,
             width=self.width,

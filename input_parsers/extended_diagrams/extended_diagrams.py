@@ -1,7 +1,7 @@
 import sys
 import re
 from .elements import SectionStruct
-from rfc2xml.elements import Rfc, Artwork, T
+from rfc2xml.elements import Rfc, Artwork, T, Figure, List
 from rfc2xml.elements.section import Section
 from ometa.runtime import ParseError
 from .parse import Parse
@@ -9,6 +9,8 @@ from typing import Dict, Tuple
 from .elements import Field, FieldRef
 from protocol import Protocol
 from .rel_loc import RelLoc
+from .protocol.element.art import Art
+from .names import Names
 
 
 class ExtendedDiagrams:
@@ -27,35 +29,106 @@ class ExtendedDiagrams:
 
         child_types = section.get_child_types()
 
-        # TODO: Replace with representation that doesn't convert to string to parse
         # Get the indexes of the items in this section we care about
         try:
-            ids = parse.parser(child_types).dom_structure()
-        except ParseError:
+            ids = ExtendedDiagrams.section_to_structure_ids(section)
+        except Exception:
             return section
 
-        #art = ExtendedDiagrams.section_art(section, ids, parse)
-        fields = ExtendedDiagrams.section_fields(section, ids, parse)
+        art = ExtendedDiagrams.section_art(section, ids, parse)
+        fields, refs = ExtendedDiagrams.section_fields(section, ids, parse)
+
+        if len(art) > 1:
+            raise Exception("TODO: Implement multiple ASCII diagrams")
+
+        lookup = {}
+        order = []
+        for a in art[0].fields:
+            name = Names.field_name_formatter(a.name)
+            a.name = name
+            lookup[name] = a
+            order.append(name)
+
+        for field in fields:
+            name = Names.field_name_formatter(field.name)
+            abbrv = Names.field_name_formatter(field.abbrv)
+
+            if name not in lookup:
+                if abbrv in lookup:
+                    f = lookup.pop(abbrv)
+                    order[order.index(abbrv)] = name
+                    f.name = name
+                    lookup[name] = f
+                else:
+                    raise Exception("Field '" + name + "' in field list not in ASCII diagram")
+            field.name = name
+            lookup[name] = lookup[name].to_field().merge(field)
+
+        fields = []
+        for o in order:
+            fields.append(lookup[o])
+
+        for ref in refs:
+            if isinstance(ref, RelLoc):
+                for i in range(0, len(fields)):
+                    field = fields[i]
+                    if field.name == ref.field_loc:
+                        fields.insert(
+                            i + ref.rel_loc,
+                            FieldRef(name=ref.field_new, value=ref.value, section_number=ref.section_number)
+                        )
+                        break
 
         return SectionStruct.from_section(section, fields)
 
     @staticmethod
-    def strip_double_underscore(s: str):
-        while s.count("__") > 0:
-            s = s.replace("__", "_")
-        return s
+    def section_to_structure_ids(section: Section):
+        o = [-1, -1, -1, -1, -1]
+
+        i = j = 0
+        while j < len(section.children):
+            if isinstance(section.children[j], Figure):
+                break
+            elif not isinstance(section.children[j], T):
+                raise Exception
+            j = j + 1
+        o[0] = j - i
+        i = j
+
+        while j < len(section.children):
+            if isinstance(section.children[j], T):
+                break
+            elif not isinstance(section.children[j], Figure):
+                raise Exception
+            j = j + 1
+        o[1] = j - i
+        i = j
+
+        while j < len(section.children):
+            if isinstance(section.children[j], T):
+                if isinstance(section.children[j].children[0], List):
+                    j = j - 1
+                    break
+            else:
+                raise Exception
+            j = j + 1
+        o[2] = j - i
+        i = j
+
+        while j < len(section.children):
+            if not isinstance(section.children[j], T):
+                break
+            j = j + 1
+            if not isinstance(section.children[j], T) and not isinstance(section.children[j].children[0], List):
+                j = j - 1
+                break
+            j = j + 1
+        o[3] = j - i
+        o[4] = len(section.children)-j
+        return tuple(o)
 
     @staticmethod
-    def type_name_formatter(name: str):
-        name = re.sub(r'[^.a-zA-Z0-9]', "_", name)
-        while name.count("__") > 0:
-            name = name.replace("__", "_")
-        name = name.strip("_")
-        name = name[0].upper() + name[1:]
-        return name
-
-    @staticmethod
-    def section_art(section: Section, ids: Tuple, parse: Parse):
+    def section_art(section: Section, ids: Tuple, parse: Parse) -> list:
         """
         Get art from a section and parse it
         :param section:
@@ -63,7 +136,6 @@ class ExtendedDiagrams:
         :param parse:
         :return:
         """
-
         art = []
         for i in range(0, ids[1]):
             figure = section.children[ids[0] + i]
@@ -121,18 +193,7 @@ class ExtendedDiagrams:
                 refs += parse.parser(text).field_body()
                 fields.append(field)
 
-        for ref in refs:
-            if isinstance(ref, RelLoc):
-                for i in range(0, len(fields)):
-                    field = fields[i]
-                    if field.name == ref.field_loc:
-                        fields.insert(
-                            i + ref.rel_loc,
-                            FieldRef(name=ref.field_new, value=ref.value, section_number=ref.section_number)
-                        )
-                        break
-
-        return fields
+        return fields, refs
 
     @staticmethod
     def art_ids_to_fields_start_index(ids: Tuple):

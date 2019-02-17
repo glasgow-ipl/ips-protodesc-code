@@ -40,11 +40,11 @@ class Field(Element):
         elif self.width is not None:
             attributes["width"] = str(self.width)
         if self.type is not None:
-            attributes["type"] = self.type
+            attributes["type"] = str(self.type)
         if self.value is not None:
-            attributes["value"] = self.value
+            attributes["value"] = str(self.value)
         if self.array is not None:
-            attributes["array"] = self.array
+            attributes["array"] = str(self.array)
         return attributes
 
     def to_xml(self):
@@ -90,9 +90,9 @@ class Field(Element):
             self.merge_field(field, 'type')
             self.merge_field(field, 'value')
             self.merge_field(field, 'array')
-            self.merge_field(field, 'rel_loc', True)
         except InconsistentData as error:
             raise error.update(field=field.name)
+        return self
 
     def set_name(self, name: str):
         self.name = name.strip()

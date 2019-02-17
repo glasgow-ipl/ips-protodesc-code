@@ -2,6 +2,7 @@ import re
 from rfc2xml.elements import Element, Section
 from typing import List
 from .field import Field
+from input_parsers.extended_diagrams.names import Names
 
 
 class SectionStruct(Section):
@@ -22,7 +23,7 @@ class SectionStruct(Section):
     @staticmethod
     def from_section(section: 'Section', fields: List['Field'] = None) -> 'SectionStruct':
         new_section = SectionStruct()
-        new_section.name = new_section.format_name(section.title)
+        new_section.name = Names.field_name_formatter(section.title)
         new_section.number = section.number
         if fields is not None:
             for field in fields:
@@ -31,17 +32,8 @@ class SectionStruct(Section):
         new_section.children += section.get_sections()
         return new_section
 
-    @staticmethod
-    def format_name(name: str):
-        name = name.lower()
-        name = re.sub(r'[^.a-zA-Z0-9]', "_", name)
-        while name.count("__") > 0:
-            name = name.replace("__", "_")
-        name = name.strip("_")
-        return name
-
     def new_name(self, n):
-        n = self.format_name(n)
+        n = Names.field_name_formatter(n)
         i = 2
         name = n
         while name in self.namespace:
