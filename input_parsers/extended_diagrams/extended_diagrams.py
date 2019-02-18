@@ -35,39 +35,82 @@ class ExtendedDiagrams:
         except Exception:
             return section
 
-        art = ExtendedDiagrams.section_art(section, ids, parse)
+        arts = ExtendedDiagrams.section_art(section, ids, parse)
         fields, refs = ExtendedDiagrams.section_fields(section, ids, parse)
 
-        if len(art) > 1:
+        if len(arts) > 1:
             raise Exception("TODO: Implement multiple ASCII diagrams")
 
+        art = arts[0]
+
+        # Convert art into lookup dict and order list
+        lookup, order = ExtendedDiagrams.art_to_lookup_order(art)
+
+        # Update lookup with details from field
+        for field in fields:
+            ExtendedDiagrams.field_update_from_lookup(field, lookup, order)
+
+        # Update fields with details from artwork
+        fields = ExtendedDiagrams.lookup_order_to_fields(lookup, order)
+
+        ExtendedDiagrams.fields_process_refs(refs, fields)
+
+        return SectionStruct.from_section(section, fields)
+
+    @staticmethod
+    def art_to_lookup_order(art: 'Art'):
+        """
+        Convert art into lookup dict and order list
+        :param art:
+        :return:
+        """
         lookup = {}
         order = []
-        for a in art[0].fields:
+        for a in art.fields:
             name = Names.field_name_formatter(a.name)
             a.name = name
             lookup[name] = a
             order.append(name)
+        return lookup, order
 
-        for field in fields:
-            name = Names.field_name_formatter(field.name)
-            abbrv = Names.field_name_formatter(field.abbrv)
+    @staticmethod
+    def field_update_from_lookup(field: 'Field', lookup: Dict, order: list):
+        """
+        Update lookup with details from field
+        :param field:
+        :param lookup:
+        :param order:
+        :return:
+        """
+        name = Names.field_name_formatter(field.name)
+        abbrv = Names.field_name_formatter(field.abbrv)
 
-            if name not in lookup:
-                if abbrv in lookup:
-                    f = lookup.pop(abbrv)
-                    order[order.index(abbrv)] = name
-                    f.name = name
-                    lookup[name] = f
-                else:
-                    raise Exception("Field '" + name + "' in field list not in ASCII diagram")
-            field.name = name
-            lookup[name] = lookup[name].to_field().merge(field)
+        if name not in lookup:
+            if abbrv in lookup:
+                f = lookup.pop(abbrv)
+                order[order.index(abbrv)] = name
+                f.name = name
+                lookup[name] = f
+            else:
+                raise Exception("Field '" + name + "' in field list not in ASCII diagram")
+        field.name = name
+        lookup[name] = lookup[name].to_field().merge(field)
 
+    @staticmethod
+    def lookup_order_to_fields(lookup: Dict, order: list):
+        """
+        Update fields with details from artwork
+        :param lookup:
+        :param order:
+        :return:
+        """
         fields = []
         for o in order:
             fields.append(lookup[o])
+        return fields
 
+    @staticmethod
+    def fields_process_refs(refs: list, fields: list):
         for ref in refs:
             if isinstance(ref, RelLoc):
                 for i in range(0, len(fields)):
@@ -78,8 +121,6 @@ class ExtendedDiagrams:
                             FieldRef(name=ref.field_new, value=ref.value, section_number=ref.section_number)
                         )
                         break
-
-        return SectionStruct.from_section(section, fields)
 
     @staticmethod
     def section_to_structure_ids(section: Section):
@@ -208,7 +249,7 @@ class ExtendedDiagrams:
 
     def protocol(self):
         protocol = Protocol()
-        protocol.set_protocol_name(ExtendedDiagrams.type_name_formatter(self.dom.front.title.get_str()))
+        protocol.set_protocol_name(Names.type_name_formatter(self.dom.front.title.get_str()))
 
         struct = protocol.define_struct("AAAAABBBBBBBCCCCCCCCC")
 
