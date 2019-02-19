@@ -26,24 +26,6 @@ abbrv                               = letterOrDigit+:x -> "".join(x)
 abbrv_bracket                       = '(' abbrv:x ')' -> x
 
 ########################################################################
-# DOM
-########################################################################
-
-dom_type                            = dom_type_name:a <dom_type_children{0,1}>:b "," -> a
-dom_type_name                       = uppercase_letter:a <letter*>:b -> a+b
-dom_type_children                   = '[' dom_type+:a ']' -> a
-
-dom_t                               = 'T':a <dom_type_children{0,1}>:b "," -> a
-dom_t_childless                     = 'T,'
-dom_figure_artwork_childless        = 'Figure[Artwork,],'
-dom_t_list                          = 'T[List':a <dom_type_children{0,1}>:b ",]," -> a
-
-dom_fields_pre                      = dom_t ~dom_t_list
-dom_field                           = dom_t_childless dom_t_list
-
-dom_structure                       = dom_t*:a dom_figure_artwork_childless+:b dom_fields_pre*:c dom_field+:d dom_type*:e -> (len(a), len(b), len(c), len(d)*2, len(e))
-
-########################################################################
 # ASCII Art Packet Diagram
 ########################################################################
 
@@ -61,9 +43,10 @@ packet_artwork_header               = packet_artwork_header_a packet_artwork_crl
 packet_artwork_header_a             = '0                   1                   2                   3'
 packet_artwork_header_b             = '0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1'
 packet_artwork_separator_full       = '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
+packet_artwork_separator            = ('+-')+ '+'
 
 packet_artwork_body                 = packet_artwork_line+:x -> Art(fields=list(itertools.chain.from_iterable(x)))
-packet_artwork_line                 = '|' (packet_artwork_line_regular | packet_artwork_line_variable):x packet_artwork_crlf packet_artwork_separator_full packet_artwork_crlf -> x
+packet_artwork_line                 = '|' (packet_artwork_line_regular | packet_artwork_line_variable):x packet_artwork_crlf packet_artwork_separator packet_artwork_crlf -> x
 packet_artwork_line_regular         = packet_artwork_field+
 packet_artwork_line_variable        = (packet_artwork_field_variable_array | packet_artwork_field_variable):x -> [x]
 

@@ -4,8 +4,7 @@ import string
 import itertools
 from rfc2xml import Rfc2Xml
 from typing import Callable
-from .protocol.element import Art, ArtField
-from .elements import Field
+from .elements import Field, Art, ArtField
 from .rel_loc import RelLoc
 from .elements.expression import *
 from .elements.expression.method_invocation import *

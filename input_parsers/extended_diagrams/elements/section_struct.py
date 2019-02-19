@@ -10,9 +10,10 @@ class SectionStruct(Section):
     name: str = None
     namespace: List[str] = None
 
-    def __init__(self):
+    def __init__(self, name: str = None):
         super().__init__()
         self.namespace = []
+        self.name = name
 
     def get_attributes(self):
         attributes = super().get_attributes()

@@ -1,16 +1,14 @@
-import sys
-import re
 from .elements import SectionStruct
 from rfc2xml.elements import Rfc, Artwork, T, Figure, List
 from rfc2xml.elements.section import Section
-from ometa.runtime import ParseError
 from .parse import Parse
 from typing import Dict, Tuple
-from .elements import Field, FieldRef
+from .elements import Field, FieldRef, ArtField
 from protocol import Protocol
 from .rel_loc import RelLoc
-from .protocol.element.art import Art
+from input_parsers.extended_diagrams.elements.art import Art
 from .names import Names
+from input_parsers.extended_diagrams.exception import InvalidStructureException
 
 
 class ExtendedDiagrams:
@@ -27,35 +25,35 @@ class ExtendedDiagrams:
 
         parse = Parse()
 
-        child_types = section.get_child_types()
-
         # Get the indexes of the items in this section we care about
         try:
             ids = ExtendedDiagrams.section_to_structure_ids(section)
-        except Exception:
+        except InvalidStructureException as error:
             return section
 
         arts = ExtendedDiagrams.section_art(section, ids, parse)
         fields, refs = ExtendedDiagrams.section_fields(section, ids, parse)
 
-        if len(arts) > 1:
-            raise Exception("TODO: Implement multiple ASCII diagrams")
+        output = []
+        for art in arts:
 
-        art = arts[0]
+            # Convert art into lookup dict and order list
+            lookup, order = ExtendedDiagrams.art_to_lookup_order(art)
 
-        # Convert art into lookup dict and order list
-        lookup, order = ExtendedDiagrams.art_to_lookup_order(art)
+            # Update lookup with details from field
+            for field in fields:
+                ExtendedDiagrams.field_update_from_lookup(field, lookup, order)
 
-        # Update lookup with details from field
-        for field in fields:
-            ExtendedDiagrams.field_update_from_lookup(field, lookup, order)
+            # Update fields with details from artwork
+            fields_new = ExtendedDiagrams.lookup_order_to_fields(lookup, order)
 
-        # Update fields with details from artwork
-        fields = ExtendedDiagrams.lookup_order_to_fields(lookup, order)
+            ExtendedDiagrams.fields_process_refs(refs, fields_new)
 
-        ExtendedDiagrams.fields_process_refs(refs, fields)
+            section_struct = SectionStruct.from_section(section, fields_new)
 
-        return SectionStruct.from_section(section, fields)
+            output.append(section_struct)
+
+        return output
 
     @staticmethod
     def art_to_lookup_order(art: 'Art'):
@@ -106,7 +104,15 @@ class ExtendedDiagrams:
         """
         fields = []
         for o in order:
-            fields.append(lookup[o])
+            field = lookup[o]
+            if isinstance(field, Field):
+                fields.append(field)
+            elif isinstance(field, ArtField):
+                fields.append(field.to_field())
+            else:
+                raise Exception(
+                    "Incorrect type of field found in field array. Found " + str(field.__class__) + "\n\n" + str(field)
+                )
         return fields
 
     @staticmethod
@@ -131,7 +137,7 @@ class ExtendedDiagrams:
             if isinstance(section.children[j], Figure):
                 break
             elif not isinstance(section.children[j], T):
-                raise Exception
+                raise InvalidStructureException("Start of section not structured T* Figure+")
             j = j + 1
         o[0] = j - i
         i = j
@@ -140,7 +146,7 @@ class ExtendedDiagrams:
             if isinstance(section.children[j], T):
                 break
             elif not isinstance(section.children[j], Figure):
-                raise Exception
+                raise InvalidStructureException("Start of section not structured T* Figure+ T")
             j = j + 1
         o[1] = j - i
         i = j
@@ -151,7 +157,7 @@ class ExtendedDiagrams:
                     j = j - 1
                     break
             else:
-                raise Exception
+                raise InvalidStructureException("Start of section not structured T* Figure+ (T T[List])*")
             j = j + 1
         o[2] = j - i
         i = j
@@ -160,7 +166,8 @@ class ExtendedDiagrams:
             if not isinstance(section.children[j], T):
                 break
             j = j + 1
-            if not isinstance(section.children[j], T) and not isinstance(section.children[j].children[0], List):
+
+            if j >= len(section.children) or (not isinstance(section.children[j], T) and not isinstance(section.children[j].children[0], List)):
                 j = j - 1
                 break
             j = j + 1

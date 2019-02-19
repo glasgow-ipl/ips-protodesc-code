@@ -1,12 +1,14 @@
 from typing import List
-from .element import Element
+from rfc2xml.elements import Element
 from .art_field import ArtField
 
 
 class Art(Element):
+    tag_name: str = "art"
     fields = []
 
     def __init__(self, fields: List['ArtField'] = None):
+        super().__init__()
         if fields is None:
             fields = []
 

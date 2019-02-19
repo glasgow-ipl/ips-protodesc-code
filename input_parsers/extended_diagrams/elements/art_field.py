@@ -1,7 +1,8 @@
-from .element import Element
+from rfc2xml.elements import Element
 
 
 class ArtField(Element):
+    tag_name: str = "art_field"
     name = None
     width = None
     value = None
@@ -10,6 +11,7 @@ class ArtField(Element):
 
     def __init__(self, name: str=None, width: int=None, value: int=None,
                  array: bool=None, abbrv: str=None):
+        super().__init__()
         self.name = name
         self.width = width
         self.value = value
@@ -45,14 +47,8 @@ class ArtField(Element):
 
         return self
 
-    def to_dict(self):
-        return {
-            **super(ArtField, self).to_dict(),
-            "attributes": self.__dict__
-        }
-
     def to_field(self):
-        from ...elements.field import Field
+        from .field import Field
         return Field(
             name=self.name,
             width=self.width,
@@ -61,5 +57,16 @@ class ArtField(Element):
             abbrv=self.abbrv
         )
 
-    def __repr__(self):
-        return str(self.to_dict())
+    def get_attributes(self):
+        attributes = {}
+        if self.name is not None:
+            attributes["name"] = self.name
+        if self.width is not None:
+            attributes["width"] = str(self.width)
+        if self.value is not None:
+            attributes["value"] = str(self.value)
+        if self.array is not None:
+            attributes["array"] = str(self.array)
+        if self.abbrv is not None:
+            attributes["abbrv"] = str(self.abbrv)
+        return attributes
