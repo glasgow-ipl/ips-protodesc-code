@@ -17,17 +17,6 @@ class Art(Element):
     def new_field(self, field: 'ArtField'):
         self.fields.append(field)
 
-    def to_dict(self):
-        fields = []
-        for f in self.fields:
-            fields.append(f.to_dict())
-
-        return {
-            **super(Art, self).to_dict(),
-            "attributes": {
-                "fields": fields,
-            }
-        }
-
-    def __repr__(self):
-        return str(self.to_dict())
+    def children_to_xml(self, element):
+        for child in self.fields:
+            element.append(child)

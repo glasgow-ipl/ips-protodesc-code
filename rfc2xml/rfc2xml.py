@@ -52,6 +52,7 @@ class Rfc2Xml:
 
     @staticmethod
     def parse(string):
+        string += "\n\n"  # TODO this is a hacky solution to the grammar requiring a double new line end of file
         parser = Rfc2Xml.get_parser_file(
             filename=os.path.dirname(os.path.realpath(__file__)) + "/grammar.txt"
         )

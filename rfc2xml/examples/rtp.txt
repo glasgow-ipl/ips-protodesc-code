@@ -347,4 +347,3 @@ Internet-Draft                     RTP                         July 2003
    header extension: 32*length bits
 
       The payload of this header extension
-

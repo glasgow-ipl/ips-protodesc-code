@@ -1,7 +1,7 @@
 import sys
-from rfc2xml import Rfc2Xml
 from . import ExtendedDiagrams, Parse
-from protocol import Protocol
+from output_formatters.json import Json
+
 
 def main():
     if len(sys.argv) < 2:
@@ -21,15 +21,12 @@ def main():
 
     extended_diagrams = ExtendedDiagrams(filename)
     extended_diagrams.traverse_dom()
+    protocol = extended_diagrams.protocol_setup()
 
-
-
-    #protocol = extended_diagrams.protocol()
-    #print(protocol)
-
-    result = None
     if not suppress_result:
-        print(extended_diagrams.dom)
+        output_formatter = Json()
+        output_formatter.format_protocol(protocol)
+        print(output_formatter.generate_output())
 
 
 def usage():

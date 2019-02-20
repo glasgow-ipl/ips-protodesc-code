@@ -8,6 +8,7 @@ from .elements import Field, Art, ArtField
 from .rel_loc import RelLoc
 from .elements.expression import *
 from .elements.expression.method_invocation import *
+from .names import Names
 
 
 class Parse:
@@ -27,6 +28,7 @@ class Parse:
             'ArtField': ArtField,
             'Field': Field,
             'RelLoc': RelLoc,
+            'Names': Names,
 
             'Constant': Constant,
             'FieldAccess': FieldAccess,

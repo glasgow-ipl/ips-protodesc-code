@@ -11,3 +11,7 @@ class Other(Expression):
 
     def children_to_xml(self, element):
         element.append(self.value.to_xml())
+
+    def to_protocol_expression(self):
+        print("TODO: Has Other been deprecated?")
+        return self.value.to_protocol_expression()

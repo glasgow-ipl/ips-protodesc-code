@@ -1,8 +1,7 @@
 from lxml import etree
 from .expression import Expression
-from input_parsers.extended_diagrams.protocol.element.exception import InconsistentData
-from typing import List, Dict
-
+from ..exception import InconsistentDataException
+from typing import List
 from rfc2xml.elements import Element
 
 
@@ -69,7 +68,7 @@ class Field(Element):
         elif value1 == value2:
             return value1
         else:
-            raise InconsistentData(
+            raise InconsistentDataException(
                 str(value1) + " and " + str(value2) + " given",
                 value1=value1,
                 value2=value2
@@ -78,7 +77,7 @@ class Field(Element):
     def merge_field(self, field: 'Field', name: str, prefer_field: bool = False):
         try:
             setattr(self, name, self.merge_field_values(getattr(field, name), getattr(self, name), prefer_field))
-        except InconsistentData as error:
+        except InconsistentDataException as error:
             raise error.update(attribute=name)
 
     def merge(self, field: 'Field'):
@@ -90,7 +89,7 @@ class Field(Element):
             self.merge_field(field, 'type')
             self.merge_field(field, 'value')
             self.merge_field(field, 'array')
-        except InconsistentData as error:
+        except InconsistentDataException as error:
             raise error.update(field=field.name)
         return self
 
@@ -109,3 +108,9 @@ class Field(Element):
     def add_expression(self, expression: 'Expression'):
         self.expressions.append(expression)
         return self
+
+    def to_protocol_expressions(self):
+        output = []
+        for expression in self.expressions:
+            output.append(expression.to_protocol_expression())
+        return output

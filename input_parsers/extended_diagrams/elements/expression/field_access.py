@@ -1,5 +1,6 @@
 from . import Expression, This
 from .method_invocation import Width
+from protocol import FieldAccessExpression
 
 
 class FieldAccess(Expression):
@@ -24,6 +25,13 @@ class FieldAccess(Expression):
         attributes = super().get_attributes()
         if self.field_name is not None:
             attributes["field_name"] = self.field_name
+        return attributes
 
     def children_to_xml(self, element):
         element.append(self.target.to_xml())
+
+    def to_protocol_expression(self):
+        return FieldAccessExpression(
+            target=self.target.to_protocol_expression(),
+            field_name=self.field_name
+        )

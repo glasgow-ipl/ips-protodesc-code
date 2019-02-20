@@ -1,4 +1,5 @@
 from . import Expression
+from protocol import ConstantExpression, BitString, ProtocolType
 
 
 class Constant(Expression):
@@ -17,3 +18,12 @@ class Constant(Expression):
         if self.size is not None:
             attributes["size"] = str(self.size)
         return attributes
+
+    def to_protocol_expression(self):
+        return ConstantExpression(
+            constant_type=BitString(
+                name="BitString$" + str(self.size),
+                size=self.size
+            ),
+            constant_value=self.value
+        )

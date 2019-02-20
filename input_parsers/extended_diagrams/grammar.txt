@@ -67,7 +67,7 @@ packet_artwork_field_value          = binary:a (' ' binary)*:b -> ArtField(value
 
 field_title :field                  = field_title_main(field) ':' ' '+ field_title_width:width field_title_control -> (field.set_width(width), {"control": True})
                                     | field_title_main(field) ':' ' '+ field_title_width:width -> (field.set_width(width), {})
-                                    | field_title_main(field) ':' ' '+ expression:expression ' '* bits -> (field.add_expression(expression), {})
+                                    | field_title_main(field):field ':' ' '+ expression:expression ' '* bits -> (field.add_expression(Eq(FieldAccess(Names.field_name_formatter(field.name)).width(), [Other(expression)])), {})
 
 field_title_main :field             = <char_regular_no_bracket_colon+>:name field_title_abbrv(field)
                                     -> field.set_name(name)

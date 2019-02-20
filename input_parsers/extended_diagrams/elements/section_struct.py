@@ -42,3 +42,6 @@ class SectionStruct(Section):
             i = i + 1
         self.namespace.append(name)
         return name
+
+    def __str__(self):
+        return self.to_xml_string(pretty=True)

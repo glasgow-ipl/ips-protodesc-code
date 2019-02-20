@@ -223,7 +223,7 @@ class IfElseExpression(Expression):
         self.condition   = condition
         self.if_true     = if_true
         self.if_false    = if_false
-    
+
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         if self.condition.get_result_type(containing_type).kind != "Boolean":
             raise ProtocolTypeError("Cannot create IfElseExpression: condition is not boolean")
@@ -713,6 +713,10 @@ class Protocol:
 
     def get_pdu_names(self) -> List[str]:
         return list(self._pdus.keys())
+
+    def get_type_names(self) -> List[str]:
+        return list(self._types.keys())
+
 
 # =================================================================================================
 # Unit tests:

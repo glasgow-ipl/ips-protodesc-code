@@ -1,10 +1,11 @@
+import sys
 from .elements import SectionStruct
-from rfc2xml.elements import Rfc, Artwork, T, Figure, List
+from rfc2xml.elements import Rfc, Artwork, T, Figure, List as ListElement, Element
 from rfc2xml.elements.section import Section
 from .parse import Parse
-from typing import Dict, Tuple
+from typing import Dict, Tuple, List, Optional
 from .elements import Field, FieldRef, ArtField
-from protocol import Protocol
+from protocol import Protocol, StructField, Expression, BitString
 from .rel_loc import RelLoc
 from input_parsers.extended_diagrams.elements.art import Art
 from .names import Names
@@ -15,20 +16,19 @@ class ExtendedDiagrams:
     dom: Rfc
 
     def __init__(self, filename: str):
+        self.protocol = Protocol()
         self.dom = Parse.parse_file(filename)
+        self.struct_lookup = {}
+        self.struct_names = []
 
     @staticmethod
-    def section(section: Section, args: Dict = None):
-        #if args is None or "extended_diagrams" not in args:
-        #    raise Exception("self not passed to section")
-        #self = args["extended_diagrams"]s
-
+    def section(section: Section):
         parse = Parse()
 
         # Get the indexes of the items in this section we care about
         try:
             ids = ExtendedDiagrams.section_to_structure_ids(section)
-        except InvalidStructureException as error:
+        except InvalidStructureException:
             return section
 
         arts = ExtendedDiagrams.section_art(section, ids, parse)
@@ -153,7 +153,7 @@ class ExtendedDiagrams:
 
         while j < len(section.children):
             if isinstance(section.children[j], T):
-                if isinstance(section.children[j].children[0], List):
+                if isinstance(section.children[j].children[0], ListElement):
                     j = j - 1
                     break
             else:
@@ -167,7 +167,7 @@ class ExtendedDiagrams:
                 break
             j = j + 1
 
-            if j >= len(section.children) or (not isinstance(section.children[j], T) and not isinstance(section.children[j].children[0], List)):
+            if j >= len(section.children) or (not isinstance(section.children[j], T) and not isinstance(section.children[j].children[0], ListElement)):
                 j = j - 1
                 break
             j = j + 1
@@ -252,12 +252,66 @@ class ExtendedDiagrams:
         return start_index+ids[3]
 
     def traverse_dom(self):
-        self.dom.middle.children = self.dom.middle.traverse_sections(ExtendedDiagrams.section, {"extended_diagrams": self})
+        self.dom.middle.children = self.dom.middle.traverse(
+            lambda element: ExtendedDiagrams.section(element) if isinstance(element, Section) else element,
+            update=True
+        )
 
-    def protocol(self):
-        protocol = Protocol()
-        protocol.set_protocol_name(Names.type_name_formatter(self.dom.front.title.get_str()))
+    ########################################################################################################
+    # Protocol
+    ########################################################################################################
 
-        struct = protocol.define_struct("AAAAABBBBBBBCCCCCCCCC")
+    protocol: Protocol
+    struct_names: List[str]
+    struct_lookup: Dict[str, List[SectionStruct]]
 
-        return protocol
+    def protocol_get_structs(self, child: Element):
+        if isinstance(child, SectionStruct):
+            if child.name not in self.struct_names:
+                self.struct_names.append(child.name)
+            if child.name not in self.struct_lookup:
+                self.struct_lookup[child.name] = []
+            self.struct_lookup[child.name].append(child)
+        return child
+
+    def protocol_struct(self, struct: SectionStruct):
+        name: str = struct.name
+        fields: List[StructField] = []
+        constraints: List[Expression] = []
+        actions: List[Expression] = []
+
+        for field in struct.children:
+            if isinstance(field, Field):
+
+                # If a generic bitstring of this width hasn't been defined, define it
+                type_name = "BitString$" + str(field.width)
+                if not self.protocol.is_type(type_name):
+                    field_type = self.protocol.define_bitstring(
+                        name=type_name,
+                        size=field.width
+                    )
+
+                else:
+                    field_type = self.protocol.get_type(type_name)
+
+                fields.append(StructField(
+                    field_name=field.name,
+                    field_type=field_type,
+                    is_present=None,
+                    transform=None
+                ))
+
+                constraints += field.to_protocol_expressions()
+
+        self.protocol.define_struct(name, fields, constraints, actions)
+
+    def protocol_setup(self):
+        self.protocol.set_protocol_name(Names.field_name_formatter(self.dom.front.title.get_str()))
+        self.dom.middle.traverse(self.protocol_get_structs)
+        for name in self.struct_lookup:
+            structs = self.struct_lookup[name]
+            if len(structs) == 1:
+                self.protocol_struct(structs[0])
+            else:
+                raise Exception("Multiple structs in a struct not implemented")
+        return self.protocol

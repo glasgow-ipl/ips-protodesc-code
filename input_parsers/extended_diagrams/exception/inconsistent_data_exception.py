@@ -1,4 +1,4 @@
-class InconsistentData(Exception):
+class InconsistentDataException(Exception):
     field = None
     attribute = None
     value1 = None
