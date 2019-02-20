@@ -170,7 +170,7 @@ class MethodInvocationExpression(Expression):
 
 class FunctionInvocationExpression(Expression):
     func       : Function
-    args_exprs : List[Argument]
+    args_exprs : List[ArgumentExpression]
 
     def __init__(self, func: Function, arg_exprs: List[ArgumentExpression]) -> None:
         if re.search(FUNC_NAME_REGEX, func.name) == None:
