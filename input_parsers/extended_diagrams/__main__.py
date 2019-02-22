@@ -1,7 +1,7 @@
 import sys
 from . import ExtendedDiagrams, Parse
 from output_formatters.json import Json
-
+from protocol import *
 
 def main():
     if len(sys.argv) < 2:
@@ -21,6 +21,9 @@ def main():
 
     extended_diagrams = ExtendedDiagrams(filename)
     extended_diagrams.traverse_dom()
+
+    print(extended_diagrams.dom.middle.to_xml_string(pretty=True))
+
     protocol = extended_diagrams.protocol_setup()
 
     if not suppress_result:

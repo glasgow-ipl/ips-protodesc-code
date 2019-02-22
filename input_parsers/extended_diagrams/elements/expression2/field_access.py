@@ -1,6 +1,6 @@
 from . import Expression, This
 from .method_invocation import Width
-from protocol import FieldAccessExpression
+from protocol import FieldAccessExpression, Protocol
 
 
 class FieldAccess(Expression):
@@ -30,8 +30,8 @@ class FieldAccess(Expression):
     def children_to_xml(self, element):
         element.append(self.target.to_xml())
 
-    def to_protocol_expression(self):
+    def to_protocol_expression(self, protocol: Protocol):
         return FieldAccessExpression(
-            target=self.target.to_protocol_expression(),
+            target=self.target.to_protocol_expression(protocol),
             field_name=self.field_name
         )

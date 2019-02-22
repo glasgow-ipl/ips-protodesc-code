@@ -67,7 +67,29 @@ packet_artwork_field_value          = binary:a (' ' binary)*:b -> ArtField(value
 
 field_title :field                  = field_title_main(field) ':' ' '+ field_title_width:width field_title_control -> (field.set_width(width), {"control": True})
                                     | field_title_main(field) ':' ' '+ field_title_width:width -> (field.set_width(width), {})
-                                    | field_title_main(field):field ':' ' '+ expression:expression ' '* bits -> (field.add_expression(Eq(FieldAccess(Names.field_name_formatter(field.name)).width(), [Other(expression)])), {})
+                                    | field_title_main(field):field ':' ' '+ expression:expression ' '* bits
+                                    ->  (
+                                            field.add_expression(
+                                                MethodInvocationExpression(
+                                                    MethodInvocationExpression(
+                                                        FieldAccessExpression(
+                                                            target=ThisExpression(),
+                                                            field_name=Names.field_name_formatter(field.name)
+                                                        ),
+                                                        "size",
+                                                        []
+                                                    ),
+                                                    "eq",
+                                                    [ArgumentExpression("other", expression)]
+                                                )
+                                            ),
+                                            {}
+                                        )
+
+
+
+
+
 
 field_title_main :field             = <char_regular_no_bracket_colon+>:name field_title_abbrv(field)
                                     -> field.set_name(name)
@@ -112,39 +134,60 @@ field_body_regular                  = <char_regular*>:a (lf <char_regular*>)* ->
 
 expression                      = expression_conditional
 
-expression_conditional          = expression_equality:cond ' '* '?' ' '* expression_conditional:true ' '* ':' ' '* expression_conditional:false -> IfElse(cond, true, false)
+expression_conditional          = expression_equality:cond ' '* '?' ' '* expression_conditional:true ' '* ':' ' '* expression_conditional:false -> IfElseExpression(cond, true, false)
                                 | expression_equality
 
-expression_equality             = expression_equality:left     ' '* '==' ' '*    expression_equality:right        -> Eq(left, [Other(right)])
-                                | expression_equality:left     ' '* '!=' ' '*    expression_equality:right        -> Neq(left, [Other(right)])
+expression_equality             = expression_equality:left ' '* '==' ' '* expression_equality:right -> MethodInvocationExpression(left, "eq", [ArgumentExpression("other", right)])
+                                | expression_equality:left ' '* '!=' ' '* expression_equality:right -> MethodInvocationExpression(left, "ne", [ArgumentExpression("other", right)])
                                 | expression_boolean
 
-expression_boolean              = expression_boolean:left     ' '* '&&' ' '*    expression_boolean:right        -> And(left, [Other(right)])
-                                | expression_boolean:left     ' '* '||' ' '*    expression_boolean:right        -> Or(left, [Other(right)])
+expression_boolean              = expression_boolean:left ' '* '&&' ' '* expression_boolean:right -> MethodInvocationExpression(left, "and", [ArgumentExpression("other", right)])
+                                | expression_boolean:left ' '* '||' ' '* expression_boolean:right -> MethodInvocationExpression(left, "or", [ArgumentExpression("other", right)])
                                 | expression_ordinal
 
-expression_ordinal              = expression_ordinal:left    ' '* '<=' ' '*    expression_ordinal:right       -> Lte(left, [Other(right)])
-                                | expression_ordinal:left    ' '* '<'  ' '*    expression_ordinal:right       -> Lt(left, [Other(right)])
-                                | expression_ordinal:left    ' '* '>=' ' '*    expression_ordinal:right       -> Gte(left, [Other(right)])
-                                | expression_ordinal:left    ' '* '>'  ' '*    expression_ordinal:right       -> Gt(left, [Other(right)])
+expression_ordinal              = expression_ordinal:left ' '* '<=' ' '* expression_ordinal:right -> MethodInvocationExpression(left, "le", [ArgumentExpression("other", right)])
+                                | expression_ordinal:left ' '* '<'  ' '* expression_ordinal:right -> MethodInvocationExpression(left, "lt", [ArgumentExpression("other", right)])
+                                | expression_ordinal:left ' '* '>=' ' '* expression_ordinal:right -> MethodInvocationExpression(left, "ge", [ArgumentExpression("other", right)])
+                                | expression_ordinal:left ' '* '>'  ' '* expression_ordinal:right -> MethodInvocationExpression(left, "gt", [ArgumentExpression("other", right)])
                                 | expression_additive
 
-expression_multiplicative       = expression_multiplicative:left     ' '* '*' ' '*     expression_multiplicative:right        -> Multiply(left, [Other(right)])
-                                | expression_multiplicative:left     ' '* '/' ' '*     expression_multiplicative:right        -> Divide(left, [Other(right)])
-                                | expression_multiplicative:left     ' '* '%' ' '*     expression_multiplicative:right        -> Modulo(left, [Other(right)])
+expression_multiplicative       = expression_multiplicative:left ' '* '*' ' '* expression_multiplicative:right -> MethodInvocationExpression(left, "multiply", [ArgumentExpression("other", right)])
+                                | expression_multiplicative:left ' '* '/' ' '* expression_multiplicative:right -> MethodInvocationExpression(left, "divide", [ArgumentExpression("other", right)])
+                                | expression_multiplicative:left ' '* '%' ' '* expression_multiplicative:right -> MethodInvocationExpression(left, "modulo", [ArgumentExpression("other", right)])
                                 | expression_primary
 
-expression_additive             = expression_additive:left ' '* '+' ' '*  expression_additive:right -> Plus(left, [Other(right)])
-                                | expression_additive:left ' '* '-' ' '*  expression_additive:right -> Minus(left, [Other(right)])
+expression_additive             = expression_additive:left ' '* '+' ' '*  expression_additive:right -> MethodInvocationExpression(left, "plus", [ArgumentExpression("other", right)])
+                                | expression_additive:left ' '* '-' ' '*  expression_additive:right -> MethodInvocationExpression(left, "minus", [ArgumentExpression("other", right)])
                                 | expression_multiplicative
 
-expression_primary              = number:n  -> Constant(n)
-                                | true      -> Constant(True)
-                                | false     -> Constant(False)
+expression_primary              = number:n  -> ConstantExpression(constant_type=get_generic_int(32, protocol), constant_value=n)
+                                | true      -> ConstantExpression(constant_type=Boolean(), constant_value=True)
+                                | false     -> ConstantExpression(constant_type=Boolean(), constant_value=False)
 							    | expression_field_accessor
 							    | ' '* '(' ' '* expression_conditional:expr ' '* ')' ' '* -> expr
 
-expression_field_accessor       = field_name:x '.width' -> FieldAccess(x).width()
-                                | field_name:x '.length' -> FieldAccess(x).width()
-                                | field_name:x '.value' -> FieldAccess(x).value()
-                                | field_name:x          -> FieldAccess(x)
+expression_field_accessor       = field_name:x '.' ('width'|'length'|'size')
+                                ->  MethodInvocationExpression(
+                                        FieldAccessExpression(
+                                            target=ThisExpression(),
+                                            field_name=Names.field_name_formatter(x)
+                                        ),
+                                        "size",
+                                        []
+                                    )
+
+                                | field_name:x '.value'
+                                ->  MethodInvocationExpression(
+                                        FieldAccessExpression(
+                                            target=ThisExpression(),
+                                            field_name=Names.field_name_formatter(x)
+                                        ),
+                                        "value",
+                                        []
+                                    )
+
+                                | field_name:x
+                                ->  FieldAccessExpression(
+                                        ThisExpression(),
+                                        field_name=Names.field_name_formatter(x)
+                                    )

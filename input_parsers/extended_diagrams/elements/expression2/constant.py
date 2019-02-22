@@ -1,11 +1,11 @@
 from . import Expression
-from protocol import ConstantExpression, BitString, ProtocolType
+from protocol import ConstantExpression, BitString, Protocol
 
 
 class Constant(Expression):
     tag_name: str = "expression_constant"
     value: int = None
-    size: int = 32
+    size: int = 4
 
     def __init__(self, value=None):
         super().__init__()
@@ -19,11 +19,16 @@ class Constant(Expression):
             attributes["size"] = str(self.size)
         return attributes
 
-    def to_protocol_expression(self):
+    def to_protocol_expression(self, protocol: Protocol):
+        type = BitString(
+            name="BitString$" + str(self.size),
+            size=self.size
+        )
+        type.implement_trait(protocol.get_trait("Sized"))
+        type.implement_trait(protocol.get_trait("Value"))
+        type.implement_trait(protocol.get_trait("Equality"))
+
         return ConstantExpression(
-            constant_type=BitString(
-                name="BitString$" + str(self.size),
-                size=self.size
-            ),
+            constant_type=type,
             constant_value=self.value
         )

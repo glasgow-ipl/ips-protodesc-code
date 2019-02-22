@@ -22,8 +22,8 @@ class ExtendedDiagrams:
         self.struct_names = []
 
     @staticmethod
-    def section(section: Section):
-        parse = Parse()
+    def section(section: Section, protocol: Protocol):
+        parse = Parse(protocol)
 
         # Get the indexes of the items in this section we care about
         try:
@@ -253,7 +253,7 @@ class ExtendedDiagrams:
 
     def traverse_dom(self):
         self.dom.middle.children = self.dom.middle.traverse(
-            lambda element: ExtendedDiagrams.section(element) if isinstance(element, Section) else element,
+            lambda element: ExtendedDiagrams.section(element, self.protocol) if isinstance(element, Section) else element,
             update=True
         )
 

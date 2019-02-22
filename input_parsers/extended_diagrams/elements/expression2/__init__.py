@@ -4,7 +4,6 @@ from .this import This
 from .field_access import FieldAccess
 from .empty import Empty
 from .if_else import IfElse
-from .other import Other
 
 __all__ = [
     'Expression',
@@ -13,5 +12,4 @@ __all__ = [
     'FieldAccess',
     'Empty',
     'IfElse',
-    'Other'
 ]

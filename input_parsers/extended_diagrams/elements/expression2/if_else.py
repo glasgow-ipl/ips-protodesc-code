@@ -1,6 +1,6 @@
 from lxml import etree
 from . import Expression, Empty
-from protocol import IfElseExpression
+from protocol import IfElseExpression, Protocol
 
 
 class IfElse(Expression):
@@ -33,9 +33,9 @@ class IfElse(Expression):
         if_false.append(self.if_false.to_xml())
         element.append(if_false)
 
-    def to_protocol_expression(self):
+    def to_protocol_expression(self, protocol: Protocol):
         return IfElseExpression(
-            condition=self.condition.to_protocol_expression(),
-            if_false=self.condition.to_protocol_expression(),
-            if_true=self.condition.to_protocol_expression()
+            condition=self.condition.to_protocol_expression(protocol),
+            if_false=self.condition.to_protocol_expression(protocol),
+            if_true=self.condition.to_protocol_expression(protocol)
         )

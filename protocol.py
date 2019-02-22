@@ -165,6 +165,7 @@ class MethodInvocationExpression(Expression):
         # convert list of ArgumentExpressions to list of Arguments
         args = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
         if not self.target.get_result_type(containing_type).get_method(self.method_name).method_accepts_arguments(self.target.get_result_type(containing_type), args):
+            print(self)
             raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
         return self.target.get_result_type(containing_type).get_method(self.method_name).return_type
 
@@ -365,9 +366,9 @@ class Size(ProtocolType):
 # Representable types follow:
 
 class BitString(ProtocolType):
-    size : int
+    size : Optional[int]
 
-    def __init__(self, name: str, size: int) -> None:
+    def __init__(self, name: str, size: Optional[int]) -> None:
         super().__init__()
         self.kind = "BitString"
         self.name = name
@@ -568,14 +569,14 @@ class Protocol:
             raise ProtocolTypeError("Cannot redefine protocol name")
         self._name = name
 
-    def define_bitstring(self, name:str, size:int) -> BitString:
+    def define_bitstring(self, name:str, size:Optional[int]) -> BitString:
         """
         Define a new bit string type for this protocol.
 
         Parameters:
           self  - the protocol in which the new type is defined
           name  - the name of the new type
-          size  - the size of the new type, in bits
+          size  - the size of the new type, in bits. None if variable
         """
         self._validate_typename(name)
         newtype = BitString(name, size)

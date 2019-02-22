@@ -3,6 +3,7 @@ from .expression import Expression
 from ..exception import InconsistentDataException
 from typing import List
 from rfc2xml.elements import Element
+from protocol import Protocol, Expression as ProtocolExpression
 
 
 class Field(Element):
@@ -105,12 +106,12 @@ class Field(Element):
         self.width = width
         return self
 
-    def add_expression(self, expression: 'Expression'):
-        self.expressions.append(expression)
+    def add_expression(self, expression: 'ProtocolExpression'):
+        self.expressions.append(Expression(expression))
         return self
 
     def to_protocol_expressions(self):
         output = []
         for expression in self.expressions:
-            output.append(expression.to_protocol_expression())
+            output.append(expression.expression)
         return output

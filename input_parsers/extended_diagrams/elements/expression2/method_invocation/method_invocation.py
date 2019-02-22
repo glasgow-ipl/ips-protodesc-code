@@ -3,7 +3,7 @@ from ..empty import *
 from typing import List
 from typing import Dict
 from ..empty import Empty
-from protocol import MethodInvocationExpression
+from protocol import MethodInvocationExpression, ArgumentExpression, Protocol
 
 
 class MethodInvocation(Expression):
@@ -39,13 +39,18 @@ class MethodInvocation(Expression):
             attributes["method"] = self.method
         return attributes
 
-    def to_protocol_expression(self):
+    def to_protocol_expression(self, protocol: Protocol):
         arg_exprs = []
         for argument in self.arguments:
-            arg_exprs.append(argument.to_protocol_expression())
+            arg_exprs.append(
+                ArgumentExpression(
+                    "other",
+                    argument.to_protocol_expression(protocol)
+                )
+            )
 
         protocol_expression = MethodInvocationExpression(
-            target=self.self.to_protocol_expression(),
+            target=self.self.to_protocol_expression(protocol),
             method_name=self.method,
             arg_exprs=arg_exprs
         )

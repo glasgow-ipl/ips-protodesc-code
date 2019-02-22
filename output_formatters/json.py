@@ -1,12 +1,12 @@
 import json
 from .outputformatter import OutputFormatter
 from protocol import *
-from typing import Dict
+from typing import Dict, Union
 
 
 class Json(OutputFormatter):
-    output: Dict = None
-    definitions: List = None
+    output: Dict
+    definitions: List
 
     def __init__(self):
         self.output = {}
@@ -35,12 +35,64 @@ class Json(OutputFormatter):
                 "transform": field.transform
             })
 
+        constraints = []
+        for constraint in struct.constraints:
+            constraints.append(self._constraint_to_dict(constraint))
+
         self.definitions.append({
             "construct": "Struct",
             "name": struct.name,
             "fields": fields,
-            "constraints": []
+            "constraints": constraints
         })
+
+    def _constraint_to_dict(self, expression: Union['Expression', 'ArgumentExpression']):
+        if isinstance(expression, ArgumentExpression):
+            return {
+                "name": expression.arg_name,
+                "value": self._constraint_to_dict(expression.arg_value)
+            }
+        elif isinstance(expression, MethodInvocationExpression):
+            return {
+                "expression": "MethodInvocation",
+                "method": expression.method_name,
+                "self": self._constraint_to_dict(expression.target),
+                "arguments": self._constraint_list_to_dict(expression.arg_exprs),
+            }
+        elif isinstance(expression, IfElseExpression):
+            return {
+                "expression": "IfElse",
+                "condition": self._constraint_to_dict(expression.condition),
+                "if_true": self._constraint_to_dict(expression.if_true),
+                "if_false": self._constraint_to_dict(expression.if_false)
+            }
+        elif isinstance(expression, ConstantExpression):
+            return {
+                "expression": "ConstantExpression",
+                "type": str(expression._result_type),   # TODO: Accessing private field
+                "value": str(expression.value)
+            }
+        elif isinstance(expression, FieldAccessExpression):
+            return {
+                "expression": "FieldAccessExpression",
+                "target": self._constraint_to_dict(expression.target),
+                "field_name": expression.field_name
+            }
+        elif isinstance(expression, ThisExpression):
+            return {
+                "expression": "This"
+            }
+        else:
+            return {
+                "expression": "NotImplemented",
+                "class": str(expression.__class__)
+            }
+
+    def _constraint_list_to_dict(self, expressions: List[Union['Expression', 'ArgumentExpression']]):
+        output = []
+        for expression in expressions:
+            output.append(self._constraint_to_dict(expression))
+        return output
 
     def format_array(self, array: Array):
         raise Exception("Not Implemented")
@@ -68,12 +120,6 @@ class Json(OutputFormatter):
             pdus.append({
                 "type": name
             })
-
-        import sys
-
-        print()
-
-        sys.exit()
 
         self.output = {
             "construct": "Protocol",
