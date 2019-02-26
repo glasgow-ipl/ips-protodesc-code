@@ -118,7 +118,7 @@ page_separator                  = page_footer ff lf page_header_footer:b lf -> r
 page_footer                     = lf:a page_header_footer:b lf:c
 page_header_footer              = chars_visible_space_separated:a spaces chars_visible_space_separated:b spaces chars_visible_space_separated:c -> (a,b,c)
 
-rfc                             = front sections -> rfc
+rfc                             = front sections post_sections anything* -> rfc
 
 # TODO: Table of contents parsing removed
 toc                             = toc_line+
@@ -165,6 +165,17 @@ section_title :level            = section_number_level(level):number '.'{0,1} ' 
 
 section_body_trailing           = <section_body_trailing_line*>:a -> a
 section_body_trailing_line      = indent <char_no_crlf+>:a <crlf+> -> a
+
+########################################################################
+# Post Sections
+########################################################################
+
+post_sections                   = post_section*
+post_section                    = post_section_title:title crlf* post_section_body crlf*
+post_section_title              = char_visible:a char_no_crlf*:b -> a+"".join(b)
+
+post_section_body               = post_section_body_line*
+post_section_body_line          = indent char_no_crlf* crlf+
 
 ########################################################################
 # Authors' Addresses
