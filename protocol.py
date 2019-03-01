@@ -29,7 +29,7 @@
 # =================================================================================================
 
 from typing import Dict, List, Any, Optional, cast
-from copy import copy
+from copy import copy, deepcopy
 import unittest
 import re
 from abc import ABC, abstractmethod
@@ -65,10 +65,6 @@ class Parameter():
             return False
         return True
 
-    def is_self_param(self) -> bool:
-        return (self.param_name == "self") and (self.param_type == None)
-
-
 class Argument():
     arg_name  : str
     arg_type  : "ProtocolType"
@@ -90,20 +86,16 @@ class Function():
         self.parameters  = parameters
         self.return_type = return_type
 
-    def is_method_compatible(self) -> bool:
-        return self.parameters[0].is_self_param()
-
     def method_accepts_arguments(self, self_type, arguments:List["Argument"]) -> bool:
         # Returns True if the arguments match the parameters of this function,
         # and this function is method compatible.
-        if not self.is_method_compatible():
-            return False
         for (p, a) in zip(self.parameters[1:], arguments):
             # if the method's parameter's type is None, then substitute it for the type of `self`
             if p.param_type is None:
                 param_type = self_type
             else:
                 param_type = p.param_type
+                
 
             # check parameter names/types match argument names/types
             if p.param_name != a.arg_name:
@@ -113,7 +105,11 @@ class Function():
                 print("accepts_arguments: type mismatch {} vs {}".format(param_type, a.arg_type))
                 return False
         return True
-
+    
+    def __eq__(self, obj):
+        if self.name != obj.name:
+            return False
+        return True
 
 class Trait:
     name    : str
@@ -124,6 +120,9 @@ class Trait:
         self.methods = {}
         for method in methods:
             self.methods[method.name] = method
+
+    def __eq__(self, obj):
+        return self.name == obj.name
 
     def __str__(self):
         print("Trait<{}>".format(self.name))
@@ -297,13 +296,15 @@ class ProtocolType(ABC):
     """
     kind:    str
     name:    str
+    parent:  Optional["ProtocolType"]
     traits:  Dict[str,Trait]
     methods: Dict[str,Function]
 
-    def __init__(self) -> None:
+    def __init__(self, parent) -> None:
         # self.kind and self.name are initialised by subtypes
         self.traits  = {}
         self.methods = {}
+        self.parent  = parent
 
     def __str__(self):
         res = "Type<{}::{}".format(self.kind, self.name)
@@ -326,39 +327,60 @@ class ProtocolType(ABC):
         return True
 
     def implement_trait(self, trait: Trait) -> None:
-        if trait in self.traits:
+        if trait.name in self.traits:
             raise ProtocolTypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
             self.traits[trait.name] = trait
             for method_name in trait.methods:
                 if method_name in self.methods:
                     raise ProtocolTypeError("Type {} already implements method {}".format(self.name, method_name))
-                else:
-                    self.methods[method_name] = trait.methods[method_name]
+                else:                        
+                    self.methods[method_name] = deepcopy(trait.methods[method_name])
+                    for parameter in self.methods[method_name].parameters:
+                        if parameter.param_type is None:
+                            parameter.param_type = self
+                    if self.methods[method_name].return_type is None:
+                        self.methods[method_name].return_type = self
 
     def get_method(self, method_name) -> Function:
-        return self.methods[method_name]
+        # try to get the method in the narrowest type, but traverse chain of parent types
+        method = None
+        current_type = self
+        while method is None:
+            method = current_type.methods.get(method_name, None)
+            if current_type.parent is not None:
+                current_type = current_type.parent
+            else: 
+                break
+        if method is None:
+            raise ProtocolTypeError("{} and its parents do not implement the {} method".format(self.name, method_name))
+        return method
 
 # Internal types follow:
 
 #FIXME: need to think about the purpose of these types: should they hold values?
 class Nothing(ProtocolType):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(None)
         self.kind  = "Nothing"
         self.name  = "Nothing"
 
 
 class Boolean(ProtocolType):
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(None)
         self.kind  = "Boolean"
         self.name  = "Boolean"
 
+class Integer(ProtocolType):
+    def __init__(self) -> None:
+        super().__init__(None)
+        self.kind  = "Integer"
+        self.name  = "Integer"
 
 class Size(ProtocolType):
-    def __init__(self) -> None:
-        super().__init__()
+    def __init__(self, parent) -> None:
+        super().__init__(parent)
         self.kind  = "Size"
         self.name  = "Size"
 
@@ -368,7 +390,7 @@ class BitString(ProtocolType):
     size : int
 
     def __init__(self, name: str, size: int) -> None:
-        super().__init__()
+        super().__init__(None)
         self.kind = "BitString"
         self.name = name
         self.size = size
@@ -379,7 +401,7 @@ class Array(ProtocolType):
     length       : int
 
     def __init__(self, name: str, element_type: ProtocolType, length: int) -> None:
-        super().__init__()
+        super().__init__(None)
         self.kind         = "Array"
         self.name         = name
         self.element_type = element_type
@@ -407,7 +429,7 @@ class Struct(ProtocolType):
     actions:     List[Expression]
 
     def __init__(self, name: str) -> None:
-        super().__init__()
+        super().__init__(None)
         self.kind        = "Struct"
         self.name        = name
         self.fields      = []
@@ -434,7 +456,7 @@ class Enum(ProtocolType):
     variants : List[ProtocolType]
 
     def __init__(self, name: str, variants: List[ProtocolType]) -> None:
-        super().__init__()
+        super().__init__(None)
         self.kind     = "Enum"
         self.name     = name
         self.variants = variants
@@ -444,7 +466,7 @@ class Context(ProtocolType):
     fields: List[ContextField]
 
     def __init__(self) -> None:
-        super().__init__()
+        super().__init__(None)
         self.kind   = "Context"
         self.fields = []
 
@@ -474,7 +496,9 @@ class Protocol:
         self._types = {}
         self._types["Nothing"] = Nothing()
         self._types["Boolean"] = Boolean()
-        self._types["Size"]    = Size()
+        self._types["Integer"] = Integer()
+        self._types["Size"]    = self.derive_subtype("Size", self._types["Integer"], [])
+        
         # Define the standard traits:
         self._traits = {}
         self._traits["Value"] = Trait("Value", [
@@ -511,14 +535,17 @@ class Protocol:
             Function("divide",  [Parameter("self", None), Parameter("other", None)], None),
             Function("modulo",  [Parameter("self", None), Parameter("other", None)], None)
         ])
+        self._traits["IntegerRepresentable"] = Trait("IntegerRepresentable", [
+            Function("to_integer", [Parameter("self", None)], self.get_type("Integer"))
+        ])
         # Implement standard traits:
         self._types["Boolean"].implement_trait(self.get_trait("Value"))
         self._types["Boolean"].implement_trait(self.get_trait("Equality"))
         self._types["Boolean"].implement_trait(self.get_trait("BooleanOps"))
-        self._types["Size"].implement_trait(self.get_trait("Value"))
-        self._types["Size"].implement_trait(self.get_trait("Equality"))
-        self._types["Size"].implement_trait(self.get_trait("Ordinal"))
-        self._types["Size"].implement_trait(self.get_trait("ArithmeticOps"))
+        self._types["Integer"].implement_trait(self.get_trait("Value"))
+        self._types["Integer"].implement_trait(self.get_trait("Equality"))
+        self._types["Integer"].implement_trait(self.get_trait("Ordinal"))
+        self._types["Integer"].implement_trait(self.get_trait("ArithmeticOps"))
         # Define the standard functions:
         self._funcs = {}
         # Define the context:
@@ -582,6 +609,7 @@ class Protocol:
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Value"))
         newtype.implement_trait(self.get_trait("Equality"))
+        newtype.implement_trait(self.get_trait("IntegerRepresentable"))
         self._types[name] = newtype
         return newtype
 
@@ -656,6 +684,27 @@ class Protocol:
         self._types[name] = copy(derived_from)
         self._types[name].name    = name
         self._types[name].methods = copy(derived_from.methods)
+        for trait in also_implements:
+            self._types[name].implement_trait(trait)
+        return self._types[name]
+
+    def derive_subtype(self, name: str, derived_from: ProtocolType, also_implements: List[Trait]) -> ProtocolType:
+        """
+        Define a new derived subtype for this protocol.
+        The type constructor is described in Section 3.2.5 of the IR specification.
+
+        Parameters:
+          self            - the protocol in which the new subtype is defined
+          name            - the name of the new subtype
+          derived_from    - the type that the new subtype is derived from
+          also_implements - additional traits that are implemented
+        """
+        self._validate_typename(name)
+        self._types[name] = copy(derived_from)
+        self._types[name].name = name
+        self._types[name].parent = derived_from
+        self._types[name].methods = {}
+        self._types[name].traits = {}
         for trait in also_implements:
             self._types[name].implement_trait(trait)
         return self._types[name]
@@ -736,10 +785,11 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.name, "Timestamp")
         self.assertEqual(res.size, 32)
         # Check trait implementations:
-        self.assertEqual(len(res.traits), 3)
-        self.assertIn("Equality", res.traits)
-        self.assertIn("Sized",    res.traits)
-        self.assertIn("Value",    res.traits)
+        self.assertEqual(len(res.traits), 4)
+        self.assertIn("Equality",             res.traits)
+        self.assertIn("Sized",                res.traits)
+        self.assertIn("Value",                res.traits)
+        self.assertIn("IntegerRepresentable", res.traits)
         # FIXME: add test for methods
 
     def test_define_array(self):
@@ -828,11 +878,12 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "SeqNum")
         # Check trait implementations:
-        self.assertEqual(len(res.traits), 4)
-        self.assertIn("Equality", res.traits)
-        self.assertIn("Sized",    res.traits)
-        self.assertIn("Value",    res.traits)
-        self.assertIn("Ordinal",  res.traits)
+        self.assertEqual(len(res.traits), 5)
+        self.assertIn("Equality",             res.traits)
+        self.assertIn("Sized",                res.traits)
+        self.assertIn("Value",                res.traits)
+        self.assertIn("Ordinal",              res.traits)
+        self.assertIn("IntegerRepresentable", res.traits)
         # FIXME: add test for methods
 
     def test_define_function(self):
@@ -966,7 +1017,7 @@ class TestProtocol(unittest.TestCase):
     def test_protocol(self):
         protocol = Protocol()
         # Check the number of built-in types:
-        self.assertEqual(len(protocol._types), 3)
+        self.assertEqual(len(protocol._types), 4)
         # Check the built-in Nothing type:
         self.assertEqual(protocol.get_type("Nothing").kind, "Nothing")
         self.assertEqual(protocol.get_type("Nothing").name, "Nothing")
@@ -974,10 +1025,10 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(protocol.get_type("Boolean").kind, "Boolean")
         self.assertEqual(protocol.get_type("Boolean").name, "Boolean")
         # Check the built-in Size type:
-        self.assertEqual(protocol.get_type("Size").kind, "Size")
+        self.assertEqual(protocol.get_type("Size").kind, "Integer")
         self.assertEqual(protocol.get_type("Size").name, "Size")
         # Check the number of built-in traits:
-        self.assertEqual(len(protocol._traits), 7)
+        self.assertEqual(len(protocol._traits), 8)
         # Check the built-in Arithmetic trait:
         self.assertEqual(protocol.get_trait("ArithmeticOps").name, "ArithmeticOps")
         self.assertEqual(protocol.get_trait("ArithmeticOps").methods["plus"    ].name,        "plus")
@@ -1059,6 +1110,12 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].parameters,  [Parameter("self", None)])
         self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].return_type, protocol.get_type("Size"))
         self.assertEqual(len(protocol.get_trait("IndexCollection").methods), 3)
+        # Check the built-in IntegerRepresentable trait:
+        self.assertEqual(protocol.get_trait("IntegerRepresentable").name, "IntegerRepresentable")
+        self.assertEqual(protocol.get_trait("IntegerRepresentable").methods["to_integer"].name,        "to_integer")
+        self.assertEqual(protocol.get_trait("IntegerRepresentable").methods["to_integer"].parameters,  [Parameter("self", None)])
+        self.assertEqual(protocol.get_trait("IntegerRepresentable").methods["to_integer"].return_type, protocol.get_type("Integer"))
+        self.assertEqual(len(protocol.get_trait("IntegerRepresentable").methods), 1)
 
 # =================================================================================================
 if __name__ == "__main__":
