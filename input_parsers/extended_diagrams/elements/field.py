@@ -106,6 +106,10 @@ class Field(Element):
         self.width = width
         return self
 
+    def set_type(self, type: str):
+        self.type = type
+        return self
+
     def add_expression(self, expression: 'ProtocolExpression'):
         self.expressions.append(Expression(expression))
         return self

@@ -440,7 +440,7 @@ RFC 3550                          RTP                          July 2003
       operating.  This RTP specification does not define any header
       extensions itself.
 
-   length: 16 bits
+   length: 16 bits [Size]
 
       The header extension contains a 16-bit length field that counts
       the number of 32-bit words in the extension, excluding the four-

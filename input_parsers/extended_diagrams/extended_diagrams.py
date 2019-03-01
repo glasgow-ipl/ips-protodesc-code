@@ -5,7 +5,7 @@ from rfc2xml.elements.section import Section
 from .parse import Parse
 from typing import Dict, Tuple, List, Optional
 from .elements import Field, FieldRef, ArtField
-from protocol import Protocol, StructField, Expression, BitString
+from protocol import Protocol, StructField, Expression
 from .rel_loc import RelLoc
 from input_parsers.extended_diagrams.elements.art import Art
 from .names import Names

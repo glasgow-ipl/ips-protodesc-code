@@ -20,6 +20,8 @@ class Parse:
 
     @staticmethod
     def get_generic_int(size: int, protocol: Protocol):
+        return Size()
+
         type_name = "BitString$" + str(4)
 
         if protocol.is_type(type_name):
@@ -42,7 +44,6 @@ class Parse:
             )
 
     def load_parser(self, grammar: str, protocol: Protocol):
-
         self.parser = parsley.makeGrammar(grammar, {
             'punctuation': string.punctuation,
             'ascii_uppercase': string.ascii_uppercase,
@@ -58,6 +59,7 @@ class Parse:
             'protocol': protocol,
             'get_generic_int': Parse.get_generic_int,
             'Boolean': Boolean,
+            'Size': Size,
             'ArgumentExpression': ArgumentExpression,
             'MethodInvocationExpression': MethodInvocationExpression,
             'ConstantExpression': ConstantExpression,
@@ -84,3 +86,4 @@ class Parse:
     @staticmethod
     def parse(s):
         return Rfc2Xml.parse(s)
+
