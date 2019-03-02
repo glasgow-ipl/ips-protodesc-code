@@ -297,8 +297,6 @@ Internet-Draft                     RTP                         July 2003
       has no notion of wallclock or elapsed time MAY set the NTP
       timestamp to zero.
 
-
-
    RTP timestamp: 32 bits
 
       Corresponds to the same time as the NTP timestamp (above), but in

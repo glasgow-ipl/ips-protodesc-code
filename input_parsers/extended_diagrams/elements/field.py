@@ -15,9 +15,10 @@ class Field(Element):
     type: str = None
     value: int = None
     array: bool = None
+    optional: bool = False
 
     def __init__(self, name: str = None, abbrv: str = None, width: int = None, expressions: List['Expression'] = None,
-                 type: str = None, value: int = None, array: bool = None):
+                 type: str = None, optional: bool = False, value: int = None, array: bool = None):
         super().__init__()
         if expressions is None:
             expressions = []
@@ -25,6 +26,7 @@ class Field(Element):
         self.abbrv = abbrv
         self.width = width
         self.type = type
+        self.optional = optional
         self.value = value
         self.array = array
         self.expressions = expressions
@@ -45,6 +47,8 @@ class Field(Element):
             attributes["value"] = str(self.value)
         if self.array is not None:
             attributes["array"] = str(self.array)
+        if self.optional:
+            attributes["optional"] = str(self.optional)
         return attributes
 
     def to_xml(self):
@@ -88,6 +92,7 @@ class Field(Element):
             self.merge_field(field, 'width')
             self.merge_field(field, 'expressions', True)
             self.merge_field(field, 'type')
+            self.merge_field(field, 'optional', True)
             self.merge_field(field, 'value')
             self.merge_field(field, 'array')
         except InconsistentDataException as error:
@@ -108,6 +113,10 @@ class Field(Element):
 
     def set_type(self, type: str):
         self.type = type
+        return self
+
+    def set_optional(self, optional: bool):
+        self.optional = optional
         return self
 
     def add_expression(self, expression: 'ProtocolExpression'):

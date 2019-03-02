@@ -18,31 +18,6 @@ class Parse:
         self.load_parser_file(os.path.dirname(os.path.realpath(__file__)) + "/grammar.txt", protocol)
         self.protocol = protocol
 
-    @staticmethod
-    def get_generic_int(size: int, protocol: Protocol):
-        return Size()
-
-        type_name = "BitString$" + str(4)
-
-        if protocol.is_type(type_name):
-            return protocol.get_type(type_name)
-
-        else:
-            return protocol.derive_type(
-                name=type_name,
-                derived_from=BitString(
-                    name="BitString$" + str(size),
-                    size=size
-                ),
-                also_implements=[
-                    protocol.get_trait("Sized"),
-                    protocol.get_trait("Value"),
-                    protocol.get_trait("Equality"),
-                    protocol.get_trait("Ordinal"),
-                    protocol.get_trait("ArithmeticOps"),
-                ]
-            )
-
     def load_parser(self, grammar: str, protocol: Protocol):
         self.parser = parsley.makeGrammar(grammar, {
             'punctuation': string.punctuation,
@@ -57,7 +32,6 @@ class Parse:
             'Names': Names,
 
             'protocol': protocol,
-            'get_generic_int': Parse.get_generic_int,
             'Boolean': Boolean,
             'Size': Size,
             'ArgumentExpression': ArgumentExpression,

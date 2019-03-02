@@ -1,15 +1,17 @@
-import sys
 from .elements import SectionStruct
 from rfc2xml.elements import Rfc, Artwork, T, Figure, List as ListElement, Element
 from rfc2xml.elements.section import Section
 from .parse import Parse
-from typing import Dict, Tuple, List, Optional
+from typing import Dict, Tuple, List, Optional, Union
 from .elements import Field, FieldRef, ArtField
 from protocol import Protocol, StructField, Expression
 from .rel_loc import RelLoc
 from input_parsers.extended_diagrams.elements.art import Art
 from .names import Names
 from input_parsers.extended_diagrams.exception import InvalidStructureException
+from ometa.runtime import ParseError
+from protocol import MethodInvocationExpression, FieldAccessExpression, ThisExpression, ConstantExpression,\
+                     ArgumentExpression
 
 
 class ExtendedDiagrams:
@@ -19,10 +21,11 @@ class ExtendedDiagrams:
         self.protocol = Protocol()
         self.dom = Parse.parse_file(filename)
         self.struct_lookup = {}
+        self.struct_lookup_number = {}
         self.struct_names = []
 
     @staticmethod
-    def section(section: Section, protocol: Protocol):
+    def section(section: Section, protocol: Protocol) -> Union[Section, List[SectionStruct]]:
         parse = Parse(protocol)
 
         # Get the indexes of the items in this section we care about
@@ -31,8 +34,14 @@ class ExtendedDiagrams:
         except InvalidStructureException:
             return section
 
+        # Return section without processing if no art was found
+        if ids[1] == 0:
+            return section
+
+        intro = ExtendedDiagrams.section_intro(section, ids, parse)
         arts = ExtendedDiagrams.section_art(section, ids, parse)
         fields, refs = ExtendedDiagrams.section_fields(section, ids, parse)
+        refs += ExtendedDiagrams.section_fields_post(section, ids, parse)
 
         output = []
         for art in arts:
@@ -49,7 +58,7 @@ class ExtendedDiagrams:
 
             ExtendedDiagrams.fields_process_refs(refs, fields_new)
 
-            section_struct = SectionStruct.from_section(section, fields_new)
+            section_struct = SectionStruct.from_section(intro, section, fields_new)
 
             output.append(section_struct)
 
@@ -121,10 +130,16 @@ class ExtendedDiagrams:
             if isinstance(ref, RelLoc):
                 for i in range(0, len(fields)):
                     field = fields[i]
-                    if field.name == ref.field_loc:
+                    if field.name == Names.field_name_formatter(ref.field_loc):
                         fields.insert(
                             i + ref.rel_loc,
-                            FieldRef(name=ref.field_new, value=ref.value, section_number=ref.section_number)
+                            FieldRef(
+                                name=ref.field_new,
+                                constraint_value=ref.value,
+                                constraint_field=ref.field_this,
+                                section_number=ref.section_number,
+                                optional=ref.optional
+                            )
                         )
                         break
 
@@ -167,13 +182,29 @@ class ExtendedDiagrams:
                 break
             j = j + 1
 
-            if j >= len(section.children) or (not isinstance(section.children[j], T) and not isinstance(section.children[j].children[0], ListElement)):
+            if j >= len(section.children)\
+                    or\
+                    (not isinstance(section.children[j], T)
+                        or
+                     not isinstance(section.children[j].children[0], ListElement)):
                 j = j - 1
                 break
             j = j + 1
         o[3] = j - i
         o[4] = len(section.children)-j
         return tuple(o)
+
+    @staticmethod
+    def section_intro(section: Section, ids: Tuple, parse: Parse) -> Optional[str]:
+        if ids[0] == 0:
+            return None
+
+        intro = "\n".join(list(map(lambda a: a.get_str(), section.children[:ids[0]])))
+
+        try:
+            return parse.parser(intro).packet_intro()
+        except ParseError:
+            return None
 
     @staticmethod
     def section_art(section: Section, ids: Tuple, parse: Parse) -> list:
@@ -184,6 +215,7 @@ class ExtendedDiagrams:
         :param parse:
         :return:
         """
+
         art = []
         for i in range(0, ids[1]):
             figure = section.children[ids[0] + i]
@@ -213,6 +245,10 @@ class ExtendedDiagrams:
         for i in range(start_index, end_index, 2):
             (field, attributes) = parse.parser(section.children[i].get_str()).field_title(Field())
 
+            # If this field should be ignored, do that
+            if "ignore" in attributes and attributes["ignore"]:
+                continue
+
             # If field is a list of control bits
             if "control" in attributes and attributes["control"]:
                 try:
@@ -227,7 +263,7 @@ class ExtendedDiagrams:
                 # Get the array of paragraph objects
                 try:
                     ts = section.children[i+1].children[0].children
-                except IndexError:
+                except (AttributeError, IndexError):
                     raise Exception("Field item body did not contain expected structure")
 
                 # Get array of text for every paragraph in field description
@@ -244,6 +280,15 @@ class ExtendedDiagrams:
         return fields, refs
 
     @staticmethod
+    def section_fields_post(section: Section, ids: Tuple, parse: Parse):
+        index = ids[0] + ids[1] + ids[2] + ids[3]
+        text = "\n".join(list(map(lambda a: a.get_str(), section.children[index:])))
+        try:
+            return [parse.parser(text).fields_post()]
+        except ParseError:
+            return []
+
+    @staticmethod
     def art_ids_to_fields_start_index(ids: Tuple):
         return ids[0]+ids[1]+ids[2]
 
@@ -253,7 +298,8 @@ class ExtendedDiagrams:
 
     def traverse_dom(self):
         self.dom.middle.children = self.dom.middle.traverse(
-            lambda element: ExtendedDiagrams.section(element, self.protocol) if isinstance(element, Section) else element,
+            lambda element:
+                ExtendedDiagrams.section(element, self.protocol) if isinstance(element, Section) else element,
             update=True
         )
 
@@ -264,6 +310,7 @@ class ExtendedDiagrams:
     protocol: Protocol
     struct_names: List[str]
     struct_lookup: Dict[str, List[SectionStruct]]
+    struct_lookup_number: Dict[str, List[SectionStruct]]
 
     def protocol_get_structs(self, child: Element):
         if isinstance(child, SectionStruct):
@@ -271,7 +318,10 @@ class ExtendedDiagrams:
                 self.struct_names.append(child.name)
             if child.name not in self.struct_lookup:
                 self.struct_lookup[child.name] = []
+            if child.number not in self.struct_lookup_number:
+                self.struct_lookup_number[child.number] = []
             self.struct_lookup[child.name].append(child)
+            self.struct_lookup_number[child.number].append(child)
         return child
 
     def protocol_struct(self, struct: SectionStruct):
@@ -281,18 +331,80 @@ class ExtendedDiagrams:
         actions: List[Expression] = []
 
         for field in struct.children:
-            if isinstance(field, Field):
+            if isinstance(field, FieldRef):
 
-                # If a generic bitstring of this width hasn't been defined, define it
-                type_name = "BitString$" + str(field.width)
-                if not self.protocol.is_type(type_name):
+                # If this reference only exists if a value is set, construct that constraint
+                is_present = None
+                if field.constraint_value is not None:
+                    is_present = MethodInvocationExpression(
+                        method_name="eq",
+                        target=FieldAccessExpression(
+                            target=ThisExpression(),
+                            field_name=field.constraint_field
+                        ),
+                        arg_exprs=[
+                            ArgumentExpression(
+                                "other",
+                                ConstantExpression(
+                                    constant_type=self.protocol.get_type("Integer"),
+                                    constant_value=field.constraint_value
+                                )
+                            )
+                        ]
+                    )
+
+                if field.section_number not in self.struct_lookup_number:
+                    raise Exception("Section " + field.section_number + " referenced but this section can't be found")
+
+                structs = self.struct_lookup_number[field.section_number]
+
+                if not len(structs) == 1:
+                    raise Exception(
+                        "Section " + field.section_number + " but an unsupported number of structs was found"
+                    )
+
+                struct = structs[0]
+
+                # If struct doesn't exist yet, create a temporary one
+                if not self.protocol.is_type(struct.name):
+                    field_type = self.protocol.define_struct(struct.name, [], [], [])
+                else:
+                    field_type = self.protocol.get_type(struct.name)
+
+                fields.append(StructField(
+                    field_name=struct.name,
+                    field_type=field_type,
+                    is_present=is_present,
+                    transform=None
+                ))
+
+            elif isinstance(field, Field):
+
+                # If a type is defined, use it
+                if field.type is not None:
+                    type_name = field.type + "$" + str(field.width)
+                    if self.protocol.is_type(type_name):
+                        field_type = self.protocol.get_type(type_name)
+                    else:
+                        field_type = self.protocol.define_bitstring(
+                            name=type_name,
+                            size=field.width
+                        )
+
+                # Otherwise create and use a generic type
+                else:
+                    # Find a unique generic type name for this field
+                    type_name = "G$" + field.name + "$" + str(field.width)
+                    i = 2
+                    while self.protocol.is_type(type_name):
+                        type_name = "G$" + field.name + "_" + str(i) + "$" + str(field.width)
+                        i += 1
+
+                    # Define this new type
                     field_type = self.protocol.define_bitstring(
                         name=type_name,
                         size=field.width
                     )
-
-                else:
-                    field_type = self.protocol.get_type(type_name)
 
                 fields.append(StructField(
                     field_name=field.name,
@@ -304,6 +416,9 @@ class ExtendedDiagrams:
                 constraints += field.to_protocol_expressions()
 
         self.protocol.define_struct(name, fields, constraints, actions)
+
+        if struct.pdu:
+            self.protocol.define_pdu(name)
 
     def protocol_setup(self):
         self.protocol.set_protocol_name(Names.field_name_formatter(self.dom.front.title.get_str()))

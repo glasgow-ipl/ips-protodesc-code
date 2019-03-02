@@ -9,21 +9,25 @@ class SectionStruct(Section):
     tag_name: str = "section_struct"
     name: str = None
     namespace: List[str] = None
+    pdu: bool = False
 
-    def __init__(self, name: str = None):
+    def __init__(self, name: str = None, pdu: bool = False):
         super().__init__()
         self.namespace = []
         self.name = name
+        self.pdu = pdu
 
     def get_attributes(self):
         attributes = super().get_attributes()
         if self.name is not None:
             attributes["name"] = self.name
+        if self.pdu is not None:
+            attributes["pdu"] = str(self.pdu)
         return attributes
 
     @staticmethod
-    def from_section(section: 'Section', fields: List['Field'] = None) -> 'SectionStruct':
-        new_section = SectionStruct()
+    def from_section(intro: str, section: 'Section', fields: List['Field'] = None) -> 'SectionStruct':
+        new_section = SectionStruct(pdu=False if intro is None else True)
         new_section.name = Names.field_name_formatter(section.title)
         new_section.number = section.number
         if fields is not None:

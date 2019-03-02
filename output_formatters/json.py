@@ -32,12 +32,13 @@ class Json(OutputFormatter):
             fields.append({
                 "name": field.field_name,
                 "type": field.field_type.name,
-                "transform": field.transform
+                "transform": field.transform,
+                "is_present": self.constraint_to_dict(field.is_present)
             })
 
         constraints = []
         for constraint in struct.constraints:
-            constraints.append(self._constraint_to_dict(constraint))
+            constraints.append(self.constraint_to_dict(constraint))
 
         self.definitions.append({
             "construct": "Struct",
@@ -46,25 +47,28 @@ class Json(OutputFormatter):
             "constraints": constraints
         })
 
-    def _constraint_to_dict(self, expression: Union['Expression', 'ArgumentExpression']):
-        if isinstance(expression, ArgumentExpression):
+    @staticmethod
+    def constraint_to_dict(expression: Union['Expression', 'ArgumentExpression']):
+        if expression is None:
+            return None
+        elif isinstance(expression, ArgumentExpression):
             return {
                 "name": expression.arg_name,
-                "value": self._constraint_to_dict(expression.arg_value)
+                "value": Json.constraint_to_dict(expression.arg_value)
             }
         elif isinstance(expression, MethodInvocationExpression):
             return {
                 "expression": "MethodInvocation",
                 "method": expression.method_name,
-                "self": self._constraint_to_dict(expression.target),
-                "arguments": self._constraint_list_to_dict(expression.arg_exprs),
+                "self": Json.constraint_to_dict(expression.target),
+                "arguments": Json.constraint_list_to_dict(expression.arg_exprs),
             }
         elif isinstance(expression, IfElseExpression):
             return {
                 "expression": "IfElse",
-                "condition": self._constraint_to_dict(expression.condition),
-                "if_true": self._constraint_to_dict(expression.if_true),
-                "if_false": self._constraint_to_dict(expression.if_false)
+                "condition": Json.constraint_to_dict(expression.condition),
+                "if_true": Json.constraint_to_dict(expression.if_true),
+                "if_false": Json.constraint_to_dict(expression.if_false)
             }
         elif isinstance(expression, ConstantExpression):
             return {
@@ -75,7 +79,7 @@ class Json(OutputFormatter):
         elif isinstance(expression, FieldAccessExpression):
             return {
                 "expression": "FieldAccessExpression",
-                "target": self._constraint_to_dict(expression.target),
+                "target": Json.constraint_to_dict(expression.target),
                 "field_name": expression.field_name
             }
         elif isinstance(expression, ThisExpression):
@@ -88,10 +92,11 @@ class Json(OutputFormatter):
                 "class": str(expression.__class__)
             }
 
-    def _constraint_list_to_dict(self, expressions: List[Union['Expression', 'ArgumentExpression']]):
+    @staticmethod
+    def constraint_list_to_dict(expressions: List[Union['Expression', 'ArgumentExpression']]):
         output = []
         for expression in expressions:
-            output.append(self._constraint_to_dict(expression))
+            output.append(Json.constraint_to_dict(expression))
         return output
 
     def format_array(self, array: Array):

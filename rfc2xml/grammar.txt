@@ -141,8 +141,9 @@ front_names_text_left           = front_names_text:a
 front_names_text_right          = date:a -> rfc.front.set_date(a)
                                 | uppercase_letter:initials '.' ' '+ (letter|' '|'-')+:surname (',' ' '+ letter+:a -> "".join(a)){0,1}:role -> {"type": "name", "initials": str(initials)+".", "surname": "".join(surname), "role": None if len(role)==0 else "".join(role)}
                                 | front_names_text:name -> {"type": "organization", "name": name}
-front_names                     = (front_names_text_left:l space+ front_names_text_right:r '.'{0,1} crlf -> (l,r) )+:a (space+ front_names_text_right:r '.'{0,1} crlf -> (None,r))+:b
+front_names                     = (front_names_text_left:l space+ front_names_text_right:r '.'{0,1} crlf -> (l,r) )+:a (space+ front_names_text_right:r '.'{0,1} crlf -> (None,r))*:b
                                 -> front_names(rfc,a+b)
+
 front_title                     = (char_no_crlf+:a -> "".join(a).strip()):title crlf ((char_no_crlf+:a -> "".join(a).strip()):a crlf -> a){0,1}:docName -> rfc_title_docname(rfc, title, "".join(docName))
 
 front_section                   = 'Abstract' crlf{2} front_section_body:b -> rfc.front.abstract.set_children(b)
@@ -151,7 +152,7 @@ front_section                   = 'Abstract' crlf{2} front_section_body:b -> rfc
                                 | front_section_title:title crlf{2} front_section_body:children -> rfc.front.add_note(title, children)    # Notes
 front_section_body              = text:a crlf* -> a
 front_section_title             = letter:a char_no_crlf*:b -> a+"".join(b)
-front_sections                  = front_section+
+front_sections                  = front_section*
 
 ########################################################################
 # RFC - Middle

@@ -1,0 +1,168 @@
+
+
+
+
+Network Working Group                                          J. Postel
+Request for Comments: 768                                            ISI
+Category: Standards Track                                August 28, 1980
+
+
+                      UDP: User Datagram Protocol
+
+1.  Introduction
+
+   This User Datagram Protocol (UDP) is defined to make available a
+   datagram mode of packet-switched computer communication in the
+   environment of an interconnected set of computer networks.  This
+   protocol assumes that the Internet Protocol (IP) is used as the
+   underlying protocol.
+
+   This protocol provides a procedure for application programs to send
+   messages to other programs with a minimum of protocol mechanism.  The
+   protocol is transaction oriented, and delivery and duplicate
+   protection are not guaranteed.  Applications requiring ordered
+   reliable delivery of streams of data should use the Transmission
+   Control Protocol (TCP).
+
+2.  Header Format
+
+   A UDP packet is formatted as follows:
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |          source port          |        destination port       |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |             length            |            checksum           |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                              data                           ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+                   Figure 1: User Datagram Header Format
+
+   source port [Port]
+
+      Source Port is an optional field, when meaningful, it indicates
+      the port of the sending process, and may be assumed to be the port
+      to which a reply should be addressed in the absence of any other
+      information.  If not used, a value of zero is inserted.
+
+   destination port [Port]
+
+      Destination Port has a meaning within the context of a particular
+      internet destination address.
+
+
+Postel                       Standards Track                    [Page 2]
+
+RFC 768                            UDP                       August 1980
+
+
+   length: 16 bits
+
+      Length is the length in octets of this user datagram including
+      this header and the data.  (This means the minimum value of the
+      length is eight.)
+
+   checksum: 16 bits
+
+      Checksum is the 16-bit one's complement of the one's complement
+      sum of a pseudo header of information from the IP header, the UDP
+      header, and the data, padded with zero octets at the end (if
+      necessary) to make a multiple of two octets.
+
+      If the computed checksum is zero, it is transmitted as all ones
+      (the equivalent in one's complement arithmetic).  An all zero
+      transmitted checksum value means that the transmitter generated no
+      checksum (for debugging or for higher level protocols that don't
+      care).
+
+   data: length*8-64 bits
+
+      The payload of the UDP packet
+
+3.  User Interface
+
+   A user interface should allow
+
+   o  the creation of new receive ports,
+
+   o  receive operations on the receive ports that return the data
+      octets and an indication of source port and source address,
+
+   o  and an operation that allows a datagram to be sent, specifying the
+      data, source and destination ports and addresses to be sent.
+
+4.  IP Interface
+
+   The UDP module must be able to determine the source and destination
+   internet addresses and the protocol field from the internet header.
+   One possible UDP/IP interface would return the whole internet
+   datagram including all of the internet header in response to a
+   receive operation.  Such an interface would also allow the UDP to
+   pass a full internet datagram complete with header to the IP to send.
+   The IP would verify certain fields for consistency and compute the
+   internet header checksum.
+
+5.  Protocol Application
+
+   The major uses of this protocol is the Internet Name Server, and the
+   Trivial File Transfer.
+
+Postel                       Standards Track                    [Page 3]
+
+RFC 768                            UDP                       August 1980
+
+
+6.  Protocol Number
+
+   This is protocol 17 (21 octal) when used in the Internet Protocol.
+   Other protocol numbers are listed in.
+
+Author's Address
+
+   J. Postel
+   ISI
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Postel                       Standards Track                    [Page 4]

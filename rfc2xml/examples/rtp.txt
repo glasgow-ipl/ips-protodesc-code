@@ -95,9 +95,9 @@ Abstract
 
 
 
-Schulzrinne, et al.      Expires January 2, 2004               [Page 11]
+Schulzrinne, et al.          Standards Track                   [Page 11]
 
-Internet-Draft                     RTP                         July 2003
+RFC 3550                           RTP                         July 2003
 
 
       If extension is 1, header extension should precede payload (format
@@ -151,9 +151,9 @@ Internet-Draft                     RTP                         July 2003
 
 
 
-Schulzrinne, et al.      Expires January 2, 2004               [Page 12]
+Schulzrinne, et al.          Standards Track                   [Page 12]
 
-Internet-Draft                     RTP                         July 2003
+RFC 3550                           RTP                         July 2003
 
 
       resolution of the clock MUST be sufficient for the desired
@@ -207,9 +207,9 @@ Internet-Draft                     RTP                         July 2003
 
 
 
-Schulzrinne, et al.      Expires January 2, 2004               [Page 13]
+Schulzrinne, et al.          Standards Track                   [Page 13]
 
-Internet-Draft                     RTP                         July 2003
+RFC 3550                           RTP                         July 2003
 
 
       case, the RTP timestamp would reflect the presentation time for
@@ -263,9 +263,9 @@ Internet-Draft                     RTP                         July 2003
 
 
 
-Schulzrinne, et al.      Expires January 2, 2004               [Page 14]
+Schulzrinne, et al.          Standards Track                   [Page 14]
 
-Internet-Draft                     RTP                         July 2003
+RFC 3550                           RTP                         July 2003
 
 
       packet are listed, allowing correct talker indication at the
@@ -323,9 +323,9 @@ Internet-Draft                     RTP                         July 2003
 
 
 
-Schulzrinne, et al.      Expires January 2, 2004               [Page 17]
+Schulzrinne, et al.          Standards Track                   [Page 17]
 
-Internet-Draft                     RTP                         July 2003
+RFC 3550                           RTP                         July 2003
 
 
       To allow multiple interoperating implementations to each

@@ -20,9 +20,12 @@ def main():
             sys.exit(2)
 
     extended_diagrams = ExtendedDiagrams(filename)
+
+    print(extended_diagrams.dom.to_xml_string(pretty=True))
+
     extended_diagrams.traverse_dom()
 
-    print(extended_diagrams.dom.middle.to_xml_string(pretty=True))
+    print(extended_diagrams.dom.to_xml_string(pretty=True))
 
     protocol = extended_diagrams.protocol_setup()
 
