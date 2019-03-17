@@ -1,0 +1,76 @@
+
+
+
+
+
+
+Network Working Group                                     H. Schulzrinne
+Request for Comments: 3550                           Columbia University
+Obsoletes: 1889                                               S.  Casner
+Category: Standards Track                                  Packet Design
+                                                            R. Frederick
+                                                  Blue Coat Systems Inc.
+                                                             V. Jacobson
+                                                           Packet Design
+                                                               July 2003
+
+
+          RTP: A Transport Protocol for Real-Time Applications
+
+6. RTP Control Protocol -- RTCP
+
+6.6 BYE: Goodbye RTCP Packet
+
+   A BYE packet is formatted as follows:
+
+       0                   1                   2                   3
+       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      |V=2|P|    SC   |   PT=BYE=203  |             length            |
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      |                          [SSRC/CSRC]                        ...
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The BYE packet indicates that one or more sources are no longer
+   active.
+
+   length: 16 bits
+
+      The length of this RTCP packet in 32-bit words minus one,
+      including the header and any padding.  (The offset of one makes
+      zero a valid length and avoids a possible infinite loop in
+      scanning a compound RTCP packet, while counting 32-bit words
+      avoids a validity check for a multiple of 4.)
+
+   packet type (PT): 8 bits
+
+      Contains the constant 203 to identify this as an RTCP BYE packet.
+
+   source count (SC): 5 bits
+
+      The number of SSRC/CSRC identifiers included in this BYE packet.
+      A count value of zero is valid, but useless.
+
+   SSRC/CSRC: (source count) elements
+
+      XX YY ZZ
+
+   Optionally, reason for leaving (format defined in Section 6.6.1)
+   could follow SSRC/CSRC if `length > source count`.
+
+6.6.1 Reason For Leaving
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |     length    |               reason for leaving            ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   length: 8 bits
+
+      The length of the reason for leaving in octets
+
+   reason for leaving: length octets
+
+      Text indicating the reason for leaving, e.g., "camera
+      malfunction" or "RTP loop detected".

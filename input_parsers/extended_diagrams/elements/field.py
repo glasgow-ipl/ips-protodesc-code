@@ -3,22 +3,22 @@ from .expression import Expression
 from ..exception import InconsistentDataException
 from typing import List
 from rfc2xml.elements import Element
-from protocol import Protocol, Expression as ProtocolExpression
+from protocol import Expression as ProtocolExpression, MethodInvocationExpression, FieldAccessExpression,\
+    ArgumentExpression, ThisExpression, ConstantExpression, Protocol
 
 
 class Field(Element):
     tag_name: str = "field"
-    name: str = None
-    abbrv: str = None
-    width: int = None
-    expressions: List['Expression'] = []
-    type: str = None
-    value: int = None
-    array: bool = None
-    optional: bool = False
+    name: str = None                        # The name of the field
+    abbrv: str = None                       # An abbreviated name for this field
+    width: int = None                       # The size of this field
+    expressions: List['Expression'] = []    # The expressions attached to this field
+    type: str = None                        # The type of this field
+    value: int = None                       # The value of this field
+    optional: bool = False                  # Whether this field is optional
 
     def __init__(self, name: str = None, abbrv: str = None, width: int = None, expressions: List['Expression'] = None,
-                 type: str = None, optional: bool = False, value: int = None, array: bool = None):
+                 type: str = None, optional: bool = False, value: int = None):
         super().__init__()
         if expressions is None:
             expressions = []
@@ -28,7 +28,6 @@ class Field(Element):
         self.type = type
         self.optional = optional
         self.value = value
-        self.array = array
         self.expressions = expressions
 
     def get_attributes(self):
@@ -45,8 +44,6 @@ class Field(Element):
             attributes["type"] = str(self.type)
         if self.value is not None:
             attributes["value"] = str(self.value)
-        if self.array is not None:
-            attributes["array"] = str(self.array)
         if self.optional:
             attributes["optional"] = str(self.optional)
         return attributes
@@ -85,7 +82,7 @@ class Field(Element):
         except InconsistentDataException as error:
             raise error.update(attribute=name)
 
-    def merge(self, field: 'Field'):
+    def merge(self, field: 'Field', ignore_value: bool = False) -> 'Field':
         try:
             self.merge_field(field, 'name')
             self.merge_field(field, 'abbrv')
@@ -93,10 +90,14 @@ class Field(Element):
             self.merge_field(field, 'expressions', True)
             self.merge_field(field, 'type')
             self.merge_field(field, 'optional', True)
-            self.merge_field(field, 'value')
-            self.merge_field(field, 'array')
+            if not ignore_value:
+                self.merge_field(field, 'value')
         except InconsistentDataException as error:
             raise error.update(field=field.name)
+        return self
+
+    def set_value(self, value: int):
+        self.value = value
         return self
 
     def set_name(self, name: str):
@@ -123,8 +124,31 @@ class Field(Element):
         self.expressions.append(Expression(expression))
         return self
 
-    def to_protocol_expressions(self):
+    def to_protocol_expressions(self, protocol: 'Protocol'):
         output = []
         for expression in self.expressions:
             output.append(expression.expression)
+        if self.value is not None:
+            output.append(
+                MethodInvocationExpression(
+                    MethodInvocationExpression(
+                        FieldAccessExpression(
+                            ThisExpression(),
+                            self.name
+                        ),
+                        "to_integer",
+                        []
+                    ),
+                    "eq",
+                    [
+                        ArgumentExpression(
+                            "other",
+                            ConstantExpression(
+                                constant_type=protocol.get_type("Integer"),
+                                constant_value=self.value
+                            )
+                        )
+                    ]
+                )
+            )
         return output

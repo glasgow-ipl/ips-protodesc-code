@@ -49,13 +49,19 @@ class ArtField(Element):
 
     def to_field(self):
         from .field import Field
-        return Field(
+        from .field_array import FieldArray
+
+        field = Field(
             name=self.name,
             width=self.width,
             value=self.value,
-            array=self.array,
             abbrv=self.abbrv
         )
+
+        if self.array:
+            return FieldArray.from_field(field)
+
+        return field
 
     def get_attributes(self):
         attributes = {}

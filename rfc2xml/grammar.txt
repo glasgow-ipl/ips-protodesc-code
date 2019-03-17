@@ -8,11 +8,7 @@ number      = <digit+>:ds -> int(ds)
 uppercase_letter                = anything:x ?(x in ascii_uppercase) -> x
 lowercase_letter                = anything:x ?(x in ascii_lowercase) -> x
 
-# TODO
-section_number                  = 'Appendix ':a letter+:b -> a+"".join(b)
-                                | (<letter+>|number):a (('.' number)*):b -> ".".join(list(map(lambda x: str(x), ([str(a)] + b))))
-
-section_number_level :level     = (<letter+>|number):a <('.' number){level}>:b -> str(a)+str(b)
+section_number :level           = (<letter+>|number):a <('.' number){level}>:b -> str(a)+str(b)
 
 crlf                            = (page_separator|lf)
 s                               = (space|crlf indent)
@@ -55,9 +51,9 @@ date                            = month:month space+ year:year -> Date(year=year
 # Text
 ########################################################################
 
-text                            = (text_bullets|text_hang|text_paragraph|text_indent|artwork)*
+content                         = (text_bullets|text_hang|text_paragraph|text_indent|artwork)*
 
-text_bullets                    = text_bullet+:bullets -> List(style="symbols", children=bullets)
+text_bullets                    = text_bullet+:bullets -> T(children=[List(style="symbols", children=bullets)])
 
 text_bullet_contents            = char_visible:a <char_no_crlf*>:b crlf -> a+b
 
@@ -150,7 +146,7 @@ front_section                   = 'Abstract' crlf{2} front_section_body:b -> rfc
                                 | ('Copyright Notice'|'Status of This Memo'|'Status of this Memo') crlf{2} front_section_body:b           # Ignore copyright notice and status of this memo
                                 | 'Table of Contents' crlf{2} toc
                                 | front_section_title:title crlf{2} front_section_body:children -> rfc.front.add_note(title, children)    # Notes
-front_section_body              = text:a crlf* -> a
+front_section_body              = content:a crlf* -> a
 front_section_title             = letter:a char_no_crlf*:b -> a+"".join(b)
 front_sections                  = front_section*
 
@@ -159,10 +155,10 @@ front_sections                  = front_section*
 ########################################################################
 
 sections                        = (section(0))+:sections -> rfc.middle.add_children(sections)
-section :level                  = section_title(level):section section_body(section):body section(level+1)*:children
+section :level                  = section_title(level):section content:body section(level+1)*:children
                                 -> section.add_children(body+children)
-section_body :section           = text:a section_body_trailing -> a
-section_title :level            = section_number_level(level):number '.'{0,1} ' '+ <char_no_crlf+>:title crlf+ -> Section(title=title, number=number)
+
+section_title :level            = section_number(level):number '.'{0,1} ' '+ <char_no_crlf+>:title crlf+ -> Section(title=title, number=number)
 
 section_body_trailing           = <section_body_trailing_line*>:a -> a
 section_body_trailing_line      = indent <char_no_crlf+>:a <crlf+> -> a

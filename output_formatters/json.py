@@ -100,10 +100,24 @@ class Json(OutputFormatter):
         return output
 
     def format_array(self, array: Array):
-        raise Exception("Not Implemented")
+        self.definitions.append({
+            "construct": "Array",
+            "name": array.name,
+            "element_type": str(array.element_type),
+            "length": array.length,
+        })
 
     def format_enum(self, enum: Enum):
-        raise Exception("Not Implemented")
+        variants = []
+
+        for variant in enum.variants:
+            variants.append(str(variant))
+
+        self.definitions.append({
+            "construct": "Enum",
+            "name": enum.name,
+            "variants": variants,
+        })
 
     def format_function(self, function: Function):
         raise Exception("Not Implemented")
@@ -119,6 +133,14 @@ class Json(OutputFormatter):
                 self.format_bitstring(type)
             elif isinstance(type, Struct):
                 self.format_struct(type)
+            elif isinstance(type, Array):
+                self.format_array(type)
+            elif isinstance(type, Enum):
+                self.format_enum(type)
+            elif isinstance(type, Nothing) or isinstance(type, Boolean) or isinstance(type, Integer):
+                pass
+            else:
+                raise Exception("Not Implemented for " + str(type.__class__))
 
         pdus = []
         for name in protocol.get_pdu_names():

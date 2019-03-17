@@ -10,7 +10,7 @@ class Expression(Element):
     tag_name: str = "expression"
     expression: ProtocolExpression
 
-    xxx = {
+    xxxx = {
         "eq": "==",
         "ne": "!=",
         "and": "&&",
@@ -25,34 +25,30 @@ class Expression(Element):
         "plus": "+",
         "minus": "-",
     }
+    xxx = {}
 
     def __init__(self, expression: ProtocolExpression):
         super().__init__()
         self.expression = expression
 
-    def get_expression_text(self) -> str:
-        return self.expression_to_string(self.expression)
-        #return json.dumps(Json.constraint_to_dict(self.expression), indent=4)
-
     def expression_to_string(self, expression: ProtocolExpression):
         if isinstance(expression, ArgumentExpression):
             return self.expression_to_string(expression.arg_value)
         elif isinstance(expression, MethodInvocationExpression):
-            if expression.method_name in self.xxx:
-                operator = " " + self.xxx[expression.method_name] + " "
-            else:
-                operator = "." + expression.method_name + "()"
-            output = self.expression_to_string(expression.target) + operator
+            output = self.expression_to_string(expression.target) + "." + expression.method_name + "("
             if len(expression.arg_exprs) == 1:
                 output += self.expression_to_string(expression.arg_exprs[0])
             elif len(expression.arg_exprs) > 1:
                 output += "["
-                for arg in expression.arg_exprs:
-                    output += self.expression_to_string(arg) + ", "
+                for i in range(0, len(expression.arg_exprs)):
+                    output += self.expression_to_string(expression.arg_exprs[i])
+                    if i < len(expression.arg_exprs)-1:
+                        output += ", "
                 output += "]"
+            output += ")"
             return output
         elif isinstance(expression, IfElseExpression):
-            return self.expression_to_string(expression.condition) + " ? " + self.expression_to_string(expression.if_true) + " : " + self.expression_to_string(expression.if_false)
+            return "(" + self.expression_to_string(expression.condition) + ") ? (" + self.expression_to_string(expression.if_true) + ") : (" + self.expression_to_string(expression.if_false) + ")"
         elif isinstance(expression, ConstantExpression):
             return str(expression.value)   # Type?
         elif isinstance(expression, FieldAccessExpression):
@@ -65,5 +61,5 @@ class Expression(Element):
     def to_xml(self):
         element = etree.Element(str(self.tag_name), self.get_attributes())
         #element.text = etree.CDATA("\n" + self.get_expression_text() + "\n")
-        element.text = self.get_expression_text()
+        element.text = self.expression_to_string(self.expression)
         return element

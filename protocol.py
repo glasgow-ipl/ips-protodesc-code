@@ -401,7 +401,7 @@ class Array(ProtocolType):
     element_type : ProtocolType
     length       : int
 
-    def __init__(self, name: str, element_type: ProtocolType, length: int) -> None:
+    def __init__(self, name: str, element_type: ProtocolType, length: Optional[int]) -> None:
         super().__init__(None)
         self.kind         = "Array"
         self.name         = name
@@ -614,7 +614,7 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def define_array(self, name:str, element_type: ProtocolType, length: int) -> Array:
+    def define_array(self, name:str, element_type: ProtocolType, length: Optional[int]) -> Array:
         """
         Define a new array type for this protocol.
 
@@ -756,6 +756,9 @@ class Protocol:
     def get_type(self, type_name: str) -> ProtocolType:
         return self._types[type_name]
 
+    def pop_type(self, type_name: str) -> None:
+        return self._types.pop(type_name)
+
     def get_func(self, func_name: str) -> Function:
         return self._funcs[func_name]
 
@@ -773,7 +776,6 @@ class Protocol:
 
     def get_type_names(self) -> List[str]:
         return list(self._types.keys())
-
 
 # =================================================================================================
 # Unit tests:

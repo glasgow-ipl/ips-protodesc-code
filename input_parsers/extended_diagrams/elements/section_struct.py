@@ -1,6 +1,6 @@
 import re
 from rfc2xml.elements import Element, Section
-from typing import List
+from typing import List, Optional
 from .field import Field
 from input_parsers.extended_diagrams.names import Names
 
@@ -10,12 +10,14 @@ class SectionStruct(Section):
     name: str = None
     namespace: List[str] = None
     pdu: bool = False
+    field_descriptions: Optional[str] = None
 
-    def __init__(self, name: str = None, pdu: bool = False):
+    def __init__(self, name: str = None, pdu: bool = False, field_descriptions: Optional[str] = None):
         super().__init__()
         self.namespace = []
         self.name = name
         self.pdu = pdu
+        self.field_descriptions = field_descriptions
 
     def get_attributes(self):
         attributes = super().get_attributes()
@@ -23,11 +25,13 @@ class SectionStruct(Section):
             attributes["name"] = self.name
         if self.pdu is not None:
             attributes["pdu"] = str(self.pdu)
+        if self.field_descriptions is not None:
+            attributes["field_descriptions"] = str(self.field_descriptions)
         return attributes
 
     @staticmethod
-    def from_section(intro: str, section: 'Section', fields: List['Field'] = None) -> 'SectionStruct':
-        new_section = SectionStruct(pdu=False if intro is None else True)
+    def from_section(intro: str, section: 'Section', fields: List['Field'] = None, field_descriptions: Optional[str] = None) -> 'SectionStruct':
+        new_section = SectionStruct(pdu=False if intro is None else True, field_descriptions=field_descriptions)
         new_section.name = Names.field_name_formatter(section.title)
         new_section.number = section.number
         if fields is not None:

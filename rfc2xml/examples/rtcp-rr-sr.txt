@@ -1,138 +1,20 @@
-6.1.  RTCP Packet Format
 
-   An RTCP packet can have the following formats:
-
-   o  SR: Sender report (as defined in Section 6.4.1).  For transmission
-      and reception statistics from participants that are active
-      senders.
-
-   Each RTCP packet begins with a fixed part similar to that of RTP data
-   packets, followed by structured elements that MAY be of variable
-   length according to the packet type but MUST end on a 32-bit
-   boundary.  The alignment requirement and a length field in the fixed
-   part of each packet are included to make RTCP packets "stackable".
-   Multiple RTCP packets can be concatenated without any intervening
-   separators to form a compound RTCP packet that is sent in a single
-   packet of the lower layer protocol, for example UDP.  There is no
-   explicit count of individual RTCP packets in the compound packet
-   since the lower layer protocols are expected to provide an overall
-   length to determine the end of the compound packet.
-
-   Each individual RTCP packet in the compound packet may be processed
-   independently with no requirements upon the order or combination of
-   packets.  However, in order to perform the functions of the protocol,
-   the following constraints are imposed:
-
-   o  Reception statistics (in SR or RR) should be sent as often as
-      bandwidth constraints will allow to maximize the resolution of the
-      statistics, therefore each periodically transmitted compound RTCP
-      packet MUST include a report packet.
-
-   o  New receivers need to receive the CNAME for a source as soon as
-      possible to identify the source and to begin associating media for
-      purposes such as lip-sync, so each compound RTCP packet MUST also
-      include the SDES CNAME except when the compound RTCP packet is
-      split for partial encryption as described in Section 9.1.
+Network Working Group                                     H. Schulzrinne
+Request for Comments: 3550                           Columbia University
+Obsoletes: 1889                                               S.  Casner
+Category: Standards Track                                  Packet Design
+                                                            R. Frederick
+                                                  Blue Coat Systems Inc.
+                                                             V. Jacobson
+                                                           Packet Design
+                                                               July 2003
 
 
+          RTP: A Transport Protocol for Real-Time Applications
 
+6. RTP Control Protocol -- RTCP
 
-Schulzrinne, et al.      Expires January 2, 2004               [Page 20]
-
-Internet-Draft                     RTP                         July 2003
-
-
-   o  The number of packet types that may appear first in the compound
-      packet needs to be limited to increase the number of constant bits
-      in the first word and the probability of successfully validating
-      RTCP packets against misaddressed RTP data packets or other
-      unrelated packets.
-
-   Thus, all RTCP packets MUST be sent in a compound packet of at least
-   two individual packets, with the following format:
-
-  Encryption prefix:  If and only if the compound packet is to be
-      encrypted according to the method in Section 9.1, it MUST be
-      prefixed by a random 32-bit quantity redrawn for every compound
-      packet transmitted.  If padding is required for the encryption, it
-      MUST be added to the last packet of the compound packet.
-
-  SR or RR:  The first RTCP packet in the compound packet MUST
-      always be a report packet to facilitate header validation as
-      described in Appendix A.2.  This is true even if no data has been
-      sent or received, in which case an empty RR MUST be sent, and even
-      if the only other RTCP packet in the compound packet is a BYE.
-
-  Additional RRs:  If the number of sources for which reception
-      statistics are being reported exceeds 31, the number that will fit
-      into one SR or RR packet, then additional RR packets SHOULD follow
-      the initial report packet.
-
-  SDES:  An SDES packet containing a CNAME item MUST be included
-      in each compound RTCP packet, except as noted in Section 9.1.
-      Other source description items MAY optionally be included if
-      required by a particular application, subject to bandwidth
-      constraints (see Section 6.3.9).
-
-  BYE or APP:  Other RTCP packet types, including those yet to be
-      defined, MAY follow in any order, except that BYE SHOULD be the
-      last packet sent with a given SSRC/CSRC.  Packet types MAY appear
-      more than once.
-
-   An individual RTP participant SHOULD send only one compound RTCP
-   packet per report interval in order for the RTCP bandwidth per
-   participant to be estimated correctly (see Section 6.2), except when
-   the compound RTCP packet is split for partial encryption as described
-   in Section 9.1.  If there are too many sources to fit all the
-   necessary RR packets into one compound RTCP packet without exceeding
-   the maximum transmission unit (MTU) of the network path, then only
-   the subset that will fit into one MTU SHOULD be included in each
-   interval.  The subsets SHOULD be selected round-robin across multiple
-   intervals so that all sources are reported.
-
-
-
-
-Schulzrinne, et al.      Expires January 2, 2004               [Page 21]
-
-Internet-Draft                     RTP                         July 2003
-
-
-   It is RECOMMENDED that translators and mixers combine individual RTCP
-   packets from the multiple sources they are forwarding into one
-   compound packet whenever feasible in order to amortize the packet
-   overhead (see Section 7).  An example RTCP compound packet as might
-   be produced by a mixer is shown in Fig. 1.  If the overall length of
-   a compound packet would exceed the MTU of the network path, it SHOULD
-   be segmented into multiple shorter compound packets to be transmitted
-   in separate packets of the underlying protocol.  This does not impair
-   the RTCP bandwidth estimation because each compound packet represents
-   at least one distinct participant.  Note that each of the compound
-   packets MUST begin with an SR or RR packet.
-
-   An implementation SHOULD ignore incoming RTCP packets with types
-   unknown to it.  Additional RTCP packet types may be registered with
-   the Internet Assigned Numbers Authority (IANA) as described in
-   Section 15.
-
-   if encrypted: random 32-bit integer
-   |
-   |[--------- packet --------][---------- packet ----------][-packet-]
-   |
-   |                receiver            chunk        chunk
-   V                reports           item  item   item  item
-   --------------------------------------------------------------------
-   R[SR #sendinfo #site1#site2][SDES #CNAME PHONE #CNAME LOC][BYE##why]
-   --------------------------------------------------------------------
-   |                                                                  |
-   |<-----------------------  compound packet ----------------------->|
-   |<--------------------------  UDP packet ------------------------->|
-
-   #: SSRC/CSRC identifier
-
-               Figure 1: Example of an RTCP compound packet
-
-6.4.  Sender and Receiver Reports
+6.4 Sender and Receiver Reports
 
    RTP receivers provide reception quality feedback using RTCP report
    packets which may take one of two forms depending upon whether or not
@@ -165,21 +47,9 @@ Internet-Draft                     RTP                         July 2003
    Details of reception reporting by translators and mixers is given in
    Section 7.
 
-6.4.1.  SR: Sender Report RTCP Packet
+6.4.1 SR: Sender Report RTCP Packet
 
-
-
-
-
-
-
-
-
-
-
-Schulzrinne, et al.      Expires January 2, 2004               [Page 34]
-
-Internet-Draft                     RTP                         July 2003
+   A Sender Report packet is formatted as follows:
 
       0                   1                   2                   3
       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -328,3 +198,29 @@ Internet-Draft                     RTP                         July 2003
       SSRC identifier.  This field can be used to estimate the average
       payload data rate.
 
+6.4.2 RR: Receiver Report RTCP Packet
+
+   A Receiver Report packet is formatted as follows:
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |V=2|P|    RC   |   PT=RR=201   |             length            |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         SSRC of sender                        |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                        [report blocks]                      ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                  profile specific extensions                  |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   Field descriptions can be found in Section 6.4.1. This is because
+   the format of the receiver report (RR) packet is the same as that of
+   the SR packet except that the packet type field contains the constant
+   201 and the five words of sender information are omitted (these are
+   the NTP and RTP timestamps and sender's packet and octet counts).
+   The remaining fields have the same meaning as for the SR packet.
+
+   An empty RR packet (RC = 0) MUST be put at the head of a compound
+   RTCP packet when there is no data transmission or reception to
+   report.

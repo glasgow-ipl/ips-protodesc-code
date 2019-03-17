@@ -6,6 +6,7 @@ binary              = ('0'|'1')
 number              = <digit+>:ds -> int(ds)
 bits                = ('bits'|'bit')
 octets              = ('octets'|'octet')
+words               = ('words'|'word')
 true                = ('True' | 'true')
 false               = ('False' | 'false')
 
@@ -73,7 +74,7 @@ packet_artwork_field_regular        = packet_artwork_field_body_chars:a packet_a
 packet_artwork_field_regular_width  = '(':a number:b ' '+:c bits:d ')':e packet_artwork_field_body_chars:f -> {"body": a+str(b)+"".join(c)+d+e+f["body"], "width": b, "abbrv": f["abbrv"]}
 
 packet_artwork_field_variable       = packet_artwork_field_body_chars:x '...' -> ArtField().parse(x['body'], variable=True, name=x['name'])
-packet_artwork_field_variable_array = ' '* '[' packet_artwork_field_body_chars:x ']' ' '* '...' -> ArtField().parse(x['body'], variable=True, array=True, name=x['name'], abbrv=x['abbrv'])
+packet_artwork_field_variable_array = ' '*:a '[':b packet_artwork_field_body_chars:c ']':d ' '*:e '...':f -> ArtField().parse("".join(a)+b+c['body']+d+"".join(e)+f, array=True, name=c['name'], abbrv=c['abbrv'])
 
 packet_artwork_field_value          = binary:a (' ' binary)*:b -> ArtField(value=int(a+"".join(b), 2), width=len(a+"".join(b)))
                                     | ' '*:a packet_artwork_field_body_chars:b '=':c <(packet_artwork_field_body_chars:f '=':g -> f["body"]+g)*>:h number:d ' '*:e -> ArtField().parse("".join(a+e)+b["body"]+c+str(d)+h, name=b["name"], value=d, abbrv=b['abbrv'])
@@ -126,27 +127,75 @@ field_title :field                  = field_title_main(field) ':' ' '+ field_tit
                                                 .add_expression(
                                                     MethodInvocationExpression(
                                                         MethodInvocationExpression(
-                                                            MethodInvocationExpression(
-                                                                FieldAccessExpression(
-                                                                    target=ThisExpression(),
-                                                                    field_name=Names.field_name_formatter(field.name)
-                                                                ),
-                                                                "size",
-                                                                []
+                                                            FieldAccessExpression(
+                                                                target=ThisExpression(),
+                                                                field_name=Names.field_name_formatter(field.name)
                                                             ),
-                                                            "eq",
-                                                            [ArgumentExpression("other", expression)]
+                                                            "size",
+                                                            []
                                                         ),
-                                                        "multiply",
+                                                        "eq",
                                                         [
                                                             ArgumentExpression(
                                                                 "other",
-                                                                ConstantExpression(
-                                                                    constant_type=protocol.get_type("Integer"),
-                                                                    constant_value=8
+                                                                MethodInvocationExpression(
+                                                                    expression,
+                                                                    "multiply",
+                                                                    [ArgumentExpression("other", ConstantExpression(constant_type=protocol.get_type("Integer"), constant_value=8))]
                                                                 )
                                                             )
                                                         ]
+                                                    )
+                                                )
+                                                .set_optional(opt[0] if len(opt) == 1 else False)
+                                                .set_type(type[0] if len(type) == 1 else None),
+                                            {}
+                                        )
+                                    | field_title_main(field):field ':' ' '+ expression:expression ' '* words field_title_optional{0,1}:opt field_title_type{0,1}:type
+                                    ->  (
+                                            field
+                                                .add_expression(
+                                                    MethodInvocationExpression(
+                                                        MethodInvocationExpression(
+                                                            FieldAccessExpression(
+                                                                target=ThisExpression(),
+                                                                field_name=Names.field_name_formatter(field.name)
+                                                            ),
+                                                            "size",
+                                                            []
+                                                        ),
+                                                        "eq",
+                                                        [
+                                                            ArgumentExpression(
+                                                                "other",
+                                                                MethodInvocationExpression(
+                                                                    expression,
+                                                                    "multiply",
+                                                                    [ArgumentExpression("other", ConstantExpression(constant_type=protocol.get_type("Integer"), constant_value=32))]
+                                                                )
+                                                            )
+                                                        ]
+                                                    )
+                                                )
+                                                .set_optional(opt[0] if len(opt) == 1 else False)
+                                                .set_type(type[0] if len(type) == 1 else None),
+                                            {}
+                                        )
+                                    | field_title_main(field):field ':' ' '+ expression:expression ' '* 'elements' field_title_optional{0,1}:opt field_title_type{0,1}:type
+                                    ->  (
+                                            field
+                                                .add_expression(
+                                                    MethodInvocationExpression(
+                                                        MethodInvocationExpression(
+                                                            FieldAccessExpression(
+                                                                target=ThisExpression(),
+                                                                field_name=Names.field_name_formatter(field.name)
+                                                            ),
+                                                            "length",
+                                                            []
+                                                        ),
+                                                        "eq",
+                                                        [ArgumentExpression("other", expression)]
                                                     )
                                                 )
                                                 .set_optional(opt[0] if len(opt) == 1 else False)
@@ -191,7 +240,7 @@ field_control_item                  = char_visible_no_bracket:a <char_regular_no
 field_name                          = word:a field_name_word*:b -> a + "".join(b)
 field_name_bracket                  = '(' field_name:x ')' -> x
                                     | field_name:x -> x
-field_name_word                     = field_name_word2:b ?(b != ' bit' and b != ' bits' and b != ' octet' and b != ' octets' and b != ' is' and b != ' should' and b != ' could' and b != ' packet') -> b
+field_name_word                     = field_name_word2:b ?(b != ' bit' and b != ' bits' and b != ' octet' and b != ' octets' and b != ' is' and b != ' should' and b != ' could' and b != ' packet' and b != ' if') -> b
 
 field_name_word3                    = (letterOrDigit|'/')+:x -> "".join(x)
 field_name_word2                    = spaces field_name_word3:x -> ' ' + x
@@ -200,10 +249,14 @@ section_number                      = (<letter+>|number):a (('.' number)*):b -> 
 
 field_body_precede_follow           = (('precede' -> 0) | ('follow' -> 1))
 
-field_body                          = "If " field_name_bracket:field_this "is " number:value ", " field_name_bracket:field_new "should " field_body_precede_follow:rel_loc ' '
-                                      field_name_bracket:field_loc "(format defined in Section " section_number:section_number ")." field_body_regular
-                                    -> [RelLoc(field_this=field_this, value=value, field_new=field_new, rel_loc=rel_loc, field_loc=field_loc, section_number=section_number)]
-                                    | field_body_regular -> []
+field_body :field                   = "Format defined in Section " section_number:section_number "." anything*
+                                    -> ("refs", [RelLoc(rel_loc=None, field_loc=Names.field_name_formatter(field.name), section_number=section_number)])
+                                    | "If " field_name:field_this "is " number:value ", " field_name:field_new "should " field_body_precede_follow:rel_loc ' '
+                                      field_name:field_loc "(format defined in Section " section_number:section_number ")." field_body_regular
+                                    -> ("refs", [RelLoc(field_this=field_this, value=value, field_new=field_new, rel_loc=rel_loc, field_loc=field_loc, section_number=section_number)])
+                                    | "Array of " field_name:type_name "(format defined in Section " section_number:section_number ")." field_body_regular
+                                    -> ("array", {"type_name": Names.field_name_formatter(type_name), "section_number": section_number})
+                                    | field_body_regular -> (None, [])
 field_body_regular                  = <char_regular*>:a (lf <char_regular*>)* -> a
 
 ########################################################################
@@ -278,6 +331,12 @@ expression_field_accessor       = field_name_bracket:x '.' ('width'|'length'|'si
 # fields_post
 ########################################################################
 
-fields_post                     = "Optionally, " field_name_bracket:field_new "could " field_body_precede_follow:rel_loc ' '
-                                  field_name:field_loc "(format defined in Section " section_number:section_number ")." anything*
-                                -> RelLoc(field_new=field_new, rel_loc=rel_loc, field_loc=field_loc, section_number=section_number, optional=True)
+fields_post                     = "Field descriptions can be found in Section " section_number:section_number "." ' '* fields_post:next
+                                -> {**next, "field_descriptions": section_number}
+                                | "Optionally, " field_name_bracket:field_new "could " field_body_precede_follow:rel_loc ' '
+                                  field_name:field_loc "(format defined in Section " section_number:section_number ")." ' '* fields_post:next
+                                -> {**next, "ref": RelLoc(field_new=field_new, rel_loc=rel_loc, field_loc=field_loc, section_number=section_number, optional=True)}
+                                | "Optionally, " field_name_bracket:field_new "(format defined in Section " section_number:section_number
+                                  ") could " field_body_precede_follow:rel_loc ' ' field_name:field_loc "if `" expression:condition "`." ' '* fields_post:next
+                                ->{**next, "ref":  RelLoc(field_new=field_new, rel_loc=rel_loc, field_loc=field_loc, section_number=section_number, condition=condition)}
+                                | anything* -> {}

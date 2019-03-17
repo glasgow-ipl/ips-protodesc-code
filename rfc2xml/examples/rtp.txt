@@ -273,7 +273,7 @@ RFC 3550                           RTP                         July 2003
 
    payload: variable
 
-      THE PAYLOAD
+      The payload
 
 5.1.1.  RTP Payload Padding
 
@@ -347,3 +347,682 @@ RFC 3550                           RTP                         July 2003
    header extension: 32*length bits
 
       The payload of this header extension
+
+6.4 Sender and Receiver Reports
+
+   RTP receivers provide reception quality feedback using RTCP report
+   packets which may take one of two forms depending upon whether or not
+   the receiver is also a sender.  The only difference between the
+   sender report (SR) and receiver report (RR) forms, besides the packet
+   type code, is that the sender report includes a 20-byte sender
+   information section for use by active senders.  The SR is issued if a
+   site has sent any data packets during the interval since issuing the
+   last report or the previous one, otherwise the RR is issued.
+
+   Both the SR and RR forms include zero or more reception report
+   blocks, one for each of the synchronization sources from which this
+   receiver has received RTP data packets since the last report.
+   Reports are not issued for contributing sources listed in the CSRC
+   list.  Each reception report block provides statistics about the data
+   received from the particular source indicated in that block.  Since a
+   maximum of 31 reception report blocks will fit in an SR or RR packet,
+   additional RR packets SHOULD be stacked after the initial SR or RR
+   packet as needed to contain the reception reports for all sources
+   heard during the interval since the last report.  If there are too
+   many sources to fit all the necessary RR packets into one compound
+   RTCP packet without exceeding the MTU of the network path, then only
+   the subset that will fit into one MTU SHOULD be included in each
+   interval.  The subsets SHOULD be selected round-robin across multiple
+   intervals so that all sources are reported.
+
+   The next sections define the formats of the two reports, how they may
+   be extended in a profile-specific manner if an application requires
+   additional feedback information, and how the reports may be used.
+   Details of reception reporting by translators and mixers is given in
+   Section 7.
+
+6.4.1 SR: Sender Report RTCP Packet
+
+   A Sender Report packet is formatted as follows:
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |V=2|P|    RC   |   PT=SR=200   |             length            |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         SSRC of sender                        |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                     sender info (160 bits)                    |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                        [report blocks]                      ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                  profile specific extensions                  |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The sender report packet consists of three sections, possibly
+   followed by a fourth profile-specific extension section if defined.
+   The first section, the header, is 8 octets long.  The fields have the
+   following meaning:
+
+   version (V): 2 bits
+
+      Identifies the version of RTP, which is the same in RTCP packets
+      as in RTP data packets.  The version defined by this specification
+      is two (2).
+
+   padding (P): 1 bit
+
+      If the padding bit is set, this individual RTCP packet contains
+      some additional padding octets at the end which are not part of
+      the control information but are included in the length field.  The
+      last octet of the padding is a count of how many padding octets
+      should be ignored, including itself (it will be a multiple of
+      four).  Padding may be needed by some encryption algorithms with
+      fixed block sizes.  In a compound RTCP packet, padding is only
+      required on one individual packet because the compound packet is
+      encrypted as a whole for the method in Section 9.1.  Thus, padding
+      MUST only be added to the last individual packet, and if padding
+      is added to that packet, the padding bit MUST be set only on that
+      packet.  This convention aids the header validity checks described
+      in Appendix A.2 and allows detection of packets from some early
+      implementations that incorrectly set the padding bit on the first
+      individual packet and add padding to the last individual packet.
+
+   reception report count (RC): 5 bits
+
+      The number of reception report blocks contained in this packet.  A
+      value of zero is valid.
+
+   packet type (PT): 8 bits
+
+      Contains the constant 200 to identify this as an RTCP SR packet.
+
+   length: 16 bits
+
+      The length of this RTCP packet in 32-bit words minus one,
+      including the header and any padding.  (The offset of one makes
+      zero a valid length and avoids a possible infinite loop in
+      scanning a compound RTCP packet, while counting 32-bit words
+      avoids a validity check for a multiple of 4.)
+
+   SSRC of sender: 32 bits
+
+      The synchronization source identifier for the originator of this
+      SR packet.
+
+   sender info: 160 bits
+
+      Format defined in Section 6.4.1.1. The sender information, is 20
+      octets long and is present in every sender report packet.  It
+      summarizes the data transmissions from this sender.
+
+   report blocks: variable
+
+      The third section contains zero or more reception report blocks
+      depending on the number of other sources heard by this sender
+      since the last report.  Each reception report block conveys
+      statistics on the reception of RTP packets from a single
+      synchronization source. Receivers SHOULD NOT carry over statistics
+      when a source changes its SSRC identifier due to a collision.
+
+6.4.1.1.  Sender Info
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                    NTP timestamp (64 bits)                    |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         RTP timestamp                         |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                     sender's packet count                     |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                      sender's octet count                     |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   NTP timestamp: 64 bits
+
+      Indicates the wallclock time (see Section 4) when this report was
+      sent so that it may be used in combination with timestamps
+      returned in reception reports from other receivers to measure
+      round-trip propagation to those receivers.  Receivers should
+      expect that the measurement accuracy of the timestamp may be
+      limited to far less than the resolution of the NTP timestamp.  The
+      measurement uncertainty of the timestamp is not indicated as it
+      may not be known.  On a system that has no notion of wallclock
+      time but does have some system-specific clock such as "system
+      uptime", a sender MAY use that clock as a reference to calculate
+      relative NTP timestamps.  It is important to choose a commonly
+      used clock so that if separate implementations are used to produce
+      the individual streams of a multimedia session, all
+      implementations will use the same clock.  Until the year 2036,
+      relative and absolute timestamps will differ in the high bit so
+      (invalid) comparisons will show a large difference; by then one
+      hopes relative timestamps will no longer be needed.  A sender that
+      has no notion of wallclock or elapsed time MAY set the NTP
+      timestamp to zero.
+
+   RTP timestamp: 32 bits
+
+      Corresponds to the same time as the NTP timestamp (above), but in
+      the same units and with the same random offset as the RTP
+      timestamps in data packets.  This correspondence may be used for
+      intra- and inter-media synchronization for sources whose NTP
+      timestamps are synchronized, and may be used by media-independent
+      receivers to estimate the nominal RTP clock frequency.  Note that
+      in most cases this timestamp will not be equal to the RTP
+      timestamp in any adjacent data packet.  Rather, it MUST be
+      calculated from the corresponding NTP timestamp using the
+      relationship between the RTP timestamp counter and real time as
+      maintained by periodically checking the wallclock time at a
+      sampling instant.
+
+   sender's packet count: 32 bits
+
+      The total number of RTP data packets transmitted by the sender
+      since starting transmission up until the time this SR packet was
+      generated.  The count SHOULD be reset if the sender changes its
+      SSRC identifier.
+
+   sender's octet count: 32 bits
+
+      The total number of payload octets (i.e., not including header or
+      padding) transmitted in RTP data packets by the sender since
+      starting transmission up until the time this SR packet was
+      generated.  The count SHOULD be reset if the sender changes its
+      SSRC identifier.  This field can be used to estimate the average
+      payload data rate.
+
+6.4.2 RR: Receiver Report RTCP Packet
+
+   A Receiver Report packet is formatted as follows:
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |V=2|P|    RC   |   PT=RR=201   |             length            |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         SSRC of sender                        |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                        [report blocks]                      ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                  profile specific extensions                  |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   Field descriptions can be found in Section 6.4.1. This is because
+   the format of the receiver report (RR) packet is the same as that of
+   the SR packet except that the packet type field contains the constant
+   201 and the five words of sender information are omitted (these are
+   the NTP and RTP timestamps and sender's packet and octet counts).
+   The remaining fields have the same meaning as for the SR packet.
+
+   An empty RR packet (RC = 0) MUST be put at the head of a compound
+   RTCP packet when there is no data transmission or reception to
+   report.
+
+6.5 SDES: Source Description RTCP Packet
+
+   A SDES packet is formatted as follows:
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |V=2|P|    SC   |  PT=SDES=202  |             length            |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         [SDES chunks]                       ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The SDES packet is a three-level structure composed of a header and
+   zero or more chunks, each of which is composed of items describing
+   the source identified in that chunk.  The items are described
+   individually in subsequent sections.
+
+   version (V): 2 bits
+
+      Identifies the version of RTP, which is the same in RTCP packets
+      as in RTP data packets.  The version defined by this specification
+      is two (2).
+
+   padding (P): 1 bit
+
+      If the padding bit is set, this individual RTCP packet contains
+      some additional padding octets at the end which are not part of
+      the control information but are included in the length field.  The
+      last octet of the padding is a count of how many padding octets
+      should be ignored, including itself (it will be a multiple of
+      four).  Padding may be needed by some encryption algorithms with
+      fixed block sizes.  In a compound RTCP packet, padding is only
+      required on one individual packet because the compound packet is
+      encrypted as a whole for the method in Section 9.1.  Thus, padding
+      MUST only be added to the last individual packet, and if padding
+      is added to that packet, the padding bit MUST be set only on that
+      packet.  This convention aids the header validity checks described
+      in Appendix A.2 and allows detection of packets from some early
+      implementations that incorrectly set the padding bit on the first
+      individual packet and add padding to the last individual packet.
+
+   source count (SC): 5 bits
+
+      The number of SSRC/CSRC chunks contained in this SDES packet.  A
+      value of zero is valid but useless.
+
+   length: 16 bits
+
+      The length of this RTCP packet in 32-bit words minus one,
+      including the header and any padding.  (The offset of one makes
+      zero a valid length and avoids a possible infinite loop in
+      scanning a compound RTCP packet, while counting 32-bit words
+      avoids a validity check for a multiple of 4.)
+
+   SDES chunks: variable
+
+      Array of SDES chunks (format defined in Section 6.5.1).
+
+6.5.1. SDES Chunk
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                           SSRC/CSRC                           |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                          [SDES Items]                       ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   SSRC/CSRC: 32 bits
+
+      A SSRC/CSRC identifier.
+
+   SDES Items: variable
+
+      Array of SDES items (format defined in Section 6.5.2).
+
+   Each chunk consists of an SSRC/CSRC identifier followed by a list of
+   zero or more items, which carry information about the SSRC/CSRC.
+   Each chunk starts on a 32-bit boundary.  Each item consists of an 8-
+   bit type field, an 8-bit octet count describing the length of the
+   text (thus, not including this two-octet header), and the text
+   itself.  Note that the text can be no longer than 255 octets, but
+   this is consistent with the need to limit RTCP bandwidth consumption.
+
+   The text is encoded according to the UTF-8 encoding specified in RFC
+   2279 [5].  US-ASCII is a subset of this encoding and requires no
+   additional encoding.  The presence of multi-octet encodings is
+   indicated by setting the most significant bit of a character to a
+   value of one.
+
+   Items are contiguous, i.e., items are not individually padded to a
+   32-bit boundary.  Text is not null terminated because some multi-
+   octet encodings include null octets.  The list of items in each chunk
+   MUST be terminated by one or more null octets, the first of which is
+   interpreted as an item type of zero to denote the end of the list.
+   No length octet follows the null item type octet, but additional null
+   octets MUST be included if needed to pad until the next 32-bit
+   boundary.  Note that this padding is separate from that indicated by
+   the P bit in the RTCP header.  A chunk with zero items (four null
+   octets) is valid but useless.
+
+   End systems send one SDES packet containing their own source
+   identifier (the same as the SSRC in the fixed RTP header).  A mixer
+   sends one SDES packet containing a chunk for each contributing source
+   from which it is receiving SDES information, or multiple complete
+   SDES packets in the format above if there are more than 31 such
+   sources (see Section 7).
+
+6.5.2. SDES Item
+
+   Every SDES Item has the same common format:
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |      type     |     length    |              text           ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   type: 8 bits
+
+      The type number of this SDES item
+
+   length: 8 bits
+
+      count describing the length of the text (thus, not including the
+      two-octet header)
+
+   text: length octets
+
+      The text body of this SDES item
+
+   The SDES items currently defined are described in the next sections.
+   Only the CNAME item is mandatory.  Some items shown here may be
+   useful only for particular profiles, but the item types are all
+   assigned from one common space to promote shared use and to simplify
+   profile-independent applications.  Additional items may be defined in
+   a profile by registering the type numbers with IANA as described in
+   Section 15.
+
+6.5.2.1 CNAME: Canonical End-Point Identifier SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |    CNAME=1    |     length    | user and domain name        ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The CNAME identifier has the following properties:
+
+   o  Because the randomly allocated SSRC identifier may change if a
+      conflict is discovered or if a program is restarted, the CNAME
+      item MUST be included to provide the binding from the SSRC
+      identifier to an identifier for the source (sender or receiver)
+      that remains constant.
+
+   o  Like the SSRC identifier, the CNAME identifier SHOULD also be
+      unique among all participants within one RTP session.
+
+   o  To provide a binding across multiple media tools used by one
+      participant in a set of related RTP sessions, the CNAME SHOULD be
+      fixed for that participant.
+
+   o  To facilitate third-party monitoring, the CNAME SHOULD be suitable
+      for either a program or a person to locate the source.
+
+   Therefore, the CNAME SHOULD be derived algorithmically and not
+   entered manually, when possible.  To meet these requirements, the
+   following format SHOULD be used unless a profile specifies an
+   alternate syntax or semantics.  The CNAME item SHOULD have the format
+   "user@host", or "host" if a user name is not available as on single-
+   user systems.  For both formats, "host" is either the fully qualified
+   domain name of the host from which the real-time data originates,
+   formatted according to the rules specified in RFC 1034 [6], RFC 1035
+   [7] and Section 2.1 of RFC 1123 [8]; or the standard ASCII
+   representation of the host's numeric address on the interface used
+   for the RTP communication.  For example, the standard ASCII
+   representation of an IP Version 4 address is "dotted decimal", also
+   known as dotted quad, and for IP Version 6, addresses are textually
+   represented as groups of hexadecimal digits separated by colons (with
+   variations as detailed in RFC 3513 [23]).  Other address types are
+   expected to have ASCII representations that are mutually unique.  The
+   fully qualified domain name is more convenient for a human observer
+   and may avoid the need to send a NAME item in addition, but it may be
+   difficult or impossible to obtain reliably in some operating
+   environments.  Applications that may be run in such environments
+   SHOULD use the ASCII representation of the address instead.
+
+   Examples are "doe@sleepy.example.com", "doe@192.0.2.89" or
+   "doe@2201:056D::112E:144A:1E24" for a multi-user system.  On a system
+   with no user name, examples would be "sleepy.example.com",
+   "192.0.2.89" or "2201:056D::112E:144A:1E24".
+
+   The user name SHOULD be in a form that a program such as "finger" or
+   "talk" could use, i.e., it typically is the login name rather than
+   the personal name.  The host name is not necessarily identical to the
+   one in the participant's electronic mail address.
+
+   This syntax will not provide unique identifiers for each source if an
+   application permits a user to generate multiple sources from one
+   host.  Such an application would have to rely on the SSRC to further
+   identify the source, or the profile for that application would have
+   to specify additional syntax for the CNAME identifier.
+
+   If each application creates its CNAME independently, the resulting
+   CNAMEs may not be identical as would be required to provide a binding
+   across multiple media tools belonging to one participant in a set of
+   related RTP sessions.  If cross-media binding is required, it may be
+   necessary for the CNAME of each tool to be externally configured with
+   the same value by a coordination tool.
+
+   Application writers should be aware that private network address
+   assignments such as the Net-10 assignment proposed in RFC 1918 [24]
+   may create network addresses that are not globally unique.  This
+   would lead to non-unique CNAMEs if hosts with private addresses and
+   no direct IP connectivity to the public Internet have their RTP
+   packets forwarded to the public Internet through an RTP-level
+   translator.  (See also RFC 1627 [25].)  To handle this case,
+   applications MAY provide a means to configure a unique CNAME, but the
+   burden is on the translator to translate CNAMEs from private
+   addresses to public addresses if necessary to keep private addresses
+   from being exposed.
+
+6.5.2.2 NAME: User Name SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |     NAME=2    |     length    | common name of source       ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   This is the real name used to describe the source, e.g., "John Doe,
+   Bit Recycler".  It may be in any form desired by the user.  For
+   applications such as conferencing, this form of name may be the most
+   desirable for display in participant lists, and therefore might be
+   sent most frequently of those items other than CNAME.  Profiles MAY
+   establish such priorities.  The NAME value is expected to remain
+   constant at least for the duration of a session.  It SHOULD NOT be
+   relied upon to be unique among all participants in the session.
+
+6.5.2.3 EMAIL: Electronic Mail Address SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |    EMAIL=3    |     length    | email address of source     ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The email address is formatted according to RFC 2822 [9], for
+   example, "John.Doe@example.com".  The EMAIL value is expected to
+   remain constant for the duration of a session.
+
+6.5.2.4 PHONE: Phone Number SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |    PHONE=4    |     length    | phone number of source      ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The phone number SHOULD be formatted with the plus sign replacing the
+   international access code.  For example, "+1 908 555 1212" for a
+   number in the United States.
+
+6.5.2.5 LOC: Geographic User Location SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |     LOC=5     |     length    | geographic location of site ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   Depending on the application, different degrees of detail are
+   appropriate for this item.  For conference applications, a string
+   like "Murray Hill, New Jersey" may be sufficient, while, for an
+   active badge system, strings like "Room 2A244, AT&T BL MH" might be
+   appropriate.  The degree of detail is left to the implementation
+   and/or user, but format and content MAY be prescribed by a profile.
+   The LOC value is expected to remain constant for the duration of a
+   session, except for mobile hosts.
+
+6.5.2.6 TOOL: Application or Tool Name SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |     TOOL=6    |     length    |name/version of source appl  ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   A string giving the name and possibly version of the application
+   generating the stream, e.g., "videotool 1.2".  This information may
+   be useful for debugging purposes and is similar to the Mailer or
+   Mail-System-Version SMTP headers.  The TOOL value is expected to
+   remain constant for the duration of the session.
+
+6.5.2.7 NOTE: Notice/Status SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |     NOTE=7    |     length    |     note about the source   ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The following semantics are suggested for this item, but these or
+   other semantics MAY be explicitly defined by a profile.  The NOTE
+   item is intended for transient messages describing the current state
+   of the source, e.g., "on the phone, can't talk".  Or, during a
+   seminar, this item might be used to convey the title of the talk.  It
+   should be used only to carry exceptional information and SHOULD NOT
+   be included routinely by all participants because this would slow
+   down the rate at which reception reports and CNAME are sent, thus
+   impairing the performance of the protocol.  In particular, it SHOULD
+   NOT be included as an item in a user's configuration file nor
+   automatically generated as in a quote-of-the-day.
+
+   Since the NOTE item may be important to display while it is active,
+   the rate at which other non-CNAME items such as NAME are transmitted
+   might be reduced so that the NOTE item can take that part of the RTCP
+   bandwidth.  When the transient message becomes inactive, the NOTE
+   item SHOULD continue to be transmitted a few times at the same
+   repetition rate but with a string of length zero to signal the
+   receivers.  However, receivers SHOULD also consider the NOTE item
+   inactive if it is not received for a small multiple of the repetition
+   rate, or perhaps 20-30 RTCP intervals.
+
+6.5.2.8 PRIV: Private Extensions SDES Item
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |     PRIV=8    |     length    | prefix length |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         prefix string                       ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                         value string                        ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   This item is used to define experimental or application-specific SDES
+   extensions.  The item contains a prefix consisting of a length-string
+   pair, followed by the value string filling the remainder of the item
+   and carrying the desired information.  The prefix length field is 8
+   bits long.  The prefix string is a name chosen by the person defining
+   the PRIV item to be unique with respect to other PRIV items this
+   application might receive.  The application creator might choose to
+   use the application name plus an additional subtype identification if
+   needed.  Alternatively, it is RECOMMENDED that others choose a name
+   based on the entity they represent, then coordinate the use of the
+   name within that entity.
+
+   Note that the prefix consumes some space within the item's total
+   length of 255 octets, so the prefix should be kept as short as
+   possible.  This facility and the constrained RTCP bandwidth SHOULD
+   NOT be overloaded; it is not intended to satisfy all the control
+   communication requirements of all applications.
+
+   SDES PRIV prefixes will not be registered by IANA.  If some form of
+   the PRIV item proves to be of general utility, it SHOULD instead be
+   assigned a regular SDES item type registered with IANA so that no
+   prefix is required.  This simplifies use and increases transmission
+   efficiency.
+
+6.6 BYE: Goodbye RTCP Packet
+
+   A BYE packet is formatted as follows:
+
+       0                   1                   2                   3
+       0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      |V=2|P|    SC   |   PT=BYE=203  |             length            |
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+      |                          [SSRC/CSRC]                        ...
+      +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The BYE packet indicates that one or more sources are no longer
+   active.
+
+   length: 16 bits
+
+      The length of this RTCP packet in 32-bit words minus one,
+      including the header and any padding.  (The offset of one makes
+      zero a valid length and avoids a possible infinite loop in
+      scanning a compound RTCP packet, while counting 32-bit words
+      avoids a validity check for a multiple of 4.)
+
+   packet type (PT): 8 bits
+
+      Contains the constant 203 to identify this as an RTCP BYE packet.
+
+   source count (SC): 5 bits
+
+      The number of SSRC/CSRC identifiers included in this BYE packet.
+      A count value of zero is valid, but useless.
+
+   SSRC/CSRC: (source count) elements
+
+      XX YY ZZ
+
+   Optionally, reason for leaving (format defined in Section 6.6.1)
+   could follow SSRC/CSRC if `length > source count`.
+
+6.6.1 Reason For Leaving
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |     length    |               reason for leaving            ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   length: 8 bits
+
+      The length of the reason for leaving in octets
+
+   reason for leaving: length octets
+
+      Text indicating the reason for leaving, e.g., "camera
+      malfunction" or "RTP loop detected".
+
+6.7 APP: Application-Defined RTCP Packet
+
+   A APP packet is formatted as follows:
+
+      0                   1                   2                   3
+      0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |V=2|P| subtype |   PT=APP=204  |             length            |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                           SSRC/CSRC                           |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                          name (ASCII)                         |
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+     |                   application-dependent data                ...
+     +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+   The APP packet is intended for experimental use as new applications
+   and new features are developed, without requiring packet type value
+   registration.  APP packets with unrecognized names SHOULD be ignored.
+   After testing and if wider use is justified, it is RECOMMENDED that
+   each APP packet be redefined without the subtype and name fields and
+   registered with IANA using an RTCP packet type.
+
+   subtype: 5 bits
+
+      May be used as a subtype to allow a set of APP packets to be
+      defined under one unique name, or for any application-dependent
+      data.
+
+   packet type (PT): 8 bits
+
+      Contains the constant 204 to identify this as an RTCP APP packet.
+
+   name: 4 octets
+
+      A name chosen by the person defining the set of APP packets to be
+      unique with respect to other APP packets this application might
+      receive.  The application creator might choose to use the
+      application name, and then coordinate the allocation of subtype
+      values to others who want to define new packet types for the
+      application.  Alternatively, it is RECOMMENDED that others choose
+      a name based on the entity they represent, then coordinate the use
+      of the name within that entity.  The name is interpreted as a
+      sequence of four ASCII characters, with uppercase and lowercase
+      characters treated as distinct.
+
+   application-dependent data: (length-2) words
+
+      Application-dependent data may or may not appear in an APP packet.
+      It is interpreted by the application and not RTP itself.  It MUST
+      be a multiple of 32 bits long.

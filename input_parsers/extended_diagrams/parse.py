@@ -2,7 +2,6 @@ import parsley
 import os
 import string
 import itertools
-from rfc2xml import Rfc2Xml
 from typing import Callable
 from .elements import Field, Art, ArtField
 from .rel_loc import RelLoc
@@ -11,6 +10,10 @@ from protocol import *
 
 
 class Parse:
+    """
+    Wrapper class for handling parsing
+    """
+
     parser: Callable = None
     protocol: Protocol
 
@@ -18,7 +21,13 @@ class Parse:
         self.load_parser_file(os.path.dirname(os.path.realpath(__file__)) + "/grammar.txt", protocol)
         self.protocol = protocol
 
-    def load_parser(self, grammar: str, protocol: Protocol):
+    def load_parser(self, grammar: str, protocol: Protocol) -> None:
+        """
+        Load the parser using the given grammar
+        :param grammar: The parser grammar
+        :param protocol: The protocol
+        :return: None
+        """
         self.parser = parsley.makeGrammar(grammar, {
             'punctuation': string.punctuation,
             'ascii_uppercase': string.ascii_uppercase,
@@ -43,21 +52,13 @@ class Parse:
         })
 
     def load_parser_file(self, filename: str, protocol: Protocol):
+        """
+        Load the parser using grammar from the given file
+        :param filename: File containing grammar
+        :param protocol: The protocol
+        :return:
+        """
         with open(filename) as fp:
             grammar = fp.read()
-        return self.load_parser(grammar, protocol)
-
-
-
-
-
-    @staticmethod
-    def parse_file(filename):
-        with open(filename) as fp:
-            contents = fp.read()
-        return Parse.parse(contents)
-
-    @staticmethod
-    def parse(s):
-        return Rfc2Xml.parse(s)
+        self.load_parser(grammar, protocol)
 
