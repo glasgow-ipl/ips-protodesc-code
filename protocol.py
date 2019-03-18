@@ -95,13 +95,12 @@ class Function():
                 param_type = self_type
             else:
                 param_type = p.param_type
-                
 
             # check parameter names/types match argument names/types
             if p.param_name != a.arg_name:
                 print("accepts_arguments: name mismatch {} vs {}".format(p.param_name, a.arg_name))
                 return False
-            if param_type != a.arg_type:
+            if not a.arg_type.is_a(param_type) and param_type != a.arg_type:
                 print("accepts_arguments: type mismatch {} vs {}".format(param_type, a.arg_type))
                 return False
         return True
@@ -326,6 +325,13 @@ class ProtocolType(ABC):
         if self.methods != obj.methods:
             return False
         return True
+        
+    def is_a(self, obj):
+        parents = []
+        while self.parent != None:
+            parents.append(self.parent)
+            self = self.parent
+        return obj in parents
 
     def implement_trait(self, trait: Trait) -> None:
         if trait.name in self.traits:
