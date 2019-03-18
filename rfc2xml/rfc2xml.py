@@ -45,12 +45,6 @@ class Rfc2Xml:
         })
 
     @staticmethod
-    def parse_file(filename) -> 'Rfc':
-        with open(filename) as fp:
-            contents = fp.read()
-        return Rfc2Xml.parse(contents)
-
-    @staticmethod
     def parse(string):
         string += "\n\n"  # TODO this is a hacky solution to the grammar requiring a double new line end of file
         parser = Rfc2Xml.get_parser_file(

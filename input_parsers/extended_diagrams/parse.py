@@ -18,10 +18,10 @@ class Parse:
     protocol: Protocol
 
     def __init__(self, protocol: Protocol):
-        self.load_parser_file(os.path.dirname(os.path.realpath(__file__)) + "/grammar.txt", protocol)
+        self._load_parser_file(os.path.dirname(os.path.realpath(__file__)) + "/grammar.txt", protocol)
         self.protocol = protocol
 
-    def load_parser(self, grammar: str, protocol: Protocol) -> None:
+    def _load_parser(self, grammar: str, protocol: Protocol) -> None:
         """
         Load the parser using the given grammar
         :param grammar: The parser grammar
@@ -51,7 +51,7 @@ class Parse:
             'IfElseExpression': IfElseExpression,
         })
 
-    def load_parser_file(self, filename: str, protocol: Protocol):
+    def _load_parser_file(self, filename: str, protocol: Protocol):
         """
         Load the parser using grammar from the given file
         :param filename: File containing grammar
@@ -60,5 +60,5 @@ class Parse:
         """
         with open(filename) as fp:
             grammar = fp.read()
-        self.load_parser(grammar, protocol)
+        self._load_parser(grammar, protocol)
 

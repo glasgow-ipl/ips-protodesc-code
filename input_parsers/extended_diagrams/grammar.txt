@@ -1,7 +1,6 @@
 uppercase_letter    = anything:x ?(x in ascii_uppercase) -> x
 lowercase_letter    = anything:x ?(x in ascii_lowercase) -> x
 lf                  = '\n'
-crlf                = '\n'
 binary              = ('0'|'1')
 number              = <digit+>:ds -> int(ds)
 bits                = ('bits'|'bit')
@@ -42,14 +41,20 @@ abbrv_bracket                       = '(' abbrv:x ')' -> x
 ########################################################################
 
 packet_intro                        = ('An'|'A') ' ' field_name:name ' packet is formatted as follows:' -> name
+                                    | <char_visible+> ' '+ packet_intro:a -> a
+                                    | <char_visible+> -> None
 
 ########################################################################
 # ASCII Art Packet Diagram
 ########################################################################
 
-packet_artwork                      = packet_artwork_indent packet_artwork_header packet_artwork_body
-packet_artwork_indent               = ' '{0,8}
-packet_artwork_crlf                 = ' '* (crlf crlf | crlf packet_artwork_indent)
+packet_artwork                      = packet_artwork_header packet_artwork_body
+packet_artwork_header               = ' 0                   1                   2                   3'    lf
+                                      ' 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1'  lf
+                                      '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+' lf
+packet_artwork_body                 = packet_artwork_line+:x -> Art(fields=list(itertools.chain.from_iterable(x)))
+
+packet_artwork_separator            = ('+-')+ '+'
 
 packet_artwork_field_body_punct     = punctuation:x ?(x not in "|.=[]()") -> x
 packet_artwork_field_body_char      = (letterOrDigit|packet_artwork_field_body_punct|' ')
@@ -57,14 +62,8 @@ packet_artwork_field_body_chars     = packet_artwork_field_body_char+:x packet_a
 packet_artwork_field_body_abbrv     = abbrv_bracket:x -> {"body": '(' + x + ')', "abbrv": x}
                                     | -> {"body": "", "abbrv": None}
 
-packet_artwork_header               = packet_artwork_header_a packet_artwork_crlf packet_artwork_header_b packet_artwork_crlf packet_artwork_separator_full packet_artwork_crlf
-packet_artwork_header_a             = '0                   1                   2                   3'
-packet_artwork_header_b             = '0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1'
-packet_artwork_separator_full       = '+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+'
-packet_artwork_separator            = ('+-')+ '+'
-
-packet_artwork_body                 = packet_artwork_line+:x -> Art(fields=list(itertools.chain.from_iterable(x)))
-packet_artwork_line                 = '|' (packet_artwork_line_regular | packet_artwork_line_variable):x packet_artwork_crlf packet_artwork_separator packet_artwork_crlf -> x
+packet_artwork_line                 = '|' (packet_artwork_line_regular | packet_artwork_line_variable):x lf packet_artwork_separator lf -> x
+packet_artwork_line                 = '|' (packet_artwork_line_regular | packet_artwork_line_variable):x lf packet_artwork_separator lf -> x
 packet_artwork_line_regular         = packet_artwork_field+
 packet_artwork_line_variable        = (packet_artwork_field_variable_array | packet_artwork_field_variable):x -> [x]
 

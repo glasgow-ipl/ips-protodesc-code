@@ -20,9 +20,11 @@ def main():
             sys.exit(2)
 
     extended_diagrams = ExtendedDiagrams()
-    extended_diagrams.load_dom(filename)
-    extended_diagrams.traverse_dom()
-    protocol = extended_diagrams.setup_protocol()
+
+    with open(filename) as fp:
+        contents = fp.read()
+
+    protocol = extended_diagrams.build_protocol(contents)
 
     if not suppress_result:
         output_formatter = Json()

@@ -9,9 +9,10 @@ from .names import Names
 from .parse import Parse
 from .rel_loc import RelLoc
 from .exception import InvalidStructureException
+from ..inputparser import InputParser
 
 
-class ExtendedDiagrams:
+class ExtendedDiagrams(InputParser):
     dom: Rfc
     protocol: Protocol
 
@@ -19,15 +20,13 @@ class ExtendedDiagrams:
         super().__init__()
         self.protocol = Protocol()
 
-    def load_dom(self, filename: str) -> None:
-        """
-        Loads DOM by parsing input file
-        :param filename: input filename
-        :return: None
-        """
-        self.dom = Rfc2Xml.parse_file(filename)
+    def build_protocol(self, input: str):
+        self.dom = Rfc2Xml.parse(input)
+        self._traverse_dom()
+        from . import ExtendedDiagramsProtocol
+        return ExtendedDiagramsProtocol.setup(self.dom, self.protocol)
 
-    def traverse_dom(self) -> None:
+    def _traverse_dom(self) -> None:
         """
         Traverse DOM to update to protocol specific DOM
         :return: None
@@ -36,14 +35,6 @@ class ExtendedDiagrams:
             lambda element: self._section(element) if isinstance(element, Section) else element,
             update=True
         )
-
-    def setup_protocol(self) -> Protocol:
-        """
-        Setup protocol from current DOM
-        :return: None
-        """
-        from . import ExtendedDiagramsProtocol
-        return ExtendedDiagramsProtocol.setup(self.dom, self.protocol)
 
     def _section(self, section: Section) -> Union[Section, List[SectionStruct]]:
         """
