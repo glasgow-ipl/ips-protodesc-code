@@ -86,12 +86,14 @@ class PacketLangParser(InputParser):
         return ConstantExpression(self.protocol.get_type(type_name), value)
 
     def new_fieldaccess(self, target, field_name: str):
-        return FieldAccessExpression(target, field_name)
+        return self.new_methodinvocation(FieldAccessExpression(target, field_name), "to_integer", [])
 
     def new_this(self):
         return ThisExpression()
 
     def new_methodinvocation(self, target, method, arguments):
+        if type(target) is MethodInvocationExpression and target.method_name == "to_integer":
+            target = target.target
         arguments = [] if arguments == None else arguments
         return MethodInvocationExpression(target, method, arguments)
 

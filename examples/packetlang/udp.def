@@ -9,7 +9,7 @@ struct Datagram {
     checksum: Checksum,
     payload: Bits
 } where {
-    payload.size() == 5;
+    payload.size() == 8 * length;
 };
 
 pdus = {Datagram};
