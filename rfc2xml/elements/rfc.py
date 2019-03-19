@@ -3,6 +3,7 @@ from lxml import etree
 from . import *
 from .front import Front
 from .middle import Middle
+from .back import Back
 from .toc import Toc
 from .toc_item import TocItem
 
@@ -17,6 +18,7 @@ class Rfc(Element):
     toc: 'Toc' = None
     front: 'Front' = Front()
     middle: 'Middle' = Middle()
+    back: 'Back' = Back()
 
     def __init__(self, compliant: bool = False):
         super().__init__()

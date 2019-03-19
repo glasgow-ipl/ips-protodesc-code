@@ -31,7 +31,9 @@
 import parsley
 import string
 import sys
+import os
 import json
+sys.path.insert(0, os.path.dirname(os.path.realpath(__file__)))
 from shared import *
 
 def parse_file(filename):

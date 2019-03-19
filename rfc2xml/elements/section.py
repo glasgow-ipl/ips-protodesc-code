@@ -1,4 +1,5 @@
-from . import Element
+from .element import Element
+from typing import List
 
 
 class Section(Element):
@@ -11,6 +12,13 @@ class Section(Element):
         self.title = title
         self.number = number
 
+    def get_sections(self) -> List['Section']:
+        o = []
+        for child in self.children:
+            if isinstance(child, Section):
+                o.append(child)
+        return o
+
     def get_attributes(self):
         attributes = {}
         if self.title is not None:
@@ -21,6 +29,3 @@ class Section(Element):
 
     def __str__(self):
         return str(self.number) + ". " + str(self.title)
-
-    def __repr__(self):
-        return self.__str__()

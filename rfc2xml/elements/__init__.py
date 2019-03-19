@@ -17,6 +17,7 @@ from .toc_item import TocItem
 from .list import List
 from .figure import Figure
 from .artwork import Artwork
+from .back import Back
 
 __all__ = ["Element", "Rfc", "Front", "Abstract", "Author", "Date", "Note", "Title", "Workgroup", "Organization",
-           "Xref", "T", "Toc", "TocItem", "Section", "List", "Figure", "Artwork"]
+           "Xref", "T", "Toc", "TocItem", "Section", "List", "Figure", "Artwork", "Back"]
