@@ -163,6 +163,7 @@ class MethodInvocationExpression(Expression):
         # convert list of ArgumentExpressions to list of Arguments
         args = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
         if not self.target.get_result_type(containing_type).get_method(self.method_name).method_accepts_arguments(self.target.get_result_type(containing_type), args):
+            print(self)
             raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
         return self.target.get_result_type(containing_type).get_method(self.method_name).return_type
 
@@ -393,9 +394,9 @@ class Size(ProtocolType):
 # Representable types follow:
 
 class BitString(ProtocolType):
-    size : int
+    size : Optional[int]
 
-    def __init__(self, name: str, size: int) -> None:
+    def __init__(self, name: str, size: Optional[int]) -> None:
         super().__init__(None)
         self.kind = "BitString"
         self.name = name
@@ -404,9 +405,9 @@ class BitString(ProtocolType):
 
 class Array(ProtocolType):
     element_type : ProtocolType
-    length       : int
+    length       : Optional[int]
 
-    def __init__(self, name: str, element_type: ProtocolType, length: int) -> None:
+    def __init__(self, name: str, element_type: ProtocolType, length: Optional[int]) -> None:
         super().__init__(None)
         self.kind         = "Array"
         self.name         = name
@@ -417,13 +418,13 @@ class Array(ProtocolType):
             self.size = None
         elif type(self.element_type) is BitString:
             element_bitstring = cast(BitString, self.element_type)
-            if element_bitstring.size is None:
+            if element_bitstring.size is None or self.length is None:
                 self.size = None
             else:
                 self.size = self.length * element_bitstring.size
         elif type(self.element_type) is Array:
             element_array = cast(Array, self.element_type)
-            if element_array.size is None:
+            if element_array.size is None or self.length is None:
                 self.size = None
             else:
                 self.size = self.length * element_array.size
@@ -601,14 +602,14 @@ class Protocol:
             raise ProtocolTypeError("Cannot redefine protocol name")
         self._name = name
 
-    def define_bitstring(self, name:str, size:int) -> BitString:
+    def define_bitstring(self, name:str, size:Optional[int]) -> BitString:
         """
         Define a new bit string type for this protocol.
 
         Parameters:
           self  - the protocol in which the new type is defined
           name  - the name of the new type
-          size  - the size of the new type, in bits
+          size  - the size of the new type, in bits. None if variable
         """
         self._validate_typename(name)
         newtype = BitString(name, size)
@@ -619,7 +620,7 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def define_array(self, name:str, element_type: ProtocolType, length: int) -> Array:
+    def define_array(self, name:str, element_type: ProtocolType, length: Optional[int]) -> Array:
         """
         Define a new array type for this protocol.
 
@@ -761,6 +762,9 @@ class Protocol:
     def get_type(self, type_name: str) -> ProtocolType:
         return self._types[type_name]
 
+    def pop_type(self, type_name: str) -> ProtocolType:
+        return self._types.pop(type_name)
+
     def get_func(self, func_name: str) -> Function:
         return self._funcs[func_name]
 
@@ -775,6 +779,9 @@ class Protocol:
 
     def get_pdu_names(self) -> List[str]:
         return list(self._pdus.keys())
+
+    def get_type_names(self) -> List[str]:
+        return list(self._types.keys())
 
 # =================================================================================================
 # Unit tests:
