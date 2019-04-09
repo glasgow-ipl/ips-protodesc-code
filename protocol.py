@@ -679,7 +679,7 @@ class Protocol:
     def derive_type(self, name: str, derived_from: ProtocolType, also_implements: List[Trait]) -> ProtocolType:
         """
         Define a new derived type for this protocol.
-        The type constructor is described in Section 3.2.5 of the IR specification.
+        The type constructor is described in Section 3.3.5 of the IR specification.
 
         Parameters:
           self            - the protocol in which the new type is defined
