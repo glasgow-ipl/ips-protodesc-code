@@ -20,7 +20,7 @@ class ExtendedDiagrams(InputParser):
         super().__init__()
         self.protocol = Protocol()
 
-    def build_protocol(self, input: str):
+    def build_protocol(self, input: str, name:str = None):
         self.dom = Rfc2Xml.parse(input)
         self._traverse_dom()
         from . import ExtendedDiagramsProtocol

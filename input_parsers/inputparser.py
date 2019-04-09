@@ -35,7 +35,7 @@ from typing import Dict, List, Tuple, Optional, Any
 class InputParser(abc.ABC):
 
     @abc.abstractmethod
-    def build_protocol(self, input: str) -> Protocol:
+    def build_protocol(self, input: str, name: str=None) -> Protocol:
         """
         Build a Protocol object for the protocol represented by the input string. 
 

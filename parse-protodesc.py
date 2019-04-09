@@ -38,6 +38,7 @@ from protocol import *
 # Input parsers
 import input_parsers.inputparser
 import input_parsers.packetlang.packetlang
+import input_parsers.extended_diagrams.extended_diagrams
 
 # Output formatters
 import output_formatters.outputformatter
@@ -53,7 +54,7 @@ def dfs_struct(struct: Struct, type_names:List[str]):
             dfs_protocoltype(field.transform.using, type_names)
             
 def dfs_array(array: Array, type_names:List[str]):
-    dfs_protocoltype(array.element_type)
+    dfs_protocoltype(array.element_type, type_names)
     
 def dfs_enum(enum: Enum, type_names:List[str]):
     for variant in enum.variants:
@@ -113,7 +114,8 @@ def main():
     ######################################################################################
     # Input parsing
     ######################################################################################
-    construct_input_parser = {"packetlang" : input_parsers.packetlang.packetlang.PacketLangParser()}
+    construct_input_parser = {"packetlang"        : input_parsers.packetlang.packetlang.PacketLangParser(),
+                              "extended-diagrams" : input_parsers.extended_diagrams.extended_diagrams.ExtendedDiagrams()}
     input_parser = construct_input_parser[args.input_format]
     
     # Load the input file into a string
