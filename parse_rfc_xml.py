@@ -1223,5 +1223,5 @@ def parse_rfc(xmlElement) -> rfc.RFC:
 
 if __name__ == "__main__":
     rfcXml = ET.parse(sys.argv[1]).getroot()
-    rfc = parse_rfc(rfcXml)
-    print(rfc)
+    parsed_rfc = parse_rfc(rfcXml)
+    print(parsed_rfc)
