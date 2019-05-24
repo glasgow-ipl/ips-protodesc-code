@@ -42,7 +42,7 @@ def parse_em(xmlElement) -> rfc.EM:
         if emChild.tag == "bcp14":
             content.append(parse_bcp14(emChild))
         elif emChild.tag == "cref":
-            content.append(cref(emChild))
+            content.append(parse_cref(emChild))
         elif emChild.tag == "iref":
             content.append(parse_iref(emChild))
         elif emChild.tag == "relref":
@@ -172,7 +172,7 @@ def parse_sub(xmlElement) -> rfc.Sub:
             content.append(parse_relref(subChild))
         elif subChild.tag == "strong":
             content.append(parse_strong(subChild))
-        elif strongChild.tag == "tt":
+        elif subChild.tag == "tt":
             content.append(parse_tt(subChild))
         elif subChild.tag == "xref":
             content.append(parse_xref(subChild))
@@ -195,7 +195,7 @@ def parse_sup(xmlElement) -> rfc.Sup:
             content.append(parse_relref(supChild))
         elif supChild.tag == "strong":
             content.append(parse_strong(supChild))
-        elif strongChild.tag == "tt":
+        elif supChild.tag == "tt":
             content.append(parse_tt(supChild))
         elif supChild.tag == "xref":
             content.append(parse_xref(supChild))
@@ -317,8 +317,9 @@ def parse_name(xmlElement) -> rfc.Name:
 def parse_sourcecode(xmlElement) -> rfc.SourceCode:
     return rfc.SourceCode(xmlElement.text,
                           xmlElement.attrib.get("anchor", None),
-                          xmlElement.attrib.get("name", None),
-                          xmlElement.attrib.get("type", None))
+                          xmlElement.attrib.get("name",   None),
+                          xmlElement.attrib.get("src",    None),
+                          xmlElement.attrib.get("type",   None))
 
 def parse_figure(xmlElement) -> rfc.Figure:
     name = None
