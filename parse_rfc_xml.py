@@ -1120,8 +1120,8 @@ def parse_refcontent(xmlElement) -> rfc.RefContent:
     return rfc.RefContent(content)
 
 def parse_reference(xmlElement) -> rfc.Reference:
-    front = None
-    content = []
+    front   : rfc.Front
+    content : ListType[Union[rfc.Annotation, rfc.Format, rfc.RefContent, rfc.SeriesInfo]] = []
     for referenceChild in xmlElement:
         if referenceChild.tag == "front":
             front = parse_front(referenceChild)
