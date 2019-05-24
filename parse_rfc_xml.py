@@ -29,6 +29,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+from typing import List as ListType, Union, Optional, Tuple
+
 import rfc
 import xml.etree.ElementTree as ET
 import sys
@@ -325,7 +327,7 @@ def parse_figure(xmlElement) -> rfc.Figure:
     name = None
     irefs = []
     preamble = None
-    content = []
+    content : ListType[Union[rfc.Artwork, rfc.SourceCode]] = []
     postamble = None
     for figureChild in xmlElement:
         if figureChild.tag == "name":
@@ -465,7 +467,7 @@ def parse_dd(xmlElement) -> rfc.DD:
                   xmlElement.attrib.get("anchor", None))
 
 def parse_dt(xmlElement) -> rfc.DT:
-    content = []
+    content : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for dtChild in xmlElement:
         if dtChild.tag == "bcp14":
             content.append(parse_bcp14(dtChild))
@@ -509,7 +511,7 @@ def parse_dl(xmlElement) -> rfc.DL:
                   xmlElement.attrib.get("spacing", "normal"))
 
 def parse_ttcol(xmlElement) -> rfc.TTCol:
-    content = []
+    content : ListType[Union[rfc.Text, rfc.CRef, rfc.ERef, rfc.IRef, rfc.XRef]] = []
     for ttcolChild in xmlElement:
         if ttcolChild.tag == "cref":
             content.append(parse_cref(ttcolChild))
@@ -526,7 +528,7 @@ def parse_ttcol(xmlElement) -> rfc.TTCol:
                      xmlElement.attrib.get("width", None))
 
 def parse_c(xmlElement) -> rfc.C:
-    content = []
+    content :  ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.SpanX, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for cChild in xmlElement:
         if cChild.tag == "bcp14":
             content.append(parse_bcp14(cChild))
