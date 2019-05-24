@@ -954,7 +954,7 @@ def parse_author(xmlElement) -> rfc.Author:
                       xmlElement.attrib.get("role", None),
                       xmlElement.attrib.get("surname", None))
 
-def parse_seriesInfo(xmlElement) -> rfc.SeriesInfo:
+def parse_seriesinfo(xmlElement) -> rfc.SeriesInfo:
     return rfc.SeriesInfo(xmlElement.attrib["name"],
                           xmlElement.attrib["value"],
                           xmlElement.attrib["name"],
@@ -1036,7 +1036,7 @@ def parse_front(xmlElement) -> rfc.Front:
         if frontChild.tag == "title":
             title = parse_title(frontChild)
         elif frontChild.tag == "seriesInfo":
-            seriesInfo.append(parse_seriesInfo(frontChild))
+            seriesInfo.append(parse_seriesinfo(frontChild))
         elif frontChild.tag == "author":
             authors.append(parse_author(frontChild))
         elif frontChild.tag == "date":
