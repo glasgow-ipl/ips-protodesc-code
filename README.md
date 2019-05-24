@@ -24,8 +24,17 @@ Overview
  The project uses Pipenv for dependency management. To begin, run:
  
  ```~~~~~~~~
+ pipenv install --dev
+ ```
+
+to create a Python virtual environment with appropriate packages install.
+Then, run:
+ ```~~~~~~~~
  pipenv shell
  ```
+
+to start the virtual environment, within which you can run the scripts.
+
  
  Generating a protocol description
  ---------------------------------
