@@ -34,8 +34,7 @@ import xml.etree.ElementTree as ET
 import sys
 
 def parse_bcp14(xmlElement) -> rfc.BCP14:
-    return rfc.BCP14(None,
-                     xmlElement.text)
+    return rfc.BCP14(xmlElement.text)
 
 def parse_em(xmlElement) -> rfc.EM:
     content = [xmlElement.text]
@@ -58,31 +57,26 @@ def parse_em(xmlElement) -> rfc.EM:
             content.append(parse_tt(emChild))
         elif emChild.tag == "xref":
             content.append(parse_xref(emChild))
-    return rfc.EM(None,
-                  content)
+    return rfc.EM(content)
 
 def parse_relref(xmlElement) -> rfc.RelRef:
-    return rfc.RelRef(None,
-                      xmlElement.text,
+    return rfc.RelRef(xmlElement.text,
                       xmlElement.attrib.get("displayFormat", None),
                       xmlElement.attrib.get("relative", None),
                       xmlElement.attrib["section"],
                       xmlElement.attrib["target"])
 
 def parse_eref(xmlElement) -> rfc.ERef:
-    return rfc.ERef(None,
-                    xmlElement.text,
+    return rfc.ERef(xmlElement.text,
                     xmlElement.attrib["target"])
 
 def parse_iref(xmlElement) -> rfc.IRef:
-    return rfc.IRef(None,
-                    xmlElement.attrib["item"],
+    return rfc.IRef(xmlElement.attrib["item"],
                     xmlElement.attrib.get("primary", False),
                     xmlElement.attrib.get("subitem", None))
 
 def parse_xref(xmlElement) -> rfc.XRef:
-    return rfc.XRef(None,
-                    xmlElement.text,
+    return rfc.XRef(xmlElement.text,
                     xmlElement.attrib.get("format", None),
                     xmlElement.attrib.get("pageno", None),
                     xmlElement.attrib["target"])
@@ -106,7 +100,7 @@ def parse_cref(xmlElement) -> rfc.CRef:
             content.append(parse_tt(crefChild))
         elif crefChild.tag == "xref":
             content.append(parse_xref(crefChild))
-    return rfc.CRef(None,
+    return rfc.CRef(content,
                     xmlElement.attrib.get("anchor", None),
                     xmlElement.attrib.get("display", True),
                     xmlElement.attrib.get("source", None))
@@ -134,8 +128,7 @@ def parse_strong(xmlElement) -> rfc.Strong:
             content.append(parse_tt(strongChild))
         elif strongChild.tag == "xref":
             content.append(parse_xref(strongChild))
-    return rfc.Strong(None,
-                      content)
+    return rfc.Strong(content)
 
 def parse_tt(xmlElement) -> rfc.TT:
     content = [xmlElement.text]
@@ -160,8 +153,7 @@ def parse_tt(xmlElement) -> rfc.TT:
             content.append(parse_strong(ttChild))
         elif ttChild.tag == "xref":
             content.append(parse_xref(ttChild))
-    return rfc.TT(None,
-                  content)
+    return rfc.TT(content)
 
 def parse_sub(xmlElement) -> rfc.Sub:
     content = [xmlElement.text]
@@ -184,8 +176,7 @@ def parse_sub(xmlElement) -> rfc.Sub:
             content.append(parse_tt(subChild))
         elif subChild.tag == "xref":
             content.append(parse_xref(subChild))
-    return rfc.Sub(None,
-                   content) 
+    return rfc.Sub(content)
 
 def parse_sup(xmlElement) -> rfc.Sup:
     content = [xmlElement.text]
@@ -208,12 +199,10 @@ def parse_sup(xmlElement) -> rfc.Sup:
             content.append(parse_tt(supChild))
         elif supChild.tag == "xref":
             content.append(parse_xref(supChild))
-    return rfc.Sup(None,
-                   content)
+    return rfc.Sup(content)
 
 def parse_spanx(xmlElement) -> rfc.SpanX:
-    return rfc.SpanX(None,
-                     xmlElement.text,
+    return rfc.SpanX(xmlElement.text,
                      xmlElement.attrib.get("style", None),
                      xmlElement.attrib.get("xml:space", None))
 
@@ -222,19 +211,16 @@ def parse_list(xmlElement) -> rfc.List:
     for listChild in xmlElement:
         if listChild.tag == "t":
             content.append(parse_t(xmlElement))
-    return rfc.List(None,
-                    content,
+    return rfc.List(content,
                     xmlElement.attrib.get("counter", None),
                     xmlElement.attrib.get("hangIndent", None),
                     xmlElement.attrib.get("style", None))
 
 def parse_vspace(xmlElement) -> rfc.VSpace:
-    return rfc.VSpace(None,
-                      xmlElement.attrib.get("blankLines", None))
+    return rfc.VSpace(xmlElement.attrib.get("blankLines", None))
 
 def parse_t(xmlElement) -> rfc.T:
-    return rfc.T(None, 
-                 xmlElement.text,
+    return rfc.T(xmlElement.text,
                  xmlElement.attrib.get("anchor", None),
                  xmlElement.attrib.get("hangText", None),
                  xmlElement.attrib.get("keepWithNext", False),
@@ -247,9 +233,8 @@ def parse_artwork(xmlElement) -> rfc.Artwork:
         content = []
         for artworkChild in xmlElement:
             if artworkChild.tag == "svg":
-                content.append(rfc.SVG(None))
-    return rfc.Artwork(None,
-                       content,
+                content.append(rfc.SVG())
+    return rfc.Artwork(content,
                        xmlElement.attrib.get("align", "left"),
                        xmlElement.attrib.get("alt", None),
                        xmlElement.attrib.get("anchor", None),
@@ -285,8 +270,7 @@ def parse_postamble(xmlElement) -> rfc.Postamble:
             content.append(parse_tt(postambleChild))
         elif postambleChild.tag == "xref":
             content.append(parse_xref(postambleChild))
-    return rfc.Postamble(None,
-                         content)
+    return rfc.Postamble(content)
 
 def parse_preamble(xmlElement) -> rfc.Preamble:
     content = [xmlElement.text]
@@ -313,8 +297,7 @@ def parse_preamble(xmlElement) -> rfc.Preamble:
             content.append(parse_tt(preambleChild))
         elif preambleChild.tag == "xref":
             content.append(parse_xref(preambleChild))
-    return rfc.Preamble(None,
-                        content)
+    return rfc.Preamble(content)
 
 def parse_name(xmlElement) -> rfc.Name:
     content = [xmlElement.text]
@@ -329,12 +312,10 @@ def parse_name(xmlElement) -> rfc.Name:
             content.append(parse_tt(nameChild))
         elif nameChild.tag == "xref":
             content.append(parse_xref(nameChild))
-    return rfc.Name(None,
-                    content)
+    return rfc.Name(content)
 
 def parse_sourcecode(xmlElement) -> rfc.SourceCode:
-    return rfc.SourceCode(None,
-                          xmlElement.text,
+    return rfc.SourceCode(xmlElement.text,
                           xmlElement.attrib.get("anchor", None),
                           xmlElement.attrib.get("name", None),
                           xmlElement.attrib.get("type", None))
@@ -357,9 +338,8 @@ def parse_figure(xmlElement) -> rfc.Figure:
         elif figureChild.tag == "sourcecode":
             content.append(parse_sourcecode(figureChild))
         elif figureChild.tag == "postamble":
-            content.append(parse_postamble(figureChild))
-    return rfc.Figure(None,
-                      name,
+            postamble = parse_postamble(figureChild)
+    return rfc.Figure(name,
                       irefs,
                       preamble,
                       content,
@@ -414,8 +394,7 @@ def parse_li(xmlElement) -> rfc.LI:
             content.append(parse_xref(liChild))
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.LI(None,
-                  content,
+    return rfc.LI(content,
                   xmlElement.attrib.get("anchor", None))
 
 def parse_ul(xmlElement) -> rfc.UL:
@@ -423,8 +402,7 @@ def parse_ul(xmlElement) -> rfc.UL:
     for ulChild in xmlElement:
         if ulChild.tag == "li":
             content.append(parse_li(ulChild))
-    return rfc.UL(None,
-                  content,
+    return rfc.UL(content,
                   xmlElement.attrib.get("anchor", None),
                   xmlElement.attrib.get("empty", False),
                   xmlElement.attrib.get("spacing", "normal"))
@@ -434,8 +412,7 @@ def parse_ol(xmlElement) -> rfc.OL:
     for olChild in xmlElement:
         if olChild.tag == "li":
             content.append(parse_li(olChild))
-    return rfc.OL(None,
-                  content,
+    return rfc.OL(content,
                   xmlElement.attrib.get("anchor", None),
                   xmlElement.attrib.get("group", None),
                   xmlElement.attrib.get("spacing", "normal"),
@@ -483,8 +460,7 @@ def parse_dd(xmlElement) -> rfc.DD:
             content.append(parse_xref(ddChild))  
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.DD(None,
-                  content,
+    return rfc.DD(content,
                   xmlElement.attrib.get("anchor", None))
 
 def parse_dt(xmlElement) -> rfc.DT:
@@ -514,8 +490,7 @@ def parse_dt(xmlElement) -> rfc.DT:
             content.append(parse_xref(dtChild))  
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.DT(None,
-                  content,
+    return rfc.DT(content,
                   xmlElement.attrib.get("anchor", None))
 
 def parse_dl(xmlElement) -> rfc.DL:
@@ -527,8 +502,7 @@ def parse_dl(xmlElement) -> rfc.DL:
             content.append(parse_dd(dlChild))
     content_iter = iter(content)
     content = list(zip(content_iter, content_iter))
-    return rfc.DL(None,
-                  content,
+    return rfc.DL(content,
                   xmlElement.attrib.get("anchor", None),
                   xmlElement.attrib.get("hanging", True),
                   xmlElement.attrib.get("spacing", "normal"))
@@ -546,8 +520,7 @@ def parse_ttcol(xmlElement) -> rfc.TTCol:
             content.append(parse_xref(ttcolChild))
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.TTCol(None,
-                     content,
+    return rfc.TTCol(content,
                      xmlElement.attrib.get("align", "left"),
                      xmlElement.attrib.get("width", None))
 
@@ -578,8 +551,7 @@ def parse_c(xmlElement) -> rfc.C:
             content.append(parse_xref(cChild))  
     if cChild.text is not None:
         content.append(cChild.text)
-    return rfc.C(None,
-                 content)
+    return rfc.C(content)
 
 def parse_texttable(xmlElement) -> rfc.TextTable:
     name = None
@@ -598,8 +570,7 @@ def parse_texttable(xmlElement) -> rfc.TextTable:
             content.append(parse_c(texttableChild))
         elif texttableChild.tag == "postamble":
             content.append(parse_postamble(texttableChild))
-    return rfc.TextTable(None,
-                         content,
+    return rfc.TextTable(content,
                          xmlElement.attrib.get("align", "center"),
                          xmlElement.attrib.get("anchor", None),
                          xmlElement.attrib.get("style", None),
@@ -607,7 +578,7 @@ def parse_texttable(xmlElement) -> rfc.TextTable:
                          xmlElement.attrib.get("title", None))
 
 def parse_br(xmlElement) -> rfc.BR:
-    return rfc.BR(None)
+    return rfc.BR()
 
 def parse_th(xmlElement) -> rfc.TH:
     content = []
@@ -652,8 +623,7 @@ def parse_th(xmlElement) -> rfc.TH:
             content.append(parse_xref(thChild))  
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.TH(None,
-                  content,
+    return rfc.TH(content,
                   xmlElement.attrib.get("align", "left"),
                   xmlElement.attrib.get("anchor", None),
                   xmlElement.attrib.get("colspan", None),
@@ -702,8 +672,7 @@ def parse_td(xmlElement) -> rfc.TD:
             content.append(parse_xref(tdChild))  
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.TD(None,
-                  content,
+    return rfc.TD(content,
                   xmlElement.attrib.get("align", "left"),
                   xmlElement.attrib.get("anchor", None),
                   xmlElement.attrib.get("colspan", None),
@@ -716,8 +685,7 @@ def parse_tr(xmlElement) -> rfc.TR:
             content.append(parse_td(trChild))
         elif trChild.tag == "th":
             content.append(parse_th(trChild))
-    return rfc.TR(None,
-                  content,
+    return rfc.TR(content,
                   xmlElement.attrib.get("anchor", None))
 
 def parse_tbody(xmlElement) -> rfc.TBody:
@@ -725,8 +693,7 @@ def parse_tbody(xmlElement) -> rfc.TBody:
     for tbodyChild in xmlElement:
         if tbodyChild.tag == "tr":
             content.append(parse_tr(tbodyChild))
-    return rfc.TBody(None,
-                     content,
+    return rfc.TBody(content,
                      xmlElement.attrib.get("anchor", None))
 
 def parse_tfoot(xmlElement) -> rfc.TFoot:
@@ -734,8 +701,7 @@ def parse_tfoot(xmlElement) -> rfc.TFoot:
     for tfootChild in xmlElement:
         if tfootChild.tag == "tr":
             content.append(parse_tr(tfootChild))
-    return rfc.TFoot(None,
-                     content,
+    return rfc.TFoot(content,
                      xmlElement.attrib.get("anchor", None))
 
 def parse_thead(xmlElement) -> rfc.THead:
@@ -743,8 +709,7 @@ def parse_thead(xmlElement) -> rfc.THead:
     for theadChild in xmlElement:
         if theadChild.tag == "tr":
             content.append(parse_tr(theadChild))
-    return rfc.THead(None,
-                     content,
+    return rfc.THead(content,
                      xmlElement.attrib.get("anchor", None))
 
 def parse_table(xmlElement) -> rfc.Table:
@@ -764,8 +729,7 @@ def parse_table(xmlElement) -> rfc.Table:
             tbody = parse_tbody(tableChild)
         elif tableChild.tag == "tfoot":
             tfoot = parse_tfoot(tableChild)
-    return rfc.Table(None,
-                     name,
+    return rfc.Table(name,
                      irefs,
                      thead,
                      tbody,
@@ -793,8 +757,7 @@ def parse_aside(xmlElement) -> rfc.Aside:
             content.append(parse_table(asideChild))
         elif asideChild.tag == "ul":
             content.append(parse_ul(asideChild))
-    return rfc.Aside(None,
-                     content,
+    return rfc.Aside(content,
                      xmlElement.attrib.get("anchor", None))
 
 def parse_blockquote(xmlElement) -> rfc.BlockQuote:
@@ -838,8 +801,7 @@ def parse_blockquote(xmlElement) -> rfc.BlockQuote:
             content.append(parse_xref(blockquoteChild))  
     if blockquoteChild.text is not None:
         content.append(blockquoteChild.text)
-    return rfc.BlockQuote(None,
-                          content,
+    return rfc.BlockQuote(content,
                           xmlElement.attrib.get("anchor", None),
                           xmlElement.attrib.get("cite", None),
                           xmlElement.attrib.get("quotedFrom", None))
@@ -875,8 +837,7 @@ def parse_section(xmlElement) -> rfc.Section:
             content.append(parse_ul(sectionChild))
         elif sectionChild.tag == "section":
             sections.append(parse_section(sectionChild))
-    return rfc.Section(None,
-                       name,
+    return rfc.Section(name,
                        content,
                        sections,
                        xmlElement.attrib.get("anchor", None),
@@ -890,37 +851,30 @@ def parse_middle(xmlElement) -> rfc.Middle:
     for middleChild in xmlElement:
         if middleChild.tag == "section":
             content.append(parse_section(middleChild))
-    return rfc.Middle(None,
-                      content)
+    return rfc.Middle(content)
 
 def parse_street(xmlElement) -> rfc.Street:
-    return rfc.Street(None,
-                      xmlElement.text,
+    return rfc.Street(xmlElement.text,
                       xmlElement.attrib.get("ascii", None))
 
 def parse_region(xmlElement) -> rfc.Region:
-    return rfc.Region(None,
-                      xmlElement.text,
+    return rfc.Region(xmlElement.text,
                       xmlElement.attrib.get("ascii", None))
 
 def parse_postalline(xmlElement) -> rfc.PostalLine:
-    return rfc.PostalLine(None,
-                          xmlElement.text,
+    return rfc.PostalLine(xmlElement.text,
                           xmlElement.attrib.get("ascii", None))
 
 def parse_city(xmlElement) -> rfc.City:
-    return rfc.City(None,
-                    xmlElement.text,
+    return rfc.City(xmlElement.text,
                     xmlElement.attrib.get("ascii", None))
                     
 def parse_code(xmlElement) -> rfc.Code:
-    return rfc.Code(None,
-                    xmlElement.text,
+    return rfc.Code(xmlElement.text,
                     xmlElement.attrib.get("ascii", None))
 
 def parse_country(xmlElement) -> rfc.Country:
-    return rfc.Country(None,
-                       xmlElement.text,
+    return rfc.Country(xmlElement.text,
                        xmlElement.attrib.get("ascii", None))
 
 def parse_postal(xmlElement) -> rfc.Postal:
@@ -936,25 +890,20 @@ def parse_postal(xmlElement) -> rfc.Postal:
             postal_elements.append(parse_region(postalChild))
         elif postalChild.tag == "street":
             postal_elements.append(parse_street(postalChild))
-    return rfc.Postal(None,
-                      postal_elements)
+    return rfc.Postal(postal_elements)
 
 def parse_email(xmlElement) -> rfc.Email:
-    return rfc.Email(None,
-                     xmlElement.text,
+    return rfc.Email(xmlElement.text,
                      xmlElement.attrib.get("ascii", None))
 
 def parse_phone(xmlElement) -> rfc.Phone:
-    return rfc.Phone(None,
-                     xmlElement.text)
+    return rfc.Phone(xmlElement.text)
 
 def parse_uri(xmlElement) -> rfc.URI:
-    return rfc.URI(None,
-                   xmlElement.text)
+    return rfc.URI(xmlElement.text)
 
 def parse_facsimile(xmlElement) -> rfc.Facsimile:
-    return rfc.Facsimile(None,
-                         xmlElement.text)
+    return rfc.Facsimile(xmlElement.text)
 
 def parse_address(xmlElement) -> rfc.Address:
     postal = None
@@ -973,16 +922,14 @@ def parse_address(xmlElement) -> rfc.Address:
             email = parse_email(addressChild)
         elif addressChild.tag == "uri":
             uri = parse_uri(addressChild)
-    return rfc.Address(None,
-                       postal,
+    return rfc.Address(postal,
                        phone,
                        facsimile,
                        email,
                        uri)
 
 def parse_organization(xmlElement) -> rfc.Organization:
-    return rfc.Organization(None,
-                            xmlElement.text,
+    return rfc.Organization(xmlElement.text,
                             xmlElement.attrib.get("abbrev", None),
                             xmlElement.attrib.get("ascii", None))
 
@@ -994,8 +941,7 @@ def parse_author(xmlElement) -> rfc.Author:
             org = parse_organization(authorChild)
         elif authorChild.tag == "address":
             address = parse_address(authorChild)
-    return rfc.Author(None,
-                      org,
+    return rfc.Author(org,
                       address,
                       xmlElement.attrib.get("asciiFullname", None),
                       xmlElement.attrib.get("asciiInitials", None),
@@ -1006,8 +952,7 @@ def parse_author(xmlElement) -> rfc.Author:
                       xmlElement.attrib.get("surname", None))
 
 def parse_seriesInfo(xmlElement) -> rfc.SeriesInfo:
-    return rfc.SeriesInfo(None,
-                          xmlElement.attrib["name"],
+    return rfc.SeriesInfo(xmlElement.attrib["name"],
                           xmlElement.attrib["value"],
                           xmlElement.attrib["name"],
                           xmlElement.attrib.get("status", None),
@@ -1015,28 +960,23 @@ def parse_seriesInfo(xmlElement) -> rfc.SeriesInfo:
                           xmlElement.attrib["value"])
 
 def parse_title(xmlElement) -> rfc.Title:
-    return rfc.Title(None,
-                     xmlElement.text,
+    return rfc.Title(xmlElement.text,
                      xmlElement.attrib.get("abbrev", None),
                      xmlElement.attrib.get("ascii", None))
 
 def parse_date(xmlElement) -> rfc.Date:
-    return rfc.Date(None,
-                    xmlElement.attrib.get("day", None),
+    return rfc.Date(xmlElement.attrib.get("day", None),
                     xmlElement.attrib.get("month", None),
                     xmlElement.attrib.get("year", None))
 
 def parse_area(xmlElement) -> rfc.Area:
-    return rfc.Area(None,
-                    xmlElement.text)
+    return rfc.Area(xmlElement.text)
 
 def parse_workgroup(xmlElement) -> rfc.Workgroup:
-    return rfc.Workgroup(None,
-                         xmlElement.text)
+    return rfc.Workgroup(xmlElement.text)
 
 def parse_keyword(xmlElement) -> rfc.Keyword:
-    return rfc.Keyword(None,
-                       xmlElement.text)
+    return rfc.Keyword(xmlElement.text)
 
 def parse_abstract(xmlElement) -> rfc.Abstract:
     content = []
@@ -1049,8 +989,7 @@ def parse_abstract(xmlElement) -> rfc.Abstract:
             content.append(parse_t(abstractChild))
         elif abstractChild.tag == "ul":
             content.append(parse_ul(abstractChild))
-    return rfc.Abstract(None,
-                        content,
+    return rfc.Abstract(content,
                         xmlElement.attrib.get("anchor", None))
 
 def parse_note(xmlElement) -> rfc.Note:
@@ -1067,8 +1006,7 @@ def parse_note(xmlElement) -> rfc.Note:
             content.append(parse_ul(noteChild)) 
         elif noteChild.tag == "name":
             name = parse_name(noteChild)
-    return rfc.Note(None,
-                    name,
+    return rfc.Note(name,
                     content,
                     xmlElement.attrib.get("removeInRFC", False),
                     xmlElement.attrib.get("title", None))
@@ -1078,8 +1016,7 @@ def parse_boilerplate(xmlElement) -> rfc.Boilerplate:
     for boilerplateChild in xmlElement:
         if boilerplateChild.tag == "section":
             content.append(parse_section(boilerplateChild))
-    return rfc.Boilerplate(None,
-                           content)
+    return rfc.Boilerplate(content)
 
 def parse_front(xmlElement) -> rfc.Front:
     title = None
@@ -1113,8 +1050,7 @@ def parse_front(xmlElement) -> rfc.Front:
             notes.append(parse_note(frontChild))
         elif frontChild.tag == "boilerplate":
             boilerplate = parse_boilerplate(frontChild)
-    return rfc.Front(None,
-                     title,
+    return rfc.Front(title,
                      seriesInfo,
                      authors,
                      date,
@@ -1126,8 +1062,7 @@ def parse_front(xmlElement) -> rfc.Front:
                      boilerplate)
 
 def parse_format(xmlElement) -> rfc.Format:
-    return rfc.Format(None,
-                      xmlElement.attrib.get("octets", None),
+    return rfc.Format(xmlElement.attrib.get("octets", None),
                       xmlElement.attrib.get("target", None),
                       xmlElement.attrib["type"])
 
@@ -1160,8 +1095,7 @@ def parse_annotation(xmlElement) -> rfc.Annotation:
             content.append(parse_xref(annotationChild))
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.Annotation(None,
-                          content)
+    return rfc.Annotation(content)
 
 def parse_refcontent(xmlElement) -> rfc.RefContent:
     content = []
@@ -1180,8 +1114,7 @@ def parse_refcontent(xmlElement) -> rfc.RefContent:
             content.append(parse_tt(refcontentChild))
     if xmlElement.text is not None:
         content.append(xmlElement.text)
-    return rfc.RefContent(None,
-                          content)
+    return rfc.RefContent(content)
 
 def parse_reference(xmlElement) -> rfc.Reference:
     front = None
@@ -1197,8 +1130,7 @@ def parse_reference(xmlElement) -> rfc.Reference:
             content.append(parse_refcontent(referenceChild))
         elif referenceChild.tag == "seriesinfo":
             content.append(parse_seriesinfo(referenceChild))
-    return rfc.Reference(None,
-                         front,
+    return rfc.Reference(front,
                          content,
                          xmlElement.attrib["anchor"],
                          xmlElement.attrib.get("quoteTitle", True),
@@ -1209,8 +1141,7 @@ def parse_referencegroup(xmlElement) -> rfc.ReferenceGroup:
     for referencegroupChild in xmlElement:
         if referencegroupChild.tag == "reference":
             content.append(parse_reference(referencegroupChild))
-    return rfc.ReferenceGroup(None,
-                              content,
+    return rfc.ReferenceGroup(content,
                               xmlElement.attrib["anchor"])
 
 def parse_references(xmlElement) -> rfc.References:
@@ -1223,15 +1154,13 @@ def parse_references(xmlElement) -> rfc.References:
             content.append(parse_reference(referencesChild))
         elif referencesChild.tag == "referencegroup":
             content.append(parse_referencegroup(referencesChild))
-    return rfc.References(None,
-                          name,
+    return rfc.References(name,
                           content,
                           xmlElement.attrib.get("anchor", None),
                           xmlElement.attrib.get("title", None))
 
 def parse_displayreference(xmlElement) -> rfc.DisplayReference:
-    return rfc.DisplayReference(None,
-                                xmlElement.attrib["target"],
+    return rfc.DisplayReference(xmlElement.attrib["target"],
                                 xmlElement.attrib["to"])
 
 def parse_back(xmlElement) -> rfc.Back:
@@ -1245,14 +1174,12 @@ def parse_back(xmlElement) -> rfc.Back:
             refs.append(parse_references(backChild))
         elif backChild.tag == "section":
             sections.append(parse_section(backChild))
-    return rfc.Back(None,
-                    displayrefs,
+    return rfc.Back(displayrefs,
                     refs,
                     sections)
 
 def parse_link(xmlElement) -> rfc.Link:
-    return rfc.Link(None,
-                    xmlElement.attrib["href"],
+    return rfc.Link(xmlElement.attrib["href"],
                     xmlElement.attrib.get("rel", None))
 
 def parse_rfc(xmlElement) -> rfc.RFC:
