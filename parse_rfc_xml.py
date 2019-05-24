@@ -890,22 +890,29 @@ def parse_country(xmlElement) -> rfc.Country:
                        xmlElement.attrib.get("ascii", None))
 
 def parse_postal(xmlElement) -> rfc.Postal:
-    postal_elements : Union[ListType[Union[rfc.City, rfc.Code, rfc.Country, rfc.Region, rfc.Street]],
-                            ListType[rfc.PostalLine]] = []
+    postalElementsA : ListType[Union[rfc.City, rfc.Code, rfc.Country, rfc.Region, rfc.Street]] = []
+    postalElementsB : ListType[rfc.PostalLine] = []
     for postalChild in xmlElement:
+        # Variant one in RFC 7991 section 2.37:
         if postalChild.tag == "city":
-            postal_elements.append(parse_city(postalChild))
+            postalElementsA.append(parse_city(postalChild))
         elif postalChild.tag == "code":
-            postal_elements.append(parse_code(postalChild))
+            postalElementsA.append(parse_code(postalChild))
         elif postalChild.tag == "country":
-            postal_elements.append(parse_country(postalChild))
+            postalElementsA.append(parse_country(postalChild))
         elif postalChild.tag == "region":
-            postal_elements.append(parse_region(postalChild))
+            postalElementsA.append(parse_region(postalChild))
         elif postalChild.tag == "street":
-            postal_elements.append(parse_street(postalChild))
+            postalElementsA.append(parse_street(postalChild))
+        # Variant two in RFC 7991 section 2.37:
         elif postalChild.tag == "postalLine":
-            postal_elements.append(parse_postalline(postalChild))
-    return rfc.Postal(postal_elements)
+            postalElementsB.append(parse_postalline(postalChild))
+    if len(postalElementsB) == 0:
+        assert len(postalElementsA) > 0
+        return rfc.Postal(postalElementsA)
+    else:
+        assert len(postalElementsB) > 0
+        return rfc.Postal(postalElementsB)
 
 def parse_email(xmlElement) -> rfc.Email:
     return rfc.Email(xmlElement.text,
