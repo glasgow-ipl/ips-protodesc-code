@@ -1187,9 +1187,9 @@ def parse_link(xmlElement) -> rfc.Link:
 
 def parse_rfc(xmlElement) -> rfc.RFC:
     links = []
-    front = None
-    middle = None
-    back = None
+    front  : rfc.Front
+    middle : rfc.Middle
+    back   : rfc.Back
     for rfcChild in xmlElement:
         if rfcChild.tag == "link":
             links.append(parse_link(rfcChild))
