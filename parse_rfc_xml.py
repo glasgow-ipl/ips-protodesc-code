@@ -1022,7 +1022,7 @@ def parse_boilerplate(xmlElement) -> rfc.Boilerplate:
     return rfc.Boilerplate(content)
 
 def parse_front(xmlElement) -> rfc.Front:
-    title = None
+    title : rfc.Title
     seriesInfo = []
     authors = []
     date = None
