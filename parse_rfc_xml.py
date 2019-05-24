@@ -893,6 +893,8 @@ def parse_postal(xmlElement) -> rfc.Postal:
             postal_elements.append(parse_region(postalChild))
         elif postalChild.tag == "street":
             postal_elements.append(parse_street(postalChild))
+        elif postalChild.tag == "postalLine":
+            postal_elements.append(parse_postalline(postalChild))
     return rfc.Postal(postal_elements)
 
 def parse_email(xmlElement) -> rfc.Email:
