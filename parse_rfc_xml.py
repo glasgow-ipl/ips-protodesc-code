@@ -432,48 +432,55 @@ def parse_ol(xmlElement) -> rfc.OL:
                   xmlElement.attrib.get("type", None))
 
 def parse_dd(xmlElement) -> rfc.DD:
-    content = []
+    contentA : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]] = []
+    contentB : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for ddChild in xmlElement:
+        # Variant one in RFC 7991 section 2.18:
         if ddChild.tag == "artwork":
-            content.append(parse_artwork(ddChild))
+            contentA.append(parse_artwork(ddChild))
         elif ddChild.tag == "dl":
-            content.append(parse_dl(ddChild))
+            contentA.append(parse_dl(ddChild))
         elif ddChild.tag == "figure":
-            content.append(parse_figure(ddChild))
+            contentA.append(parse_figure(ddChild))
         elif ddChild.tag == "ol":
-            content.append(parse_ol(ddChild))
+            contentA.append(parse_ol(ddChild))
         elif ddChild.tag == "sourcecode":
-            content.append(parse_sourcecode(ddChild))
+            contentA.append(parse_sourcecode(ddChild))
         elif ddChild.tag == "t":
-            content.append(parse_t(ddChild))
+            contentA.append(parse_t(ddChild))
         elif ddChild.tag == "ul":
-            content.append(parse_ul(ddChild))
+            contentA.append(parse_ul(ddChild))
+        # Variant two in RFC 7991 section 2.18:
         elif ddChild.tag == "bcp14":
-            content.append(parse_bcp14(ddChild))
+            contentB.append(parse_bcp14(ddChild))
         elif ddChild.tag == "cref":
-            content.append(parse_cref(ddChild))
+            contentB.append(parse_cref(ddChild))
         elif ddChild.tag == "em":
-            content.append(parse_em(ddChild))
+            contentB.append(parse_em(ddChild))
         elif ddChild.tag == "eref":
-            content.append(parse_eref(ddChild))
+            contentB.append(parse_eref(ddChild))
         elif ddChild.tag == "iref":
-            content.append(parse_iref(ddChild))
+            contentB.append(parse_iref(ddChild))
         elif ddChild.tag == "relref":
-            content.append(parse_relref(ddChild))
+            contentB.append(parse_relref(ddChild))
         elif ddChild.tag == "strong":
-            content.append(parse_strong(ddChild))
+            contentB.append(parse_strong(ddChild))
         elif ddChild.tag == "sub":
-            content.append(parse_sub(ddChild))
+            contentB.append(parse_sub(ddChild))
         elif ddChild.tag == "sup":
-            content.append(parse_sup(ddChild))
+            contentB.append(parse_sup(ddChild))
         elif ddChild.tag == "tt":
-            content.append(parse_tt(ddChild))
+            contentB.append(parse_tt(ddChild))
         elif ddChild.tag == "xref":
-            content.append(parse_xref(ddChild))  
+            contentB.append(parse_xref(ddChild))  
     if xmlElement.text is not None:
-        content.append(xmlElement.text)
-    return rfc.DD(content,
-                  xmlElement.attrib.get("anchor", None))
+        contentB.append(xmlElement.text)
+    if len(contentB) == 0:
+        assert len(contentA) > 0
+        return rfc.DD(contentA, xmlElement.attrib.get("anchor", None))
+    else:
+        assert len(contentB) > 0
+        return rfc.DD(contentB, xmlElement.attrib.get("anchor", None))
 
 def parse_dt(xmlElement) -> rfc.DT:
     content : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
@@ -593,102 +600,126 @@ def parse_br(xmlElement) -> rfc.BR:
     return rfc.BR()
 
 def parse_th(xmlElement) -> rfc.TH:
-    content = []
+    contentA : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]] = []
+    contentB : ListType[Union[rfc.Text, rfc.BCP14, rfc.BR, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for thChild in xmlElement:
+        # Variant one in RFC 7991 section 2.58:
         if thChild.tag == "artwork":
-            content.append(parse_artwork(thChild))
+            contentA.append(parse_artwork(thChild))
         elif thChild.tag == "dl":
-            content.append(parse_dl(thChild))
+            contentA.append(parse_dl(thChild))
         elif thChild.tag == "figure":
-            content.append(parse_figure(thChild))
+            contentA.append(parse_figure(thChild))
         elif thChild.tag == "ol":
-            content.append(parse_ol(thChild))
+            contentA.append(parse_ol(thChild))
         elif thChild.tag == "sourcecode":
-            content.append(parse_sourcecode(thChild))
+            contentA.append(parse_sourcecode(thChild))
         elif thChild.tag == "t":
-            content.append(parse_t(thChild))
+            contentA.append(parse_t(thChild))
         elif thChild.tag == "ul":
-            content.append(parse_ul(thChild))
+            contentA.append(parse_ul(thChild))
+        # Variant two in RFC 7991 section 2.58:
         elif thChild.tag == "bcp14":
-            content.append(parse_bcp14(thChild))
+            contentB.append(parse_bcp14(thChild))
         elif thChild.tag == "br":
-            content.append(parse_br(thChild))
+            contentB.append(parse_br(thChild))
         elif thChild.tag == "cref":
-            content.append(parse_cref(thChild))
+            contentB.append(parse_cref(thChild))
         elif thChild.tag == "em":
-            content.append(parse_em(thChild))
+            contentB.append(parse_em(thChild))
         elif thChild.tag == "eref":
-            content.append(parse_eref(thChild))
+            contentB.append(parse_eref(thChild))
         elif thChild.tag == "iref":
-            content.append(parse_iref(thChild))
+            contentB.append(parse_iref(thChild))
         elif thChild.tag == "relref":
-            content.append(parse_relref(thChild))
+            contentB.append(parse_relref(thChild))
         elif thChild.tag == "strong":
-            content.append(parse_strong(thChild))
+            contentB.append(parse_strong(thChild))
         elif thChild.tag == "sub":
-            content.append(parse_sub(thChild))
+            contentB.append(parse_sub(thChild))
         elif thChild.tag == "sup":
-            content.append(parse_sup(thChild))
+            contentB.append(parse_sup(thChild))
         elif thChild.tag == "tt":
-            content.append(parse_tt(thChild))
+            contentB.append(parse_tt(thChild))
         elif thChild.tag == "xref":
-            content.append(parse_xref(thChild))  
+            contentB.append(parse_xref(thChild))  
     if xmlElement.text is not None:
-        content.append(xmlElement.text)
-    return rfc.TH(content,
-                  xmlElement.attrib.get("align", "left"),
-                  xmlElement.attrib.get("anchor", None),
-                  xmlElement.attrib.get("colspan", None),
-                  xmlElement.attrib.get("rowspan", None))
+        contentB.append(xmlElement.text)
+    if len(contentB) == 0:
+        assert len(contentA) > 0
+        return rfc.TH(contentA,
+                      xmlElement.attrib.get("align", "left"),
+                      xmlElement.attrib.get("anchor", None),
+                      xmlElement.attrib.get("colspan", None),
+                      xmlElement.attrib.get("rowspan", None))
+    else:
+        assert len(contentB) > 0
+        return rfc.TH(contentB,
+                      xmlElement.attrib.get("align", "left"),
+                      xmlElement.attrib.get("anchor", None),
+                      xmlElement.attrib.get("colspan", None),
+                      xmlElement.attrib.get("rowspan", None))
 
 def parse_td(xmlElement) -> rfc.TD:
-    content = []
+    contentA : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]] = []
+    contentB : ListType[Union[rfc.Text, rfc.BCP14, rfc.BR, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for tdChild in xmlElement:
+        # Variant one in RFC 7991 section 2.56:
         if tdChild.tag == "artwork":
-            content.append(parse_artwork(tdChild))
+            contentA.append(parse_artwork(tdChild))
         elif tdChild.tag == "dl":
-            content.append(parse_dl(tdChild))
+            contentA.append(parse_dl(tdChild))
         elif tdChild.tag == "figure":
-            content.append(parse_figure(tdChild))
+            contentA.append(parse_figure(tdChild))
         elif tdChild.tag == "ol":
-            content.append(parse_ol(tdChild))
+            contentA.append(parse_ol(tdChild))
         elif tdChild.tag == "sourcecode":
-            content.append(parse_sourcecode(tdChild))
+            contentA.append(parse_sourcecode(tdChild))
         elif tdChild.tag == "t":
-            content.append(parse_t(tdChild))
+            contentA.append(parse_t(tdChild))
         elif tdChild.tag == "ul":
-            content.append(parse_ul(tdChild))
+            contentA.append(parse_ul(tdChild))
+        # Variant two in RFC 7991 section 2.56:
         elif tdChild.tag == "bcp14":
-            content.append(parse_bcp14(tdChild))
+            contentB.append(parse_bcp14(tdChild))
         elif tdChild.tag == "br":
-            content.append(parse_br(tdChild))
+            contentB.append(parse_br(tdChild))
         elif tdChild.tag == "cref":
-            content.append(parse_cref(tdChild))
+            contentB.append(parse_cref(tdChild))
         elif tdChild.tag == "em":
-            content.append(parse_em(tdChild))
+            contentB.append(parse_em(tdChild))
         elif tdChild.tag == "eref":
-            content.append(parse_eref(tdChild))
+            contentB.append(parse_eref(tdChild))
         elif tdChild.tag == "iref":
-            content.append(parse_iref(tdChild))
+            contentB.append(parse_iref(tdChild))
         elif tdChild.tag == "relref":
-            content.append(parse_relref(tdChild))
+            contentB.append(parse_relref(tdChild))
         elif tdChild.tag == "strong":
-            content.append(parse_strong(tdChild))
+            contentB.append(parse_strong(tdChild))
         elif tdChild.tag == "sub":
-            content.append(parse_sub(tdChild))
+            contentB.append(parse_sub(tdChild))
         elif tdChild.tag == "sup":
-            content.append(parse_sup(tdChild))
+            contentB.append(parse_sup(tdChild))
         elif tdChild.tag == "tt":
-            content.append(parse_tt(tdChild))
+            contentB.append(parse_tt(tdChild))
         elif tdChild.tag == "xref":
-            content.append(parse_xref(tdChild))  
+            contentB.append(parse_xref(tdChild))  
     if xmlElement.text is not None:
-        content.append(xmlElement.text)
-    return rfc.TD(content,
-                  xmlElement.attrib.get("align", "left"),
-                  xmlElement.attrib.get("anchor", None),
-                  xmlElement.attrib.get("colspan", None),
-                  xmlElement.attrib.get("rowspan", None))
+        contentB.append(xmlElement.text)
+    if len(contentB) == 0:
+        assert len(contentA) > 0
+        return rfc.TD(contentA,
+                      xmlElement.attrib.get("align", "left"),
+                      xmlElement.attrib.get("anchor", None),
+                      xmlElement.attrib.get("colspan", None),
+                      xmlElement.attrib.get("rowspan", None))
+    else:
+        assert len(contentB) > 0
+        return rfc.TD(contentB,
+                      xmlElement.attrib.get("align", "left"),
+                      xmlElement.attrib.get("anchor", None),
+                      xmlElement.attrib.get("colspan", None),
+                      xmlElement.attrib.get("rowspan", None))
 
 def parse_tr(xmlElement) -> rfc.TR:
     content = []
@@ -773,50 +804,61 @@ def parse_aside(xmlElement) -> rfc.Aside:
                      xmlElement.attrib.get("anchor", None))
 
 def parse_blockquote(xmlElement) -> rfc.BlockQuote:
-    content = []
+    contentA : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]] = []
+    contentB : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for blockquoteChild in xmlElement:
+        # Variant one in RFC 7991 section 2.10:
         if blockquoteChild.tag == "artwork":
-            content.append(parse_artwork(blockquoteChild))
+            contentA.append(parse_artwork(blockquoteChild))
         elif blockquoteChild.tag == "dl":
-            content.append(parse_dl(blockquoteChild))
+            contentA.append(parse_dl(blockquoteChild))
         elif blockquoteChild.tag == "figure":
-            content.append(parse_figure(blockquoteChild))
+            contentA.append(parse_figure(blockquoteChild))
         elif blockquoteChild.tag == "ol":
-            content.append(parse_ol(blockquoteChild))
+            contentA.append(parse_ol(blockquoteChild))
         elif blockquoteChild.tag == "sourcecode":
-            content.append(parse_sourcecode(blockquoteChild))
+            contentA.append(parse_sourcecode(blockquoteChild))
         elif blockquoteChild.tag == "t":
-            content.append(parse_t(blockquoteChild))
+            contentA.append(parse_t(blockquoteChild))
         elif blockquoteChild.tag == "ul":
-            content.append(parse_ul(blockquoteChild))
+            contentA.append(parse_ul(blockquoteChild))
+        # Variant two in RFC 7991 section 2.10:
         elif blockquoteChild.tag == "bcp14":
-            content.append(parse_bcp14(blockquoteChild))
+            contentB.append(parse_bcp14(blockquoteChild))
         elif blockquoteChild.tag == "cref":
-            content.append(parse_cref(blockquoteChild))
+            contentB.append(parse_cref(blockquoteChild))
         elif blockquoteChild.tag == "em":
-            content.append(parse_em(blockquoteChild))
+            contentB.append(parse_em(blockquoteChild))
         elif blockquoteChild.tag == "eref":
-            content.append(parse_eref(blockquoteChild))
+            contentB.append(parse_eref(blockquoteChild))
         elif blockquoteChild.tag == "iref":
-            content.append(parse_iref(blockquoteChild))
+            contentB.append(parse_iref(blockquoteChild))
         elif blockquoteChild.tag == "relref":
-            content.append(parse_relref(blockquoteChild))
+            contentB.append(parse_relref(blockquoteChild))
         elif blockquoteChild.tag == "strong":
-            content.append(parse_strong(blockquoteChild))
+            contentB.append(parse_strong(blockquoteChild))
         elif blockquoteChild.tag == "sub":
-            content.append(parse_sub(blockquoteChild))
+            contentB.append(parse_sub(blockquoteChild))
         elif blockquoteChild.tag == "sup":
-            content.append(parse_sup(blockquoteChild))
+            contentB.append(parse_sup(blockquoteChild))
         elif blockquoteChild.tag == "tt":
-            content.append(parse_tt(blockquoteChild))
+            contentB.append(parse_tt(blockquoteChild))
         elif blockquoteChild.tag == "xref":
-            content.append(parse_xref(blockquoteChild))  
+            contentB.append(parse_xref(blockquoteChild))  
     if blockquoteChild.text is not None:
-        content.append(blockquoteChild.text)
-    return rfc.BlockQuote(content,
-                          xmlElement.attrib.get("anchor", None),
-                          xmlElement.attrib.get("cite", None),
-                          xmlElement.attrib.get("quotedFrom", None))
+        contentB.append(blockquoteChild.text)
+    if len(contentB) == 0:
+        assert len(contentA) > 0
+        return rfc.BlockQuote(contentA,
+                              xmlElement.attrib.get("anchor", None),
+                              xmlElement.attrib.get("cite", None),
+                              xmlElement.attrib.get("quotedFrom", None))
+    else:
+        assert len(contentB) > 0
+        return rfc.BlockQuote(contentB,
+                              xmlElement.attrib.get("anchor", None),
+                              xmlElement.attrib.get("cite", None),
+                              xmlElement.attrib.get("quotedFrom", None))
 
 def parse_section(xmlElement) -> rfc.Section:
     name = None
