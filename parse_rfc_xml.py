@@ -1149,7 +1149,7 @@ def parse_referencegroup(xmlElement) -> rfc.ReferenceGroup:
 
 def parse_references(xmlElement) -> rfc.References:
     name = None
-    content = []
+    content : ListType[Union[rfc.Reference, rfc.ReferenceGroup]] = []
     for referencesChild in xmlElement:
         if referencesChild.tag == "name":
             name = parse_name(referencesChild)
