@@ -740,7 +740,7 @@ def parse_table(xmlElement) -> rfc.Table:
                      xmlElement.attrib.get("anchor", None))
 
 def parse_aside(xmlElement) -> rfc.Aside:
-    content = []
+    content : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.IRef, rfc.List, rfc.OL, rfc.T, rfc.Table, rfc.UL]] = []
     for asideChild in xmlElement:
         if asideChild.tag == "artwork":
             content.append(parse_artwork(asideChild))
@@ -811,7 +811,7 @@ def parse_blockquote(xmlElement) -> rfc.BlockQuote:
 
 def parse_section(xmlElement) -> rfc.Section:
     name = None
-    content = []
+    content : ListType[Union[rfc.Artwork, rfc.Aside, rfc.BlockQuote, rfc.DL, rfc.Figure, rfc.IRef, rfc.OL, rfc.SourceCode, rfc.T, rfc.Table, rfc.TextTable, rfc.UL]] = []
     sections = []
     for sectionChild in xmlElement:
         if sectionChild.tag == "artwork":
@@ -982,7 +982,7 @@ def parse_keyword(xmlElement) -> rfc.Keyword:
     return rfc.Keyword(xmlElement.text)
 
 def parse_abstract(xmlElement) -> rfc.Abstract:
-    content = []
+    content : ListType[Union[rfc.DL, rfc.OL, rfc.T, rfc.UL]] = []
     for abstractChild in xmlElement:
         if abstractChild.tag == "dl":
             content.append(parse_dl(abstractChild))
@@ -997,7 +997,7 @@ def parse_abstract(xmlElement) -> rfc.Abstract:
 
 def parse_note(xmlElement) -> rfc.Note:
     name = None
-    content = []
+    content : ListType[Union[rfc.DL, rfc.OL, rfc.T, rfc.UL]] = []
     for noteChild in xmlElement:
         if noteChild.tag == "dl":
             content.append(parse_dl(noteChild))
@@ -1070,7 +1070,7 @@ def parse_format(xmlElement) -> rfc.Format:
                       xmlElement.attrib["type"])
 
 def parse_annotation(xmlElement) -> rfc.Annotation:
-    content = []
+    content : ListType[Union[rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.SpanX, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for annotationChild in xmlElement:
         if annotationChild.tag == "bcp14":
             content.append(parse_bcp14(annotationChild))
@@ -1101,7 +1101,7 @@ def parse_annotation(xmlElement) -> rfc.Annotation:
     return rfc.Annotation(content)
 
 def parse_refcontent(xmlElement) -> rfc.RefContent:
-    content = []
+    content : ListType[Union[rfc.Text, rfc.BCP14, rfc.EM, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT]] = []
     for refcontentChild in xmlElement:
         if refcontentChild.tag == "bcp14":
             content.append(parse_bcp14(refcontentChild))
