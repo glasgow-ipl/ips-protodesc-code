@@ -357,48 +357,57 @@ def parse_figure(xmlElement) -> rfc.Figure:
                       xmlElement.attrib.get("width", None))
 
 def parse_li(xmlElement) -> rfc.LI:
-    content = []
+    contentA : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]] = []
+    contentB : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
     for liChild in xmlElement:
+        # Variant one in RFC 7991 section 2.29:
         if liChild.tag == "artwork":
-            content.append(parse_artwork(liChild))
+            contentA.append(parse_artwork(liChild))
         elif liChild.tag == "dl":
-            content.append(parse_dl(liChild))
+            contentA.append(parse_dl(liChild))
         elif liChild.tag == "figure":
-            content.append(parse_figure(liChild))
+            contentA.append(parse_figure(liChild))
         elif liChild.tag == "ol":
-            content.append(parse_ol(liChild))
+            contentA.append(parse_ol(liChild))
         elif liChild.tag == "sourcecode":
-            content.append(parse_sourcecode(liChild))
+            contentA.append(parse_sourcecode(liChild))
         elif liChild.tag == "t":
-            content.append(parse_t(liChild))
+            contentA.append(parse_t(liChild))
         elif liChild.tag == "ul":
-            content.append(parse_ul(liChild))
+            contentA.append(parse_ul(liChild))
+        # Variant two in RFC 7991 section 2.29:
         elif liChild.tag == "bcp14":
-            content.append(parse_bcp14(liChild))
+            contentB.append(parse_bcp14(liChild))
         elif liChild.tag == "cref":
-            content.append(parse_cref(liChild))
+            contentB.append(parse_cref(liChild))
         elif liChild.tag == "em":
-            content.append(parse_em(liChild))
+            contentB.append(parse_em(liChild))
         elif liChild.tag == "eref":
-            content.append(parse_eref(liChild))
+            contentB.append(parse_eref(liChild))
         elif liChild.tag == "iref":
-            content.append(parse_iref(liChild))
+            contentB.append(parse_iref(liChild))
         elif liChild.tag == "relref":
-            content.append(parse_relref(liChild))
+            contentB.append(parse_relref(liChild))
         elif liChild.tag == "strong":
-            content.append(parse_strong(liChild))
+            contentB.append(parse_strong(liChild))
         elif liChild.tag == "sub":
-            content.append(parse_sub(liChild))
+            contentB.append(parse_sub(liChild))
         elif liChild.tag == "sup":
-            content.append(parse_sup(liChild))
+            contentB.append(parse_sup(liChild))
         elif liChild.tag == "tt":
-            content.append(parse_tt(liChild))
+            contentB.append(parse_tt(liChild))
         elif liChild.tag == "xref":
-            content.append(parse_xref(liChild))
+            contentB.append(parse_xref(liChild))
     if xmlElement.text is not None:
-        content.append(xmlElement.text)
-    return rfc.LI(content,
-                  xmlElement.attrib.get("anchor", None))
+        contentB.append(xmlElement.text)
+    if len(contentB) == 0:
+        # Variant one:
+        assert len(contentA) > 0
+        return rfc.LI(contentA, xmlElement.attrib.get("anchor", None))
+    else:
+        # Variant two:
+        assert len(contentB) > 0
+        return rfc.LI(contentB, xmlElement.attrib.get("anchor", None))
 
 def parse_ul(xmlElement) -> rfc.UL:
     content = []
@@ -881,7 +890,8 @@ def parse_country(xmlElement) -> rfc.Country:
                        xmlElement.attrib.get("ascii", None))
 
 def parse_postal(xmlElement) -> rfc.Postal:
-    postal_elements = []
+    postal_elements : Union[ListType[Union[rfc.City, rfc.Code, rfc.Country, rfc.Region, rfc.Street]],
+                            ListType[rfc.PostalLine]] = []
     for postalChild in xmlElement:
         if postalChild.tag == "city":
             postal_elements.append(parse_city(postalChild))
