@@ -87,9 +87,10 @@ class Function():
                 print("accepts_arguments: type mismatch {} vs {}".format(param_type, a.arg_type))
                 return False
         return True
-    
 
-class Trait:
+
+@dataclass
+class Trait():
     name    : str
     methods : Dict[str, Function]
 
