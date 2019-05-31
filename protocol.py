@@ -762,9 +762,6 @@ class Protocol:
     def get_type(self, type_name: str) -> ProtocolType:
         return self._types[type_name]
 
-    def pop_type(self, type_name: str) -> ProtocolType:
-        return self._types.pop(type_name)
-
     def get_func(self, func_name: str) -> Function:
         return self._funcs[func_name]
 
