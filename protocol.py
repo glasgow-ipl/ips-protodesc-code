@@ -28,12 +28,13 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+from abc         import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Any, Optional, cast
-from copy import copy, deepcopy
+from copy        import copy, deepcopy
+from typing      import Dict, List, Any, Optional, cast
+
 import unittest
 import re
-from abc import ABC, abstractmethod
 
 # Type names begin with an upper case letter, function names do not:
 TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$_]+$"
