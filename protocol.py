@@ -313,13 +313,16 @@ class ProtocolType(ABC):
             for method_name in trait.methods:
                 if method_name in self.methods:
                     raise ProtocolTypeError("Type {} already implements method {}".format(self.name, method_name))
-                else:                        
-                    self.methods[method_name] = deepcopy(trait.methods[method_name])
-                    for parameter in self.methods[method_name].parameters:
-                        if parameter.param_type is None:
-                            parameter.param_type = self
-                    if self.methods[method_name].return_type is None:
-                        self.methods[method_name].return_type = self
+                else:
+                    method = trait.methods[method_name]
+                    mf_name        = method.name
+                    mf_return_type = method.return_type if method.return_type is not None else self
+                    mf_parameters  = []
+                    for p in method.parameters:
+                        pn = p.param_name
+                        pt = p.param_type if p.param_type is not None else self
+                        mf_parameters.append(Parameter(pn, pt))
+                    self.methods[method_name] = Function(mf_name, mf_parameters, mf_return_type)
 
     def get_method(self, method_name) -> Function:
         # try to get the method in the narrowest type, but traverse chain of parent types
