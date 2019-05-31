@@ -28,6 +28,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+from dataclasses import dataclass
 from typing import Dict, List, Any, Optional, cast
 from copy import copy, deepcopy
 import unittest
@@ -65,15 +66,11 @@ class Parameter():
             return False
         return True
 
+@dataclass
 class Argument():
     arg_name  : str
     arg_type  : "ProtocolType"
     arg_value : Any
-
-    def __init__(self, arg_name: str, arg_type: "ProtocolType", arg_value: Any) -> None:
-        self.arg_name  = arg_name
-        self.arg_type  = arg_type
-        self.arg_value = arg_value
 
 
 class Function():
@@ -253,30 +250,23 @@ class ConstantExpression(Expression):
 # =================================================================================================
 # Fields in a structure or the context:
 
+@dataclass
 class Transform():
-    def __init__(self, into_name: str, into_type: "ProtocolType", using: Function) -> None:
-        self.into_name = into_name
-        self.into_type = into_type
-        self.using     = using
+    into_name : str
+    into_type : "ProtocolType"
+    using     : Function
 
-
+@dataclass
 class StructField():
-    def __init__(self, 
-                 field_name: str, 
-                 field_type: "ProtocolType", 
-                 is_present: Optional[Expression], 
-                 transform : Optional[Transform]) -> None:
-        self.field_name = field_name
-        self.field_type = field_type
-        self.is_present = is_present
-        self.transform  = transform
+    field_name: str
+    field_type: "ProtocolType"
+    is_present: Optional[Expression]
+    transform : Optional[Transform]
 
-
+@dataclass
 class ContextField():
-    def __init__(self, field_name: str, field_type: "ProtocolType") -> None:
-        self.field_name = field_name
-        self.field_type = field_type
-
+    field_name : str
+    field_type : "ProtocolType"
 
 # =================================================================================================
 # Protocol Types:
