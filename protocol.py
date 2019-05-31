@@ -292,10 +292,10 @@ class ProtocolType(ABC):
             return False
         if self.kind != obj.kind:
             return False
-        if self.traits != obj.traits:
-            return False
-        if self.methods != obj.methods:
-            return False
+#        if self.traits != obj.traits:
+#            return False
+#        if self.methods != obj.methods:
+#            return False
         return True
         
     def is_a(self, obj):
