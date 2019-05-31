@@ -50,20 +50,20 @@ class ProtocolTypeError(Exception):
 # =================================================================================================
 # Parameters, arguments, functions, and traits:
 
-@dataclass
+@dataclass(frozen=True)
 class Parameter():
     param_name : str
     param_type : "ProtocolType"
 
 
-@dataclass
+@dataclass(frozen=True)
 class Argument():
     arg_name  : str
     arg_type  : "ProtocolType"
     arg_value : Any
 
 
-@dataclass
+@dataclass(frozen=True)
 class Function():
     name        : str
     parameters  : List[Parameter]
