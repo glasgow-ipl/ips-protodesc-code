@@ -69,22 +69,24 @@ class Function:
     parameters  : List[Parameter]
     return_type : "ProtocolType"
 
-    def method_accepts_arguments(self, self_type, arguments:List[Argument]) -> bool:
-        # Returns True if the arguments match the parameters of this function,
-        # and this function is method compatible.
-        for (p, a) in zip(self.parameters[1:], arguments):
-            # if the method's parameter's type is None, then substitute it for the type of `self`
-            if p.param_type is None:
-                param_type = self_type
-            else:
-                param_type = p.param_type
+    def is_method(self) -> bool:
+        return (self.parameters[0].param_name == "self") and (self.parameters[0].param_type == None)
 
-            # check parameter names/types match argument names/types
-            if p.param_name != a.arg_name:
-                print("accepts_arguments: name mismatch {} vs {}".format(p.param_name, a.arg_name))
+
+    def is_method_accepting(self, self_type:"ProtocolType", arguments:List[Argument]) -> bool:
+        """
+        Check if this function is a method and accepts the specified arguments when invoked on an
+        object of type self_type
+        """
+        if not self.is_method():
+            return False
+        for (p, a) in zip(self.parameters[1:], arguments):
+            pname = p.param_name
+            ptype = p.param_type if p.param_type is not None else self_type
+
+            if (pname != a.arg_name):
                 return False
-            if not a.arg_type.is_a(param_type) and param_type != a.arg_type:
-                print("accepts_arguments: type mismatch {} vs {}".format(param_type, a.arg_type))
+            if (ptype != a.arg_type) or not a.arg_type.is_a(ptype):
                 return False
         return True
 
@@ -131,7 +133,7 @@ class MethodInvocationExpression(Expression):
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         # convert list of ArgumentExpressions to list of Arguments
         args = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
-        if not self.target.get_result_type(containing_type).get_method(self.method_name).method_accepts_arguments(self.target.get_result_type(containing_type), args):
+        if not self.target.get_result_type(containing_type).get_method(self.method_name).is_method_accepting(self.target.get_result_type(containing_type), args):
             print(self)
             raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
         return self.target.get_result_type(containing_type).get_method(self.method_name).return_type
