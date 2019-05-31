@@ -89,22 +89,11 @@ class Function:
         return True
 
 
-@dataclass
-class Trait():
+@dataclass(frozen=True)
+class Trait:
     name    : str
-    methods : Dict[str, Function]
+    methods : List[Function]
 
-    def __init__(self, name: str, methods: List[Function]) -> None:
-        self.name    = name
-        self.methods = {}
-        for method in methods:
-            self.methods[method.name] = method
-
-    def __eq__(self, obj):
-        return self.name == obj.name
-
-    def __str__(self):
-        print("Trait<{}>".format(self.name))
 
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
@@ -311,11 +300,10 @@ class ProtocolType(ABC):
             raise ProtocolTypeError("Type {} already implements trait {}".format(self.name, trait.name))
         else:
             self.traits[trait.name] = trait
-            for method_name in trait.methods:
-                if method_name in self.methods:
-                    raise ProtocolTypeError("Type {} already implements method {}".format(self.name, method_name))
+            for method in trait.methods:
+                if method.name in self.methods:
+                    raise ProtocolTypeError("Type {} already implements method {}".format(self.name, method.name))
                 else:
-                    method = trait.methods[method_name]
                     mf_name        = method.name
                     mf_return_type = method.return_type if method.return_type is not None else self
                     mf_parameters  = []
@@ -323,7 +311,7 @@ class ProtocolType(ABC):
                         pn = p.param_name
                         pt = p.param_type if p.param_type is not None else self
                         mf_parameters.append(Parameter(pn, pt))
-                    self.methods[method_name] = Function(mf_name, mf_parameters, mf_return_type)
+                    self.methods[method.name] = Function(mf_name, mf_parameters, mf_return_type)
 
     def get_method(self, method_name) -> Function:
         # try to get the method in the narrowest type, but traverse chain of parent types
@@ -996,112 +984,6 @@ class TestProtocol(unittest.TestCase):
 
         self.assertTrue(isinstance(const_expr, ConstantExpression))
         self.assertTrue(const_expr.get_result_type(None), protocol.get_type("Size"))
-
-    # =============================================================================================
-    # Test cases for the overall protocol:
-
-    def test_protocol(self):
-        protocol = Protocol()
-        # Check the number of built-in types:
-        self.assertEqual(len(protocol._types), 4)
-        # Check the built-in Nothing type:
-        self.assertEqual(protocol.get_type("Nothing").kind, "Nothing")
-        self.assertEqual(protocol.get_type("Nothing").name, "Nothing")
-        # Check the built-in Boolean type:
-        self.assertEqual(protocol.get_type("Boolean").kind, "Boolean")
-        self.assertEqual(protocol.get_type("Boolean").name, "Boolean")
-        # Check the built-in Size type:
-        self.assertEqual(protocol.get_type("Size").kind, "Integer")
-        self.assertEqual(protocol.get_type("Size").name, "Size")
-        # Check the number of built-in traits:
-        self.assertEqual(len(protocol._traits), 8)
-        # Check the built-in Arithmetic trait:
-        self.assertEqual(protocol.get_trait("ArithmeticOps").name, "ArithmeticOps")
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["plus"    ].name,        "plus")
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["plus"    ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["plus"    ].return_type, None)
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["minus"   ].name,        "minus")
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["minus"   ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["minus"   ].return_type, None)
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["multiply"].name,        "multiply")
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["multiply"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["multiply"].return_type, None)
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["divide"  ].name,        "divide")
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["divide"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["divide"  ].return_type, None)
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["modulo"  ].name,        "modulo")
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["modulo"  ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("ArithmeticOps").methods["modulo"  ].return_type, None)
-        self.assertEqual(len(protocol.get_trait("ArithmeticOps").methods), 5)
-        # Check the built-in Boolean trait:
-        self.assertEqual(protocol.get_trait("BooleanOps").name, "BooleanOps")
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["and"].name,        "and")
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["and"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["and"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["or" ].name,        "or")
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["or" ].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["or" ].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["not"].name,        "not")
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["not"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.get_trait("BooleanOps").methods["not"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(len(protocol.get_trait("BooleanOps").methods), 3)
-        # Check the built-in Equality trait:
-        self.assertEqual(protocol.get_trait("Equality").name, "Equality")
-        self.assertEqual(protocol.get_trait("Equality").methods["eq"].name,        "eq")
-        self.assertEqual(protocol.get_trait("Equality").methods["eq"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("Equality").methods["eq"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(protocol.get_trait("Equality").methods["ne"].name,        "ne")
-        self.assertEqual(protocol.get_trait("Equality").methods["ne"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("Equality").methods["ne"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(len(protocol.get_trait("Equality").methods), 2)
-        # Check the built-in Ordinal trait:
-        self.assertEqual(protocol.get_trait("Ordinal").name, "Ordinal")
-        self.assertEqual(protocol.get_trait("Ordinal").methods["lt"].name,        "lt")
-        self.assertEqual(protocol.get_trait("Ordinal").methods["lt"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("Ordinal").methods["lt"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(protocol.get_trait("Ordinal").methods["le"].name,        "le")
-        self.assertEqual(protocol.get_trait("Ordinal").methods["le"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("Ordinal").methods["le"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(protocol.get_trait("Ordinal").methods["gt"].name,        "gt")
-        self.assertEqual(protocol.get_trait("Ordinal").methods["gt"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("Ordinal").methods["gt"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(protocol.get_trait("Ordinal").methods["ge"].name,        "ge")
-        self.assertEqual(protocol.get_trait("Ordinal").methods["ge"].parameters,  [Parameter("self", None), Parameter("other", None)])
-        self.assertEqual(protocol.get_trait("Ordinal").methods["ge"].return_type, protocol.get_type("Boolean"))
-        self.assertEqual(len(protocol.get_trait("Ordinal").methods), 4)
-        # Check the built-in Value trait:
-        self.assertEqual(protocol.get_trait("Value").name, "Value")
-        self.assertEqual(protocol.get_trait("Value").methods["get"].name,        "get")
-        self.assertEqual(protocol.get_trait("Value").methods["get"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.get_trait("Value").methods["get"].return_type, None)
-        self.assertEqual(protocol.get_trait("Value").methods["set"].name,        "set")
-        self.assertEqual(protocol.get_trait("Value").methods["set"].parameters,  [Parameter("self", None), Parameter("value", None)])
-        self.assertEqual(protocol.get_trait("Value").methods["set"].return_type, protocol.get_type("Nothing"))
-        self.assertEqual(len(protocol.get_trait("Value").methods), 2)
-        # Check the built-in Sized trait:
-        self.assertEqual(protocol.get_trait("Sized").name, "Sized")
-        self.assertEqual(protocol.get_trait("Sized").methods["size"].name,        "size")
-        self.assertEqual(protocol.get_trait("Sized").methods["size"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.get_trait("Sized").methods["size"].return_type, protocol.get_type("Size"))
-        self.assertEqual(len(protocol.get_trait("Sized").methods), 1)
-        # Check the built-in IndexCollection trait:
-        self.assertEqual(protocol.get_trait("IndexCollection").name, "IndexCollection")
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["get"].name,           "get")
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["get"].parameters,     [Parameter("self", None), Parameter("index", protocol.get_type("Size"))])
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["get"].return_type,    None)
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["set"].name,           "set")
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["set"].parameters,     [Parameter("self", None), Parameter("index", protocol.get_type("Size")), Parameter("value", None)])
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["set"].return_type,    protocol.get_type("Nothing"))
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].name,        "length")
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.get_trait("IndexCollection").methods["length"].return_type, protocol.get_type("Size"))
-        self.assertEqual(len(protocol.get_trait("IndexCollection").methods), 3)
-        # Check the built-in IntegerRepresentable trait:
-        self.assertEqual(protocol.get_trait("IntegerRepresentable").name, "IntegerRepresentable")
-        self.assertEqual(protocol.get_trait("IntegerRepresentable").methods["to_integer"].name,        "to_integer")
-        self.assertEqual(protocol.get_trait("IntegerRepresentable").methods["to_integer"].parameters,  [Parameter("self", None)])
-        self.assertEqual(protocol.get_trait("IntegerRepresentable").methods["to_integer"].return_type, protocol.get_type("Integer"))
-        self.assertEqual(len(protocol.get_trait("IntegerRepresentable").methods), 1)
 
 # =================================================================================================
 if __name__ == "__main__":
