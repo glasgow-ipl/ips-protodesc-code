@@ -51,25 +51,25 @@ class ProtocolTypeError(Exception):
 # Parameters, arguments, functions, and traits:
 
 @dataclass(frozen=True)
-class Parameter():
+class Parameter:
     param_name : str
     param_type : "ProtocolType"
 
 
 @dataclass(frozen=True)
-class Argument():
+class Argument:
     arg_name  : str
     arg_type  : "ProtocolType"
     arg_value : Any
 
 
 @dataclass(frozen=True)
-class Function():
+class Function:
     name        : str
     parameters  : List[Parameter]
     return_type : "ProtocolType"
 
-    def method_accepts_arguments(self, self_type, arguments:List["Argument"]) -> bool:
+    def method_accepts_arguments(self, self_type, arguments:List[Argument]) -> bool:
         # Returns True if the arguments match the parameters of this function,
         # and this function is method compatible.
         for (p, a) in zip(self.parameters[1:], arguments):
