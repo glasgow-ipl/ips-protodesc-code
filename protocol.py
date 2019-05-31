@@ -756,7 +756,7 @@ class Protocol:
     def get_protocol_name(self) -> str:
         return self._name
 
-    def is_type(self, type_name: str) -> bool:
+    def has_type(self, type_name: str) -> bool:
         return type_name in self._types
 
     def get_type(self, type_name: str) -> ProtocolType:
