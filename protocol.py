@@ -63,15 +63,11 @@ class Argument():
     arg_value : Any
 
 
+@dataclass
 class Function():
     name        : str
     parameters  : List[Parameter]
     return_type : "ProtocolType"
-
-    def __init__(self, name: str, parameters: List[Parameter], return_type: "ProtocolType") -> None:
-        self.name        = name
-        self.parameters  = parameters
-        self.return_type = return_type
 
     def method_accepts_arguments(self, self_type, arguments:List["Argument"]) -> bool:
         # Returns True if the arguments match the parameters of this function,
@@ -92,10 +88,6 @@ class Function():
                 return False
         return True
     
-    def __eq__(self, obj):
-        if self.name != obj.name:
-            return False
-        return True
 
 class Trait:
     name    : str
