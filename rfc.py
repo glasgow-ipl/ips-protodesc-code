@@ -87,8 +87,8 @@ class RelRef(Elem):
     RFC 7991 Section 2.44
     """
     content       : Text
-    displayFormat : str
-    relative      : str
+    displayFormat : Optional[str]
+    relative      : Optional[str]
     section       : str
     target        : str
 
@@ -106,8 +106,8 @@ class IRef(Elem):
     RFC 7991 Section 2.27
     """
     item    : str
-    primary : bool
-    subitem : str
+    primary : Optional[bool]
+    subitem : Optional[str]
 
 @dataclass
 class XRef(Elem):
@@ -115,8 +115,8 @@ class XRef(Elem):
     RFC 7991 Section 2.66
     """
     content : Text
-    format  : str
-    pageno  : bool
+    format  : Optional[str]
+    pageno  : Optional[bool]
     target  : str
 
 @dataclass
@@ -125,9 +125,9 @@ class CRef(Elem):
     RFC 7991 Section 2.16
     """
     content : ListType[Union[Text, EM, ERef, RelRef, "Strong", "Sub", "Sup", "TT", XRef]]
-    anchor  : str
-    display : bool
-    source  : str
+    anchor  : Optional[str]
+    display : Optional[bool]
+    source  : Optional[str]
 
 # =================================================================================================
 # Sub and Sup elements
@@ -171,8 +171,8 @@ class SpanX(Elem):
     RFC 7991 Section 3.7
     """
     content  : Text
-    style    : str
-    xmlSpace : str
+    style    : Optional[str]
+    xmlSpace : Optional[str]
 
 
 # =================================================================================================
@@ -185,16 +185,16 @@ class List(Elem):
     RFC 7991 Section 3.4
     """
     content    : ListType["T"]
-    counter    : str 
-    hangIndent : str
-    style      : str
+    counter    : Optional[str] 
+    hangIndent : Optional[str]
+    style      : Optional[str]
 
 @dataclass
 class VSpace(Elem):
     """
     RFC 7991 Section 3.10
     """
-    blankLines : str
+    blankLines : Optional[str]
 
 @dataclass
 class T(Elem):
@@ -202,10 +202,10 @@ class T(Elem):
     RFC 7991 Section 2.53
     """
     content          : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, List, RelRef, SpanX, Strong, Sub, Sup, TT, VSpace, XRef]]
-    anchor           : str
-    hangText         : str
-    keepWithNext     : bool
-    keepWithPrevious : bool
+    anchor           : Optional[str]
+    hangText         : Optional[str]
+    keepWithNext     : Optional[bool]
+    keepWithPrevious : Optional[bool]
 
 # =================================================================================================
 # Artwork element
@@ -217,15 +217,15 @@ class Artwork(Elem):
     RFC 7991 Section 2.5
     """
     content  : Union[Text, ListType[SVG]]
-    align    : str
-    alt      : str
-    anchor   : str
-    height   : str
-    name     : str
-    src      : str
-    type     : str
-    width    : str
-    xmlSpace : str
+    align    : Optional[str]
+    alt      : Optional[str]
+    anchor   : Optional[str]
+    height   : Optional[str]
+    name     : Optional[str]
+    src      : Optional[str]
+    type     : Optional[str]
+    width    : Optional[str]
+    xmlSpace : Optional[str]
 
 # =================================================================================================
 # Pre and Postamble elements
@@ -266,10 +266,10 @@ class SourceCode(Elem):
     RFC 7991 Section 2.48
     """
     content : Text
-    anchor  : str
-    name    : str
-    src     : str
-    type    : str
+    anchor  : Optional[str]
+    name    : Optional[str]
+    src     : Optional[str]
+    type    : Optional[str]
 
 # =================================================================================================
 # Figure element
@@ -285,14 +285,14 @@ class Figure(Elem):
     preamble      : Optional[Preamble]
     content       : ListType[Union[Artwork, SourceCode]]
     postamble     : Optional[Postamble]
-    align         : str
-    alt           : str
-    anchor        : str
-    height        : str
-    src           : str
-    suppressTitle : bool
-    title         : str
-    width         : str
+    align         : Optional[str]
+    alt           : Optional[str]
+    anchor        : Optional[str]
+    height        : Optional[str]
+    src           : Optional[str]
+    suppressTitle : Optional[bool]
+    title         : Optional[str]
+    width         : Optional[str]
 
 # =================================================================================================
 # OL elements
@@ -305,7 +305,7 @@ class LI(Elem):
     """
     content : Union[ListType[Union[Artwork, "DL", Figure, "OL", SourceCode, T, "UL"]],
                     ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class UL(Elem):
@@ -313,9 +313,9 @@ class UL(Elem):
     RFC 7991 Section 2.63
     """
     content : ListType[LI]
-    anchor  : str
-    empty   : bool
-    spacing : str
+    anchor  : Optional[str]
+    empty   : Optional[bool]
+    spacing : Optional[str]
 
 @dataclass
 class OL(Elem):
@@ -323,11 +323,11 @@ class OL(Elem):
     RFC 7991 Section 2.34
     """
     content : ListType[LI]
-    anchor  : str
-    group   : str
-    spacing : str
-    start   : str
-    type    : str
+    anchor  : Optional[str]
+    group   : Optional[str]
+    spacing : Optional[str]
+    start   : Optional[str]
+    type    : Optional[str]
 
 # =================================================================================================
 # DL elements
@@ -340,7 +340,7 @@ class DD(Elem):
     """
     content : Union[ListType[Union[Artwork, "DL", Figure, OL, SourceCode, T, UL]],
                     ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class DT(Elem):
@@ -348,7 +348,7 @@ class DT(Elem):
     RFC 7991 Section 2.21
     """
     content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class DL(Elem):
@@ -356,9 +356,9 @@ class DL(Elem):
     RFC 7991 Section 2.20
     """
     content : ListType[Tuple[DT, DD]]
-    anchor  : str
-    hanging : bool
-    spacing : str
+    anchor  : Optional[str]
+    hanging : Optional[bool]
+    spacing : Optional[str]
 
 # =================================================================================================
 # TextTable elements
@@ -370,8 +370,8 @@ class TTCol(Elem):
     RFC 7991 Section 3.9
     """
     content : ListType[Union[Text, CRef, ERef, IRef, XRef]]
-    align   : str
-    width   : str
+    align   : Optional[str]
+    width   : Optional[str]
 
 @dataclass
 class C(Elem):
@@ -390,11 +390,11 @@ class TextTable(Elem):
     ttcols        : ListType[TTCol]
     cs            : Optional[ListType[C]]
     postamble     : Optional[Postamble]
-    align         : str
-    anchor        : str
-    style         : str
-    suppressTitle : bool
-    title         : str 
+    align         : Optional[str]
+    anchor        : Optional[str]
+    style         : Optional[str]
+    suppressTitle : Optional[bool]
+    title         : Optional[str]
 
 # =================================================================================================
 # TR elements
@@ -413,10 +413,10 @@ class TH(Elem):
     """
     content : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]], 
                     ListType[Union[Text, BCP14, BR, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
-    align   : str
-    anchor  : str
-    colspan : str
-    rowspan : str
+    align   : Optional[str]
+    anchor  : Optional[str]
+    colspan : Optional[str]
+    rowspan : Optional[str]
 
 @dataclass
 class TD(Elem):
@@ -425,10 +425,10 @@ class TD(Elem):
     """
     content : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]],
                     ListType[Union[Text, BCP14, BR, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
-    align   : str
-    anchor  : str
-    colspan : str
-    rowspan : str
+    align   : Optional[str]
+    anchor  : Optional[str]
+    colspan : Optional[str]
+    rowspan : Optional[str]
 
 @dataclass
 class TR(Elem):
@@ -436,7 +436,7 @@ class TR(Elem):
     RFC 7991 Section 2.61
     """
     content : ListType[Union[TD, TH]]
-    anchor  : str 
+    anchor  : Optional[str] 
 
 # =================================================================================================
 # Table elements
@@ -448,7 +448,7 @@ class TBody(Elem):
     RFC 7991 Section 2.55
     """
     content : ListType[TR]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class TFoot(Elem):
@@ -456,7 +456,7 @@ class TFoot(Elem):
     RFC 7991 Section 2.57
     """
     content : ListType[TR]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class THead(Elem):
@@ -464,7 +464,7 @@ class THead(Elem):
     RFC 7991 Section 2.59
     """
     content : ListType[TR]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class Table(Elem):
@@ -476,7 +476,7 @@ class Table(Elem):
     thead   : Optional[THead]
     tbodies : ListType[TBody]
     tfoot   : Optional[TFoot]
-    anchor  : str
+    anchor  : Optional[str]
 
 # =================================================================================================
 # Section elements
@@ -488,7 +488,7 @@ class Aside(Elem):
     RFC 7991 Section 2.6
     """
     content : ListType[Union[Artwork, DL, Figure, IRef, List, OL, T, Table, UL]]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class BlockQuote(Elem):
@@ -497,9 +497,9 @@ class BlockQuote(Elem):
     """
     content    : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]],
                        ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
-    anchor     : str
-    cite       : str
-    quotedFrom : str
+    anchor     : Optional[str]
+    cite       : Optional[str]
+    quotedFrom : Optional[str]
 
 @dataclass
 class Section(Elem):
@@ -509,11 +509,11 @@ class Section(Elem):
     name        : Optional[Name]
     content     : ListType[Union[Artwork, Aside, BlockQuote, DL, Figure, IRef, OL, SourceCode, T, Table, TextTable, UL]]
     sections    : Optional[ListType["Section"]]
-    anchor      : str
-    numbered    : bool
-    removeInRFC : bool
-    title       : str
-    toc         : str
+    anchor      : Optional[str]
+    numbered    : Optional[bool]
+    removeInRFC : Optional[bool]
+    title       : Optional[str]
+    toc         : Optional[str]
 
 # =================================================================================================
 # Middle element
@@ -536,7 +536,7 @@ class Street(Elem):
     RFC 7991 Section 2.49
     """
     content : Text
-    ascii   : str
+    ascii   : Optional[str]
 
 @dataclass
 class Region(Elem):
@@ -544,7 +544,7 @@ class Region(Elem):
     RFC 7991 Section 2.43
     """
     content : Text
-    ascii   : str
+    ascii   : Optional[str]
 
 @dataclass
 class PostalLine(Elem):
@@ -552,7 +552,7 @@ class PostalLine(Elem):
     RFC 7991 Section 2.38
     """
     content : Text
-    ascii   : str
+    ascii   : Optional[str]
 
 @dataclass
 class City(Elem):
@@ -560,7 +560,7 @@ class City(Elem):
     RFC 7991 Section 2.13
     """
     content : Text
-    ascii   : str
+    ascii   : Optional[str]
 
 @dataclass
 class Code(Elem):
@@ -568,7 +568,7 @@ class Code(Elem):
     RFC 7991 Section 2.14
     """
     content : Text
-    ascii   : str
+    ascii   : Optional[str]
     
 @dataclass
 class Country(Elem):
@@ -576,7 +576,7 @@ class Country(Elem):
     RFC 7991 Section 2.15
     """
     content : Text
-    ascii   : str
+    ascii   : Optional[str]
 
 @dataclass
 class Postal(Elem):
@@ -596,7 +596,7 @@ class Email(Elem):
     RFC 7991 Section 2.23
     """
     content : Text
-    ascii   : str
+    ascii   : Optional[str]
 
 @dataclass
 class Phone(Elem):
@@ -650,13 +650,13 @@ class Author(Elem):
     """
     org           : Optional[Organization]
     address       : Optional[Address]
-    asciiFullname : str
-    asciiInitials : str
-    asciiSurname  : str
-    fullname      : str
-    initials      : str
-    role          : str
-    surname       : str
+    asciiFullname : Optional[str]
+    asciiInitials : Optional[str]
+    asciiSurname  : Optional[str]
+    fullname      : Optional[str]
+    initials      : Optional[str]
+    role          : Optional[str]
+    surname       : Optional[str]
 
 # =================================================================================================
 # Front elements
@@ -667,11 +667,11 @@ class SeriesInfo(Elem):
     """
     RFC 7991 Section 2.47
     """
-    asciiName  : str
-    asciiValue : str
+    asciiName  : Optional[str]
+    asciiValue : Optional[str]
     name       : str
-    status     : str # TODO: optional?
-    stream     : str # TODO: optional?
+    status     : Optional[str]
+    stream     : Optional[str]
     value      : str
 
 @dataclass
@@ -680,17 +680,17 @@ class Title(Elem):
     RFC 7991 Section 2.60
     """
     content : Text
-    abbrev  : str
-    ascii   : str
+    abbrev  : Optional[str]
+    ascii   : Optional[str]
 
 @dataclass
 class Date(Elem):
     """
     RFC 7991 Section 2.17
     """
-    day    : str
-    month  : str
-    year   : str
+    day    : Optional[str]
+    month  : Optional[str]
+    year   : Optional[str]
 
 @dataclass
 class Area(Elem):
@@ -719,7 +719,7 @@ class Abstract(Elem):
     RFC 7991 Section 2.1
     """
     content : ListType[Union[DL, OL, T, UL]]
-    anchor  : str
+    anchor  : Optional[str]
 
 @dataclass
 class Note(Elem):
@@ -728,8 +728,8 @@ class Note(Elem):
     """
     name        : Optional[Name]
     content     : ListType[Union[DL, OL, T, UL]]
-    removeInRFC : bool 
-    title       : str
+    removeInRFC : Optional[bool] 
+    title       : Optional[str]
 
 @dataclass
 class Boilerplate(Elem):
@@ -763,8 +763,8 @@ class Format(Elem):
     """
     RFC 7991 Section 3.3
     """
-    octets : str
-    target : str
+    octets : Optional[str]
+    target : Optional[str]
     type   : str
 
 @dataclass
@@ -789,8 +789,8 @@ class Reference(Elem):
     front      : Front
     content    : ListType[Union[Annotation, Format, RefContent, SeriesInfo]]
     anchor     : str
-    quoteTitle : bool 
-    target     : str
+    quoteTitle : Optional[bool] 
+    target     : Optional[str]
 
 @dataclass
 class ReferenceGroup(Elem):
@@ -807,8 +807,8 @@ class References(Elem):
     """
     name    : Optional[Name]
     content : ListType[Union[Reference, ReferenceGroup]]
-    anchor  : str
-    title   : str
+    anchor  : Optional[str]
+    title   : Optional[str]
 
 # =================================================================================================
 # Back elements
@@ -841,7 +841,7 @@ class Link(Elem):
     RFC 7991 Section 2.30
     """
     href   : str
-    rel    : str
+    rel    : Optional[str]
 
 # =================================================================================================
 # RFC
@@ -856,20 +856,20 @@ class RFC(Elem):
     front          : Front
     middle         : Middle
     back           : Optional[Back]
-    category       : str
-    consensus      : str
-    docName        : str
-    indexInclude   : bool 
-    ipr            : str
-    iprExtract     : str
-    number         : str
-    obsoletes      : str
-    prepTime       : str
-    seriesNo       : str
-    sortRefs       : bool 
-    submissionType : str
-    symRefs        : bool 
-    tocDepth       : str
-    tocInclude     : bool 
-    updates        : str
-    version        : str
+    category       : Optional[str]
+    consensus      : Optional[str]
+    docName        : Optional[str]
+    indexInclude   : Optional[bool] 
+    ipr            : Optional[str]
+    iprExtract     : Optional[str]
+    number         : Optional[str]
+    obsoletes      : Optional[str]
+    prepTime       : Optional[str]
+    seriesNo       : Optional[str]
+    sortRefs       : Optional[bool] 
+    submissionType : Optional[str]
+    symRefs        : Optional[bool] 
+    tocDepth       : Optional[str]
+    tocInclude     : Optional[bool] 
+    updates        : Optional[str]
+    version        : Optional[str]
