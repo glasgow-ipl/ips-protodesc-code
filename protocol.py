@@ -50,22 +50,11 @@ class ProtocolTypeError(Exception):
 # =================================================================================================
 # Parameters, arguments, functions, and traits:
 
+@dataclass
 class Parameter():
     param_name : str
     param_type : "ProtocolType"
 
-    def __init__(self, param_name: str, param_type: "ProtocolType") -> None:
-        self.param_name = param_name
-        self.param_type = param_type
-
-    def __eq__(self, other) -> bool:
-        if not isinstance(other, Parameter):
-            return False
-        if self.param_name != other.param_name:
-            return False
-        if self.param_type != other.param_type:
-            return False
-        return True
 
 @dataclass
 class Argument():
