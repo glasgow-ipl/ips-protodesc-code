@@ -134,12 +134,12 @@ class MethodInvocationExpression(Expression):
         self.arg_exprs   = arg_exprs
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
-        # convert list of ArgumentExpressions to list of Arguments
-        args = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
-        if not self.target.get_result_type(containing_type).get_method(self.method_name).is_method_accepting(self.target.get_result_type(containing_type), args):
-            print(self)
+        args   = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
+        result = self.target.get_result_type(containing_type)
+        method = result.get_method(self.method_name) 
+        if not method.is_method_accepting(result, args):
             raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
-        return self.target.get_result_type(containing_type).get_method(self.method_name).return_type
+        return method.return_type
 
 
 class FunctionInvocationExpression(Expression):
