@@ -227,23 +227,26 @@ class ConstantExpression(Expression):
 # =================================================================================================
 # Fields in a structure or the context:
 
-@dataclass
+@dataclass(frozen=True)
 class Transform():
     into_name : str
     into_type : "ProtocolType"
     using     : Function
 
-@dataclass
+
+@dataclass(frozen=True)
 class StructField():
     field_name: str
     field_type: "ProtocolType"
     is_present: Optional[Expression]
     transform : Optional[Transform]
 
-@dataclass
+
+@dataclass(frozen=True)
 class ContextField():
     field_name : str
     field_type : "ProtocolType"
+
 
 # =================================================================================================
 # Protocol Types:
