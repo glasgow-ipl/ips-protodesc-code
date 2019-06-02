@@ -109,29 +109,24 @@ class Expression(ABC):
         pass
 
 
+@dataclass(frozen=True)
 class ArgumentExpression(Expression):
     arg_name: str
     arg_value: Expression
-
-    def __init__(self, arg_name: str, arg_value: Expression) -> None:
-        self.arg_name = arg_name
-        self.arg_value = arg_value
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         return self.arg_value.get_result_type(containing_type)
 
 
+@dataclass(frozen=True)
 class MethodInvocationExpression(Expression):
     target      : Expression
     method_name : str
     arg_exprs   : List[ArgumentExpression]
 
-    def __init__(self, target: Expression, method_name:str, arg_exprs: List[ArgumentExpression]) -> None:
-        if re.search(FUNC_NAME_REGEX, method_name) == None:
-            raise ProtocolTypeError("Method {}: invalid name".format(method_name))
-        self.target      = target
-        self.method_name = method_name
-        self.arg_exprs   = arg_exprs
+    def __post_init__(self):
+        if re.search(FUNC_NAME_REGEX, self.method_name) == None:
+            raise ProtocolTypeError("Method {}: invalid name".format(self.method_name))
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         args   = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
@@ -142,21 +137,21 @@ class MethodInvocationExpression(Expression):
         return method.return_type
 
 
+@dataclass(frozen=True)
 class FunctionInvocationExpression(Expression):
     func       : Function
     args_exprs : List[ArgumentExpression]
 
-    def __init__(self, func: Function, arg_exprs: List[ArgumentExpression]) -> None:
+    def __psto_init__(self):
         if re.search(FUNC_NAME_REGEX, func.name) == None:
             raise ProtocolTypeError("Invalid function name {}".format(func.name))
-        self.func        = func
-        self.arg_exprs   = arg_exprs
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         #TODO type checking
         return self.func.return_type
 
 
+@dataclass(frozen=True)
 class FieldAccessExpression(Expression):
     """
     An expression representing access to `field` of `target`.
@@ -164,10 +159,6 @@ class FieldAccessExpression(Expression):
     """
     target     : Expression
     field_name : str
-
-    def __init__(self, target: Expression, field_name: str) -> None:
-        self.target = target
-        self.field_name = field_name
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         if isinstance(self.target.get_result_type(containing_type), Struct):
@@ -177,27 +168,20 @@ class FieldAccessExpression(Expression):
             raise ProtocolTypeError("Cannot access fields in object of type {}".format(self.target.get_result_type(containing_type)))
 
 
+@dataclass(frozen=True)
 class ContextAccessExpression(Expression):
     context    : "Context"
     field_name : str
-
-    def __init__(self, context:"Context", field_name: str) -> None:
-        self.context     = context
-        self.field_name  = field_name
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         return self.context.field(self.field_name).field_type
 
 
+@dataclass(frozen=True)
 class IfElseExpression(Expression):
     condition : Expression
     if_true   : Expression
     if_false  : Expression
-
-    def __init__(self, condition: Expression, if_true: Expression, if_false: Expression) -> None:
-        self.condition   = condition
-        self.if_true     = if_true
-        self.if_false    = if_false
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         if self.condition.get_result_type(containing_type).kind != "Boolean":
@@ -207,21 +191,19 @@ class IfElseExpression(Expression):
         return self.if_true.get_result_type(containing_type)
 
 
+@dataclass(frozen=True)
 class ThisExpression(Expression):
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         return cast("ProtocolType", containing_type)
 
 
+@dataclass(frozen=True)
 class ConstantExpression(Expression):
-    _result_type : "ProtocolType"
-    value       : Any
-
-    def __init__(self, constant_type: "ProtocolType", constant_value: Any) -> None:
-        self._result_type = constant_type
-        self.value       = constant_value
+    constant_type  : "ProtocolType"
+    constant_value : Any
 
     def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
-        return self._result_type
+        return self.constant_type
 
 
 # =================================================================================================
