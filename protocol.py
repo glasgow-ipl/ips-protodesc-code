@@ -369,14 +369,14 @@ class Array(ProtocolType):
 
         if length == None:
             self.size = None
-        elif type(self.element_type) is BitString:
-            element_bitstring = cast(BitString, self.element_type)
+        elif isinstance(self.element_type, BitString):
+            element_bitstring = self.element_type
             if element_bitstring.size is None or self.length is None:
                 self.size = None
             else:
                 self.size = self.length * element_bitstring.size
-        elif type(self.element_type) is Array:
-            element_array = cast(Array, self.element_type)
+        elif isinstance(self.element_type, Array):
+            element_array = self.element_type
             if element_array.size is None or self.length is None:
                 self.size = None
             else:
