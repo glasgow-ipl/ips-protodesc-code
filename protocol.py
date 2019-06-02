@@ -82,15 +82,14 @@ class Function:
         Check if this function is a method and accepts the specified arguments when invoked on an
         object of type self_type
         """
-        if not self.is_method():
+        if not self.is_method(self_type):
             return False
         for (p, a) in zip(self.parameters[1:], arguments):
             pname = p.param_name
             ptype = p.param_type if p.param_type is not None else self_type
-
             if (pname != a.arg_name):
                 return False
-            if (ptype != a.arg_type) or not a.arg_type.is_a(ptype):
+            if (ptype != a.arg_type) and not a.arg_type.is_a(ptype):
                 return False
         return True
 
