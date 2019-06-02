@@ -69,8 +69,12 @@ class Function:
     parameters  : List[Parameter]
     return_type : "ProtocolType"
 
-    def is_method(self) -> bool:
-        return (self.parameters[0].param_name == "self") and (self.parameters[0].param_type == None)
+    def is_method(self, self_type: "ProtocolType") -> bool:
+        if self.parameters[0].param_name != "self":
+            return False
+        if self.parameters[0].param_type != self_type:
+            return False
+        return True
 
 
     def is_method_accepting(self, self_type:"ProtocolType", arguments:List[Argument]) -> bool:
