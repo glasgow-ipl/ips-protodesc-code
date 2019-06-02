@@ -105,8 +105,8 @@ class Trait:
 
 class Expression(ABC):
     @abstractmethod
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
-        pass
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+        raise ProtocolTypeError("Expression MUST be subclassed")
 
 
 @dataclass(frozen=True)
@@ -114,7 +114,7 @@ class ArgumentExpression(Expression):
     arg_name: str
     arg_value: Expression
 
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         return self.arg_value.get_result_type(containing_type)
 
 
@@ -128,7 +128,7 @@ class MethodInvocationExpression(Expression):
         if re.search(FUNC_NAME_REGEX, self.method_name) == None:
             raise ProtocolTypeError("Method {}: invalid name".format(self.method_name))
 
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         args   = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
         result = self.target.get_result_type(containing_type)
         method = result.get_method(self.method_name) 
@@ -146,8 +146,7 @@ class FunctionInvocationExpression(Expression):
         if re.search(FUNC_NAME_REGEX, func.name) == None:
             raise ProtocolTypeError("Invalid function name {}".format(func.name))
 
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
-        #TODO type checking
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         return self.func.return_type
 
 
@@ -160,7 +159,7 @@ class FieldAccessExpression(Expression):
     target     : Expression
     field_name : str
 
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         if isinstance(self.target.get_result_type(containing_type), Struct):
             struct = cast(Struct, self.target.get_result_type(containing_type))
             return struct.field(self.field_name).field_type
@@ -173,7 +172,7 @@ class ContextAccessExpression(Expression):
     context    : "Context"
     field_name : str
 
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         return self.context.field(self.field_name).field_type
 
 
@@ -183,7 +182,7 @@ class IfElseExpression(Expression):
     if_true   : Expression
     if_false  : Expression
 
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         if self.condition.get_result_type(containing_type).kind != "Boolean":
             raise ProtocolTypeError("Cannot create IfElseExpression: condition is not boolean")
         if self.if_true.get_result_type(containing_type) != self.if_false.get_result_type(containing_type):
@@ -193,8 +192,8 @@ class IfElseExpression(Expression):
 
 @dataclass(frozen=True)
 class ThisExpression(Expression):
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
-        return cast("ProtocolType", containing_type)
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+        return containing_type
 
 
 @dataclass(frozen=True)
@@ -202,7 +201,7 @@ class ConstantExpression(Expression):
     constant_type  : "ProtocolType"
     constant_value : Any
 
-    def get_result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         return self.constant_type
 
 
