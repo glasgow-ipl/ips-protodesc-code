@@ -1,4 +1,5 @@
 import sys
+import parsley
 
 def depaginate(lines):
     depaginated_lines = []
@@ -22,9 +23,14 @@ def trim_blank_lines(lines):
             trimmed_lines.append(lines[i])
     return trimmed_lines
 
+def generate_parser(grammarFilename):
+    with open(grammarFilename) as grammarFile:
+        return parsley.makeGrammar(grammarFile.read())
+
 if __name__ == "__main__":
     with open(sys.argv[1], "r") as rfcFile:
         rfcTxt = rfcFile.readlines()
         rfcTxt = depaginate(rfcTxt)
         rfcTxt = trim_blank_lines(rfcTxt)
+    parser = generate_parser(sys.argv[2])
     print("".join(rfcTxt))
