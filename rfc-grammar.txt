@@ -1,0 +1,61 @@
+# Generic helpers
+
+letter      = anything:x ?(x in ascii_letters)
+punc        = anything:x ?(x in punctuation)
+digit       = anything:x ?(x in '0123456789')
+letterdigit = letter|digit
+word        = <(letter|punc)+>:ls -> str(ls)
+
+uppercase_letter = anything:x ?(x in ascii_uppercase)
+lowercase_letter = anything:x ?(x in ascii_lowercase)
+number           = <digit+>:ds -> int(ds)
+
+tab = '   '
+ws = ' '*
+nl = '\n'
+
+line = tab <((word|number) ws)+>:text nl -> text
+t = line+:lines -> rfc.T(" ".join(lines), None, None, None, None)
+
+# RFC
+
+rfc = front:(front_obj, doc_name_str) -> print(rfc.RFC(None, 
+                                 front_obj,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 doc_name_str,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None,
+                                 None))
+
+# Front
+
+header_line = ((word|number) ws)+ nl
+title = ws <(word ws)+>:title_str ws -> print(rfc.Title(title_str, None, None))
+doc_name = ws <((word|number) ws)>+:doc_name ws -> "".join(doc_name)
+
+abstract = "Abstract" nl nl t+:ts -> print(rfc.Abstract(ts, None))
+
+status = "Status of This Memo" nl nl (line+ nl)+:text -> get_doc_series(text)
+ipr = "Copyright Notice" nl nl (line+ nl)+:text -> get_ipr_code(text)
+
+front = header_line+ nl
+        title:title_obj nl
+        doc_name:doc_name_str nl
+        abstract:abstract_obj nl
+        status:status_name
+        ipr:ipr_code
+                -> (rfc.Front(title_obj, None, [], None, None, None, None, None, None, None), doc_name_str)
