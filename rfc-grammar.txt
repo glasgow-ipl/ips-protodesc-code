@@ -58,4 +58,4 @@ front = header_line+ nl
         abstract:abstract_obj nl
         status:status_name
         ipr:ipr_code
-                -> (rfc.Front(title_obj, None, [], None, None, None, None, None, None, None), doc_name_str)
+                -> (rfc.Front(title_obj, [rfc.SeriesInfo(status_name, doc_name_str, status_name, None, None, doc_name_str)], [], None, None, None, None, None, None, None), doc_name_str)
