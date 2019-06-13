@@ -568,8 +568,8 @@ def parse_c(xmlElement) -> rfc.C:
             content.append(parse_tt(cChild))
         elif cChild.tag == "xref":
             content.append(parse_xref(cChild))  
-    if cChild.text is not None:
-        content.append(cChild.text)
+        if cChild.text is not None:
+            content.append(cChild.text)
     return rfc.C(content)
 
 def parse_texttable(xmlElement) -> rfc.TextTable:
@@ -580,16 +580,20 @@ def parse_texttable(xmlElement) -> rfc.TextTable:
     postamble = None
     for texttableChild in xmlElement:
         if texttableChild.tag == "name":
-            content.append(parse_name(texttableChild))
+            name = parse_name(texttableChild)
         elif texttableChild.tag == "preamble":
-            content.append(parse_preamble(texttableChild))
+            preamble = parse_preamble(texttableChild)
         elif texttableChild.tag == "ttcol":
-            content.append(parse_ttcol(texttableChild))
+            ttcols.append(parse_ttcol(texttableChild))
         elif texttableChild.tag == "c":
-            content.append(parse_c(texttableChild))
+            cs.append(parse_c(texttableChild))
         elif texttableChild.tag == "postamble":
-            content.append(parse_postamble(texttableChild))
-    return rfc.TextTable(content,
+            postamble = parse_postamble(texttableChild)
+    return rfc.TextTable(name,
+                         preamble,
+                         ttcols,
+                         cs,
+                         postamble,
                          xmlElement.attrib.get("align", "center"),
                          xmlElement.attrib.get("anchor", None),
                          xmlElement.attrib.get("style", None),
