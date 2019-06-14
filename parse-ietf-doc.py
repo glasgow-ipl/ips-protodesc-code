@@ -46,6 +46,8 @@ def main():
     docnameparser.add_argument("--rfc",     type=str)
     docnameparser.add_argument("--bcp",     type=str)
     docnameparser.add_argument("--std",     type=str)
+    docnameparser.add_argument("--xml",     type=str)
+    docnameparser.add_argument("--txt",     type=str)
     args = argparser.parse_args()
     
     dt = datatracker.DataTracker()
@@ -60,6 +62,8 @@ def main():
                 rfcXml = ET.fromstring(xml)
                 parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)
                 print(parsed_rfc)
+                
+    
     #TODO: rfc
     #TODO: bcp
     #TODO: std
