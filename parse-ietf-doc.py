@@ -50,23 +50,28 @@ def main():
     docnameparser.add_argument("--txt",     type=str)
     args = argparser.parse_args()
     
-    dt = datatracker.DataTracker()
-    if args.docname is not None:
-        doc = dt.document("/api/v1/doc/document/%s/" % (args.docname))
-        sub = dt.submission(doc.submissions[-1])
-        if ".xml" in sub.file_types:
-            #FIXME: check status
-            xmlReq = requests.get(ACTIVE_ID_URL + sub.name + "-" + sub.rev + ".xml")
-            if xmlReq.status_code == 200:
-                xml = xmlReq.text
-                rfcXml = ET.fromstring(xml)
-                parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)
-                print(parsed_rfc)
-                
+    xml = None
+    txt = None
     
-    #TODO: rfc
-    #TODO: bcp
-    #TODO: std
+    if args.docname is not None or args.rfc is not None or args.bcp is not None:
+        dt = datatracker.DataTracker()
+        if args.docname is not None:
+            doc = dt.document("/api/v1/doc/document/%s/" % (args.docname))
+            sub = dt.submission(doc.submissions[-1])
+            if ".xml" in sub.file_types:
+                #FIXME: check status
+                xmlReq = requests.get(ACTIVE_ID_URL + sub.name + "-" + sub.rev + ".xml")
+                if xmlReq.status_code == 200:
+                    xml = xmlReq.text
+    
+    if xml is not None:
+        rfcXml = ET.fromstring(xml)
+        parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)      
+    elif txt is not None:
+        parsed_rfc = None
+        #TODO
+    
+    print(parsed_rfc)          
 
 if __name__ == "__main__":
     main()
