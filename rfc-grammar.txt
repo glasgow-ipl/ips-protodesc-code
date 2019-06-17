@@ -14,15 +14,21 @@ tab = '   '
 ws = ' '*
 nl = '\n'
 
-line = tab <((word|number) ws)+>:text nl -> text
+line = tab ws <((word|number) ws)+>:text nl -> text
 t = line+:lines -> rfc.T(" ".join(lines), None, None, None, None)
+tocline = tab ws (number '.')* ws (word ws)+ number? nl
+section_name = (number '.')+ ws <(word ws)+>:name nl -> name
+appendix_name = "Appendix " (letter '.') (number '.')* ws <(word ws)+>:name nl -> name
 
 # RFC
 
-rfc = front:(front_obj, doc_name_str) -> print(rfc.RFC(None, 
+rfc = front:(front_obj, doc_name_str)
+      middle:middle_obj
+      back:back_obj
+                -> rfc.RFC(None, 
                                  front_obj,
-                                 None,
-                                 None,
+                                 middle_obj,
+                                 back_obj,
                                  None,
                                  None,
                                  doc_name_str,
@@ -39,18 +45,49 @@ rfc = front:(front_obj, doc_name_str) -> print(rfc.RFC(None,
                                  None,
                                  None,
                                  None,
-                                 None))
+                                 None)
+
+# Middle
+
+section = section_name:name nl <(t+ nl)>*:ts -> rfc.Section(name,
+                                    ts,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None)
+
+middle = section+:sections -> rfc.Middle(sections)
+
+# Back
+
+author_addr_blocks = "Authors' Addresses" nl nl (line+ nl)+:author_addr_block
+
+appendix = appendix_name:name nl <(t+ nl)>*:ts -> rfc.Section(name,
+                                    ts,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None,
+                                    None)
+
+back = appendix+:appendices author_addr_blocks -> rfc.Back(None,
+                                        None,
+                                        appendices)
 
 # Front
 
 header_line = ((word|number) ws)+ nl
-title = ws <(word ws)+>:title_str ws -> print(rfc.Title(title_str, None, None))
+title = ws <(word ws)+>:title_str ws -> rfc.Title(title_str, None, None)
 doc_name = ws <((word|number) ws)>+:doc_name ws -> "".join(doc_name)
 
-abstract = "Abstract" nl nl t+:ts -> print(rfc.Abstract(ts, None))
+abstract = "Abstract" nl nl t+:ts -> rfc.Abstract(ts, None)
 
 status = "Status of This Memo" nl nl (line+ nl)+:text -> get_doc_series(text)
 ipr = "Copyright Notice" nl nl (line+ nl)+:text -> get_ipr_code(text)
+toc = "Table of Contents" nl nl tocline+ nl
 
 front = header_line+ nl
         title:title_obj nl
@@ -58,4 +95,5 @@ front = header_line+ nl
         abstract:abstract_obj nl
         status:status_name
         ipr:ipr_code
-                -> (rfc.Front(title_obj, [rfc.SeriesInfo(status_name, doc_name_str, status_name, None, None, doc_name_str)], [], None, None, None, None, None, None, None), doc_name_str)
+        toc
+                -> (rfc.Front(title_obj, [rfc.SeriesInfo(status_name, doc_name_str, status_name, None, None, doc_name_str)], [], None, None, None, None, abstract_obj, None, None), doc_name_str)
