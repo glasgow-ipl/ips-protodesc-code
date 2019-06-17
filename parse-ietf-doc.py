@@ -63,7 +63,10 @@ def main():
                 xmlReq = requests.get(ACTIVE_ID_URL + sub.name + "-" + sub.rev + ".xml")
                 if xmlReq.status_code == 200:
                     xml = xmlReq.text
-    
+    elif args.xml is not None:
+        with open(args.xml, "r") as xmlFile:
+            xml = xmlFile.read()
+
     if xml is not None:
         rfcXml = ET.fromstring(xml)
         parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)      
