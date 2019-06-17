@@ -44,11 +44,14 @@ def generate_parser(grammarFilename):
                                      "get_ipr_code"    : get_ipr_code,
                                    })
 
+def parse_rfc(rfcTxt):
+    rfcTxt = depaginate(rfcTxt)
+    rfcTxt = trim_blank_lines(rfcTxt)
+    parser = generate_parser("rfc-grammar.txt")
+    rfc = parser("".join(rfcTxt)).rfc()
+    return rfc
+
 if __name__ == "__main__":
     with open(sys.argv[1], "r") as rfcFile:
         rfcTxt = rfcFile.readlines()
-        rfcTxt = depaginate(rfcTxt)
-        rfcTxt = trim_blank_lines(rfcTxt)
-    parser = generate_parser("rfc-grammar.txt")
-    rfc = parser("".join(rfcTxt)).rfc()
-    print(rfc)
+        print(parse_rfc(rfcTxt))

@@ -33,11 +33,9 @@ from ietfdata.ietfdata import datatracker
 import argparse
 import rfc
 import requests
-import parse_rfc_xml
+import parse_rfc_xml #TODO tidy up the directory structure for these
+import parse_rfc_txt # ^^
 import xml.etree.ElementTree as ET
-
-ACTIVE_ID_URL   = "https://ietf.org/id/"
-ARCHIVED_ID_URL = "https://ietf.org/archive/id/"
 
 def main():
     argparser = argparse.ArgumentParser()
@@ -52,27 +50,34 @@ def main():
     
     xml = None
     txt = None
-    
+    parsed_rfc = None
+
     if args.draftname is not None or args.rfc is not None or args.bcp is not None:
         dt = datatracker.DataTracker()
         if args.draftname is not None:
             doc = dt.document_from_draft(args.draftname)
             sub = dt.submission(doc.submissions[-1])
             if ".xml" in sub.file_types:
-                #FIXME: check status
+                #FIXME: import datatracker function
                 xmlReq = requests.get(ACTIVE_ID_URL + sub.name + "-" + sub.rev + ".xml")
                 if xmlReq.status_code == 200:
                     xml = xmlReq.text
+            elif ".txt" in sub.file_types:
+                txtReq = requests.get(ACTIVE_ID_URL + sub.name + "-" + sub.rev + ".txt")
+                if txtReq.status_code == 200:
+                    txt = txtReq.text
     elif args.xml is not None:
         with open(args.xml, "r") as xmlFile:
             xml = xmlFile.read()
+    elif args.txt is not None:
+        with open(args.txt, "r") as txtFile:
+            txt = txtFile.readlines()
 
     if xml is not None:
         rfcXml = ET.fromstring(xml)
         parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)      
     elif txt is not None:
-        parsed_rfc = None
-        #TODO
+        parsed_rfc = parse_rfc_txt.parse_rfc(txt)
     
     print(parsed_rfc)          
 
