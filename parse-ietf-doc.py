@@ -42,7 +42,7 @@ ARCHIVED_ID_URL = "https://ietf.org/archive/id/"
 def main():
     argparser = argparse.ArgumentParser()
     docnameparser = argparser.add_mutually_exclusive_group(required=True)
-    docnameparser.add_argument("--docname", type=str)
+    docnameparser.add_argument("--draftname", type=str)
     docnameparser.add_argument("--rfc",     type=str)
     docnameparser.add_argument("--bcp",     type=str)
     docnameparser.add_argument("--std",     type=str)
@@ -53,10 +53,10 @@ def main():
     xml = None
     txt = None
     
-    if args.docname is not None or args.rfc is not None or args.bcp is not None:
+    if args.draftname is not None or args.rfc is not None or args.bcp is not None:
         dt = datatracker.DataTracker()
-        if args.docname is not None:
-            doc = dt.document("/api/v1/doc/document/%s/" % (args.docname))
+        if args.draftname is not None:
+            doc = dt.document_from_draft(args.draftname)
             sub = dt.submission(doc.submissions[-1])
             if ".xml" in sub.file_types:
                 #FIXME: check status
