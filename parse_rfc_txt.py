@@ -25,6 +25,16 @@ def trim_blank_lines(lines):
             trimmed_lines.append(lines[i])
     return trimmed_lines
 
+def structure_subsections(sections):
+    section_depths = {}
+    for depth, section in sections:
+        if depth not in section_depths:
+            section_depths[depth] = []
+        section_depths[depth].append(section)
+        if depth > 1:
+            section_depths[depth-1][-1].sections.append(section)
+    return section_depths[1]
+
 def get_doc_series(text):
     return "Internet-Draft"
 
@@ -35,13 +45,14 @@ def generate_parser(grammarFilename):
     with open(grammarFilename) as grammarFile:
         return parsley.makeGrammar(grammarFile.read(),
                                    {
-                                     "ascii_uppercase" : string.ascii_uppercase,
-                                     "ascii_lowercase" : string.ascii_lowercase,
-                                     "ascii_letters"   : string.ascii_letters,
-                                     "punctuation"     : string.punctuation,
-                                     "rfc"             : rfc,
-                                     "get_doc_series"  : get_doc_series,
-                                     "get_ipr_code"    : get_ipr_code,
+                                     "ascii_uppercase"       : string.ascii_uppercase,
+                                     "ascii_lowercase"       : string.ascii_lowercase,
+                                     "ascii_letters"         : string.ascii_letters,
+                                     "punctuation"           : string.punctuation,
+                                     "rfc"                   : rfc,
+                                     "get_doc_series"        : get_doc_series,
+                                     "get_ipr_code"          : get_ipr_code,
+                                     "structure_subsections" : structure_subsections,
                                    })
 
 def parse_rfc(rfcTxt):
