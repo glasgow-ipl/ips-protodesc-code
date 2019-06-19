@@ -49,7 +49,7 @@ rfc = front:(front_obj, doc_name_str)
 
 # Middle
 
-section = section_name:(depth, name) nl <(t+ nl)>*:ts
+section = section_name:(depth, name) nl (t+:text nl -> text)*:ts
                          -> (depth, rfc.Section(name,
                                         ts,
                                         [],
