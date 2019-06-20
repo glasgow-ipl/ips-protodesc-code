@@ -16,9 +16,10 @@ nl = '\n'
 
 line = tab ws <((word|number) ws)+>:text nl -> text
 t = line+:lines -> rfc.T(" ".join(lines), None, None, None, None)
-tocline = tab ws (number '.')* ws (word ws)+ number? nl
+tocline = tab ws (letter '.')? (number '.')* ws (word ws)+ number? nl
 section_name = <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('.'), name)
-appendix_name = "Appendix " (letter '.') (number '.')* ws <(word ws)+>:name nl -> name
+appendix_name = "Appendix " (letter '.') ws <(word ws)+>:name nl -> (1, name)
+appendix_sub_name = (letter '.') <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('.')+1, name)
 
 # RFC
 
@@ -65,18 +66,18 @@ middle = section+:sections -> rfc.Middle(structure_subsections(sections))
 
 author_addr_blocks = "Authors' Addresses" nl nl (line+ nl)+:author_addr_block
 
-appendix = appendix_name:(depth, name) nl <(t+ nl)>*:ts -> rfc.Section(name,
+appendix = (appendix_name|appendix_sub_name):(depth, name) nl (t+:text nl -> text)*:ts -> (depth, rfc.Section(name,
                                     ts,
+                                    [],
                                     None,
                                     None,
                                     None,
                                     None,
-                                    None,
-                                    None)
+                                    None))
 
 back = appendix+:appendices author_addr_blocks -> rfc.Back(None,
                                         None,
-                                        appendices)
+                                        structure_subsections(appendices))
 
 # Front
 
