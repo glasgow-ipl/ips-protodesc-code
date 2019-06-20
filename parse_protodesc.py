@@ -38,7 +38,7 @@ from protocol import *
 # Input parsers
 import input_parsers.inputparser
 import input_parsers.packetlang.packetlang
-import input_parsers.extended_diagrams.extended_diagrams
+#import input_parsers.extended_diagrams.extended_diagrams
 
 # Output formatters
 import output_formatters.outputformatter

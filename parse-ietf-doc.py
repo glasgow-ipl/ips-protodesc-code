@@ -36,13 +36,19 @@ import requests
 import parse_rfc_xml #TODO tidy up the directory structure for these
 import parse_rfc_txt # ^^
 import xml.etree.ElementTree as ET
+import parse_protodesc #TODO pull the DFS code out of this file
 
 # RFC DOM input parsers
 import input_parsers.inputparser
 import input_parsers.rfcdom.asciidiagrams.asciidiagrams
 
+# Output formatters
+import output_formatters.outputformatter
+import output_formatters.simpleprinter
+
 def main():
     argparser = argparse.ArgumentParser()
+    
     docnameparser = argparser.add_mutually_exclusive_group(required=True)
     docnameparser.add_argument("--draftname", type=str)
     docnameparser.add_argument("--rfc",       type=str)
@@ -53,6 +59,9 @@ def main():
     
     argparser.add_argument("--dom-parser", type=str, nargs='+')
     
+    argparser.add_argument("--output-format", type=str, required=True)
+    argparser.add_argument("--output-file",   type=str, required=True)
+
     args = argparser.parse_args()
     
     xml = None
@@ -104,7 +113,41 @@ def main():
         dom_parser = construct_dom_parser[dom_parser_name]
         protocol = dom_parser.build_protocol(protocol, parsed_rfc)
 
-    print(protocol)
+    # ============================================================================================
+    # Protocol -> output
+    # ============================================================================================
+    
+    type_names = parse_protodesc.dfs_protocol(protocol)
+    
+    construct_output_formatter = {
+                                  "simpleprinter" : output_formatters.simpleprinter.SimplePrinter()
+                                 }
+    output_formatter = construct_output_formatter[args.output_format]
+    
+    # Format the protocol using output formatter
+    try:
+        for type_name in type_names:
+            pt = protocol.get_type(type_name)
+            if type(pt) is BitString:
+                output_formatter.format_bitstring(pt)
+            elif type(pt) is Struct:
+                output_formatter.format_struct(pt)
+            elif type(pt) is Array:
+                output_formatter.format_array(pt)
+            elif type(pt) is Enum:
+                output_formatter.format_enum(pt)
+            elif type(pt) is Function:
+                output_formatter.format_function(pt)
+            elif type(pt) is Context:
+                output_formatter.format_context(pt)
+        output_formatter.format_protocol(protocol)
+    except Exception as e:
+        raise e
+        print("Could not format protocol with specified formatter (%s)" % (args.output_format))
+
+    # Output to file
+    with open(args.output_file, "w+") as outputFile:
+        outputFile.write(output_formatter.generate_output())
 
 if __name__ == "__main__":
     main()
