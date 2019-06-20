@@ -37,21 +37,32 @@ import parse_rfc_xml #TODO tidy up the directory structure for these
 import parse_rfc_txt # ^^
 import xml.etree.ElementTree as ET
 
+# RFC DOM input parsers
+import input_parsers.inputparser
+import input_parsers.rfcdom.asciidiagrams.asciidiagrams
+
 def main():
     argparser = argparse.ArgumentParser()
     docnameparser = argparser.add_mutually_exclusive_group(required=True)
     docnameparser.add_argument("--draftname", type=str)
-    docnameparser.add_argument("--rfc",     type=str)
-    docnameparser.add_argument("--bcp",     type=str)
-    docnameparser.add_argument("--std",     type=str)
-    docnameparser.add_argument("--xml",     type=str)
-    docnameparser.add_argument("--txt",     type=str)
+    docnameparser.add_argument("--rfc",       type=str)
+    docnameparser.add_argument("--bcp",       type=str)
+    docnameparser.add_argument("--std",       type=str)
+    docnameparser.add_argument("--xml",       type=str)
+    docnameparser.add_argument("--txt",       type=str)
+    
+    argparser.add_argument("--dom-parser", type=str, required=True)
+    
     args = argparser.parse_args()
     
     xml = None
     txt = None
     parsed_rfc = None
 
+    # ============================================================================================
+    # RFC -> RFC DOM
+    # ============================================================================================
+    
     if args.draftname is not None or args.rfc is not None or args.bcp is not None:
         dt = datatracker.DataTracker()
         if args.draftname is not None:
@@ -78,8 +89,19 @@ def main():
         parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)      
     elif txt is not None:
         parsed_rfc = parse_rfc_txt.parse_rfc(txt)
+
+    # ============================================================================================
+    # RFC DOM -> Protocol
+    # ============================================================================================
+
+    construct_dom_parser = {
+                            "asciidiagrams"     : input_parsers.rfcdom.asciidiagrams.asciidiagrams.AsciiDiagrams(),
+                           }
+    dom_parser = construct_dom_parser[args.dom_parser]
     
-    print(parsed_rfc)          
+    protocol = dom_parser.build_protocol(parsed_rfc)
+
+    print(protocol)
 
 if __name__ == "__main__":
     main()
