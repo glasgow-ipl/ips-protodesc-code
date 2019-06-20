@@ -30,17 +30,21 @@
 
 import abc
 from protocol import Protocol
-from typing import Dict, List, Tuple, Optional, Any
+from typing import Dict, List, Tuple, Optional, Any, Union
+import rfc
 
 class InputParser(abc.ABC):
 
     @abc.abstractmethod
-    def build_protocol(self, input: str, name: str=None) -> Protocol:
+    def build_protocol(self, proto: Optional[Protocol], input: Union[str, rfc.RFC], name: str=None) -> Protocol:
         """
         Build a Protocol object for the protocol represented by the input string. 
 
         Arguments:
-            input -- A string representing a protocol definition
+            proto -- A protocol object. If specified, the input parser should augment this Protocol
+                     rather than creating a new Protocol. This allows input parsers to be chained
+                     together to define a single Protocol.
+            input -- A string representing a protocol definition or RFC DOM object
 	        
         Returns:
             A Protocol object

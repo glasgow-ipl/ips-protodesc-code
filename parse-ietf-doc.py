@@ -51,7 +51,7 @@ def main():
     docnameparser.add_argument("--xml",       type=str)
     docnameparser.add_argument("--txt",       type=str)
     
-    argparser.add_argument("--dom-parser", type=str, required=True)
+    argparser.add_argument("--dom-parser", type=str, nargs='+')
     
     args = argparser.parse_args()
     
@@ -97,9 +97,12 @@ def main():
     construct_dom_parser = {
                             "asciidiagrams"     : input_parsers.rfcdom.asciidiagrams.asciidiagrams.AsciiDiagrams(),
                            }
-    dom_parser = construct_dom_parser[args.dom_parser]
     
-    protocol = dom_parser.build_protocol(parsed_rfc)
+    protocol = None
+
+    for dom_parser_name in args.dom_parser:
+        dom_parser = construct_dom_parser[dom_parser_name]
+        protocol = dom_parser.build_protocol(protocol, parsed_rfc)
 
     print(protocol)
 
