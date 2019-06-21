@@ -38,6 +38,8 @@ import parse_rfc_txt # ^^
 import xml.etree.ElementTree as ET
 import parse_protodesc #TODO pull the DFS code out of this file
 
+from protocol import *
+
 # RFC DOM input parsers
 import input_parsers.inputparser
 import input_parsers.rfcdom.asciidiagrams.asciidiagrams
@@ -142,7 +144,6 @@ def main():
                 output_formatter.format_context(pt)
         output_formatter.format_protocol(protocol)
     except Exception as e:
-        raise e
         print("Could not format protocol with specified formatter (%s)" % (args.output_format))
 
     # Output to file

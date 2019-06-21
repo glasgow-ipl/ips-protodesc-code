@@ -53,7 +53,7 @@ rfc = front:(front_obj, doc_name_str)
 
 # Middle
 
-section = section_name:(depth, name) nl ((ascii_packet_diagram|t)+:text nl -> text)*:ts
+section = section_name:(depth, name) nl ((ascii_packet_diagram|t):text nl -> text)*:ts
                          -> (depth, rfc.Section(name,
                                         ts,
                                         [],
@@ -69,7 +69,7 @@ middle = section+:sections -> rfc.Middle(structure_subsections(sections))
 
 author_addr_blocks = "Authors' Addresses" nl nl (line+ nl)+:author_addr_block
 
-appendix = (appendix_name|appendix_sub_name):(depth, name) nl (t+:text nl -> text)*:ts -> (depth, rfc.Section(name,
+appendix = (appendix_name|appendix_sub_name):(depth, name) nl (t:text nl -> text)*:ts -> (depth, rfc.Section(name,
                                     ts,
                                     [],
                                     None,
