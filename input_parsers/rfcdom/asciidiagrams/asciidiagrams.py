@@ -7,4 +7,7 @@ class AsciiDiagrams(InputParser):
         super().__init__()
 
     def build_protocol(self, proto: protocol.Protocol, input: rfc.RFC, name: str=None) -> protocol.Protocol:
-        return protocol.Protocol()
+        if proto is None:
+            proto = protocol.Protocol()
+        proto.set_protocol_name(input.front.title.content)
+        return proto
