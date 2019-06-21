@@ -1,0 +1,20 @@
+# Generic helpers
+
+letter      = anything:x ?(x in ascii_letters)
+punc        = anything:x ?(x in punctuation)
+digit       = anything:x ?(x in '0123456789')
+letterdigit = letter|digit
+word        = <(letter|punc)+>:ls -> str(ls)
+
+uppercase_letter = anything:x ?(x in ascii_uppercase) -> x
+lowercase_letter = anything:x ?(x in ascii_lowercase)
+number           = <digit+>:ds -> int(ds)
+
+capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
+
+pdu_name = <(capitalised_word ' '?)*>:name -> str(name)[:-1]
+
+# Preamble
+
+preamble = ("An "|"A ") pdu_name:name "packet is formatted as follows:" -> protocol.define_struct(name, [], [], [])
+
