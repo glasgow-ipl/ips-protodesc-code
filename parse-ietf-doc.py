@@ -48,6 +48,8 @@ import input_parsers.rfcdom.asciidiagrams.asciidiagrams
 import output_formatters.outputformatter
 import output_formatters.simpleprinter
 
+ACTIVE_ID_URL = "https://www.ietf.org/id/"
+
 def main():
     argparser = argparse.ArgumentParser()
     
