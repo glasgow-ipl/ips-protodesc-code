@@ -7,7 +7,7 @@ def depaginate(lines):
     depaginated_lines = []
     for i in range(len(lines)):
         line_no = i - (56 * int(i/56))
-        if line_no not in [53, 54, 55, 0, 1, 2, 3]:
+        if line_no not in [53, 54, 55, 0, 1, 2]:
             if line_no == 52 and i+8 < len(lines):
                 indent_prev = len(lines[i-1]) - len(lines[i-1].lstrip())
                 indent_next = len(lines[i+8]) - len(lines[i+8].lstrip())
@@ -18,11 +18,15 @@ def depaginate(lines):
 
 def trim_blank_lines(lines):
     trimmed_lines = []
+    started = False
     for i in range(len(lines)):
+        if not started and lines[i] == "\n":
+            continue
         if i > 0 and lines[i] == "\n" and lines[i-1] == "\n":
             continue
         else:
             trimmed_lines.append(lines[i])
+            started = True
     return trimmed_lines
 
 def structure_subsections(sections):
