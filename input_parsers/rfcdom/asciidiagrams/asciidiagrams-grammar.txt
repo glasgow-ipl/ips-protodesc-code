@@ -7,14 +7,13 @@ letterdigit = letter|digit
 word        = <(letter|punc)+>:ls -> str(ls)
 
 uppercase_letter = anything:x ?(x in ascii_uppercase) -> x
-lowercase_letter = anything:x ?(x in ascii_lowercase)
+lowercase_letter = anything:x ?(x in ascii_lowercase) -> x
 number           = <digit+>:ds -> int(ds)
 
 capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
 
-pdu_name = <(capitalised_word ' '?)*>:name -> str(name)[:-1]
+pdu_name = <(word:w ?(w != "packet")' '?)*>:name -> str(name)[:-1]
 
 # Preamble
 
 preamble = ("An "|"A ") pdu_name:name "packet is formatted as follows:" -> protocol.define_struct(name, [], [], [])
-
