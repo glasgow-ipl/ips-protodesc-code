@@ -84,7 +84,7 @@ back = appendix+:appendices author_addr_blocks -> rfc.Back(None,
 
 # Front
 
-header_line = ((word|number) ws)+ nl
+header_line = ws ((word|number) ws)+ nl
 title = ws <(word ws)+>:title_str ws -> rfc.Title(title_str, None, None)
 doc_name = ws <((word|number) ws)>+:doc_name ws -> "".join(doc_name)
 
