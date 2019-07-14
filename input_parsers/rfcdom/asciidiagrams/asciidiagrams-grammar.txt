@@ -5,6 +5,7 @@ punc        = anything:x ?(x in punctuation)
 digit       = anything:x ?(x in '0123456789')
 letterdigit = letter|digit
 word        = <(letter|punc)+>:ls -> str(ls)
+alphanum    = <(letter|number)+>:ls -> str(ls)
 
 uppercase_letter = anything:x ?(x in ascii_uppercase) -> x
 lowercase_letter = anything:x ?(x in ascii_lowercase) -> x
@@ -14,6 +15,10 @@ capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + l
 
 pdu_name = <(word:w ?(w != "packet")' '?)*>:name -> str(name)[:-1]
 
+field_name = <(alphanum:w ' '?)*>:name -> name.strip()
+
+field_title = field_name:full_label ('(' field_name:short_label ')')? ': ' number:size ' ' ('bits'|'bytes'|'bit'|'byte'):units -> generate_bitstring_type(protocol, full_label, size, units)
+
 # Preamble
 
-preamble = ("An "|"A ") pdu_name:name "packet is formatted as follows:" -> protocol.define_struct(name, [], [], [])
+preamble = ("An "|"A ") pdu_name:name "packet is formatted as follows:" -> name

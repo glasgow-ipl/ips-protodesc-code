@@ -4,16 +4,13 @@ import protocol
 import parsley 
 import string
 
-def process_section(section : rfc.Section, parser, structs):
-    for content in section.content:
-        if type(content) is rfc.T:
-            try:
-                preamble = parser(content.content).preamble()
-                structs.append(preamble)
-            except:
-                continue
-    for subsection in section.sections:
-        process_section(subsection, parser, structs)
+def generate_bitstring_type(proto, name, size, units):
+    if units == "bytes" or units == "byte":
+        size = size * 8
+    if name not in proto.get_type_names():
+        return proto.define_bitstring(name, size)
+    else:
+        return proto.get_type(name)
 
 class AsciiDiagrams(InputParser):
     def __init__(self) -> None:
@@ -23,13 +20,37 @@ class AsciiDiagrams(InputParser):
         with open("input_parsers/rfcdom/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
                                    {
-                                     "ascii_uppercase"       : string.ascii_uppercase,
-                                     "ascii_lowercase"       : string.ascii_lowercase,
-                                     "ascii_letters"         : string.ascii_letters,
-                                     "punctuation"           : string.punctuation,
-                                     "protocol"              : self.proto
+                                     "ascii_uppercase"         : string.ascii_uppercase,
+                                     "ascii_lowercase"         : string.ascii_lowercase,
+                                     "ascii_letters"           : string.ascii_letters,
+                                     "punctuation"             : string.punctuation,
+                                     "generate_bitstring_type" : generate_bitstring_type,
+                                     "protocol"                : self.proto
                                    })
 
+    def process_section(self, section : rfc.Section, parser, structs):
+        for i in range(len(section.content)):
+            if type(section.content[i]) is rfc.T:
+                try:
+                    pdu_name = parser(section.content[i].content).preamble()
+                    artwork = section.content[i+1]
+                    where = section.content[i+2]
+                    desc_list = section.content[i+3]
+                    fields = []
+                    for i in range(len(desc_list.content)):
+                        title, desc = desc_list.content[i]
+                        field_type = parser(title.content[0]).field_title()
+                        field = protocol.StructField(field_type.name.lower(),
+                              field_type,
+                              protocol.ConstantExpression(self.proto.get_type("Boolean"), "True"),
+                              None)
+                        fields.append(field)
+                    structs.append(self.proto.define_struct(pdu_name, fields, [], []))
+                except:
+                    continue
+        for subsection in section.sections:
+            self.process_section(subsection, parser, structs)
+        
     def build_protocol(self, proto: protocol.Protocol, input: rfc.RFC, name: str=None) -> protocol.Protocol:
         # if a Protocol hasn't been passed in, then instantiate one
         if proto is None:
@@ -47,7 +68,7 @@ class AsciiDiagrams(InputParser):
         structs = []
 
         for section in input.middle.content:
-            process_section(section, parser, structs)
+            self.process_section(section, parser, structs)
         
         for struct in structs:
             self.proto.define_pdu(struct.name)

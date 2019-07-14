@@ -222,7 +222,7 @@ def parse_vspace(xmlElement) -> rfc.VSpace:
     return rfc.VSpace(xmlElement.attrib.get("blankLines", None))
 
 def parse_t(xmlElement) -> rfc.T:
-    return rfc.T(xmlElement.text,
+    return rfc.T(" ".join(xmlElement.text.strip().split()),
                  xmlElement.attrib.get("anchor", None),
                  xmlElement.attrib.get("hangText", None),
                  xmlElement.attrib.get("keepWithNext", False),
@@ -474,7 +474,7 @@ def parse_dd(xmlElement) -> rfc.DD:
         elif ddChild.tag == "xref":
             contentB.append(parse_xref(ddChild))  
     if xmlElement.text is not None:
-        contentB.append(xmlElement.text)
+        contentB.append(" ".join(xmlElement.text.strip().split()))
     if len(contentB) == 0:
         assert len(contentA) > 0
         return rfc.DD(contentA, xmlElement.attrib.get("anchor", None))
@@ -508,7 +508,7 @@ def parse_dt(xmlElement) -> rfc.DT:
         elif dtChild.tag == "xref":
             content.append(parse_xref(dtChild))  
     if xmlElement.text is not None:
-        content.append(xmlElement.text)
+        content.append(" ".join(xmlElement.text.strip().split()))
     return rfc.DT(content,
                   xmlElement.attrib.get("anchor", None))
 
@@ -1028,7 +1028,7 @@ def parse_seriesinfo(xmlElement) -> rfc.SeriesInfo:
                           xmlElement.attrib["value"])
 
 def parse_title(xmlElement) -> rfc.Title:
-    return rfc.Title(xmlElement.text,
+    return rfc.Title(" ".join(xmlElement.text.strip().split()),
                      xmlElement.attrib.get("abbrev", None),
                      xmlElement.attrib.get("ascii", None))
 
