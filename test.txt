@@ -1,5 +1,0 @@
-Struct (Type<Struct::Fixed-width Field Format Sized Equality>)
-Struct (Type<Struct::Variable-width Field Format Sized Equality>)
-Struct (Type<Struct::Cross-referencing and Sequences Format Sized Equality>)
-Struct (Type<Struct::Optional Field Format Sized Equality>)
-Protocol (Fully Specifying Protocol Parsing with Augmented ASCII Diagrams)
