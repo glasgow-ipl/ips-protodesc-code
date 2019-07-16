@@ -47,7 +47,18 @@ class CodeGenerator(OutputFormatter):
 
 
     def format_bitstring(self, bitstring:BitString):
-        pass
+        self.output.append("    %s: " % bitstring.name)
+        #assign the smallest possible unsigned int which can accommodate the field
+        if bitstring.size <= 8:
+            self.output.append(" u%d" % 8)
+        elif bitstring.size <= 16:
+            self.output.append(" u%d" % 16)
+        elif bitstring.size <= 32:
+            self.output.append(" u%d" % 32)
+        elif bitstring.size <= 64:
+            self.output.append(" u%d" % 64)
+        else:
+            self.output.append(" u%d" % 128)
 
 
     def format_struct(self, struct:Struct):
@@ -63,8 +74,12 @@ class CodeGenerator(OutputFormatter):
         self.output.append("struct %s {\n" % struct.name)
         print(struct.fields)
         for field in struct.fields:
-            #need to add type annotations for each field
-            self.output.append("    %s : %s,\n" % (field.field_name, field.field_type))
+            if field.field_type.kind == "BitString":
+                self.format_bitstring(field.field_type)
+            if struct.fields.index(field) != len(struct.fields) - 1:
+                self.output.append(",\n")
+            else:
+                self.output.append("\n")
         self.output.append("}\n\n")
 
     def format_array(self, array:Array):

@@ -36,8 +36,6 @@ from typing      import Dict, List, Any, Optional, cast
 import unittest
 import re
 
-import output_formatters.code_generator
-
 # Type names begin with an upper case letter, function names do not:
 TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$_]+$"
 FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
@@ -819,10 +817,6 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Equality", res.traits)
         self.assertIn("Sized",    res.traits)
         # FIXME: add test for methods
-
-        #TESTING
-        generator = output_formatters.code_generator.CodeGenerator()
-        generator.format_protocol(protocol)
 
     def test_define_enum(self):
         protocol = Protocol()
