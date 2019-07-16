@@ -45,26 +45,50 @@ class CodeGenerator(OutputFormatter):
     def generate_output(self):
         pass
 
-
+    '''
     def format_bitstring(self, bitstring:BitString):
-        self.output.append("    %s: " % bitstring.name)
-        #assign the smallest possible unsigned int which can accommodate the field
-        if bitstring.size <= 8:
-            self.output.append(" u%d" % 8)
-        elif bitstring.size <= 16:
-            self.output.append(" u%d" % 16)
-        elif bitstring.size <= 32:
-            self.output.append(" u%d" % 32)
-        elif bitstring.size <= 64:
-            self.output.append(" u%d" % 64)
-        else:
-            self.output.append(" u%d" % 128)
+        pass
 
+    def format_bitstring_struct(self, bitstring:BitString, parent_pt:ProtocolType):
+    '''
+    def format_bitstring(self, bitstring:BitString, parent_pt:ProtocolType=None):
+        #do bitstrings occur on their own outside of enums/structs?
+        if parent_pt == None:
+            self.output.append("let %s: u%d;\n" % (bitstring.name.lower(), self.assign_int_size(bitstring)))
+        elif parent_pt.kind == "Struct":
+            self.output.append(": %s(u%d),\n" % (bitstring.name, self.assign_int_size(bitstring)))
+        elif parent_pt.kind == "Enum":
+            self.output.append("    %s(u%d),\n" % (bitstring.name, self.assign_int_size(bitstring)))
+
+    def assign_int_size(self, bitstring:BitString):
+        #assign the smallest possible unsigned int which can accommodate the field
+        #TODO: determine how to handle bitstrings which aren't given an explicit size
+        if bitstring.size <= 8:
+            return 8
+        elif bitstring.size <= 16:
+            return 16
+        elif bitstring.size <= 32:
+            return 32
+        elif bitstring.size <= 64:
+            return 64
+        else:
+            return 128
+
+
+    def declare_field_types(self, pt:ProtocolType):
+        if pt.kind == "Struct":
+            for field in pt.fields:
+                if field.field_type.kind == "BitString":
+                    self.output.append("struct %s(u%d);\n" % (field.field_type.name, self.assign_int_size(field.field_type)))
+                else:
+                    self.output.append("struct %s;\n" % field.field_type.name)
 
     def format_struct(self, struct:Struct):
+        #declare fields as types first
+        self.declare_field_types(struct)
         #traits need to be added up here if we're using !derive (eg. Eq, Ord)
         #including Debug trait by default - this may be changed later
-        self.output.append("#[derive(Debug")
+        self.output.append("\n#[derive(Debug")
         for trait in struct.traits:
             if trait == "Equality":
                 self.output.append(", Eq")
@@ -72,22 +96,42 @@ class CodeGenerator(OutputFormatter):
                 self.output.append(", Ord")
         self.output.append(")]\n")
         self.output.append("struct %s {\n" % struct.name)
-        print(struct.fields)
         for field in struct.fields:
             if field.field_type.kind == "BitString":
-                self.format_bitstring(field.field_type)
-            if struct.fields.index(field) != len(struct.fields) - 1:
-                self.output.append(",\n")
-            else:
-                self.output.append("\n")
-        self.output.append("}\n\n")
+                self.output.append("    %s" % field.field_name)
+                self.format_bitstring(field.field_type, struct)
+            if field.field_type.kind == "Struct":
+                self.format_field_struct(field.field_type)
+            if field.field_type.kind == "Enum":
+                self.format_enum("%s: %s,\n" % (field.field_name, field.field_type.name))
+        self.output.append("}\n")
+
+    #makes layout of enum variants or struct members which are structs less ugly
+    def format_field_struct(self, struct:Struct):
+        self.output.append("    %s { " % struct.name)
+        for field in struct.fields:
+            if field.field_type.kind == "BitString":
+                if struct.fields.index(field) != 0:
+                    self.output.append(", ")
+                self.output.append("%s: %s(u%d)" % (field.field_name, field.field_type.name, self.assign_int_size(field.field_type)))
+        self.output.append(")\n")
+
 
     def format_array(self, array:Array):
         pass
 
 
     def format_enum(self, enum:Enum):
-        pass
+        for variant in enum.variants:
+            if variant.kind == "Struct":
+                self.declare_field_types(variant)
+        self.output.append("\nEnum %s {\n" % enum.name)
+        for variant in enum.variants:
+            if variant.kind == "BitString":
+                self.format_bitstring(variant, enum)
+            elif variant.kind == "Struct":
+                self.format_field_struct(variant)
+        self.output.append("}\n")
 
 
     def format_function(self, function:Function):
@@ -104,5 +148,10 @@ class CodeGenerator(OutputFormatter):
             #print(protocol.get_type(item).kind)
             if protocol.get_type(item).kind == "Struct":
                 self.format_struct(protocol.get_type(item))
-        print("\n\n")
+                self.output.append("\n")
+            elif protocol.get_type(item).kind == "Enum":
+                self.format_enum(protocol.get_type(item))
+                self.output.append("\n")
+        print("========\n\n")
         print("".join(self.output))
+        print("========")

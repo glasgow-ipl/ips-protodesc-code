@@ -28,6 +28,11 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("IntegerRepresentable", res.traits)
         # FIXME: add test for methods
 
+        #Testing Rust code generation
+        generator = output_formatters.code_generator.CodeGenerator()
+        generator.format_bitstring(res)
+        print("".join(generator.output))
+
     def test_define_array(self):
         protocol = Protocol()
         ssrc = protocol.define_bitstring("SSRC", 32)
@@ -109,9 +114,46 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_enum(self):
         protocol = Protocol()
+
+        seqnum_trans = protocol.define_bitstring("SeqNumTrans", 16)
+        seqnum = protocol.define_bitstring("SeqNum", 16)
+        timestamp = protocol.define_bitstring("Timestamp", 32)
+        transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
+        field_6 = protocol.define_bitstring("Field6", 6)
+        field_10 = protocol.define_bitstring("Field10", 10)
+
+        # define fields
+        seq = StructField("seq",
+                          seqnum,
+                          Transform("ext_seq", seqnum_trans, transform_seq),
+                          ConstantExpression(protocol.get_type("Boolean"), "True"))
+        ts  = StructField("ts",
+                          timestamp,
+                          None,
+                          ConstantExpression(protocol.get_type("Boolean"), "True"))
+
+        f6  = StructField("f6",
+                          field_6,
+                          None,
+                          ConstantExpression(protocol.get_type("Boolean"), "True"))
+
+        f10  = StructField("f10",
+                           field_10,
+                           None,
+                           ConstantExpression(protocol.get_type("Boolean"), "True"))
+
+        # add constraints
+        seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(), "seq"),
+                                                    "eq",
+                                                    [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
+
+        # construct TestStruct
+        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10], [seq_constraint], [])
+
+        ress = protocol.get_type("TestStruct")
         typea = protocol.define_bitstring("TypeA", 32)
         typeb = protocol.define_bitstring("TypeB", 32)
-        protocol.define_enum("TestEnum", [typea, typeb])
+        protocol.define_enum("TestEnum", [typea, typeb, ress])
 
         res = protocol.get_type("TestEnum")
         self.assertEqual(res.variants[0], protocol.get_type("TypeA"))
@@ -120,6 +162,11 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(len(res.traits), 1)
         self.assertIn("Sized", res.traits)
         # FIXME: add test for methods
+
+        #Testing Rust code generation
+        generator = output_formatters.code_generator.CodeGenerator()
+        generator.format_enum(res)
+        print("".join(generator.output))
 
     def test_derive_type(self):
         protocol = Protocol()
