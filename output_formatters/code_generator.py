@@ -37,7 +37,6 @@ class CodeGenerator(OutputFormatter):
     """
 
     output: List[str]
-    structs : Dict[Struct, list[StructField]]
 
     def __init__(self):
         self.output = []
@@ -52,12 +51,21 @@ class CodeGenerator(OutputFormatter):
 
 
     def format_struct(self, struct:Struct):
-        #traits need to be added up here if we're using !derive (eg. Sized, Eq)
-        self.output.append("struct %s\n {" % (struct.name))
+        #traits need to be added up here if we're using !derive (eg. Eq, Ord)
+        #including Debug trait by default - this may be changed later
+        self.output.append("#[derive(Debug")
+        for trait in struct.traits:
+            if trait == "Equality":
+                self.output.append(", Eq")
+            elif trait == "Ordinal":
+                self.output.append(", Ord")
+        self.output.append(")]\n")
+        self.output.append("struct %s {\n" % struct.name)
+        print(struct.fields)
         for field in struct.fields:
             #need to add type annotations for each field
-            self.output.append("\t%s\n" % (field.name))
-        self.output.append("}\n")
+            self.output.append("    %s : %s,\n" % (field.field_name, field.field_type))
+        self.output.append("}\n\n")
 
     def format_array(self, array:Array):
         pass
@@ -76,8 +84,10 @@ class CodeGenerator(OutputFormatter):
 
 
     def format_protocol(self, protocol:Protocol):
-        pass
-        #loop format_struct
+        #print(protocol.get_type_names())
         for item in protocol.get_type_names():
-            if type(item) is Struct:
+            #print(protocol.get_type(item).kind)
+            if protocol.get_type(item).kind == "Struct":
                 self.format_struct(protocol.get_type(item))
+        print("\n\n")
+        print("".join(self.output))
