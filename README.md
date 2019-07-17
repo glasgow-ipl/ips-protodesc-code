@@ -10,7 +10,7 @@ Overview
   - helper classes (`protocol.py` and `protocoltypes.py`), that are used to
     construct and inspect the intermediate representation; and
 
-  - output formatters (`/formatters`), that take the intermediate
+  - output formatters (`/output_formatters`), that take the intermediate
     representation, and produce output in a given format.
 
  Additionally, there is a directory of examples (`/examples`), containing a
@@ -35,6 +35,10 @@ Then, run:
 
 to start the virtual environment, within which you can run the scripts.
 
+To run the project's test suite, run:
+ ```~~~~~~~~
+ pipenv run tests
+ ```
  
  Generating a protocol description
  ---------------------------------
