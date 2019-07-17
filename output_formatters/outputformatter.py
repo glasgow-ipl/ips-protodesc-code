@@ -41,7 +41,7 @@ class OutputFormatter(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def format_bitstring(self, bitstring:BitString):
+    def format_bitstring(self, bitstring:BitString, parent_pt=None):
         pass
 
     @abc.abstractmethod
