@@ -45,20 +45,14 @@ class CodeGenerator(OutputFormatter):
     def generate_output(self):
         pass
 
-    '''
-    def format_bitstring(self, bitstring:BitString):
-        pass
-
-    def format_bitstring_struct(self, bitstring:BitString, parent_pt:ProtocolType):
-    '''
     def format_bitstring(self, bitstring:BitString, parent_pt:ProtocolType=None):
         #do bitstrings occur on their own outside of enums/structs?
         if parent_pt == None:
             self.output.append("let %s: u%d;\n" % (bitstring.name.lower(), self.assign_int_size(bitstring)))
         elif parent_pt.kind == "Struct":
-            self.output.append(": %s(u%d),\n" % (bitstring.name, self.assign_int_size(bitstring)))
+            self.output.append(": %s(u%d)" % (bitstring.name, self.assign_int_size(bitstring)))
         elif parent_pt.kind == "Enum":
-            self.output.append("    %s(u%d),\n" % (bitstring.name, self.assign_int_size(bitstring)))
+            self.output.append("    %s(u%d)" % (bitstring.name, self.assign_int_size(bitstring)))
 
     def assign_int_size(self, bitstring:BitString):
         #assign the smallest possible unsigned int which can accommodate the field
@@ -80,8 +74,19 @@ class CodeGenerator(OutputFormatter):
             for field in pt.fields:
                 if field.field_type.kind == "BitString":
                     self.output.append("struct %s(u%d);\n" % (field.field_type.name, self.assign_int_size(field.field_type)))
+                elif field.field_type.kind == "Array":
+                    self.declare_array_type(field.field_type)
                 else:
                     self.output.append("struct %s;\n" % field.field_type.name)
+        elif pt.kind == "Array":
+            self.declare_array_type(pt)
+
+
+    def declare_array_type(self, array:Array):
+        if array.element_type.kind == "BitString":
+            self.output.append("struct %s(u%d);\n" % (array.element_type.name, self.assign_int_size(array.element_type)))
+        else:
+            self.output.append("struct %s;\n" % array.element_type.name)
 
     def format_struct(self, struct:Struct):
         #declare fields as types first
@@ -97,13 +102,17 @@ class CodeGenerator(OutputFormatter):
         self.output.append(")]\n")
         self.output.append("struct %s {\n" % struct.name)
         for field in struct.fields:
+            self.output.append("    %s: " % field.field_name)
             if field.field_type.kind == "BitString":
-                self.output.append("    %s" % field.field_name)
+                #self.output.append("    %s" % field.field_name)
                 self.format_bitstring(field.field_type, struct)
             if field.field_type.kind == "Struct":
                 self.format_field_struct(field.field_type)
             if field.field_type.kind == "Enum":
-                self.format_enum("%s: %s,\n" % (field.field_name, field.field_type.name))
+                self.format_enum(field.field_type)
+            if field.field_type.kind == "Array":
+                self.format_array(field.field_type)
+            self.output.append(",\n")
         self.output.append("}\n")
 
     #makes layout of enum variants or struct members which are structs less ugly
@@ -114,12 +123,20 @@ class CodeGenerator(OutputFormatter):
                 if struct.fields.index(field) != 0:
                     self.output.append(", ")
                 self.output.append("%s: %s(u%d)" % (field.field_name, field.field_type.name, self.assign_int_size(field.field_type)))
-        self.output.append(")\n")
+        self.output.append("}")
 
 
     def format_array(self, array:Array):
-        pass
-
+        if array.length is None:
+            self.output.append("Vec<%s" % array.element_type.name)
+            if array.element_type.kind == "BitString":
+                self.output.append("(u%d)" % self.assign_int_size(array.element_type))
+            self.output.append(">")
+        else:
+            self.output.append("[%s" % array.element_type.name)
+            if array.element_type.kind == "BitString":
+                self.output.append("(u%d)" % self.assign_int_size(array.element_type))
+            self.output.append("; %d]" % array.length)
 
     def format_enum(self, enum:Enum):
         for variant in enum.variants:
@@ -131,6 +148,9 @@ class CodeGenerator(OutputFormatter):
                 self.format_bitstring(variant, enum)
             elif variant.kind == "Struct":
                 self.format_field_struct(variant)
+            elif variant.kind == "Array":
+                self.format_array(variant)
+            self.output.append(",\n")
         self.output.append("}\n")
 
 

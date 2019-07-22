@@ -82,6 +82,10 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Sized",           res.traits)
         # FIXME: add test for methods
 
+        generator = output_formatters.code_generator.CodeGenerator()
+        generator.format_array(res)
+        print("".join(generator.output))
+
     def test_define_struct(self):
         protocol = Protocol()
 
@@ -92,6 +96,10 @@ class TestProtocol(unittest.TestCase):
         transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
         field_6 = protocol.define_bitstring("Field6", 6)
         field_10 = protocol.define_bitstring("Field10", 10)
+
+        ssrc = protocol.define_bitstring("SSRC", 32)
+        protocol.define_array("CSRCList", ssrc, 4)
+        res_array = protocol.get_type("CSRCList")
 
         # define fields
         seq = StructField("seq",
@@ -113,13 +121,28 @@ class TestProtocol(unittest.TestCase):
                           None,
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
 
+        array_wrapped = StructField("array_wrapped",
+                            res_array,
+                            None,
+                            ConstantExpression(protocol.get_type("Boolean"), "True"))
+
         # add constraints
         seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(), "seq"),
                                                     "eq",
                                                     [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
 
+        smallstruct = protocol.define_struct("SmallStruct", [seq], [seq_constraint], [])
+
+        protocol.define_array("StructArray", smallstruct, None)
+        struct_array = protocol.get_type("StructArray")
+
+        array_non_wrapped = StructField("array_non_wrapped",
+                                        struct_array,
+                                        None,
+                                        ConstantExpression(protocol.get_type("Boolean"), "True"))
+
         # construct TestStruct
-        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10], [seq_constraint], [])
+        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped], [seq_constraint], [])
 
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
