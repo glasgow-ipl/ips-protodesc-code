@@ -126,6 +126,16 @@ class TestProtocol(unittest.TestCase):
                             None,
                             ConstantExpression(protocol.get_type("Boolean"), "True"))
 
+        typea = protocol.define_bitstring("TypeA", 32)
+        typeb = protocol.define_bitstring("TypeB", 32)
+        protocol.define_enum("TestEnum", [typea, typeb])
+        res_enum = protocol.get_type("TestEnum")
+
+        enum_field = StructField("enum_field",
+                                    res_enum,
+                                    None,
+                                    ConstantExpression(protocol.get_type("Boolean"), "True"))
+
         # add constraints
         seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(), "seq"),
                                                     "eq",
@@ -142,7 +152,7 @@ class TestProtocol(unittest.TestCase):
                                         ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         # construct TestStruct
-        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped], [seq_constraint], [])
+        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field], [seq_constraint], [])
 
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")

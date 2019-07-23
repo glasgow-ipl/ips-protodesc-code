@@ -79,6 +79,8 @@ class CodeGenerator(OutputFormatter):
                     elif field.field_type.kind == "Array":
                         if field.field_type.element_type.name not in self.output:
                             self.declare_array_type(field.field_type)
+                    elif field.field_type.kind == "Enum":
+                        self.format_enum(field.field_type)
                     else:
                         self.output.extend(["struct ", field.field_type.name, ";\n"])
         elif pt.kind == "Array":
@@ -107,12 +109,11 @@ class CodeGenerator(OutputFormatter):
         for field in struct.fields:
             self.output.append("    %s: " % field.field_name)
             if field.field_type.kind == "BitString":
-                #self.output.append("    %s" % field.field_name)
                 self.format_bitstring(field.field_type, struct)
             if field.field_type.kind == "Struct":
                 self.format_field_struct(field.field_type)
             if field.field_type.kind == "Enum":
-                self.format_enum(field.field_type)
+                self.output.append(field.field_type.name)
             if field.field_type.kind == "Array":
                 self.format_array(field.field_type)
             self.output.append(",\n")
@@ -166,9 +167,7 @@ class CodeGenerator(OutputFormatter):
 
 
     def format_protocol(self, protocol:Protocol):
-        #print(protocol.get_type_names())
         for item in protocol.get_type_names():
-            #print(protocol.get_type(item).kind)
             if protocol.get_type(item).kind == "Struct":
                 self.format_struct(protocol.get_type(item))
                 self.output.append("\n")
