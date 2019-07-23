@@ -72,21 +72,24 @@ class CodeGenerator(OutputFormatter):
     def declare_field_types(self, pt:ProtocolType):
         if pt.kind == "Struct":
             for field in pt.fields:
-                if field.field_type.kind == "BitString":
-                    self.output.append("struct %s(u%d);\n" % (field.field_type.name, self.assign_int_size(field.field_type)))
-                elif field.field_type.kind == "Array":
-                    self.declare_array_type(field.field_type)
-                else:
-                    self.output.append("struct %s;\n" % field.field_type.name)
+                #prevent types being declared twice
+                if field.field_type.name not in self.output:
+                    if field.field_type.kind == "BitString":
+                        self.output.extend(["struct ", field.field_type.name, "(u%d);\n" % self.assign_int_size(field.field_type)])
+                    elif field.field_type.kind == "Array":
+                        if field.field_type.element_type.name not in self.output:
+                            self.declare_array_type(field.field_type)
+                    else:
+                        self.output.extend(["struct ", field.field_type.name, ";\n"])
         elif pt.kind == "Array":
             self.declare_array_type(pt)
 
 
     def declare_array_type(self, array:Array):
         if array.element_type.kind == "BitString":
-            self.output.append("struct %s(u%d);\n" % (array.element_type.name, self.assign_int_size(array.element_type)))
+            self.output.extend(["struct ", array.element_type.name, "(u%d);\n" % self.assign_int_size(array.element_type)])
         else:
-            self.output.append("struct %s;\n" % array.element_type.name)
+            self.output.extend(["struct ", array.element_type.name, ";\n"])
 
     def format_struct(self, struct:Struct):
         #declare fields as types first
@@ -100,7 +103,7 @@ class CodeGenerator(OutputFormatter):
             elif trait == "Ordinal":
                 self.output.append(", Ord")
         self.output.append(")]\n")
-        self.output.append("struct %s {\n" % struct.name)
+        self.output.extend(["struct ", struct.name, " {\n"])
         for field in struct.fields:
             self.output.append("    %s: " % field.field_name)
             if field.field_type.kind == "BitString":
