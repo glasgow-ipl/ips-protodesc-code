@@ -86,7 +86,7 @@ class TestProtocol(unittest.TestCase):
         generator.format_array(res)
         print("".join(generator.output))
 
-    def test_define_struct(self):
+    def test_write_struct(self):
         protocol = Protocol()
 
         # define types
@@ -176,6 +176,7 @@ class TestProtocol(unittest.TestCase):
         #Testing Rust code generation
         generator = output_formatters.code_generator.CodeGenerator()
         generator.format_protocol(protocol)
+
 
     def test_define_enum(self):
         protocol = Protocol()

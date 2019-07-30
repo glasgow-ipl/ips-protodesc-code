@@ -166,6 +166,26 @@ class CodeGenerator(OutputFormatter):
         pass
 
 
+    def format_parser(self, protocol:Protocol):
+        bit_count = 0
+        byte_count = 0
+        for item in protocol.get_type_names():
+            if protocol.get_type(item).kind == "Struct":
+                self.output.append("\nfn parse_%(name)(wire_data: &[u8]) -> %(name) {" % {"name": protocol.get_type(item).name})
+                for field in protocol.get_type(item):
+                    if field.field_type.kind == "BitString":
+                        pass
+                    if field.field_type.kind == "Struct":
+                        for struct_field in field.field_type.fields:
+                            if struct_field.kind == "BitString":
+                                #TODO: handle cases where size is not fixed (ie. is None)
+                                if struct_field.size / 8
+
+                    if field.field_type.kind == "Enum":
+                        pass
+                    if field.field_type.kind == "Array":
+                        pass
+
     def format_protocol(self, protocol:Protocol):
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
@@ -174,6 +194,8 @@ class CodeGenerator(OutputFormatter):
             elif protocol.get_type(item).kind == "Enum":
                 self.format_enum(protocol.get_type(item))
                 self.output.append("\n")
-        print("========\n\n")
-        print("".join(self.output))
-        print("========")
+        self.format_parser(protocol)
+        rust_output = "".join(self.output)
+        print(rust_output)
+        with open("rust_output.rs", "w") as rf:
+            rf.write(rust_output)
