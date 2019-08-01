@@ -141,6 +141,7 @@ class TestProtocol(unittest.TestCase):
                                                     "eq",
                                                     [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
 
+        '''
         smallstruct = protocol.define_struct("SmallStruct", [seq], [seq_constraint], [])
 
         protocol.define_array("StructArray", smallstruct, None)
@@ -153,6 +154,9 @@ class TestProtocol(unittest.TestCase):
 
         # construct TestStruct
         teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field], [seq_constraint], [])
+        '''
+
+        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10], [seq_constraint], [])
 
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")

@@ -50,7 +50,7 @@ class CodeGenerator(OutputFormatter):
         if parent_pt == None:
             self.output.append("let %s: u%d;\n" % (bitstring.name.lower(), self.assign_int_size(bitstring)))
         elif parent_pt.kind == "Struct":
-            self.output.append(": %s(u%d)" % (bitstring.name, self.assign_int_size(bitstring)))
+            self.output.append(" %s" % bitstring.name)
         elif parent_pt.kind == "Enum":
             self.output.append("    %s(u%d)" % (bitstring.name, self.assign_int_size(bitstring)))
 
@@ -74,6 +74,13 @@ class CodeGenerator(OutputFormatter):
             for field in pt.fields:
                 #prevent types being declared twice
                 if field.field_type.name not in self.output:
+                    self.output.append("\n#[derive(Debug")
+                    for trait in pt.traits:
+                        if trait == "Equality":
+                            self.output.append(", PartialEq, Eq")
+                        elif trait == "Ordinal":
+                            self.output.append(", Ord")
+                    self.output.append(")]\n")
                     if field.field_type.kind == "BitString":
                         self.output.extend(["struct ", field.field_type.name, "(u%d);\n" % self.assign_int_size(field.field_type)])
                     elif field.field_type.kind == "Array":
@@ -101,7 +108,7 @@ class CodeGenerator(OutputFormatter):
         self.output.append("\n#[derive(Debug")
         for trait in struct.traits:
             if trait == "Equality":
-                self.output.append(", Eq")
+                self.output.append(", PartialEq, Eq")
             elif trait == "Ordinal":
                 self.output.append(", Ord")
         self.output.append(")]\n")
@@ -146,7 +153,7 @@ class CodeGenerator(OutputFormatter):
         for variant in enum.variants:
             if variant.kind == "Struct":
                 self.declare_field_types(variant)
-        self.output.append("\nEnum %s {\n" % enum.name)
+        self.output.append("\nenum %s {\n" % enum.name)
         for variant in enum.variants:
             if variant.kind == "BitString":
                 self.format_bitstring(variant, enum)
@@ -167,26 +174,36 @@ class CodeGenerator(OutputFormatter):
 
 
     def format_parser(self, protocol:Protocol):
-        bit_count = 0
-        byte_count = 0
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
-                self.output.append("\nfn parse_%(name)(wire_data: &[u8]) -> %(name) {" % {"name": protocol.get_type(item).name})
-                for field in protocol.get_type(item):
+                self.output.append("\nfn parse_{name}(wire_data: &[u8]) -> nom::IResult<&[u8], {name}>{{".format(name=protocol.get_type(item).name))
+                #TODO: rename parsed_data to something which better describes a PDU
+                #alternatively, creating separate parser functions for each PDU is probably a better idea
+                self.output.append("\n    do_parse!(\n    wire_data,\n    parsed_data: bits!(tuple!(\n")
+                #keep track of which tuple element to assign to struct fields after parsing
+                item_count = 0
+                struct_assignment = []
+                for field in protocol.get_type(item).fields:
                     if field.field_type.kind == "BitString":
-                        pass
+                        #TODO: handle cases where size is not fixed (ie. is None)
+                        self.output.append("        take_bits!(%du8)" % field.field_type.size)
+                        struct_assignment.append("    {f_name}: {wrapper}(parsed_data.{index}),\n".format(f_name=field.field_name, wrapper=field.field_type.name, index=item_count))
+                        item_count += 1
+                        if item_count != len(protocol.get_type(item).fields):
+                            self.output.append(",\n")
+                        else:
+                            self.output.append("\n    )) >> ({name} {{\n{s}    }})\n)\n}}".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
                     if field.field_type.kind == "Struct":
                         for struct_field in field.field_type.fields:
                             if struct_field.kind == "BitString":
-                                #TODO: handle cases where size is not fixed (ie. is None)
-                                if struct_field.size / 8
-
+                                pass
                     if field.field_type.kind == "Enum":
                         pass
                     if field.field_type.kind == "Array":
                         pass
 
     def format_protocol(self, protocol:Protocol):
+        self.output.append("#[macro_use]\nextern crate nom;\n\n")
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
                 self.format_struct(protocol.get_type(item))
