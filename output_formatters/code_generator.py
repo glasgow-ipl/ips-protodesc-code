@@ -182,25 +182,49 @@ class CodeGenerator(OutputFormatter):
                 self.output.append("\n    do_parse!(\n    wire_data,\n    parsed_data: bits!(tuple!(\n")
                 #keep track of which tuple element to assign to struct fields after parsing
                 item_count = 0
+                #allocation of tuple elements happens after parsing bits - add it to output as a whole afterwards
                 struct_assignment = []
                 for field in protocol.get_type(item).fields:
                     if field.field_type.kind == "BitString":
                         #TODO: handle cases where size is not fixed (ie. is None)
                         self.output.append("        take_bits!(%du8)" % field.field_type.size)
                         struct_assignment.append("    {f_name}: {wrapper}(parsed_data.{index}),\n".format(f_name=field.field_name, wrapper=field.field_type.name, index=item_count))
+                        #TODO: probably relocate this check to the end of the for loop
                         item_count += 1
-                        if item_count != len(protocol.get_type(item).fields):
+                        if (protocol.get_type(item).fields.index(field) + 1) != len(protocol.get_type(item).fields):
                             self.output.append(",\n")
                         else:
-                            self.output.append("\n    )) >> ({name} {{\n{s}    }})\n)\n}}".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
-                    if field.field_type.kind == "Struct":
-                        for struct_field in field.field_type.fields:
-                            if struct_field.kind == "BitString":
+                            self.output.append("\n    )) >> ({name} {{\n{s}    }})\n)\n}}\n\n".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
+                    elif field.field_type.kind == "Struct":
+                        struct_assignment.append("    {field_struct_name}: {{ ".format(field_struct_name=field.field_type.name))
+                        for nested_struct_field in field.field_type.fields:
+                            if nested_struct_field.field_type.kind == "BitString":
+                                self.output.append("        take_bits!(%du8)" % nested_struct_field.field_type.size)
+                                struct_assignment.append("{f_name}: {wrapper}(parsed_data.{index})".format(f_name=nested_struct_field.field_name, wrapper=nested_struct_field.field_type.name, index=item_count))
+                                item_count += 1
+                                if (field.field_type.fields.index(nested_struct_field) + 1) != len(field.field_type.fields):
+                                    struct_assignment.append(", ")
+                                else:
+                                    struct_assignment.append(" },\n")
+                        #TODO: recursive function call for structs within structs
+                            #be careful not to conflate item_count (ie. tuple element) with number of fields in parent struct
+                            #in most cases, item_count > number of fields if a nested struct is present
+                            elif nested_struct_field.kind == "Struct":
+                                #TODO: insert recursive call here
                                 pass
-                    if field.field_type.kind == "Enum":
+                            elif nested_struct_field.kind == "Enum":
+                                pass
+                            elif nested_struct_field.kind == "Array":
+                                pass
+                        if (protocol.get_type(item).fields.index(field) + 1) != len(protocol.get_type(item).fields):
+                            self.output.append(",\n")
+                        else:
+                            self.output.append("\n    )) >> ({name} {{\n{s}    }})\n)\n}}\n\n".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
+                    elif field.field_type.kind == "Enum":
                         pass
-                    if field.field_type.kind == "Array":
+                    elif field.field_type.kind == "Array":
                         pass
+            #self.output.append("\n")
 
     def format_protocol(self, protocol:Protocol):
         self.output.append("#[macro_use]\nextern crate nom;\n\n")
