@@ -142,7 +142,7 @@ class TestProtocol(unittest.TestCase):
                                                     [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
 
 
-        smallstruct = protocol.define_struct("SmallStruct", [seq], [seq_constraint], [])
+        smallstruct = protocol.define_struct("SmallStruct", [seq, f6], [seq_constraint], [])
 
         nested_struct = StructField("nested_struct",
                                     smallstruct,

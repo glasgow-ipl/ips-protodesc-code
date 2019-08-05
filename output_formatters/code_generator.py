@@ -128,13 +128,16 @@ class CodeGenerator(OutputFormatter):
 
     #makes layout of enum variants or struct members which are structs less ugly
     def format_field_struct(self, struct:Struct):
-        self.output.append("    %s { " % struct.name)
+        '''
+        self.output.append("%s { " % struct.name)
         for field in struct.fields:
             if field.field_type.kind == "BitString":
                 if struct.fields.index(field) != 0:
                     self.output.append(", ")
-                self.output.append("%s: %s(u%d)" % (field.field_name, field.field_type.name, self.assign_int_size(field.field_type)))
-        self.output.append("}")
+                self.output.append("%s: %s" % (field.field_name, field.field_type.name))
+        self.output.append(" }")
+        '''
+        self.output.append("%s" % struct.name)
 
 
     def format_array(self, array:Array):
@@ -188,7 +191,7 @@ class CodeGenerator(OutputFormatter):
                     if field.field_type.kind == "BitString":
                         #TODO: handle cases where size is not fixed (ie. is None)
                         self.output.append("        take_bits!(%du8)" % field.field_type.size)
-                        struct_assignment.append("    {f_name}: {wrapper}(parsed_data.{index}),\n".format(f_name=field.field_name, wrapper=field.field_type.name, index=item_count))
+                        struct_assignment.append("        {f_name}: {wrapper}(parsed_data.{index}),\n".format(f_name=field.field_name, wrapper=field.field_type.name, index=item_count))
                         #TODO: probably relocate this check to the end of the for loop
                         item_count += 1
                         if (protocol.get_type(item).fields.index(field) + 1) != len(protocol.get_type(item).fields):
@@ -196,19 +199,21 @@ class CodeGenerator(OutputFormatter):
                         else:
                             self.output.append("\n    )) >> ({name} {{\n{s}    }})\n)\n}}\n\n".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
                     elif field.field_type.kind == "Struct":
-                        struct_assignment.append("    {field_struct_name}: {{ ".format(field_struct_name=field.field_type.name))
+                        struct_assignment.append("        {field_struct_name}: {field_struct_type} {{ ".format(field_struct_name=field.field_name, field_struct_type=field.field_type.name))
                         for nested_struct_field in field.field_type.fields:
                             if nested_struct_field.field_type.kind == "BitString":
                                 self.output.append("        take_bits!(%du8)" % nested_struct_field.field_type.size)
                                 struct_assignment.append("{f_name}: {wrapper}(parsed_data.{index})".format(f_name=nested_struct_field.field_name, wrapper=nested_struct_field.field_type.name, index=item_count))
                                 item_count += 1
                                 if (field.field_type.fields.index(nested_struct_field) + 1) != len(field.field_type.fields):
+                                    self.output.append(",\n")
                                     struct_assignment.append(", ")
                                 else:
                                     struct_assignment.append(" },\n")
                         #TODO: recursive function call for structs within structs
                             #be careful not to conflate item_count (ie. tuple element) with number of fields in parent struct
-                            #in most cases, item_count > number of fields if a nested struct is present
+                            #item_count is used to assign tuple elements, number of fields is used to detect when parsing has finished
+                            #in most cases, item_count > number of fields in base struct if a nested struct is present
                             elif nested_struct_field.kind == "Struct":
                                 #TODO: insert recursive call here
                                 pass
@@ -219,7 +224,7 @@ class CodeGenerator(OutputFormatter):
                         if (protocol.get_type(item).fields.index(field) + 1) != len(protocol.get_type(item).fields):
                             self.output.append(",\n")
                         else:
-                            self.output.append("\n    )) >> ({name} {{\n{s}    }})\n)\n}}\n\n".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
+                            self.output.append("\n    )) >> ({name} {{\n{s}        }})\n    )\n}}\n\n".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
                     elif field.field_type.kind == "Enum":
                         pass
                     elif field.field_type.kind == "Array":
