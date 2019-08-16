@@ -28,6 +28,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+from string import ascii_letters
+
 from protocol import *
 from output_formatters.outputformatter import OutputFormatter
 
@@ -148,7 +150,8 @@ class CodeGenerator(OutputFormatter):
             if variant.kind == "BitString":
                 self.format_bitstring(variant, enum)
             elif variant.kind == "Struct":
-                self.format_field_struct(variant)
+                #self.format_field_struct(variant)
+                pass
             elif variant.kind == "Array":
                 self.format_array(variant)
             else:
@@ -165,64 +168,37 @@ class CodeGenerator(OutputFormatter):
     def format_context(self, context:Context):
         pass
 
+    def closure_gen(self):
+        for i in range(len(ascii_letters)):
+            yield ascii_letters[i]
 
     def format_parser(self, protocol:Protocol):
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
-                self.output.append("\nfn parse_{name}(wire_data: &[u8]) -> nom::IResult<&[u8], {name}>{{".format(name=protocol.get_type(item).name))
-                #TODO: rename parsed_data to something which better describes a PDU
-                #alternatively, creating separate parser functions for each PDU is probably a better idea
-                self.output.append("\n    do_parse!(\n    wire_data,\n    parsed_data: bits!(tuple!(\n")
-                #keep track of which tuple element to assign to struct fields after parsing
-                item_count = 0
-                #allocation of tuple elements happens after parsing bits - add it to output as a whole afterwards
-                struct_assignment = []
+                parser_functions = []
+                closure_terms = []
+                generator = self.closure_gen()
+                #write parsers for individual fields
                 for field in protocol.get_type(item).fields:
-                    if field.field_type.kind == "BitString":
-                        #TODO: handle cases where size is not fixed (ie. is None)
-                        self.output.append("        take_bits!(%du8)" % field.field_type.size)
-                        struct_assignment.append("        {f_name}: {wrapper}(parsed_data.{index}),\n".format(f_name=field.field_name, wrapper=field.field_type.name, index=item_count))
-                        #TODO: probably relocate this check to the end of the for loop
-                        item_count += 1
-                        if (protocol.get_type(item).fields.index(field) + 1) != len(protocol.get_type(item).fields):
-                            self.output.append(",\n")
+                    if field.field_type == "BitString":
+                        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=field.field_type.name.lower(), typename=field.field_type.name))
+                        self.output.append("\n    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=field.field_type.size, name=field.field_type.name))
+                        if protocol.get_type(item).fields.index(field) != (len(protocol.get_type(item).fields) - 1):
+                            parser_functions.append("parse_{name}, ".format(name=field.field_type.name.lower()))
+                            closure_terms.append("{term}, ".format(term=next(generator)))
                         else:
-                            self.output.append("\n    )) >> ({name} {{\n{s}    }})\n)\n}}\n\n".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
-                    elif field.field_type.kind == "Struct":
-                        struct_assignment.append("        {field_struct_name}: {field_struct_type} {{ ".format(field_struct_name=field.field_name, field_struct_type=field.field_type.name))
-                        for nested_struct_field in field.field_type.fields:
-                            if nested_struct_field.field_type.kind == "BitString":
-                                self.output.append("        take_bits!(%du8)" % nested_struct_field.field_type.size)
-                                struct_assignment.append("{f_name}: {wrapper}(parsed_data.{index})".format(f_name=nested_struct_field.field_name, wrapper=nested_struct_field.field_type.name, index=item_count))
-                                item_count += 1
-                                if (field.field_type.fields.index(nested_struct_field) + 1) != len(field.field_type.fields):
-                                    self.output.append(",\n")
-                                    struct_assignment.append(", ")
-                                else:
-                                    struct_assignment.append(" },\n")
-                        #TODO: recursive function call for structs within structs
-                            #be careful not to conflate item_count (ie. tuple element) with number of fields in parent struct
-                            #item_count is used to assign tuple elements, number of fields is used to detect when parsing has finished
-                            #in most cases, item_count > number of fields in base struct if a nested struct is present
-                            elif nested_struct_field.kind == "Struct":
-                                #TODO: insert recursive call here
-                                pass
-                            elif nested_struct_field.kind == "Enum":
-                                pass
-                            elif nested_struct_field.kind == "Array":
-                                pass
-                        if (protocol.get_type(item).fields.index(field) + 1) != len(protocol.get_type(item).fields):
-                            self.output.append(",\n")
-                        else:
-                            self.output.append("\n    )) >> ({name} {{\n{s}        }})\n    )\n}}\n\n".format(name=protocol.get_type(item).name, s="".join(struct_assignment)))
-                    elif field.field_type.kind == "Enum":
-                        pass
-                    elif field.field_type.kind == "Array":
-                        pass
-            #self.output.append("\n")
+                            parser_functions.append("parse_{name}".format(name=field.field_type.name.lower()))
+                            closure_terms.append("{term}".format(term=next(generator)))
+                #write function to combine parsers to parse an entire PDU
+                #TODO: make this use items in PDU field of protocol object, not just list of types (nothing currently in PDUs in test cases)
+                self.output.append("\nfn parse_{name}(input: &[u8]) -> nom::IResult<&[u8], {name}>{{".format(name=protocol.get_type(item).name))
+                self.output.append("\n    map(bits::<_, _, (_, _), _, _>(tuple(({functions}))), |{closure}|".format(functions="".join(parser_functions), closure="".join(closure_terms)))
+                self.output.append(" {struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=zip(iter(protocol.get_type(item).fields), iter(closure_terms))))
+
 
     def format_protocol(self, protocol:Protocol):
-        self.output.append("#[macro_use]\nextern crate nom;\n\n")
+        #add crate/imports
+        self.output.append("extern crate nom;\nuse nom::IResult;\nuse nom::{bits::bits, bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
                 self.format_struct(protocol.get_type(item))

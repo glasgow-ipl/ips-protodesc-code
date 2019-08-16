@@ -149,7 +149,7 @@ class TestProtocol(unittest.TestCase):
                                     None,
                                     ConstantExpression(protocol.get_type("Boolean"), "True"))
 
-        '''
+
         protocol.define_array("StructArray", smallstruct, None)
         struct_array = protocol.get_type("StructArray")
 
@@ -160,9 +160,9 @@ class TestProtocol(unittest.TestCase):
 
         # construct TestStruct
         teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field], [seq_constraint], [])
-        '''
 
-        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, nested_struct], [seq_constraint], [])
+
+        #teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, nested_struct], [seq_constraint], [])
 
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")

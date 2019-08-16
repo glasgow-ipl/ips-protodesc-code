@@ -1,5 +1,7 @@
-#[macro_use]
 extern crate nom;
+use nom::IResult;
+use nom::{bits::bits, bits::complete::take, combinator::map};
+use nom::sequence::tuple;
 
 
 enum TestEnum {
@@ -28,46 +30,33 @@ struct Timestamp(u32);
 struct Field10(u16);
 
 #[derive(Debug, PartialEq, Eq)]
+struct SSRC(u32);
+
+#[derive(Debug, PartialEq, Eq)]
+
+#[derive(Debug, PartialEq, Eq)]
+
+enum TestEnum {
+    TypeA(u32),
+    TypeB(u32),
+}
+
+#[derive(Debug, PartialEq, Eq)]
 struct TestStruct {
     seq:  SeqNum,
     ts:  Timestamp,
     f6:  Field6,
     f10:  Field10,
-    nested_struct: SmallStruct,
+    array_wrapped: [SSRC(u32); 4],
+    array_non_wrapped: Vec<SmallStruct>,
+    enum_field: TestEnum,
 }
 
 
-fn parse_SmallStruct(wire_data: &[u8]) -> nom::IResult<&[u8], SmallStruct>{
-    do_parse!(
-    wire_data,
-    parsed_data: bits!(tuple!(
-        take_bits!(16u8),
-        take_bits!(6u8)
-    )) >> (SmallStruct {
-        seq: SeqNum(parsed_data.0),
-        f6: Field6(parsed_data.1),
-    })
-)
+fn parse_SmallStruct(input: &[u8]) -> nom::IResult<&[u8], SmallStruct>{
+    map(bits::<_, _, (_, _), _, _>(tuple(())), || SmallStruct{<zip object at 0x7f1eb8c7a288>})(input)
 }
 
-
-fn parse_TestStruct(wire_data: &[u8]) -> nom::IResult<&[u8], TestStruct>{
-    do_parse!(
-    wire_data,
-    parsed_data: bits!(tuple!(
-        take_bits!(16u8),
-        take_bits!(32u8),
-        take_bits!(6u8),
-        take_bits!(10u8),
-        take_bits!(16u8),
-        take_bits!(6u8)
-    )) >> (TestStruct {
-        seq: SeqNum(parsed_data.0),
-        ts: Timestamp(parsed_data.1),
-        f6: Field6(parsed_data.2),
-        f10: Field10(parsed_data.3),
-        nested_struct: SmallStruct { seq: SeqNum(parsed_data.4), f6: Field6(parsed_data.5) },
-        })
-    )
+fn parse_TestStruct(input: &[u8]) -> nom::IResult<&[u8], TestStruct>{
+    map(bits::<_, _, (_, _), _, _>(tuple(())), || TestStruct{<zip object at 0x7f1eb8c7a288>})(input)
 }
-
