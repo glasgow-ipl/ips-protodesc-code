@@ -29,6 +29,7 @@
 # =================================================================================================
 
 from string import ascii_letters
+import itertools
 
 from protocol import *
 from output_formatters.outputformatter import OutputFormatter
@@ -145,7 +146,7 @@ class CodeGenerator(OutputFormatter):
         for variant in enum.variants:
             if variant.kind == "Struct":
                 self.declare_field_types(variant)
-        self.output.append("\nenum %s {\n" % enum.name)
+        self.output.extend(["\nenum ", "%s {\n" % enum.name])
         for variant in enum.variants:
             if variant.kind == "BitString":
                 self.format_bitstring(variant, enum)
@@ -173,6 +174,7 @@ class CodeGenerator(OutputFormatter):
             yield ascii_letters[i]
 
     def format_parser(self, protocol:Protocol):
+        defined_parsers = []
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
                 parser_functions = []
@@ -180,34 +182,39 @@ class CodeGenerator(OutputFormatter):
                 generator = self.closure_gen()
                 #write parsers for individual fields
                 for field in protocol.get_type(item).fields:
-                    if field.field_type == "BitString":
-                        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=field.field_type.name.lower(), typename=field.field_type.name))
-                        self.output.append("\n    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=field.field_type.size, name=field.field_type.name))
-                        if protocol.get_type(item).fields.index(field) != (len(protocol.get_type(item).fields) - 1):
-                            parser_functions.append("parse_{name}, ".format(name=field.field_type.name.lower()))
-                            closure_terms.append("{term}, ".format(term=next(generator)))
-                        else:
-                            parser_functions.append("parse_{name}".format(name=field.field_type.name.lower()))
-                            closure_terms.append("{term}".format(term=next(generator)))
+                    if field.field_type.name.lower() not in defined_parsers:
+                        if field.field_type.kind == "BitString":
+                            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=field.field_type.name.lower(), typename=field.field_type.name))
+                            self.output.append("\n    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=field.field_type.size, name=field.field_type.name))
+                        defined_parsers.append(field.field_type.name.lower())
+                    parser_functions.append("parse_{name}".format(name=field.field_type.name.lower()))
+                    closure_terms.append("{term}".format(term=next(generator)))
                 #write function to combine parsers to parse an entire PDU
                 #TODO: make this use items in PDU field of protocol object, not just list of types (nothing currently in PDUs in test cases)
-                self.output.append("\nfn parse_{name}(input: &[u8]) -> nom::IResult<&[u8], {name}>{{".format(name=protocol.get_type(item).name))
-                self.output.append("\n    map(bits::<_, _, (_, _), _, _>(tuple(({functions}))), |{closure}|".format(functions="".join(parser_functions), closure="".join(closure_terms)))
-                self.output.append(" {struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=zip(iter(protocol.get_type(item).fields), iter(closure_terms))))
+                self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=protocol.get_type(item).name.lower(),typename=protocol.get_type(item).name))
+                self.output.append("\n    map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=protocol.get_type(item).name))
+                #self.output.append("{struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms)))))))))
+                for i in range(len(protocol.get_type(item).fields)):
+                    self.output.append("{f_name}: {closure_term}, ".format(f_name=protocol.get_type(item).fields[i].field_name, closure_term=closure_terms[i]))
+                self.output.append("})(input)\n}\n")
+                defined_parsers.append(protocol.get_type(item).name.lower())
+                #self.output.append(" {struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms)))))))))
+                #print(": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms))))))))
+
 
 
     def format_protocol(self, protocol:Protocol):
         #add crate/imports
-        self.output.append("extern crate nom;\nuse nom::IResult;\nuse nom::{bits::bits, bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
+        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
                 self.format_struct(protocol.get_type(item))
                 self.output.append("\n")
-            elif protocol.get_type(item).kind == "Enum":
-                self.format_enum(protocol.get_type(item))
-                self.output.append("\n")
+            #elif protocol.get_type(item).kind == "Enum":
+                #self.format_enum(protocol.get_type(item))
+                #self.output.append("\n")
         self.format_parser(protocol)
         rust_output = "".join(self.output)
-        print(rust_output)
+        #print(rust_output)
         with open("rust_output.rs", "w") as rf:
             rf.write(rust_output)

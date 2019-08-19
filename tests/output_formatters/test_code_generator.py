@@ -159,10 +159,10 @@ class TestProtocol(unittest.TestCase):
                                         ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         # construct TestStruct
-        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field], [seq_constraint], [])
+        #teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field], [seq_constraint], [])
 
 
-        #teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, nested_struct], [seq_constraint], [])
+        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, nested_struct], [seq_constraint], [])
 
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
