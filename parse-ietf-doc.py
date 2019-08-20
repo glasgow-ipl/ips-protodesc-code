@@ -47,7 +47,7 @@ import input_parsers.rfcdom.asciidiagrams.asciidiagrams
 # Output formatters
 import output_formatters.outputformatter
 import output_formatters.simpleprinter
-import output_formatters.code_generator
+import output_formatters.rust_writer
 
 ACTIVE_ID_URL = "https://www.ietf.org/id/"
 
@@ -126,7 +126,7 @@ def main():
     
     construct_output_formatter = {
                                   "simpleprinter" : output_formatters.simpleprinter.SimplePrinter(),
-                                  "rustprinter" : output_formatters.code_generator.CodeGenerator()
+                                  "rustprinter" : output_formatters.rust_writer.RustWriter()
                                  }
     output_formatter = construct_output_formatter[args.output_format]
     

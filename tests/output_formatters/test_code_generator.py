@@ -35,7 +35,7 @@ import unittest
 
 from protocol import *
 
-import output_formatters.code_generator
+import output_formatters.rust_writer
 
 
 # =================================================================================================
@@ -61,7 +61,7 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for methods
 
         #Testing Rust code generation
-        generator = output_formatters.code_generator.CodeGenerator()
+        generator = output_formatters.rust_writer.RustWriter()
         generator.format_bitstring(res)
         print("".join(generator.output))
 
@@ -82,7 +82,7 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Sized",           res.traits)
         # FIXME: add test for methods
 
-        generator = output_formatters.code_generator.CodeGenerator()
+        generator = output_formatters.rust_writer.RustWriter()
         generator.format_array(res)
         print("".join(generator.output))
 
@@ -186,7 +186,7 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for methods
 
         #Testing Rust code generation
-        generator = output_formatters.code_generator.CodeGenerator()
+        generator = output_formatters.rust_writer.RustWriter()
         generator.format_protocol(protocol)
 
 
@@ -242,7 +242,7 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for methods
 
         #Testing Rust code generation
-        generator = output_formatters.code_generator.CodeGenerator()
+        generator = output_formatters.rust_writer.RustWriter()
         generator.format_enum(res)
         print("".join(generator.output))
 

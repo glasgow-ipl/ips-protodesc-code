@@ -34,7 +34,7 @@ import itertools
 from protocol import *
 from output_formatters.outputformatter import OutputFormatter
 
-class CodeGenerator(OutputFormatter):
+class RustWriter(OutputFormatter):
     """
     Class to generate code from parsed ASCII diagrams - currently only produces Rust
     """
