@@ -164,6 +164,8 @@ class TestProtocol(unittest.TestCase):
 
         teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, nested_struct], [seq_constraint], [])
 
+        #protocol.define_pdu("TestStruct")
+
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
         self.assertEqual(res.name, "TestStruct")

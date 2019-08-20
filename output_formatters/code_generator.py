@@ -44,18 +44,16 @@ class CodeGenerator(OutputFormatter):
     def __init__(self):
         self.output = []
         self.structs = {}
+        #add crate/imports
+        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
 
     def generate_output(self):
-        pass
+        return "".join(self.output)
 
-    def format_bitstring(self, bitstring:BitString, parent_pt:ProtocolType=None):
-        #do bitstrings occur on their own outside of enums/structs?
-        if parent_pt == None:
-            self.output.append("let %s: u%d;\n" % (bitstring.name.lower(), self.assign_int_size(bitstring)))
-        elif parent_pt.kind == "Struct":
-            self.output.append(" %s" % bitstring.name)
-        elif parent_pt.kind == "Enum":
-            self.output.append("    %s(u%d)" % (bitstring.name, self.assign_int_size(bitstring)))
+    def format_bitstring(self, bitstring:BitString):
+        if bitstring.name not in self.output:
+            self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
+            self.output.extend(["struct ", bitstring.name, "(u%d);\n" % self.assign_int_size(bitstring)])
 
     def assign_int_size(self, bitstring:BitString):
         #assign the smallest possible unsigned int which can accommodate the field
@@ -71,32 +69,6 @@ class CodeGenerator(OutputFormatter):
         else:
             return 128
 
-
-    def declare_field_types(self, pt:ProtocolType):
-        if pt.kind == "Struct":
-            for field in pt.fields:
-                #prevent types being declared twice
-                if field.field_type.name not in self.output:
-                    self.output.append("\n#[derive(Debug")
-                    for trait in pt.traits:
-                        if trait == "Equality":
-                            self.output.append(", PartialEq, Eq")
-                        elif trait == "Ordinal":
-                            self.output.append(", Ord")
-                    self.output.append(")]\n")
-                    if field.field_type.kind == "BitString":
-                        self.output.extend(["struct ", field.field_type.name, "(u%d);\n" % self.assign_int_size(field.field_type)])
-                    elif field.field_type.kind == "Array":
-                        if field.field_type.element_type.name not in self.output:
-                            self.declare_array_type(field.field_type)
-                    elif field.field_type.kind == "Enum":
-                        self.format_enum(field.field_type)
-                    else:
-                        self.output.extend(["struct ", field.field_type.name, ";\n"])
-        elif pt.kind == "Array":
-            self.declare_array_type(pt)
-
-
     def declare_array_type(self, array:Array):
         if array.element_type.kind == "BitString":
             self.output.extend(["struct ", array.element_type.name, "(u%d);\n" % self.assign_int_size(array.element_type)])
@@ -104,10 +76,7 @@ class CodeGenerator(OutputFormatter):
             self.output.extend(["struct ", array.element_type.name, ";\n"])
 
     def format_struct(self, struct:Struct):
-        #declare fields as types first
-        self.declare_field_types(struct)
         #traits need to be added up here if we're using !derive (eg. Eq, Ord)
-        #including Debug trait by default - this may be changed later
         self.output.append("\n#[derive(Debug")
         for trait in struct.traits:
             if trait == "Equality":
@@ -115,19 +84,9 @@ class CodeGenerator(OutputFormatter):
             elif trait == "Ordinal":
                 self.output.append(", Ord")
         self.output.append(")]\n")
-        self.output.extend(["struct ", struct.name, " {\n"])
+        self.output.extend(["struct ", struct.name.replace("-", "").replace(" ", ""), " {\n"])
         for field in struct.fields:
-            self.output.append("    %s: " % field.field_name)
-            if field.field_type.kind == "BitString":
-                self.format_bitstring(field.field_type, struct)
-            if field.field_type.kind == "Struct":
-                #self.format_field_struct(field.field_type)
-                self.output.append("%s" % field.field_type.name)
-            if field.field_type.kind == "Enum":
-                self.output.append(field.field_type.name)
-            if field.field_type.kind == "Array":
-                self.format_array(field.field_type)
-            self.output.append(",\n")
+            self.output.append("    %s: %s,\n" % (field.field_name, field.field_type.name))
         self.output.append("}\n")
 
     def format_array(self, array:Array):
@@ -143,22 +102,9 @@ class CodeGenerator(OutputFormatter):
             self.output.append("; %d]" % array.length)
 
     def format_enum(self, enum:Enum):
-        for variant in enum.variants:
-            if variant.kind == "Struct":
-                self.declare_field_types(variant)
         self.output.extend(["\nenum ", "%s {\n" % enum.name])
         for variant in enum.variants:
-            if variant.kind == "BitString":
-                self.format_bitstring(variant, enum)
-            elif variant.kind == "Struct":
-                #self.format_field_struct(variant)
-                pass
-            elif variant.kind == "Array":
-                self.format_array(variant)
-            else:
-                #TODO: double-check enums which are their own type with no associated value can actually be generated by frontend
-                self.append("%s" % variant.name)
-            self.output.append(",\n")
+            self.append("%s,\n" % variant.name)
         self.output.append("}\n")
 
 
@@ -173,7 +119,7 @@ class CodeGenerator(OutputFormatter):
         for i in range(len(ascii_letters)):
             yield ascii_letters[i]
 
-    def format_parser(self, protocol:Protocol):
+    def format_protocol(self, protocol:Protocol):
         defined_parsers = []
         for item in protocol.get_type_names():
             if protocol.get_type(item).kind == "Struct":
@@ -184,37 +130,17 @@ class CodeGenerator(OutputFormatter):
                 for field in protocol.get_type(item).fields:
                     if field.field_type.name.lower() not in defined_parsers:
                         if field.field_type.kind == "BitString":
-                            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=field.field_type.name.lower(), typename=field.field_type.name))
+                            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=field.field_type.name.lower(), typename=field.field_type.name.replace("-", "").replace(" ", "")))
                             self.output.append("\n    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=field.field_type.size, name=field.field_type.name))
                         defined_parsers.append(field.field_type.name.lower())
                     parser_functions.append("parse_{name}".format(name=field.field_type.name.lower()))
                     closure_terms.append("{term}".format(term=next(generator)))
                 #write function to combine parsers to parse an entire PDU
                 #TODO: make this use items in PDU field of protocol object, not just list of types (nothing currently in PDUs in test cases)
-                self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=protocol.get_type(item).name.lower(),typename=protocol.get_type(item).name))
-                self.output.append("\n    map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=protocol.get_type(item).name))
+                self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=protocol.get_type(item).name.replace(" ", "_").replace("-", "_").lower(),typename=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
+                self.output.append("\n    map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
                 #self.output.append("{struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms)))))))))
                 for i in range(len(protocol.get_type(item).fields)):
                     self.output.append("{f_name}: {closure_term}, ".format(f_name=protocol.get_type(item).fields[i].field_name, closure_term=closure_terms[i]))
                 self.output.append("})(input)\n}\n")
                 defined_parsers.append(protocol.get_type(item).name.lower())
-                #self.output.append(" {struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms)))))))))
-                #print(": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms))))))))
-
-
-
-    def format_protocol(self, protocol:Protocol):
-        #add crate/imports
-        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
-        for item in protocol.get_type_names():
-            if protocol.get_type(item).kind == "Struct":
-                self.format_struct(protocol.get_type(item))
-                self.output.append("\n")
-            #elif protocol.get_type(item).kind == "Enum":
-                #self.format_enum(protocol.get_type(item))
-                #self.output.append("\n")
-        self.format_parser(protocol)
-        rust_output = "".join(self.output)
-        #print(rust_output)
-        with open("rust_output.rs", "w") as rf:
-            rf.write(rust_output)

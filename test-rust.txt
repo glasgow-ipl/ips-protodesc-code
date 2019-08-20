@@ -68,31 +68,3 @@ fn parse_optionalfield(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Op
 fn parse_optional_field_format(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), OptionalFieldFormat>{
     map(tuple((parse_field8, parse_optionalfield)), |(a, b)| OptionalFieldFormat{field8: a, optionalfield: b, })(input)
 }
-
-//manually added for testing
-fn main() {
-    let input = [0b01000010, 0b01111111, 0b10101010, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b00000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01000110, 0b11001010, 0b11111101, 0b11001011];
-
-
-    match parse_fixed_width_field_format((&input, 0)) {
-        Ok((remain, result)) => {
-            println!("Remain: {:?}", remain);
-            println!("Result: {:?}", result);
-        }
-        Err(e) => {
-            println!("Failed: {:?}", e)
-        }
-    }
-
-    println!("{:?}", input);
-
-    match parse_optional_field_format((&input, 0)) {
-        Ok((remain, result)) => {
-            println!("Remain: {:?}", remain);
-            println!("Result: {:?}", result);
-        }
-        Err(e) => {
-            println!("Failed: {:?}", e)
-        }
-    }
-}
