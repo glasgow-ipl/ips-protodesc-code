@@ -2,6 +2,8 @@ extern crate nom;
 
 use nom::{bits::complete::take, combinator::map};
 use nom::sequence::tuple;
+use nom::error::ErrorKind;
+use nom::Err::Error;
 
 
 #[derive(Debug, PartialEq, Eq)]
@@ -50,7 +52,18 @@ fn parse_field64(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field64>
 }
 
 fn parse_field48(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field48>{
-    map(take(48_usize), |x| Field48(x))(input)
+    match map(take(48_usize), |x| Field48(x))(input) {
+        Ok((rest, value)) => {
+            if value.0 == 2 {
+                Ok((rest, value))
+            } else {
+                Err(Error((rest, ErrorKind::Verify))) // FIXME: unclear what ErrorKind makes sense
+            }
+        }
+        Err(e) => {
+            Err(e)
+        }
+    }
 }
 
 fn parse_field8(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field8>{
