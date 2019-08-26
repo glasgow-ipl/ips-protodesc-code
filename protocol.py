@@ -143,8 +143,8 @@ class FunctionInvocationExpression(Expression):
     args_exprs : List[ArgumentExpression]
 
     def __psto_init__(self):
-        if re.search(FUNC_NAME_REGEX, func.name) == None:
-            raise ProtocolTypeError("Invalid function name {}".format(func.name))
+        if re.search(FUNC_NAME_REGEX, self.func.name) == None:
+            raise ProtocolTypeError("Invalid function name {}".format(self.func.name))
 
     def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         return self.func.return_type
