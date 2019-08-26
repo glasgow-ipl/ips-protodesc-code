@@ -35,7 +35,7 @@ import unittest
 
 from protocol import *
 
-import output_formatters.code_generator
+import output_formatters.rust_writer
 
 
 # =================================================================================================
@@ -61,7 +61,7 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for methods
 
         #Testing Rust code generation
-        generator = output_formatters.code_generator.CodeGenerator()
+        generator = output_formatters.rust_writer.RustWriter()
         generator.format_bitstring(res)
         print("".join(generator.output))
 
@@ -82,7 +82,7 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Sized",           res.traits)
         # FIXME: add test for methods
 
-        generator = output_formatters.code_generator.CodeGenerator()
+        generator = output_formatters.rust_writer.RustWriter()
         generator.format_array(res)
         print("".join(generator.output))
 
@@ -149,7 +149,7 @@ class TestProtocol(unittest.TestCase):
                                     None,
                                     ConstantExpression(protocol.get_type("Boolean"), "True"))
 
-        '''
+
         protocol.define_array("StructArray", smallstruct, None)
         struct_array = protocol.get_type("StructArray")
 
@@ -159,10 +159,12 @@ class TestProtocol(unittest.TestCase):
                                         ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         # construct TestStruct
-        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field], [seq_constraint], [])
-        '''
+        #teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field], [seq_constraint], [])
+
 
         teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, nested_struct], [seq_constraint], [])
+
+        #protocol.define_pdu("TestStruct")
 
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.kind, "Struct")
@@ -182,10 +184,6 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Equality", res.traits)
         self.assertIn("Sized",    res.traits)
         # FIXME: add test for methods
-
-        #Testing Rust code generation
-        generator = output_formatters.code_generator.CodeGenerator()
-        generator.format_protocol(protocol)
 
 
     def test_define_enum(self):
@@ -240,7 +238,7 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for methods
 
         #Testing Rust code generation
-        generator = output_formatters.code_generator.CodeGenerator()
+        generator = output_formatters.rust_writer.RustWriter()
         generator.format_enum(res)
         print("".join(generator.output))
 
