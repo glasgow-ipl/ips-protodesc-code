@@ -185,10 +185,6 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Sized",    res.traits)
         # FIXME: add test for methods
 
-        #Testing Rust code generation
-        generator = output_formatters.rust_writer.RustWriter()
-        generator.format_protocol(protocol)
-
 
     def test_define_enum(self):
         protocol = Protocol()

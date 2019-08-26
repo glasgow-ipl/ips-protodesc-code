@@ -115,7 +115,7 @@ class RustWriter(OutputFormatter):
     def format_context(self, context:Context):
         pass
 
-    def closure_gen(self):
+    def closure_term_gen(self):
         for i in range(len(ascii_letters)):
             yield ascii_letters[i]
 
@@ -125,13 +125,15 @@ class RustWriter(OutputFormatter):
             if protocol.get_type(item).kind == "Struct":
                 parser_functions = []
                 closure_terms = []
-                generator = self.closure_gen()
+                generator = self.closure_term_gen()
                 #write parsers for individual fields
                 for field in protocol.get_type(item).fields:
                     if field.field_type.name.lower() not in defined_parsers:
                         if field.field_type.kind == "BitString":
                             self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=field.field_type.name.lower(), typename=field.field_type.name.replace("-", "").replace(" ", "")))
                             self.output.append("\n    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=field.field_type.size, name=field.field_type.name))
+                        elif field.field_type.kind == "Enum":
+                            self.output
                         defined_parsers.append(field.field_type.name.lower())
                     parser_functions.append("parse_{name}".format(name=field.field_type.name.lower()))
                     closure_terms.append("{term}".format(term=next(generator)))
