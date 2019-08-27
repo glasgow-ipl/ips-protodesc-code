@@ -45,7 +45,7 @@ class RustWriter(OutputFormatter):
         self.output = []
         self.structs = {}
         #add crate/imports
-        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
+        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\nuse nom::error::ErrorKind;\nuse nom::Err::Error;\n\n")
 
     def generate_output(self):
         return "".join(self.output)
@@ -130,22 +130,27 @@ class RustWriter(OutputFormatter):
                 for field in protocol.get_type(item).fields:
                     if field.field_type.name.lower() not in defined_parsers:
                         if field.field_type.kind == "BitString":
-                            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=field.field_type.name.lower(), typename=field.field_type.name.replace("-", "").replace(" ", "")))
+                            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=field.field_type.name.lower(), typename=field.field_type.name.replace("-", "").replace(" ", "")))
                             self.output.append("\n    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=field.field_type.size, name=field.field_type.name))
                         defined_parsers.append(field.field_type.name.lower())
                     parser_functions.append("parse_{name}".format(name=field.field_type.name.lower()))
                     closure_terms.append("{term}".format(term=next(generator)))
                 #write function to combine parsers to parse an entire PDU
                 #TODO: make this use items in PDU field of protocol object, not just list of types (nothing currently in PDUs in test cases)
-                self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{".format(fname=protocol.get_type(item).name.replace(" ", "_").replace("-", "_").lower(),typename=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
-                self.output.append("\n    map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
+                self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=protocol.get_type(item).name.replace(" ", "_").replace("-", "_").lower(),typename=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
+                if protocol.get_type(item).constraints:
+                    self.output.append("match ")
+                self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
                 #check constraints
                 #self.output.append("{struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms)))))))))
                 for i in range(len(protocol.get_type(item).fields)):
                     self.output.append("{f_name}: {closure_term}, ".format(f_name=protocol.get_type(item).fields[i].field_name, closure_term=closure_terms[i]))
                 self.output.append("})(input)")
+                #TODO: change this so it can deal with more than one constraint and fields with more than one element (ie. arrays or tuples)
                 for constraint in protocol.get_type(item).constraints:
-                    print(constraint)
-                    self.output.append("")
+                    self.output.append(" {{\n        Ok((remain, parsed_value)) => \n        if parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
+                    if constraint.method_name == "eq":
+                        self.output.append("== {term}".format(term=constraint.arg_exprs[0].arg_value.constant_value))
+                    self.output.append(" {\n            Ok((remain, parsed_value))\n        } else {\n            Err(Error((remain, ErrorKind::Verify)))\n        }\n        Err(e) => {\n            Err(e)\n        }\n    }")
                 self.output.append("\n}\n")
                 defined_parsers.append(protocol.get_type(item).name.lower())
