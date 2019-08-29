@@ -146,11 +146,19 @@ class RustWriter(OutputFormatter):
                 for i in range(len(protocol.get_type(item).fields)):
                     self.output.append("{f_name}: {closure_term}, ".format(f_name=protocol.get_type(item).fields[i].field_name, closure_term=closure_terms[i]))
                 self.output.append("})(input)")
-                #TODO: change this so it can deal with more than one constraint and fields with more than one element (ie. arrays or tuples)
+
                 for constraint in protocol.get_type(item).constraints:
-                    self.output.append(" {{\n        Ok((remain, parsed_value)) => \n        if parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
+                    #TODO: change from hardcoded '.0' to handle fields with more than one element (ie. arrays or tuples)
+                    if protocol.get_type(item).constraints.index(constraint) == 0:
+                        self.output.append(" {{\n        Ok((remain, parsed_value)) => \n        if parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
+                    else:
+                        self.output.append(" parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
                     if constraint.method_name == "eq":
-                        self.output.append("== {term}".format(term=constraint.arg_exprs[0].arg_value.constant_value))
-                    self.output.append(" {\n            Ok((remain, parsed_value))\n        } else {\n            Err(Error((remain, ErrorKind::Verify)))\n        }\n        Err(e) => {\n            Err(e)\n        }\n    }")
+                        self.output.append("== ")
+                    self.output.append("{term} ".format(term=constraint.arg_exprs[0].arg_value.constant_value))
+                    if protocol.get_type(item).constraints.index(constraint)+1 == len(protocol.get_type(item).constraints):
+                        self.output.append("{{\n            Ok((remain, parsed_value))\n        }} else {{\n            Err(Error((remain, ErrorKind::Verify)))\n        }}\n        Err(e) => {{\n            Err(e)\n        }}\n    }}".format())
+                    else:
+                        self.output.append("&&")
                 self.output.append("\n}\n")
                 defined_parsers.append(protocol.get_type(item).name.lower())

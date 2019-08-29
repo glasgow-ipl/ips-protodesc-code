@@ -7,87 +7,53 @@ use nom::Err::Error;
 
 
 #[derive(Debug, PartialEq, Eq)]
-struct Field2(u8);
+struct BitString1(u8);
 
 #[derive(Debug, PartialEq, Eq)]
-struct Field30(u32);
-
-#[derive(Debug, PartialEq, Eq)]
-struct Field64(u64);
-
-#[derive(Debug, PartialEq, Eq)]
-struct Field48(u64);
-
-#[derive(Debug, PartialEq, Eq)]
-struct Field8(u8);
-
-#[derive(Debug, PartialEq, Eq)]
-struct FixedwidthFieldFormat {
-    field2: Field2,
-    field30: Field30,
-    field64: Field64,
-    field48: Field48,
-    field8: Field8,
+struct stun_messagetype_split {
+    m11: BitString1,
+    m10: BitString1,
+    m9: BitString1,
+    m8: BitString1,
+    m7: BitString1,
+    c1: BitString1,
+    m6: BitString1,
+    m5: BitString1,
+    m4: BitString1,
+    c0: BitString1,
+    m3: BitString1,
+    m2: BitString1,
+    m1: BitString1,
+    m0: BitString1,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-struct OptionalField(u32);
+fn parse_bitstring1(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), BitString1>{
 
-#[derive(Debug, PartialEq, Eq)]
-struct OptionalFieldFormat {
-    field8: Field8,
-    optionalfield: OptionalField,
+    map(take(1_usize), |x| BitString1(x))(input)
 }
 
-fn parse_field2(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field2>{
-    map(take(2_usize), |x| Field2(x))(input)
-}
-
-fn parse_field30(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field30>{
-    map(take(30_usize), |x| Field30(x))(input)
-}
-
-fn parse_field64(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field64>{
-    map(take(64_usize), |x| Field64(x))(input)
-}
-
-fn parse_field48(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field48>{
-    match map(take(48_usize), |x| Field48(x))(input) {
-        Ok((rest, value)) => {
-            if value.0 == 2 {
-                Ok((rest, value))
+fn parse_stun_messagetype_split(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), stun_messagetype_split>{
+    match map(tuple((parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1, parse_bitstring1)), |(a, b, c, d, e, f, g, h, i, j, k, l, m, n)| stun_messagetype_split{m11: a, m10: b, m9: c, m8: d, m7: e, c1: f, m6: g, m5: h, m4: i, c0: j, m3: k, m2: l, m1: m, m0: n, })(input) {
+        Ok((remain, parsed_value)) =>
+            if parsed_value.m1.0 == 1 && parsed_value.c1.0 == 1 {
+                Ok((remain, parsed_value))
             } else {
-                Err(Error((rest, ErrorKind::Verify))) // FIXME: unclear what ErrorKind makes sense
+                Err(Error((remain, ErrorKind::Verify)))
             }
-        }
         Err(e) => {
             Err(e)
         }
     }
 }
 
-fn parse_field8(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), Field8>{
-    map(take(8_usize), |x| Field8(x))(input)
-}
 
-fn parse_fixed_width_field_format(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), FixedwidthFieldFormat>{
-    map(tuple((parse_field2, parse_field30, parse_field64, parse_field48, parse_field8)), |(a, b, c, d, e)| FixedwidthFieldFormat{field2: a, field30: b, field64: c, field48: d, field8: e, })(input)
-}
-
-fn parse_optionalfield(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), OptionalField>{
-    map(take(32_usize), |x| OptionalField(x))(input)
-}
-
-fn parse_optional_field_format(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), OptionalFieldFormat>{
-    map(tuple((parse_field8, parse_optionalfield)), |(a, b)| OptionalFieldFormat{field8: a, optionalfield: b, })(input)
-}
 
 //manually added for testing
 fn main() {
-    let input = [0b01000010, 0b01111111, 0b10101010, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b00000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01000110, 0b11001010, 0b11111101, 0b11001011];
+    let input = [0b01000110, 0b01111111, 0b10101010, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b00000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01000110, 0b11001010, 0b11111101, 0b11001011];
 
 
-    match parse_fixed_width_field_format((&input, 0)) {
+    match parse_stun_messagetype_split((&input, 0)) {
         Ok((remain, result)) => {
             println!("Remain: {:?}", remain);
             println!("Result: {:?}", result);
@@ -99,13 +65,4 @@ fn main() {
 
     println!("{:?}", input);
 
-    match parse_optional_field_format((&input, 0)) {
-        Ok((remain, result)) => {
-            println!("Remain: {:?}", remain);
-            println!("Result: {:?}", result);
-        }
-        Err(e) => {
-            println!("Failed: {:?}", e)
-        }
-    }
 }

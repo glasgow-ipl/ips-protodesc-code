@@ -103,6 +103,14 @@ protocol.define_struct(
             [
                ArgumentExpression("other", ConstantExpression(bit_1, "1"))
             ]
+        ),
+
+        MethodInvocationExpression(
+            FieldAccessExpression(ThisExpression(), "c1"),
+            "eq",
+            [
+                ArgumentExpression("other", ConstantExpression(bit_1, "1"))
+            ]
         )
     ],
     []
