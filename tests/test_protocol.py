@@ -92,7 +92,7 @@ class TestProtocol(unittest.TestCase):
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         # add constraints
-        seq_constraint = MethodInvocationExpression(FieldAccessExpression(ThisExpression(), "seq"),
+        seq_constraint = MethodInvocationExpression(FieldAccessExpression(SelfExpression(), "seq"),
                                                     "eq",
                                                     [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
 
@@ -219,7 +219,7 @@ class TestProtocol(unittest.TestCase):
         teststruct = protocol.define_struct("TestStruct", [test], [], [])
 
         # Check that we can parse FieldAccess expressions
-        fieldaccess_expr = FieldAccessExpression(ThisExpression(), "test")
+        fieldaccess_expr = FieldAccessExpression(SelfExpression(), "test")
 
         self.assertTrue(isinstance(fieldaccess_expr, FieldAccessExpression))
         self.assertEqual(fieldaccess_expr.get_result_type(teststruct), protocol.get_type("TestField"))
@@ -260,9 +260,9 @@ class TestProtocol(unittest.TestCase):
 
         # Check we can parse This expressions:
         teststruct = protocol.define_struct("TestStruct", [], [], [])
-        this_expr = ThisExpression()
+        this_expr = SelfExpression()
 
-        self.assertTrue(isinstance(this_expr, ThisExpression))
+        self.assertTrue(isinstance(this_expr, SelfExpression))
         self.assertEqual(this_expr.get_result_type(teststruct), protocol.get_type("TestStruct"))
 
     def test_parse_expression_Constant(self):

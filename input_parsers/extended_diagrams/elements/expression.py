@@ -53,7 +53,7 @@ class Expression(Element):
             return str(expression.value)   # Type?
         elif isinstance(expression, FieldAccessExpression):
             return self.expression_to_string(expression.target) + "." + expression.field_name
-        elif isinstance(expression, ThisExpression):
+        elif isinstance(expression, SelfExpression):
             return "this"
         else:
             return "NotImplemented<" + str(expression.__class__) + ">"

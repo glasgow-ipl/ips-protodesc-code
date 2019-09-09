@@ -106,7 +106,7 @@ field_title :field                  = field_title_main(field) ':' ' '+ field_tit
                                                     MethodInvocationExpression(
                                                         MethodInvocationExpression(
                                                             FieldAccessExpression(
-                                                                target=ThisExpression(),
+                                                                target=SelfExpression(),
                                                                 field_name=Names.field_name_formatter(field.name)
                                                             ),
                                                             "size",
@@ -127,7 +127,7 @@ field_title :field                  = field_title_main(field) ':' ' '+ field_tit
                                                     MethodInvocationExpression(
                                                         MethodInvocationExpression(
                                                             FieldAccessExpression(
-                                                                target=ThisExpression(),
+                                                                target=SelfExpression(),
                                                                 field_name=Names.field_name_formatter(field.name)
                                                             ),
                                                             "size",
@@ -157,7 +157,7 @@ field_title :field                  = field_title_main(field) ':' ' '+ field_tit
                                                     MethodInvocationExpression(
                                                         MethodInvocationExpression(
                                                             FieldAccessExpression(
-                                                                target=ThisExpression(),
+                                                                target=SelfExpression(),
                                                                 field_name=Names.field_name_formatter(field.name)
                                                             ),
                                                             "size",
@@ -187,7 +187,7 @@ field_title :field                  = field_title_main(field) ':' ' '+ field_tit
                                                     MethodInvocationExpression(
                                                         MethodInvocationExpression(
                                                             FieldAccessExpression(
-                                                                target=ThisExpression(),
+                                                                target=SelfExpression(),
                                                                 field_name=Names.field_name_formatter(field.name)
                                                             ),
                                                             "length",
@@ -299,7 +299,7 @@ expression_primary              = number:n  -> ConstantExpression(constant_type=
 expression_field_accessor       = field_name_bracket:x '.' ('width'|'length'|'size')
                                 ->  MethodInvocationExpression(
                                         FieldAccessExpression(
-                                            target=ThisExpression(),
+                                            target=SelfExpression(),
                                             field_name=Names.field_name_formatter(x)
                                         ),
                                         "size",
@@ -309,7 +309,7 @@ expression_field_accessor       = field_name_bracket:x '.' ('width'|'length'|'si
                                 | field_name_bracket:x '.value'
                                 ->  MethodInvocationExpression(
                                         FieldAccessExpression(
-                                            target=ThisExpression(),
+                                            target=SelfExpression(),
                                             field_name=Names.field_name_formatter(x)
                                         ),
                                         "to_integer",
@@ -319,7 +319,7 @@ expression_field_accessor       = field_name_bracket:x '.' ('width'|'length'|'si
                                 | field_name_bracket:x
                                 ->  MethodInvocationExpression(
                                         FieldAccessExpression(
-                                            target=ThisExpression(),
+                                            target=SelfExpression(),
                                             field_name=Names.field_name_formatter(x)
                                         ),
                                         "to_integer",

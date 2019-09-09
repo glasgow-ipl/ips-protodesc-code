@@ -191,7 +191,7 @@ class IfElseExpression(Expression):
 
 
 @dataclass(frozen=True)
-class ThisExpression(Expression):
+class SelfExpression(Expression):
     def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         return containing_type
 

@@ -89,7 +89,7 @@ class PacketLangParser(InputParser):
         return self.new_methodinvocation(FieldAccessExpression(target, field_name), "to_integer", [])
 
     def new_this(self):
-        return ThisExpression()
+        return SelfExpression()
 
     def new_methodinvocation(self, target, method, arguments):
         if type(target) is MethodInvocationExpression and target.method_name == "to_integer":

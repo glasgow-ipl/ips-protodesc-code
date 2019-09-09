@@ -4,7 +4,7 @@ from ..exception import InconsistentDataException
 from typing import List
 from rfc2xml.elements import Element
 from protocol import Expression as ProtocolExpression, MethodInvocationExpression, FieldAccessExpression,\
-    ArgumentExpression, ThisExpression, ConstantExpression, Protocol
+    ArgumentExpression, SelfExpression, ConstantExpression, Protocol
 
 
 class Field(Element):
@@ -133,7 +133,7 @@ class Field(Element):
                 MethodInvocationExpression(
                     MethodInvocationExpression(
                         FieldAccessExpression(
-                            ThisExpression(),
+                            SelfExpression(),
                             self.name
                         ),
                         "to_integer",

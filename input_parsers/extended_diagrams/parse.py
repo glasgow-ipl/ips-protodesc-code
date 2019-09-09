@@ -47,7 +47,7 @@ class Parse:
             'MethodInvocationExpression': MethodInvocationExpression,
             'ConstantExpression': ConstantExpression,
             'FieldAccessExpression': FieldAccessExpression,
-            'ThisExpression': ThisExpression,
+            'SelfExpression': SelfExpression,
             'IfElseExpression': IfElseExpression,
         })
 

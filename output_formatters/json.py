@@ -82,7 +82,7 @@ class Json(OutputFormatter):
                 "target": Json.constraint_to_dict(expression.target),
                 "field_name": expression.field_name
             }
-        elif isinstance(expression, ThisExpression):
+        elif isinstance(expression, SelfExpression):
             return {
                 "expression": "This"
             }

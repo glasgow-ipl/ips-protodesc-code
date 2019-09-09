@@ -1,7 +1,7 @@
 import sys
 from typing import Dict, List, Union, Tuple, Optional
 from protocol import Protocol, StructField, Expression, MethodInvocationExpression, FieldAccessExpression,\
-                     ThisExpression, ConstantExpression, ArgumentExpression
+                     SelfExpression, ConstantExpression, ArgumentExpression
 from rfc2xml.elements import Element, Rfc
 from .elements import SectionStruct
 from .exception import SectionReferenceNotFound
@@ -161,7 +161,7 @@ class ExtendedDiagramsProtocol:
             is_present = MethodInvocationExpression(
                 method_name="eq",
                 target=FieldAccessExpression(
-                    target=ThisExpression(),
+                    target=SelfExpression(),
                     field_name=field.constraint_field
                 ),
                 arg_exprs=[

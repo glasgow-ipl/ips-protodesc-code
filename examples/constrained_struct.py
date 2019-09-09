@@ -98,7 +98,7 @@ protocol.define_struct(
     ],
     [
         MethodInvocationExpression(
-            FieldAccessExpression(ThisExpression(), "m1"),
+            FieldAccessExpression(SelfExpression(), "m1"),
             "eq",
             [
                ArgumentExpression("other", ConstantExpression(bit_1, "1"))
@@ -106,7 +106,7 @@ protocol.define_struct(
         ),
 
         MethodInvocationExpression(
-            FieldAccessExpression(ThisExpression(), "c1"),
+            FieldAccessExpression(SelfExpression(), "c1"),
             "eq",
             [
                 ArgumentExpression("other", ConstantExpression(bit_1, "1"))
