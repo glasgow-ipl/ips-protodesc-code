@@ -209,18 +209,10 @@ class ConstantExpression(Expression):
 # Fields in a structure or the context:
 
 @dataclass(frozen=True)
-class Transform():
-    into_name : str
-    into_type : "ProtocolType"
-    using     : Function
-
-
-@dataclass(frozen=True)
 class StructField():
     field_name: str
     field_type: "ProtocolType"
     is_present: Optional[Expression]
-    transform : Optional[Transform]
 
 
 @dataclass(frozen=True)
@@ -325,7 +317,6 @@ class Nothing(ProtocolType):
         self.kind  = "Nothing"
         self.name  = "Nothing"
 
-
 class Boolean(ProtocolType):
     def __init__(self) -> None:
         super().__init__(None)
@@ -353,6 +344,13 @@ class BitString(ProtocolType):
         super().__init__(None)
         self.kind = "BitString"
         self.name = name
+        self.size = size
+
+class DataUnit(ProtocolType):
+    def __init__(self, name: str, size: int) -> None:
+        super().__init__(None)
+        self.kind  = "DataUnit"
+        self.name  = name
         self.size = size
 
 
@@ -457,6 +455,7 @@ class Protocol:
         self._types["Nothing"] = Nothing()
         self._types["Boolean"] = Boolean()
         self._types["Integer"] = Integer()
+        self._types["DataUnit"] = BitString(.....)
         self._types["Size"]    = self.derive_subtype("Size", self._types["Integer"], [])
         
         # Define the standard traits:

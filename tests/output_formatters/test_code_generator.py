@@ -202,85 +202,71 @@ class TestProtocol(unittest.TestCase):
                     field_name="m11",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m10",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m9",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m8",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m7",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="c1",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m6",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m5",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m4",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="c0",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m3",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m2",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m1",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 ),
                 StructField(
                     field_name="m0",
                     field_type=bit_1,
                     is_present=None,
-                    transform=None
                 )
             ],
             [
