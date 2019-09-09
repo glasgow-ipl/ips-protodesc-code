@@ -36,7 +36,7 @@ from output_formatters.outputformatter import OutputFormatter
 
 class RustWriter(OutputFormatter):
     """
-    Class to generate code from parsed ASCII diagrams - currently only produces Rust
+    Class to generate Rust code from parsed ASCII diagrams
     """
 
     output: List[str]
@@ -153,8 +153,19 @@ class RustWriter(OutputFormatter):
                         self.output.append(" {{\n        Ok((remain, parsed_value)) => \n        if parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
                     else:
                         self.output.append(" parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
+                    #TODO: refactor this into something less bloated
                     if constraint.method_name == "eq":
                         self.output.append("== ")
+                    elif constraint.method_name == "ne":
+                        self.output.append("!= ")
+                    elif constraint.method_name == "lt":
+                        self.output.append("< ")
+                    elif constraint.method_name == "le":
+                        self.output.append("<= ")
+                    elif constraint.method_name == "gt":
+                        self.output.append("> ")
+                    elif constraint.method_name == "ge":
+                        self.output.append(">= ")
                     self.output.append("{term} ".format(term=constraint.arg_exprs[0].arg_value.constant_value))
                     if protocol.get_type(item).constraints.index(constraint)+1 == len(protocol.get_type(item).constraints):
                         self.output.append("{{\n            Ok((remain, parsed_value))\n        }} else {{\n            Err(Error((remain, ErrorKind::Verify)))\n        }}\n        Err(e) => {{\n            Err(e)\n        }}\n    }}".format())

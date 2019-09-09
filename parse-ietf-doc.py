@@ -64,7 +64,8 @@ def main():
     
     argparser.add_argument("--dom-parser", type=str, nargs='+')
     
-    argparser.add_argument("--output-format", type=str, required=True)
+    #argparser.add_argument("--output-format", type=str, required=True)
+    argparser.add_argument("--output-format", type=str, required=False)
     argparser.add_argument("--output-file",   type=str, required=True)
 
     args = argparser.parse_args()
@@ -123,7 +124,14 @@ def main():
     # ============================================================================================
     
     type_names = parse_protodesc.dfs_protocol(protocol)
-    
+
+    if args.output_format is None:
+        output_filetype = args.output_file.split(".")[-1]
+        if output_filetype == "rs":
+            args.output_format = "rustprinter"
+        else:
+            args.output_format = "simpleprinter"
+
     construct_output_formatter = {
                                   "simpleprinter" : output_formatters.simpleprinter.SimplePrinter(),
                                   "rustprinter" : output_formatters.rust_writer.RustWriter()
