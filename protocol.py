@@ -311,12 +311,6 @@ class ProtocolType(ABC):
 # Internal types follow:
 
 #FIXME: need to think about the purpose of these types: should they hold values?
-class Nothing(ProtocolType):
-    def __init__(self) -> None:
-        super().__init__(None)
-        self.kind  = "Nothing"
-        self.name  = "Nothing"
-
 class Boolean(ProtocolType):
     def __init__(self) -> None:
         super().__init__(None)
@@ -346,12 +340,20 @@ class BitString(ProtocolType):
         self.name = name
         self.size = size
 
+
 class DataUnit(ProtocolType):
     def __init__(self, name: str, size: int) -> None:
         super().__init__(None)
         self.kind  = "DataUnit"
         self.name  = name
         self.size = size
+
+#TODO: decide if Nothing is actually needed as a type
+class Nothing(ProtocolType):
+    def __init__(self) -> None:
+        super().__init__(None)
+        self.kind  = "Nothing"
+        self.name  = "Nothing"
 
 
 class Array(ProtocolType):
@@ -452,10 +454,12 @@ class Protocol:
         self._name  = None
         # Define the primitive types:
         self._types = {}
-        self._types["Nothing"] = Nothing()
+        #self._types["Nothing"] = Nothing()
+        self._types["Nothing"] = BitString("Nothing", 0)
         self._types["Boolean"] = Boolean()
         self._types["Integer"] = Integer()
-        self._types["DataUnit"] = BitString(.....)
+        #TODO: figure out where to get name and size from for DataUnit
+        #self._types["DataUnit"] = BitString(name, size)
         self._types["Size"]    = self.derive_subtype("Size", self._types["Integer"], [])
         
         # Define the standard traits:
