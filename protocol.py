@@ -330,6 +330,7 @@ class Nothing(ProtocolType):
         super().__init__(None)
         self.kind  = "Nothing"
         self.name  = "Nothing"
+        self.size = 0
 
 # Representable types follow:
 
@@ -341,6 +342,15 @@ class BitString(ProtocolType):
         self.kind = "BitString"
         self.name = name
         self.size = size
+
+
+class Option(ProtocolType):
+    def __init__(self, name: str, reference_type: ProtocolType) -> None:
+        super().__init__(None)
+        self.kind = "Option"
+        self.name = name
+        self.reference_type = ProtocolType
+        self.size = reference_type.size
 
 
 class Array(ProtocolType):
@@ -557,6 +567,22 @@ class Protocol:
         newtype.implement_trait(self.get_trait("Value"))
         newtype.implement_trait(self.get_trait("Equality"))
         newtype.implement_trait(self.get_trait("NumberRepresentable"))
+        self._types[name] = newtype
+        return newtype
+
+    def define_option(self, name:str, reference_type:ProtocolType) -> Option:
+        """
+        Define a new option type for this protocol.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          name  - the name of the new type
+          reference_type - the type which this instantiation of Option will take (either Nothing or another representable type)
+          size  - the size of reference_type (0 if Nothing, varies for other representable types)
+        """
+        self._validate_typename(name)
+        newtype = Option(name, reference_type)
+        newtype.implement_trait(self.get_trait("Sized"))
         self._types[name] = newtype
         return newtype
 
