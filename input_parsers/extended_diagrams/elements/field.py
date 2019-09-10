@@ -144,7 +144,7 @@ class Field(Element):
                         ArgumentExpression(
                             "other",
                             ConstantExpression(
-                                constant_type=protocol.get_type("Integer"),
+                                constant_type=protocol.get_type("Number"),
                                 constant_value=self.value
                             )
                         )

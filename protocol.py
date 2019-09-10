@@ -317,15 +317,9 @@ class Boolean(ProtocolType):
         self.kind  = "Boolean"
         self.name  = "Boolean"
 
-class Integer(ProtocolType):
+class Number(ProtocolType):
     def __init__(self) -> None:
         super().__init__(None)
-        self.kind  = "Integer"
-        self.name  = "Integer"
-
-class Number(ProtocolType):
-    def __init__(self, parent) -> None:
-        super().__init__(parent)
         self.kind  = "Number"
         self.name  = "Number"
 
@@ -449,12 +443,11 @@ class Protocol:
         self._types = {}
         self._types["Nothing"] = BitString("Nothing", 0)
         self._types["Boolean"] = Boolean()
-        self._types["Integer"] = Integer()
+        self._types["Number"] = Number()
         #TODO: figure out where to get size from for DataUnit
         #using 0 as a placeholder for now
         #self._types["DataUnit"] = BitString("DataUnit", size)
         self._types["DataUnit"] = BitString("DataUnit", 0)
-        self._types["Number"]    = self.derive_subtype("Number", self._types["Integer"], [])
         
         # Define the standard traits:
         self._traits = {}
@@ -492,17 +485,17 @@ class Protocol:
             Function("divide",  [Parameter("self", None), Parameter("other", None)], None),
             Function("modulo",  [Parameter("self", None), Parameter("other", None)], None)
         ])
-        self._traits["IntegerRepresentable"] = Trait("IntegerRepresentable", [
-            Function("to_integer", [Parameter("self", None)], self.get_type("Integer"))
+        self._traits["NumberRepresentable"] = Trait("NumberRepresentable", [
+            Function("to_number", [Parameter("self", None)], self.get_type("Number"))
         ])
         # Implement standard traits:
         self._types["Boolean"].implement_trait(self.get_trait("Value"))
         self._types["Boolean"].implement_trait(self.get_trait("Equality"))
         self._types["Boolean"].implement_trait(self.get_trait("BooleanOps"))
-        self._types["Integer"].implement_trait(self.get_trait("Value"))
-        self._types["Integer"].implement_trait(self.get_trait("Equality"))
-        self._types["Integer"].implement_trait(self.get_trait("Ordinal"))
-        self._types["Integer"].implement_trait(self.get_trait("ArithmeticOps"))
+        self._types["Number"].implement_trait(self.get_trait("Value"))
+        self._types["Number"].implement_trait(self.get_trait("Equality"))
+        self._types["Number"].implement_trait(self.get_trait("Ordinal"))
+        self._types["Number"].implement_trait(self.get_trait("ArithmeticOps"))
         # Define the standard functions:
         self._funcs = {}
         # Define the context:
@@ -566,7 +559,7 @@ class Protocol:
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Value"))
         newtype.implement_trait(self.get_trait("Equality"))
-        newtype.implement_trait(self.get_trait("IntegerRepresentable"))
+        newtype.implement_trait(self.get_trait("NumberRepresentable"))
         self._types[name] = newtype
         return newtype
 

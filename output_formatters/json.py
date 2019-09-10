@@ -137,7 +137,7 @@ class Json(OutputFormatter):
                 self.format_array(type)
             elif isinstance(type, Enum):
                 self.format_enum(type)
-            elif isinstance(type, Nothing) or isinstance(type, Boolean) or isinstance(type, Integer):
+            elif isinstance(type, Nothing) or isinstance(type, Boolean) or isinstance(type, Number):
                 pass
             else:
                 raise Exception("Not Implemented for " + str(type.__class__))

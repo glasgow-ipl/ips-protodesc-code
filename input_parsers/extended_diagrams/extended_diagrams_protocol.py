@@ -168,7 +168,7 @@ class ExtendedDiagramsProtocol:
                     ArgumentExpression(
                         "other",
                         ConstantExpression(
-                            constant_type=self.protocol.get_type("Integer"),
+                            constant_type=self.protocol.get_type("Number"),
                             constant_value=field.constraint_value
                         )
                     )

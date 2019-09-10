@@ -140,7 +140,7 @@ field_title :field                  = field_title_main(field) ':' ' '+ field_tit
                                                                 MethodInvocationExpression(
                                                                     expression,
                                                                     "multiply",
-                                                                    [ArgumentExpression("other", ConstantExpression(constant_type=protocol.get_type("Integer"), constant_value=8))]
+                                                                    [ArgumentExpression("other", ConstantExpression(constant_type=protocol.get_type("Number"), constant_value=8))]
                                                                 )
                                                             )
                                                         ]
@@ -170,7 +170,7 @@ field_title :field                  = field_title_main(field) ':' ' '+ field_tit
                                                                 MethodInvocationExpression(
                                                                     expression,
                                                                     "multiply",
-                                                                    [ArgumentExpression("other", ConstantExpression(constant_type=protocol.get_type("Integer"), constant_value=32))]
+                                                                    [ArgumentExpression("other", ConstantExpression(constant_type=protocol.get_type("Number"), constant_value=32))]
                                                                 )
                                                             )
                                                         ]
@@ -290,7 +290,7 @@ expression_additive             = expression_additive:left ' '* '+' ' '*  expres
                                 | expression_additive:left ' '* '-' ' '*  expression_additive:right -> MethodInvocationExpression(left, "minus", [ArgumentExpression("other", right)])
                                 | expression_multiplicative
 
-expression_primary              = number:n  -> ConstantExpression(constant_type=protocol.get_type("Integer"), constant_value=n)
+expression_primary              = number:n  -> ConstantExpression(constant_type=protocol.get_type("Number"), constant_value=n)
                                 | true      -> ConstantExpression(constant_type=Boolean(), constant_value=True)
                                 | false     -> ConstantExpression(constant_type=Boolean(), constant_value=False)
 							    | expression_field_accessor
