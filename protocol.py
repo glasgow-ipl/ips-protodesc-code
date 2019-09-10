@@ -317,11 +317,19 @@ class Boolean(ProtocolType):
         self.kind  = "Boolean"
         self.name  = "Boolean"
 
+
 class Number(ProtocolType):
     def __init__(self) -> None:
         super().__init__(None)
         self.kind  = "Number"
         self.name  = "Number"
+
+
+class Nothing(ProtocolType):
+    def __init__(self) -> None:
+        super().__init__(None)
+        self.kind  = "Nothing"
+        self.name  = "Nothing"
 
 # Representable types follow:
 
@@ -332,14 +340,6 @@ class BitString(ProtocolType):
         super().__init__(None)
         self.kind = "BitString"
         self.name = name
-        self.size = size
-
-
-class DataUnit(ProtocolType):
-    def __init__(self, name: str, size: int) -> None:
-        super().__init__(None)
-        self.kind  = "DataUnit"
-        self.name  = name
         self.size = size
 
 
@@ -441,13 +441,9 @@ class Protocol:
         self._name  = None
         # Define the primitive types:
         self._types = {}
-        self._types["Nothing"] = BitString("Nothing", 0)
+        self._types["Nothing"] = Nothing()
         self._types["Boolean"] = Boolean()
         self._types["Number"] = Number()
-        #TODO: figure out where to get size from for DataUnit
-        #using 0 as a placeholder for now
-        #self._types["DataUnit"] = BitString("DataUnit", size)
-        self._types["DataUnit"] = BitString("DataUnit", 0)
         
         # Define the standard traits:
         self._traits = {}
