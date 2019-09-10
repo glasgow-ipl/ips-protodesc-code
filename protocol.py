@@ -492,6 +492,7 @@ class Protocol:
         self._types["Number"].implement_trait(self.get_trait("Equality"))
         self._types["Number"].implement_trait(self.get_trait("Ordinal"))
         self._types["Number"].implement_trait(self.get_trait("ArithmeticOps"))
+        self._types["Nothing"].implement_trait(self.get_trait("Sized"))
         # Define the standard functions:
         self._funcs = {}
         # Define the context:
@@ -630,27 +631,6 @@ class Protocol:
         self._types[name] = copy(derived_from)
         self._types[name].name    = name
         self._types[name].methods = copy(derived_from.methods)
-        for trait in also_implements:
-            self._types[name].implement_trait(trait)
-        return self._types[name]
-
-    def derive_subtype(self, name: str, derived_from: ProtocolType, also_implements: List[Trait]) -> ProtocolType:
-        """
-        Define a new derived subtype for this protocol.
-        The type constructor is described in Section 3.2.5 of the IR specification.
-
-        Parameters:
-          self            - the protocol in which the new subtype is defined
-          name            - the name of the new subtype
-          derived_from    - the type that the new subtype is derived from
-          also_implements - additional traits that are implemented
-        """
-        self._validate_typename(name)
-        self._types[name] = copy(derived_from)
-        self._types[name].name = name
-        self._types[name].parent = derived_from
-        self._types[name].methods = {}
-        self._types[name].traits = {}
         for trait in also_implements:
             self._types[name].implement_trait(trait)
         return self._types[name]
