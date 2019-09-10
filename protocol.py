@@ -323,11 +323,11 @@ class Integer(ProtocolType):
         self.kind  = "Integer"
         self.name  = "Integer"
 
-class Size(ProtocolType):
+class Number(ProtocolType):
     def __init__(self, parent) -> None:
         super().__init__(parent)
-        self.kind  = "Size"
-        self.name  = "Size"
+        self.kind  = "Number"
+        self.name  = "Number"
 
 # Representable types follow:
 
@@ -347,13 +347,6 @@ class DataUnit(ProtocolType):
         self.kind  = "DataUnit"
         self.name  = name
         self.size = size
-
-#TODO: decide if Nothing is actually needed as a type
-class Nothing(ProtocolType):
-    def __init__(self) -> None:
-        super().__init__(None)
-        self.kind  = "Nothing"
-        self.name  = "Nothing"
 
 
 class Array(ProtocolType):
@@ -454,13 +447,14 @@ class Protocol:
         self._name  = None
         # Define the primitive types:
         self._types = {}
-        #self._types["Nothing"] = Nothing()
         self._types["Nothing"] = BitString("Nothing", 0)
         self._types["Boolean"] = Boolean()
         self._types["Integer"] = Integer()
-        #TODO: figure out where to get name and size from for DataUnit
-        #self._types["DataUnit"] = BitString(name, size)
-        self._types["Size"]    = self.derive_subtype("Size", self._types["Integer"], [])
+        #TODO: figure out where to get size from for DataUnit
+        #using 0 as a placeholder for now
+        #self._types["DataUnit"] = BitString("DataUnit", size)
+        self._types["DataUnit"] = BitString("DataUnit", 0)
+        self._types["Number"]    = self.derive_subtype("Number", self._types["Integer"], [])
         
         # Define the standard traits:
         self._traits = {}
@@ -469,12 +463,12 @@ class Protocol:
             Function("set", [Parameter("self", None), Parameter("value", None)], self.get_type("Nothing"))
         ])
         self._traits["Sized"] = Trait("Sized", [
-            Function("size", [Parameter("self", None)], self.get_type("Size"))
+            Function("size", [Parameter("self", None)], self.get_type("Number"))
         ])
         self._traits["IndexCollection"] = Trait("IndexCollection", [
-            Function("get",    [Parameter("self", None), Parameter("index", self.get_type("Size"))], None),
-            Function("set",    [Parameter("self", None), Parameter("index", self.get_type("Size")), Parameter("value", None)], self.get_type("Nothing")),
-            Function("length", [Parameter("self", None)], self.get_type("Size"))
+            Function("get",    [Parameter("self", None), Parameter("index", self.get_type("Number"))], None),
+            Function("set",    [Parameter("self", None), Parameter("index", self.get_type("Number")), Parameter("value", None)], self.get_type("Nothing")),
+            Function("length", [Parameter("self", None)], self.get_type("Number"))
         ])
         self._traits["Equality"] = Trait("Equality", [
             Function("eq", [Parameter("self", None), Parameter("other", None)], self.get_type("Boolean")),
