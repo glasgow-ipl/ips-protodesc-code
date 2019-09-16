@@ -53,7 +53,7 @@ class ProtocolTypeError(Exception):
 @dataclass(frozen=True)
 class Parameter:
     param_name : str
-    param_type : Optional["ProtocolType"]
+    param_type : "ProtocolType"
 
 
 @dataclass(frozen=True)

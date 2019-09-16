@@ -63,7 +63,7 @@ class TestProtocol(unittest.TestCase):
         #Testing Rust code generation
         generator = output_formatters.rust_writer.RustWriter()
         generator.format_bitstring(res)
-        print("".join(generator.output))
+        #print("".join(generator.output))
 
     def test_define_array(self):
         protocol = Protocol()
@@ -84,7 +84,7 @@ class TestProtocol(unittest.TestCase):
 
         generator = output_formatters.rust_writer.RustWriter()
         generator.format_array(res)
-        print("".join(generator.output))
+        #print("".join(generator.output))
 
     def test_write_struct(self):
         protocol = Protocol()
@@ -104,7 +104,6 @@ class TestProtocol(unittest.TestCase):
         # define fields
         seq = StructField("seq",
                           seqnum,
-                          Transform("ext_seq", seqnum_trans, transform_seq),
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
         ts  = StructField("ts",
                           timestamp,
@@ -296,36 +295,37 @@ class TestProtocol(unittest.TestCase):
         generator.format_bitstring(bit_1)
         generator.format_struct(struct)
         generator.format_protocol(protocol)
-        print("".join(generator.output))
+        #print("".join(generator.output))
 
     def test_define_enum(self):
         protocol = Protocol()
 
         seqnum_trans = protocol.define_bitstring("SeqNumTrans", 16)
         seqnum = protocol.define_bitstring("SeqNum", 16)
+        redvar = protocol.define_bitstring("Red", 16)
+        greenvar = protocol.define_bitstring("Green", 32)
+        bluevar = protocol.define_bitstring("Blue", 8)
+        combined_var = protocol.define_bitstring("CombinedVar", 32)
         timestamp = protocol.define_bitstring("Timestamp", 32)
         transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
+        test_function = protocol.define_function("test_function", [Parameter("red", redvar), Parameter("green", greenvar), Parameter("blue", bluevar)], combined_var)
         field_6 = protocol.define_bitstring("Field6", 6)
         field_10 = protocol.define_bitstring("Field10", 10)
 
         # define fields
         seq = StructField("seq",
                           seqnum,
-                          Transform("ext_seq", seqnum_trans, transform_seq),
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
         ts  = StructField("ts",
                           timestamp,
-                          None,
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         f6  = StructField("f6",
                           field_6,
-                          None,
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         f10  = StructField("f10",
                            field_10,
-                           None,
                            ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         # add constraints
@@ -351,8 +351,9 @@ class TestProtocol(unittest.TestCase):
 
         #Testing Rust code generation
         generator = output_formatters.rust_writer.RustWriter()
-        #generator.format_enum(res)
-        #print("".join(generator.output))
+        generator.format_function(transform_seq)
+        generator.format_function(test_function)
+        print("".join(generator.output))
 
     def test_derive_type(self):
         protocol = Protocol()

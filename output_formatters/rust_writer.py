@@ -107,10 +107,18 @@ class RustWriter(OutputFormatter):
             self.append("%s,\n" % variant.name)
         self.output.append("}\n")
 
-
     def format_function(self, function:Function):
-        pass
-
+        self.output.append("fn {function_name}(".format(function_name=function.name))
+        for param in function.parameters:
+            #TODO: handle parameters which aren't just structs
+            self.output.append("{param_name}: {param_type}".format(param_name=param.param_name, param_type=param.param_type.name))
+            if param not in function.parameters[-1:]:
+                self.output.append(", ")
+            else:
+                self.output.append(") ")
+        if function.return_type.kind != "Nothing":
+            self.output.append("-> {return_type}".format(return_type=function.return_type.name))
+        self.output.append(" {\n    //function body required\n}\n\n")
 
     def format_context(self, context:Context):
         pass
