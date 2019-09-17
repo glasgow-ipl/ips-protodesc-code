@@ -53,7 +53,7 @@ ACTIVE_ID_URL = "https://www.ietf.org/id/"
 
 def main():
     argparser = argparse.ArgumentParser()
-    
+
     docnameparser = argparser.add_mutually_exclusive_group(required=True)
     docnameparser.add_argument("--draftname", type=str)
     docnameparser.add_argument("--rfc",       type=str)
@@ -61,15 +61,14 @@ def main():
     docnameparser.add_argument("--std",       type=str)
     docnameparser.add_argument("--xml",       type=str)
     docnameparser.add_argument("--txt",       type=str)
-    
+
     argparser.add_argument("--dom-parser", type=str, nargs='+')
-    
-    #argparser.add_argument("--output-format", type=str, required=True)
-    argparser.add_argument("--output-format", type=str, required=False)
+
+    argparser.add_argument("--output-format", type=str, required=False, help="If not specified, the output format will be inferred from the output filename's extension")
     argparser.add_argument("--output-file",   type=str, required=True)
 
     args = argparser.parse_args()
-    
+
     xml = None
     txt = None
     parsed_rfc = None
@@ -77,7 +76,7 @@ def main():
     # ============================================================================================
     # RFC -> RFC DOM
     # ============================================================================================
-    
+
     if args.draftname is not None or args.rfc is not None or args.bcp is not None:
         dt = datatracker.DataTracker()
         if args.draftname is not None:
@@ -101,7 +100,7 @@ def main():
 
     if xml is not None:
         rfcXml = ET.fromstring(xml)
-        parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)      
+        parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)
     elif txt is not None:
         parsed_rfc = parse_rfc_txt.parse_rfc(txt)
 
@@ -112,7 +111,7 @@ def main():
     construct_dom_parser = {
                             "asciidiagrams"     : input_parsers.rfcdom.asciidiagrams.asciidiagrams.AsciiDiagrams(),
                            }
-    
+
     protocol = None
 
     for dom_parser_name in args.dom_parser:
@@ -122,22 +121,27 @@ def main():
     # ============================================================================================
     # Protocol -> output
     # ============================================================================================
-    
+
     type_names = parse_protodesc.dfs_protocol(protocol)
 
+    output_file_ext = args.output_file.split(".")[-1]
+
+    file_exts = {
+        "rs"  : "rustprinter",
+        "txt" : "simpleprinter"
+    }
+
     if args.output_format is None:
-        output_filetype = args.output_file.split(".")[-1]
-        if output_filetype == "rs":
-            args.output_format = "rustprinter"
-        else:
-            args.output_format = "simpleprinter"
+        output_file_ext = args.output_file.split(".")[-1]
+        args.output_format = file_exts.get(output_file_ext, "simpleprinter")
 
     construct_output_formatter = {
                                   "simpleprinter" : output_formatters.simpleprinter.SimplePrinter(),
                                   "rustprinter" : output_formatters.rust_writer.RustWriter()
                                  }
+
     output_formatter = construct_output_formatter[args.output_format]
-    
+
     # Format the protocol using output formatter
     try:
         for type_name in type_names:
