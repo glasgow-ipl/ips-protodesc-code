@@ -62,8 +62,6 @@ def main():
     docnameparser.add_argument("--xml",       type=str)
     docnameparser.add_argument("--txt",       type=str)
 
-    argparser.add_argument("--dom-parser", type=str, nargs='+')
-
     argparser.add_argument("--output-format", type=str, required=False, help="If not specified, the output format will be inferred from the output filename's extension")
     argparser.add_argument("--output-file",   type=str, required=True)
 
@@ -108,13 +106,15 @@ def main():
     # RFC DOM -> Protocol
     # ============================================================================================
 
+    dom_parsers = ["asciidiagrams"]
+
     construct_dom_parser = {
                             "asciidiagrams"     : input_parsers.rfcdom.asciidiagrams.asciidiagrams.AsciiDiagrams(),
                            }
 
     protocol = None
 
-    for dom_parser_name in args.dom_parser:
+    for dom_parser_name in dom_parsers:
         dom_parser = construct_dom_parser[dom_parser_name]
         protocol = dom_parser.build_protocol(protocol, parsed_rfc)
 
