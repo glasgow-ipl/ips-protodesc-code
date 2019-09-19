@@ -118,10 +118,37 @@ class RustWriter(OutputFormatter):
                 self.output.append(") ")
         if function.return_type.kind != "Nothing":
             self.output.append("-> {return_type}".format(return_type=function.return_type.name))
-        self.output.append(" {\n    //function body required\n}\n\n")
+        self.output.append(" {\n    //function body required\n    unimplemented!();\n}\n\n")
 
     def format_context(self, context:Context):
-        pass
+        for field in context.fields:
+            #TODO: expand this to handle expressions when a numerical size is not present (ie. size was left undefined)
+            if field.field_type.kind == "BitString":
+                var_type = "u%d" % (self.assign_int_size(field.field_type))
+            elif field.field_type.kind == "Option":
+                var_type = "Option<{ref_type}>".format(ref_type=field.field_type.reference_type.name)
+            #Nothing shouldn't be a return type here - covered by Option
+            elif field.field_type.kind == "Array":
+                if field.field_type.length is None:
+                    var_type = "Vec<{element_type}>".format(element_type=field.field_type.element_type.name)
+                else:
+                    if field.field_type.element_type.kind == "BitString":
+                        var_type = "[%s(u%d); %d]" % (field.field_type.name, (self.assign_int_size(field.field_type.element_type)), field.field_type.length)
+                    else:
+                        var_type = "[%s; %d]" % (field.field_type.name, field.field_type.length)
+            elif field.field_type.kind == "Struct":
+                var_type = field.field_type.name
+            elif field.field_type.kind == "Enum":
+                var_type = field.field_type.name
+            #FIXME: this will likely not work for all cases of derived types
+            else:
+                var_type = field.field_type.name
+
+            #all variables are set to mutable for now
+            #self.output.append("let mut {var_name} = {value};\n".format(var_name=field.field_name, value=field.field_type.))
+            #TODO: check where values are obtained from/stored - are they always obtained from parsers?
+            #if yes, how should the type declaration work here?
+            self.output.append("let mut {var_name}: {var_type};\n".format(var_name=field.field_name, var_type=var_type))
 
     def closure_term_gen(self):
         for i in range(len(ascii_letters)):

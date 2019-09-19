@@ -344,6 +344,14 @@ class BitString(ProtocolType):
         self.size = size
 
 
+class DataUnit(ProtocolType):
+    def __init__(self, name: str, size: int) -> None:
+        super().__init__(None)
+        self.kind  = "DataUnit"
+        self.name  = name
+        self.size = size
+
+
 class Option(ProtocolType):
     def __init__(self, name: str, reference_type: ProtocolType) -> None:
         super().__init__(None)
@@ -563,6 +571,25 @@ class Protocol:
         """
         self._validate_typename(name)
         newtype = BitString(name, size)
+        newtype.implement_trait(self.get_trait("Sized"))
+        newtype.implement_trait(self.get_trait("Value"))
+        newtype.implement_trait(self.get_trait("Equality"))
+        newtype.implement_trait(self.get_trait("NumberRepresentable"))
+        self._types[name] = newtype
+        return newtype
+
+    #FIXME: ContextField is assumed to have field_type BitString - would a constant value of some sort make more sense?
+    def define_dataunit(self, name:str, context_field:ContextField) -> DataUnit:
+        """
+        Define a new data unit type for this protocol.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          name  - the name of the new type
+          context_field - contains the value needed for the size of DataUnit
+        """
+        self._validate_typename(name)
+        newtype = BitString(name, context_field.field_type.size)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Value"))
         newtype.implement_trait(self.get_trait("Equality"))
