@@ -52,7 +52,6 @@ fn parse_stun_messagetype_split(input: (&[u8], usize)) -> nom::IResult<(&[u8], u
 fn main() {
     let input = [0b01000110, 0b01111111, 0b10101010, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b00000110, 0b11001010, 0b11111101, 0b11001011, 0b01011100, 0b01000110, 0b11001010, 0b11111101, 0b11001011, 0b01000110, 0b11001010, 0b11111101, 0b11001011];
 
-
     match parse_stun_messagetype_split((&input, 0)) {
         Ok((remain, result)) => {
             println!("Remain: {:?}", remain);
@@ -62,7 +61,4 @@ fn main() {
             println!("Failed: {:?}", e)
         }
     }
-
-    println!("{:?}", input);
-
 }

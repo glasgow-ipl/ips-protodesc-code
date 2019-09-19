@@ -127,7 +127,7 @@ class RustWriter(OutputFormatter):
                 var_type = "u%d" % (self.assign_int_size(field.field_type))
             elif field.field_type.kind == "Option":
                 var_type = "Option<{ref_type}>".format(ref_type=field.field_type.reference_type.name)
-            #Nothing shouldn't be a return type here - covered by Option
+            #Nothing isn't included as a return type here - should be covered by Option
             elif field.field_type.kind == "Array":
                 if field.field_type.length is None:
                     var_type = "Vec<{element_type}>".format(element_type=field.field_type.element_type.name)
@@ -145,9 +145,6 @@ class RustWriter(OutputFormatter):
                 var_type = field.field_type.name
 
             #all variables are set to mutable for now
-            #self.output.append("let mut {var_name} = {value};\n".format(var_name=field.field_name, value=field.field_type.))
-            #TODO: check where values are obtained from/stored - are they always obtained from parsers?
-            #if yes, how should the type declaration work here?
             self.output.append("let mut {var_name}: {var_type};\n".format(var_name=field.field_name, var_type=var_type))
 
     def closure_term_gen(self):
