@@ -312,6 +312,10 @@ class TestProtocol(unittest.TestCase):
         field_6 = protocol.define_bitstring("Field6", 6)
         field_10 = protocol.define_bitstring("Field10", 10)
 
+        ssrc = protocol.define_bitstring("SSRC", 32)
+        protocol.define_array("CSRCList", ssrc, 4)
+        res_array = protocol.get_type("CSRCList")
+
         # define fields
         seq = StructField("seq",
                           seqnum,
@@ -328,18 +332,41 @@ class TestProtocol(unittest.TestCase):
                            field_10,
                            ConstantExpression(protocol.get_type("Boolean"), "True"))
 
+        array_wrapped = StructField("array_set_length",
+                                    res_array,
+                                    ConstantExpression(protocol.get_type("Boolean"), "True"))
+
+        typea = protocol.define_bitstring("TypeA", 32)
+        typeb = protocol.define_bitstring("TypeB", 32)
+        test_enum = protocol.define_enum("TestEnum", [typea, typeb])
+        res_enum = protocol.get_type("TestEnum")
+
+        enum_field = StructField("enum_field",
+                                 res_enum,
+                                 ConstantExpression(protocol.get_type("Boolean"), "True"))
+
         # add constraints
         seq_constraint = MethodInvocationExpression(FieldAccessExpression(SelfExpression(), "seq"),
                                                     "eq",
                                                     [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
 
-        # construct TestStruct
-        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10], [seq_constraint], [])
 
-        ress = protocol.get_type("TestStruct")
-        typea = protocol.define_bitstring("TypeA", 32)
-        typeb = protocol.define_bitstring("TypeB", 32)
-        protocol.define_enum("TestEnum", [typea, typeb, ress])
+        smallstruct = protocol.define_struct("SmallStruct", [seq, f6], [seq_constraint], [])
+
+        nested_struct = StructField("nested_struct",
+                                    smallstruct,
+                                    ConstantExpression(protocol.get_type("Boolean"), "True"))
+
+
+        protocol.define_array("StructArray", smallstruct, None)
+        struct_array = protocol.get_type("StructArray")
+
+        array_non_wrapped = StructField("array_non_fixed_length",
+                                        struct_array,
+                                        ConstantExpression(protocol.get_type("Boolean"), "True"))
+
+        # construct TestStruct
+        teststruct = protocol.define_struct("TestStruct", [seq, ts, f6, f10, array_wrapped, array_non_wrapped, enum_field, nested_struct], [seq_constraint], [])
 
         res = protocol.get_type("TestEnum")
         self.assertEqual(res.variants[0], protocol.get_type("TypeA"))
@@ -354,9 +381,13 @@ class TestProtocol(unittest.TestCase):
         protocol.define_context_field("ContextTestField", context_bitstring)
 
         generator = output_formatters.rust_writer.RustWriter()
+        generator.format_context(protocol.get_context())
         generator.format_function(transform_seq)
         generator.format_function(test_function)
-        generator.format_context(protocol.get_context())
+        generator.format_bitstring(typea)
+        generator.format_enum(test_enum)
+        generator.format_array(struct_array)
+        generator.format_array(res_array)
         generator.format_struct(teststruct)
         print("".join(generator.output))
 

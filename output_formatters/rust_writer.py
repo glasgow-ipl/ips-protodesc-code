@@ -41,6 +41,7 @@ class RustWriter(OutputFormatter):
 
     output: List[str]
 
+    #add necessary imports at the start of every generated rust file
     def __init__(self):
         self.output = []
         self.structs = {}
@@ -50,13 +51,14 @@ class RustWriter(OutputFormatter):
     def generate_output(self):
         return "".join(self.output)
 
+    #bitstrings are formatted as structs containing a single int to differentiate between bitstrings which serve different purposes (eg. Timestamp, SeqNum, PortNum)
     def format_bitstring(self, bitstring:BitString):
         if bitstring.name not in self.output:
             self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
             self.output.extend(["struct ", bitstring.name, "(u%d);\n" % self.assign_int_size(bitstring)])
 
+    #assign the smallest possible unsigned int which can accommodate the size given
     def assign_int_size(self, bitstring:BitString):
-        #assign the smallest possible unsigned int which can accommodate the field
         #TODO: determine how to handle bitstrings which aren't given an explicit size
         if bitstring.size <= 8:
             return 8
@@ -69,14 +71,8 @@ class RustWriter(OutputFormatter):
         else:
             return 128
 
-    def declare_array_type(self, array:Array):
-        if array.element_type.kind == "BitString":
-            self.output.extend(["struct ", array.element_type.name, "(u%d);\n" % self.assign_int_size(array.element_type)])
-        else:
-            self.output.extend(["struct ", array.element_type.name, ";\n"])
-
     def format_struct(self, struct:Struct):
-        #traits need to be added up here if we're using !derive (eg. Eq, Ord)
+        #traits need to be added up here when using !derive (eg. Eq, Ord)
         self.output.append("\n#[derive(Debug")
         for trait in struct.traits:
             if trait == "Equality":
@@ -91,21 +87,22 @@ class RustWriter(OutputFormatter):
 
     def format_array(self, array:Array):
         if array.length is None:
-            self.output.append("Vec<%s" % array.element_type.name)
+            self.output.append("struct %s(Vec<%s" % (array.name, array.element_type.name))
             if array.element_type.kind == "BitString":
                 self.output.append("(u%d)" % self.assign_int_size(array.element_type))
-            self.output.append(">")
+            self.output.append(">);")
         else:
-            self.output.append("[%s" % array.element_type.name)
+            self.output.append("struct %s([%s" % (array.name, array.element_type.name))
             if array.element_type.kind == "BitString":
                 self.output.append("(u%d)" % self.assign_int_size(array.element_type))
-            self.output.append("; %d]" % array.length)
+            self.output.append("; %d]);" % array.length)
+        self.output.append("\n\n")
 
     def format_enum(self, enum:Enum):
         self.output.extend(["\nenum ", "%s {\n" % enum.name])
         for variant in enum.variants:
-            self.append("%s,\n" % variant.name)
-        self.output.append("}\n")
+            self.output.append("    %s,\n" % variant.name)
+        self.output.append("}\n\n")
 
     def format_function(self, function:Function):
         self.output.append("fn {function_name}(".format(function_name=function.name))
