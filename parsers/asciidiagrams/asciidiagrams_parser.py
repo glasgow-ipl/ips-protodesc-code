@@ -12,7 +12,7 @@ def generate_bitstring_type(proto, name, size, units):
     else:
         return proto.get_type(name)
 
-class AsciiDiagrams(Parser):
+class AsciiDiagramsParser(Parser):
     def __init__(self) -> None:
         super().__init__()
 

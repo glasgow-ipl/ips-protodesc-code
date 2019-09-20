@@ -39,9 +39,9 @@ from protocol import *
 # RFC DOM input parsers
 import parsers.parser
 import parsers.rfc.rfc as rfc
-import parsers.rfc.parser_rfc_txt
-import parsers.rfc.parser_rfc_xml
-import parsers.asciidiagrams.asciidiagrams
+import parsers.rfc.rfc_txt_parser
+import parsers.rfc.rfc_xml_parser
+import parsers.asciidiagrams.asciidiagrams_parser
 
 # Output formatters
 import formatters.formatter
@@ -128,9 +128,9 @@ def main():
 
     if xml is not None:
         rfcXml = ET.fromstring(xml)
-        parsed_rfc = parsers.rfc.parser_rfc_xml.parse_rfc(rfcXml)
+        parsed_rfc = parsers.rfc.rfc_xml_parser.parse_rfc(rfcXml)
     elif txt is not None:
-        parsed_rfc = parsers.rfc.parser_rfc_txt.parse_rfc(txt)
+        parsed_rfc = parsers.rfc.rfc_txt_parser.parse_rfc(txt)
 
     # ============================================================================================
     # RFC DOM -> Protocol
@@ -139,7 +139,7 @@ def main():
     dom_parsers = ["asciidiagrams"]
 
     construct_dom_parser = {
-                            "asciidiagrams"     : parsers.asciidiagrams.asciidiagrams.AsciiDiagrams(),
+                            "asciidiagrams"     : parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser(),
                            }
 
     protocol = None
