@@ -1,9 +1,9 @@
 # =================================================================================================
 # Copyright (C) 2018-19 University of Glasgow
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -31,7 +31,7 @@
 import argparse
 import importlib
 import json
-import re    
+import re
 
 from protocol import *
 
@@ -49,22 +49,19 @@ import output_formatters.simpleprinter
 def dfs_struct(struct: Struct, type_names:List[str]):
     for field in struct.fields:
         dfs_protocoltype(field.field_type, type_names)
-        if field.transform is not None:
-            dfs_protocoltype(field.transform.into_type, type_names)
-            dfs_protocoltype(field.transform.using, type_names)
             
 def dfs_array(array: Array, type_names:List[str]):
     dfs_protocoltype(array.element_type, type_names)
-    
+
 def dfs_enum(enum: Enum, type_names:List[str]):
     for variant in enum.variants:
         dfs_protocoltype(variant)
-        
+
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
         dfs_protocoltype(parameter.param_type)
     dfs_protocoltype(function.return_type)
-    
+
 def dfs_context(context: Context, type_names:List[str]):
     for field in context.fields:
         dfs_protocoltype(field.field_type)
@@ -87,15 +84,15 @@ def dfs_protocol(protocol: Protocol):
 
     for pdu_name in protocol.get_pdu_names():
         dfs_protocoltype(protocol.get_pdu(pdu_name), type_names)
-    
+
     type_names_dedupe = []
-    
+
     for type_name in type_names:
         if type_name not in type_names_dedupe:
             type_names_dedupe.append(type_name)
-            
+
     return type_names_dedupe
- 
+
 def filename_to_protocol_name(filename):
     split = re.split('[\./\\\]+', filename)
     return split[len(split)-2].title()
@@ -117,11 +114,11 @@ def main():
     construct_input_parser = {"packetlang"        : input_parsers.packetlang.packetlang.PacketLangParser(),
                               "extended-diagrams" : input_parsers.extended_diagrams.extended_diagrams.ExtendedDiagrams()}
     input_parser = construct_input_parser[args.input_format]
-    
+
     # Load the input file into a string
     with open(args.input_file, "r+") as inputFile:
         inputString = inputFile.read()
-    
+
     # Parse input string using input parser
     try:
         protocol = input_parser.build_protocol(inputString, name=filename_to_protocol_name(args.input_file))
@@ -138,22 +135,22 @@ def main():
     ######################################################################################
     construct_output_formatter = {"simpleprinter" : output_formatters.simpleprinter.SimplePrinter()}
     output_formatter = construct_output_formatter[args.output_format]
-    
+
     # Format the protocol using output formatter
     try:
         for type_name in type_names:
             pt = protocol.get_type(type_name)
-            if type(pt) is BitString:
+            if type(pt) is protocol.BitString:
                 output_formatter.format_bitstring(pt)
-            elif type(pt) is Struct:
+            elif type(pt) is protocol.Struct:
                 output_formatter.format_struct(pt)
-            elif type(pt) is Array:
+            elif type(pt) is protocol.Array:
                 output_formatter.format_array(pt)
-            elif type(pt) is Enum:
+            elif type(pt) is protocol.Enum:
                 output_formatter.format_enum(pt)
-            elif type(pt) is Function:
+            elif type(pt) is protocol.Function:
                 output_formatter.format_function(pt)
-            elif type(pt) is Context:
+            elif type(pt) is protocol.Context:
                 output_formatter.format_context(pt)
         output_formatter.format_protocol(protocol)
     except:

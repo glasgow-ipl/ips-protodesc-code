@@ -1,7 +1,7 @@
 from ...inputparser import InputParser
 import rfc
 import protocol
-import parsley 
+import parsley
 import string
 
 def generate_bitstring_type(proto, name, size, units):
@@ -42,15 +42,14 @@ class AsciiDiagrams(InputParser):
                         field_type = parser(title.content[0]).field_title()
                         field = protocol.StructField(field_type.name.lower(),
                               field_type,
-                              protocol.ConstantExpression(self.proto.get_type("Boolean"), "True"),
-                              None)
+                              protocol.ConstantExpression(self.proto.get_type("Boolean"), "True"))
                         fields.append(field)
                     structs.append(self.proto.define_struct(pdu_name, fields, [], []))
-                except:
+                except Exception as e:
                     continue
         for subsection in section.sections:
             self.process_section(subsection, parser, structs)
-        
+
     def build_protocol(self, proto: protocol.Protocol, input: rfc.RFC, name: str=None) -> protocol.Protocol:
         # if a Protocol hasn't been passed in, then instantiate one
         if proto is None:
@@ -60,16 +59,16 @@ class AsciiDiagrams(InputParser):
 
         # set the Protocol's name from the RFC's title
         self.proto.set_protocol_name(input.front.title.content)
-        
+
         # make parser
         parser = self.build_parser()
-        
+
         # find matching preambles
         structs = []
 
         for section in input.middle.content:
             self.process_section(section, parser, structs)
-        
+
         for struct in structs:
             self.proto.define_pdu(struct.name)
 
