@@ -34,7 +34,6 @@ import requests
 import parse_rfc_xml #TODO tidy up the directory structure for these
 import parse_rfc_txt # ^^
 import xml.etree.ElementTree as ET
-import parse_protodesc #TODO pull the DFS code out of this file
 import os.path
 
 from protocol import *
@@ -50,6 +49,55 @@ import formatters.simple_formatter
 import formatters.rust_formatter
 
 ACTIVE_ID_URL = "https://www.ietf.org/id/"
+
+# Protocol DFS
+
+def dfs_struct(struct: Struct, type_names:List[str]):
+    for field in struct.fields:
+        dfs_protocoltype(field.field_type, type_names)
+
+def dfs_array(array: Array, type_names:List[str]):
+    dfs_protocoltype(array.element_type, type_names)
+
+def dfs_enum(enum: Enum, type_names:List[str]):
+    for variant in enum.variants:
+        dfs_protocoltype(variant)
+
+def dfs_function(function: Function, type_names:List[str]):
+    for parameter in function.parameters:
+        dfs_protocoltype(parameter.param_type)
+    dfs_protocoltype(function.return_type)
+
+def dfs_context(context: Context, type_names:List[str]):
+    for field in context.fields:
+        dfs_protocoltype(field.field_type)
+
+def dfs_protocoltype(pt: ProtocolType, type_names:List[str]):
+    if type(pt) is Struct:
+        dfs_struct(pt, type_names)
+    elif type(pt) is Array:
+        dfs_array(pt, type_names)
+    elif type(pt) is Enum:
+        dfs_enum(pt, type_names)
+    elif type(pt) is Function:
+        dfs_function(pt, type_names)
+    elif type(pt) is Context:
+        dfs_context(pt, type_names)
+    type_names.append(pt.name)
+
+def dfs_protocol(protocol: Protocol):
+    type_names = []
+
+    for pdu_name in protocol.get_pdu_names():
+        dfs_protocoltype(protocol.get_pdu(pdu_name), type_names)
+
+    type_names_dedupe = []
+
+    for type_name in type_names:
+        if type_name not in type_names_dedupe:
+            type_names_dedupe.append(type_name)
+
+    return type_names_dedupe
 
 def main():
     argparser = argparse.ArgumentParser()
@@ -104,7 +152,7 @@ def main():
     # Protocol -> output
     # ============================================================================================
 
-    type_names = parse_protodesc.dfs_protocol(protocol)
+    type_names = dfs_protocol(protocol)
 
     output_file_ext = args.output_file.split(".")[-1]
 
