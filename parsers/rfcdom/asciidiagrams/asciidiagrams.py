@@ -1,5 +1,5 @@
-from ...inputparser import InputParser
-import rfc
+from ...parser import Parser
+import parsers.rfc as rfc
 import protocol
 import parsley
 import string
@@ -12,12 +12,12 @@ def generate_bitstring_type(proto, name, size, units):
     else:
         return proto.get_type(name)
 
-class AsciiDiagrams(InputParser):
+class AsciiDiagrams(Parser):
     def __init__(self) -> None:
         super().__init__()
 
     def build_parser(self):
-        with open("input_parsers/rfcdom/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
+        with open("parsers/rfcdom/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
                                    {
                                      "ascii_uppercase"         : string.ascii_uppercase,

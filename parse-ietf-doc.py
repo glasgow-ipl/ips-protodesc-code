@@ -30,7 +30,6 @@
 # =================================================================================================
 
 import argparse
-import rfc
 import requests
 import parse_rfc_xml #TODO tidy up the directory structure for these
 import parse_rfc_txt # ^^
@@ -41,13 +40,14 @@ import os.path
 from protocol import *
 
 # RFC DOM input parsers
-import input_parsers.inputparser
-import input_parsers.rfcdom.asciidiagrams.asciidiagrams
+import parsers.parser
+import parsers.rfc
+import parsers.rfcdom.asciidiagrams.asciidiagrams
 
 # Output formatters
-import output_formatters.outputformatter
-import output_formatters.simpleprinter
-import output_formatters.rust_writer
+import formatters.formatter
+import formatters.simple_formatter
+import formatters.rust_formatter
 
 ACTIVE_ID_URL = "https://www.ietf.org/id/"
 
@@ -91,7 +91,7 @@ def main():
     dom_parsers = ["asciidiagrams"]
 
     construct_dom_parser = {
-                            "asciidiagrams"     : input_parsers.rfcdom.asciidiagrams.asciidiagrams.AsciiDiagrams(),
+                            "asciidiagrams"     : parsers.rfcdom.asciidiagrams.asciidiagrams.AsciiDiagrams(),
                            }
 
     protocol = None
@@ -109,8 +109,8 @@ def main():
     output_file_ext = args.output_file.split(".")[-1]
 
     file_exts = {
-        "rs"  : "rustprinter",
-        "txt" : "simpleprinter"
+        "rs"  : "rust_formatter",
+        "txt" : "simple_formatter"
     }
 
     if args.output_format is None:
@@ -118,8 +118,8 @@ def main():
         args.output_format = file_exts.get(output_file_ext, "simpleprinter")
 
     construct_output_formatter = {
-                                  "simpleprinter" : output_formatters.simpleprinter.SimplePrinter(),
-                                  "rustprinter" : output_formatters.rust_writer.RustWriter()
+                                  "simple_formatter" : formatters.simple_formatter.SimpleFormatter(),
+                                  "rust_formatter"   : formatters.rust_formatter.RustFormatter()
                                  }
 
     output_formatter = construct_output_formatter[args.output_format]

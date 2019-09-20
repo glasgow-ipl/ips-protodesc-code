@@ -1,9 +1,9 @@
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -32,9 +32,9 @@ from string import ascii_letters
 import itertools
 
 from protocol import *
-from output_formatters.outputformatter import OutputFormatter
+from formatters.formatter import Formatter
 
-class RustWriter(OutputFormatter):
+class RustFormatter(Formatter):
     """
     Class to generate Rust code from parsed ASCII diagrams
     """

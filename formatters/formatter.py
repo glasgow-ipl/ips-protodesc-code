@@ -1,9 +1,9 @@
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -29,37 +29,41 @@
 # =================================================================================================
 
 import abc
-from output_formatters.outputformatter import OutputFormatter
-from protocol import * 
+from protocol import *
 
-class SimplePrinter(OutputFormatter):
-    output: List[str]
-    parsers: Dict[str, str]
-    
-    def __init__(self):
-        self.output = []
-        self.parser = {}
+class Formatter(abc.ABC):
+    """
+    Abstract class for output formatters.
+    """
 
+    @abc.abstractmethod
     def generate_output(self):
-        return "\n".join(self.output)
+        pass
 
-    def format_bitstring(self, bitstring:BitString):
-        self.output.append("BitString ({})".format(bitstring))
+    @abc.abstractmethod
+    def format_bitstring(self, bitstring:BitString, parent_pt=None):
+        pass
 
+    @abc.abstractmethod
     def format_struct(self, struct:Struct):
-        self.output.append("Struct ({})".format(struct))
+        pass
 
+    @abc.abstractmethod
     def format_array(self, array:Array):
-        self.output.append("Array ({})".format(array))
-        
+        pass
+
+    @abc.abstractmethod
     def format_enum(self, enum:Enum):
-        self.output.append("Enum ({})".format(enum))
+        pass
 
+    @abc.abstractmethod
     def format_function(self, function:Function):
-        self.output.append("Function ({})".format(function))
+        pass
 
+    @abc.abstractmethod
     def format_context(self, context:Context):
-        self.output.append("Context ({})".format(context))
+        pass
 
+    @abc.abstractmethod
     def format_protocol(self, protocol:Protocol):
-        self.output.append("Protocol ({})\n".format(protocol.get_protocol_name()))
+        pass

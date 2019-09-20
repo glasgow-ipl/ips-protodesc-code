@@ -31,7 +31,7 @@
 
 from typing import List as ListType, Union, Optional, Tuple
 
-import rfc
+import parsers.rfc as rfc
 import xml.etree.ElementTree as ET
 import sys
 
@@ -472,7 +472,7 @@ def parse_dd(xmlElement) -> rfc.DD:
         elif ddChild.tag == "tt":
             contentB.append(parse_tt(ddChild))
         elif ddChild.tag == "xref":
-            contentB.append(parse_xref(ddChild))  
+            contentB.append(parse_xref(ddChild))
     if xmlElement.text is not None:
         contentB.append(" ".join(xmlElement.text.strip().split()))
     if len(contentB) == 0:
@@ -506,7 +506,7 @@ def parse_dt(xmlElement) -> rfc.DT:
         elif dtChild.tag == "tt":
             content.append(parse_tt(dtChild))
         elif dtChild.tag == "xref":
-            content.append(parse_xref(dtChild))  
+            content.append(parse_xref(dtChild))
     if xmlElement.text is not None:
         content.append(" ".join(xmlElement.text.strip().split()))
     return rfc.DT(content,
@@ -567,7 +567,7 @@ def parse_c(xmlElement) -> rfc.C:
         elif cChild.tag == "tt":
             content.append(parse_tt(cChild))
         elif cChild.tag == "xref":
-            content.append(parse_xref(cChild))  
+            content.append(parse_xref(cChild))
         if cChild.text is not None:
             content.append(cChild.text)
     return rfc.C(content)
@@ -646,7 +646,7 @@ def parse_th(xmlElement) -> rfc.TH:
         elif thChild.tag == "tt":
             contentB.append(parse_tt(thChild))
         elif thChild.tag == "xref":
-            contentB.append(parse_xref(thChild))  
+            contentB.append(parse_xref(thChild))
     if xmlElement.text is not None:
         contentB.append(xmlElement.text)
     if len(contentB) == 0:
@@ -707,7 +707,7 @@ def parse_td(xmlElement) -> rfc.TD:
         elif tdChild.tag == "tt":
             contentB.append(parse_tt(tdChild))
         elif tdChild.tag == "xref":
-            contentB.append(parse_xref(tdChild))  
+            contentB.append(parse_xref(tdChild))
     if xmlElement.text is not None:
         contentB.append(xmlElement.text)
     if len(contentB) == 0:
@@ -848,7 +848,7 @@ def parse_blockquote(xmlElement) -> rfc.BlockQuote:
         elif blockquoteChild.tag == "tt":
             contentB.append(parse_tt(blockquoteChild))
         elif blockquoteChild.tag == "xref":
-            contentB.append(parse_xref(blockquoteChild))  
+            contentB.append(parse_xref(blockquoteChild))
     if blockquoteChild.text is not None:
         contentB.append(blockquoteChild.text)
     if len(contentB) == 0:
@@ -926,7 +926,7 @@ def parse_postalline(xmlElement) -> rfc.PostalLine:
 def parse_city(xmlElement) -> rfc.City:
     return rfc.City(xmlElement.text,
                     xmlElement.attrib.get("ascii", None))
-                    
+
 def parse_code(xmlElement) -> rfc.Code:
     return rfc.Code(xmlElement.text,
                     xmlElement.attrib.get("ascii", None))
@@ -1071,7 +1071,7 @@ def parse_note(xmlElement) -> rfc.Note:
         elif noteChild.tag == "t":
             content.append(parse_t(noteChild))
         elif noteChild.tag == "ul":
-            content.append(parse_ul(noteChild)) 
+            content.append(parse_ul(noteChild))
         elif noteChild.tag == "name":
             name = parse_name(noteChild)
     return rfc.Note(name,

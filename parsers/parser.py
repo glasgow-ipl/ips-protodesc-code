@@ -1,9 +1,9 @@
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -29,41 +29,24 @@
 # =================================================================================================
 
 import abc
-from protocol import *
+from protocol import Protocol
+from typing import Dict, List, Tuple, Optional, Any, Union
+import parsers.rfc as rfc
 
-class OutputFormatter(abc.ABC):
-    """
-    Abstract class for output formatters. 	
-    """
-
-    @abc.abstractmethod
-    def generate_output(self):
-        pass
+class Parser(abc.ABC):
 
     @abc.abstractmethod
-    def format_bitstring(self, bitstring:BitString, parent_pt=None):
-        pass
+    def build_protocol(self, proto: Optional[Protocol], input: Union[str, rfc.RFC], name: str=None) -> Protocol:
+        """
+        Build a Protocol object for the protocol represented by the input string.
 
-    @abc.abstractmethod
-    def format_struct(self, struct:Struct):
-        pass
+        Arguments:
+            proto -- A protocol object. If specified, the input parser should augment this Protocol
+                     rather than creating a new Protocol. This allows input parsers to be chained
+                     together to define a single Protocol.
+            input -- A string representing a protocol definition or RFC DOM object
 
-    @abc.abstractmethod
-    def format_array(self, array:Array):
-        pass
-
-    @abc.abstractmethod
-    def format_enum(self, enum:Enum):
-        pass
-
-    @abc.abstractmethod
-    def format_function(self, function:Function):
-        pass
-
-    @abc.abstractmethod
-    def format_context(self, context:Context):
-        pass
-
-    @abc.abstractmethod
-    def format_protocol(self, protocol:Protocol):
+        Returns:
+            A Protocol object
+        """
         pass

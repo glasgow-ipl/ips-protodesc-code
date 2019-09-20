@@ -1,7 +1,7 @@
 import sys
 import parsley
 import string
-import rfc
+import parsers.rfc as rfc
 
 def depaginate(lines):
     depaginated_lines = []

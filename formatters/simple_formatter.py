@@ -1,9 +1,9 @@
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
 #
 # 1. Redistributions of source code must retain the above copyright notice,
@@ -29,24 +29,37 @@
 # =================================================================================================
 
 import abc
-from protocol import Protocol
-from typing import Dict, List, Tuple, Optional, Any, Union
-import rfc
+from formatters.formatter import Formatter
+from protocol import *
 
-class InputParser(abc.ABC):
+class SimpleFormatter(Formatter):
+    output: List[str]
+    parsers: Dict[str, str]
 
-    @abc.abstractmethod
-    def build_protocol(self, proto: Optional[Protocol], input: Union[str, rfc.RFC], name: str=None) -> Protocol:
-        """
-        Build a Protocol object for the protocol represented by the input string. 
+    def __init__(self):
+        self.output = []
+        self.parser = {}
 
-        Arguments:
-            proto -- A protocol object. If specified, the input parser should augment this Protocol
-                     rather than creating a new Protocol. This allows input parsers to be chained
-                     together to define a single Protocol.
-            input -- A string representing a protocol definition or RFC DOM object
-	        
-        Returns:
-            A Protocol object
-        """
-        pass
+    def generate_output(self):
+        return "\n".join(self.output)
+
+    def format_bitstring(self, bitstring:BitString):
+        self.output.append("BitString ({})".format(bitstring))
+
+    def format_struct(self, struct:Struct):
+        self.output.append("Struct ({})".format(struct))
+
+    def format_array(self, array:Array):
+        self.output.append("Array ({})".format(array))
+
+    def format_enum(self, enum:Enum):
+        self.output.append("Enum ({})".format(enum))
+
+    def format_function(self, function:Function):
+        self.output.append("Function ({})".format(function))
+
+    def format_context(self, context:Context):
+        self.output.append("Context ({})".format(context))
+
+    def format_protocol(self, protocol:Protocol):
+        self.output.append("Protocol ({})\n".format(protocol.get_protocol_name()))

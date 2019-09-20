@@ -36,20 +36,18 @@ import re
 from protocol import *
 
 # Input parsers
-import input_parsers.inputparser
-import input_parsers.packetlang.packetlang
-#import input_parsers.extended_diagrams.extended_diagrams
+import parsers.parser
 
 # Output formatters
-import output_formatters.outputformatter
-import output_formatters.simpleprinter
+import formatters.formatter
+import formatters.simple_formatter
 
 # Protocol DFS
 
 def dfs_struct(struct: Struct, type_names:List[str]):
     for field in struct.fields:
         dfs_protocoltype(field.field_type, type_names)
-            
+
 def dfs_array(array: Array, type_names:List[str]):
     dfs_protocoltype(array.element_type, type_names)
 
@@ -133,7 +131,7 @@ def main():
     ######################################################################################
     # Output formatting
     ######################################################################################
-    construct_output_formatter = {"simpleprinter" : output_formatters.simpleprinter.SimplePrinter()}
+    construct_output_formatter = {"simple" : formatters.simple_formatter.SimplePrinter()}
     output_formatter = construct_output_formatter[args.output_format]
 
     # Format the protocol using output formatter

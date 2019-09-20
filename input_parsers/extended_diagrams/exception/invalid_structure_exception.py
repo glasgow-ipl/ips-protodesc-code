@@ -1,2 +1,0 @@
-class InvalidStructureException(Exception):
-    pass
