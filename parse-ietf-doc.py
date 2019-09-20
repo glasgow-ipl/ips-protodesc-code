@@ -29,7 +29,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from ietfdata.ietfdata import datatracker
 import argparse
 import rfc
 import requests
@@ -37,6 +36,7 @@ import parse_rfc_xml #TODO tidy up the directory structure for these
 import parse_rfc_txt # ^^
 import xml.etree.ElementTree as ET
 import parse_protodesc #TODO pull the DFS code out of this file
+import os.path
 
 from protocol import *
 
@@ -54,14 +54,7 @@ ACTIVE_ID_URL = "https://www.ietf.org/id/"
 def main():
     argparser = argparse.ArgumentParser()
 
-    docnameparser = argparser.add_mutually_exclusive_group(required=True)
-    docnameparser.add_argument("--draftname", type=str)
-    docnameparser.add_argument("--rfc",       type=str)
-    docnameparser.add_argument("--bcp",       type=str)
-    docnameparser.add_argument("--std",       type=str)
-    docnameparser.add_argument("--xml",       type=str)
-    docnameparser.add_argument("--txt",       type=str)
-
+    argparser.add_argument("--docname",       type=str, required=True)
     argparser.add_argument("--output-format", type=str, required=False, help="If not specified, the output format will be inferred from the output filename's extension")
     argparser.add_argument("--output-file",   type=str, required=True)
 
@@ -75,26 +68,15 @@ def main():
     # RFC -> RFC DOM
     # ============================================================================================
 
-    if args.draftname is not None or args.rfc is not None or args.bcp is not None:
-        dt = datatracker.DataTracker()
-        if args.draftname is not None:
-            doc = dt.document_from_draft(args.draftname)
-            sub = dt.submission(doc.submissions[-1])
-            if ".xml" in sub.file_types:
-                #FIXME: import datatracker function
-                xmlReq = requests.get(ACTIVE_ID_URL + sub.name + "-" + sub.rev + ".xml")
-                if xmlReq.status_code == 200:
-                    xml = xmlReq.text
-            elif ".txt" in sub.file_types:
-                txtReq = requests.get(ACTIVE_ID_URL + sub.name + "-" + sub.rev + ".txt")
-                if txtReq.status_code == 200:
-                    txt = txtReq.text
-    elif args.xml is not None:
-        with open(args.xml, "r") as xmlFile:
-            xml = xmlFile.read()
-    elif args.txt is not None:
-        with open(args.txt, "r") as txtFile:
-            txt = txtFile.readlines()
+    if os.path.exists(args.docname):
+        with open(args.docname) as inputFile:
+            if args.docname[-3:] == "xml":
+                xml = inputFile.read()
+            else:
+                txt = inputFile.readlines()
+    else:
+        # TODO: lookup docname in DT
+        return
 
     if xml is not None:
         rfcXml = ET.fromstring(xml)
