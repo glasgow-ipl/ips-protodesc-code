@@ -350,9 +350,14 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for methods
 
         #Testing Rust code generation
+        context_bitstring = protocol.define_bitstring("ContextBitstring", 10)
+        protocol.define_context_field("ContextTestField", context_bitstring)
+
         generator = output_formatters.rust_writer.RustWriter()
         generator.format_function(transform_seq)
         generator.format_function(test_function)
+        generator.format_context(protocol.get_context())
+        generator.format_struct(teststruct)
         print("".join(generator.output))
 
     def test_derive_type(self):

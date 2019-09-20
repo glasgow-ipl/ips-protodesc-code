@@ -49,6 +49,7 @@ class ProtocolTypeError(Exception):
 
 # =================================================================================================
 # Parameters, arguments, functions, and traits:
+#TODO: review ProtocolType in this section (change to RepresentableType or InternalType where appropriate)
 
 @dataclass(frozen=True)
 class Parameter:
@@ -102,6 +103,7 @@ class Trait:
 
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
+#TODO: review ProtocolType in this section (change to RepresentableType or InternalType where appropriate)
 
 class Expression(ABC):
     @abstractmethod
@@ -211,7 +213,7 @@ class ConstantExpression(Expression):
 @dataclass(frozen=True)
 class StructField():
     field_name: str
-    field_type: "ProtocolType"
+    field_type: "RepresentableType"
     is_present: Optional[Expression]
 
 
@@ -308,33 +310,57 @@ class ProtocolType(ABC):
             raise ProtocolTypeError("{} and its parents do not implement the {} method".format(self.name, method_name))
         return method
 
+class InternalType(ProtocolType):
+    pass
+
+class RepresentableType(ProtocolType):
+    pass
+
 # Internal types follow:
 
 #FIXME: need to think about the purpose of these types: should they hold values?
-class Boolean(ProtocolType):
+class Boolean(InternalType):
     def __init__(self) -> None:
         super().__init__(None)
         self.kind  = "Boolean"
         self.name  = "Boolean"
 
 
-class Number(ProtocolType):
+class Number(InternalType):
     def __init__(self) -> None:
         super().__init__(None)
         self.kind  = "Number"
         self.name  = "Number"
 
 
-class Nothing(ProtocolType):
+class Context(InternalType):
+    fields: List[ContextField]
+
+    def __init__(self) -> None:
+        super().__init__(None)
+        self.kind   = "Context"
+        self.fields = []
+
+    def add_field(self, field: ContextField) -> None:
+        self.fields.append(field)
+
+    def field(self, field_name:str) -> ContextField:
+        for field in self.fields:
+            if field.field_name == field_name:
+                return field
+        raise ProtocolTypeError("Context has no field named {}".format(field_name))
+
+# Representable types follow:
+
+class Nothing(RepresentableType):
     def __init__(self) -> None:
         super().__init__(None)
         self.kind  = "Nothing"
         self.name  = "Nothing"
         self.size = 0
 
-# Representable types follow:
 
-class BitString(ProtocolType):
+class BitString(RepresentableType):
     size : Optional[int]
 
     def __init__(self, name: str, size: Optional[int]) -> None:
@@ -344,20 +370,28 @@ class BitString(ProtocolType):
         self.size = size
 
 
-class Option(ProtocolType):
-    def __init__(self, name: str, reference_type: ProtocolType) -> None:
+class DataUnit(RepresentableType):
+    def __init__(self, name: str, size: int) -> None:
+        super().__init__(None)
+        self.kind  = "DataUnit"
+        self.name  = name
+        self.size = size
+
+
+class Option(RepresentableType):
+    def __init__(self, name: str, reference_type: RepresentableType) -> None:
         super().__init__(None)
         self.kind = "Option"
         self.name = name
-        self.reference_type = ProtocolType
+        self.reference_type = RepresentableType
         self.size = reference_type.size
 
 
-class Array(ProtocolType):
-    element_type : ProtocolType
+class Array(RepresentableType):
+    element_type : RepresentableType
     length       : Optional[int]
 
-    def __init__(self, name: str, element_type: ProtocolType, length: Optional[int]) -> None:
+    def __init__(self, name: str, element_type: RepresentableType, length: Optional[int]) -> None:
         super().__init__(None)
         self.kind         = "Array"
         self.name         = name
@@ -380,7 +414,7 @@ class Array(ProtocolType):
                 self.size = self.length * element_array.size
 
 
-class Struct(ProtocolType):
+class Struct(RepresentableType):
     fields:      List[StructField]
     constraints: List[Expression]
     actions:     List[Expression]
@@ -409,42 +443,25 @@ class Struct(ProtocolType):
         raise ProtocolTypeError("{} has no field named {}".format(self.name, field_name))
 
 
-class Enum(ProtocolType):
-    variants : List[ProtocolType]
+class Enum(RepresentableType):
+    variants : List[RepresentableType]
 
-    def __init__(self, name: str, variants: List[ProtocolType]) -> None:
+    def __init__(self, name: str, variants: List[RepresentableType]) -> None:
         super().__init__(None)
         self.kind     = "Enum"
         self.name     = name
         self.variants = variants
 
 
-class Context(ProtocolType):
-    fields: List[ContextField]
-
-    def __init__(self) -> None:
-        super().__init__(None)
-        self.kind   = "Context"
-        self.fields = []
-
-    def add_field(self, field: ContextField) -> None:
-        self.fields.append(field)
-
-    def field(self, field_name:str) -> ContextField:
-        for field in self.fields:
-            if field.field_name == field_name:
-                return field
-        raise ProtocolTypeError("Context has no field named {}".format(field_name))
-
 # =================================================================================================
 
 class Protocol:
     _name   : str
-    _types  : Dict[str,ProtocolType]
+    _types  : Dict[str,RepresentableType]
     _traits : Dict[str,Trait]
     _funcs  : Dict[str,Function]
     _context: Context
-    _pdus   : Dict[str,ProtocolType]
+    _pdus   : Dict[str,RepresentableType]
 
     def __init__(self):
         # The protocol is initially unnammed:
@@ -570,7 +587,26 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def define_option(self, name:str, reference_type:ProtocolType) -> Option:
+    #FIXME: ContextField is assumed to have field_type BitString - would a constant value of some sort make more sense?
+    def define_dataunit(self, name:str, context_field:ContextField) -> DataUnit:
+        """
+        Define a new data unit type for this protocol.
+
+        Parameters:
+          self  - the protocol in which the new type is defined
+          name  - the name of the new type
+          context_field - contains the value needed for the size of DataUnit
+        """
+        self._validate_typename(name)
+        newtype = BitString(name, context_field.field_type.size)
+        newtype.implement_trait(self.get_trait("Sized"))
+        newtype.implement_trait(self.get_trait("Value"))
+        newtype.implement_trait(self.get_trait("Equality"))
+        newtype.implement_trait(self.get_trait("NumberRepresentable"))
+        self._types[name] = newtype
+        return newtype
+
+    def define_option(self, name:str, reference_type:RepresentableType) -> Option:
         """
         Define a new option type for this protocol.
 
@@ -586,7 +622,7 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def define_array(self, name:str, element_type: ProtocolType, length: Optional[int]) -> Array:
+    def define_array(self, name:str, element_type: RepresentableType, length: Optional[int]) -> Array:
         """
         Define a new array type for this protocol.
 
@@ -627,7 +663,7 @@ class Protocol:
         newtype.implement_trait(self.get_trait("Equality"))
         return newtype
 
-    def define_enum(self, name:str, variants: List[ProtocolType]) -> Enum:
+    def define_enum(self, name:str, variants: List[RepresentableType]) -> Enum:
         """
         Define a new enumerated type for this protocol.
 
@@ -642,7 +678,7 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def derive_type(self, name: str, derived_from: ProtocolType, also_implements: List[Trait]) -> ProtocolType:
+    def derive_type(self, name: str, derived_from: RepresentableType, also_implements: List[Trait]) -> RepresentableType:
         """
         Define a new derived type for this protocol.
         The type constructor is described in Section 3.3.5 of the IR specification.
@@ -661,7 +697,7 @@ class Protocol:
             self._types[name].implement_trait(trait)
         return self._types[name]
 
-    def define_function(self, name:str, parameters:List[Parameter], return_type:ProtocolType) -> Function:
+    def define_function(self, name:str, parameters:List[Parameter], return_type:RepresentableType) -> Function:
         """
         Define a new function type for this protocol.
 
@@ -684,7 +720,8 @@ class Protocol:
 
         Parameters:
           self   - the protocol whose context is to be added to
-          field  - the field to be added
+          name   - name of the field to be added
+          ptype  - type of the field to be added
         """
         self._context.add_field(ContextField(name, ptype))
 
