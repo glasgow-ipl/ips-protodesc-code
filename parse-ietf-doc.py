@@ -31,8 +31,6 @@
 
 import argparse
 import requests
-import parse_rfc_xml #TODO tidy up the directory structure for these
-import parse_rfc_txt # ^^
 import xml.etree.ElementTree as ET
 import os.path
 
@@ -40,8 +38,10 @@ from protocol import *
 
 # RFC DOM input parsers
 import parsers.parser
-import parsers.rfc
-import parsers.rfcdom.asciidiagrams.asciidiagrams
+import parsers.rfc.rfc as rfc
+import parsers.rfc.parser_rfc_txt
+import parsers.rfc.parser_rfc_xml
+import parsers.asciidiagrams.asciidiagrams
 
 # Output formatters
 import formatters.formatter
@@ -128,9 +128,9 @@ def main():
 
     if xml is not None:
         rfcXml = ET.fromstring(xml)
-        parsed_rfc = parse_rfc_xml.parse_rfc(rfcXml)
+        parsed_rfc = parsers.rfc.parser_rfc_xml.parse_rfc(rfcXml)
     elif txt is not None:
-        parsed_rfc = parse_rfc_txt.parse_rfc(txt)
+        parsed_rfc = parsers.rfc.parser_rfc_txt.parse_rfc(txt)
 
     # ============================================================================================
     # RFC DOM -> Protocol
@@ -139,7 +139,7 @@ def main():
     dom_parsers = ["asciidiagrams"]
 
     construct_dom_parser = {
-                            "asciidiagrams"     : parsers.rfcdom.asciidiagrams.asciidiagrams.AsciiDiagrams(),
+                            "asciidiagrams"     : parsers.asciidiagrams.asciidiagrams.AsciiDiagrams(),
                            }
 
     protocol = None

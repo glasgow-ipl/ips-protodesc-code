@@ -31,7 +31,7 @@
 import abc
 from protocol import Protocol
 from typing import Dict, List, Tuple, Optional, Any, Union
-import parsers.rfc as rfc
+import parsers.rfc.rfc as rfc
 
 class Parser(abc.ABC):
 

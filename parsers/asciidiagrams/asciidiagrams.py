@@ -1,5 +1,5 @@
-from ...parser import Parser
-import parsers.rfc as rfc
+from ..parser import Parser
+import parsers.rfc.rfc as rfc
 import protocol
 import parsley
 import string
@@ -17,7 +17,7 @@ class AsciiDiagrams(Parser):
         super().__init__()
 
     def build_parser(self):
-        with open("parsers/rfcdom/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
+        with open("parsers/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
                                    {
                                      "ascii_uppercase"         : string.ascii_uppercase,
