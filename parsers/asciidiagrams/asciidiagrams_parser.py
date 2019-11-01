@@ -4,7 +4,14 @@ import protocol
 import parsley
 import string
 
+def valid_field_name_convertor(name):
+    return name.lower()
+
+def valid_type_name_convertor(name):
+    return name.capitalize().replace(" ", "_")
+
 def generate_bitstring_type(proto, name, size, units):
+    name = valid_type_name_convertor(name)
     if units == "bytes" or units == "byte":
         size = size * 8
     if name not in proto.get_type_names():
@@ -40,7 +47,7 @@ class AsciiDiagramsParser(Parser):
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
                         field_type = parser(title.content[0]).field_title()
-                        field = protocol.StructField(field_type.name.lower(),
+                        field = protocol.StructField(valid_field_name_convertor(field_type.name),
                               field_type,
                               protocol.ConstantExpression(self.proto.get_type("Boolean"), "True"))
                         fields.append(field)
