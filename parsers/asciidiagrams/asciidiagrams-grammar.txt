@@ -4,7 +4,7 @@ letter      = anything:x ?(x in ascii_letters)
 punc        = anything:x ?(x in punctuation)
 digit       = anything:x ?(x in '0123456789')
 letterdigit = letter|digit
-word        = <(letter|punc)+>:ls -> str(ls)
+word        = <(letter|punc|number)+>:ls -> str(ls)
 alphanum    = <(letter|number)+>:ls -> str(ls)
 wordnum     = <(letter|number|punc)+>:ls -> str(ls)
 
@@ -14,7 +14,7 @@ number           = <digit+>:ds -> int(ds)
 
 capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
 
-pdu_name = <(word:w ?(w != "packet")' '?)*>:name -> str(name)[:-1]
+pdu_name = <(word:w ?(w != "is")' '?)*>:name -> str(name)[:-1]
 
 field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
@@ -24,4 +24,4 @@ field_title = field_name:full_label ('(' short_field_name:short_label ')')? ': '
 
 # Preamble
 
-preamble = ("An "|"A ") pdu_name:name "packet is formatted as follows:" -> name
+preamble = <(word:w ?(w != "An")' '?)>? ("An "|"A ") pdu_name:name "is formatted as follows:" -> name

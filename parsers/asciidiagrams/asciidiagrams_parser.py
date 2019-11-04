@@ -39,7 +39,7 @@ class AsciiDiagramsParser(Parser):
         for i in range(len(section.content)):
             if type(section.content[i]) is rfc.T:
                 try:
-                    pdu_name = parser(section.content[i].content).preamble()
+                    pdu_name = parser(section.content[i].content[-1]).preamble()
                     artwork = section.content[i+1]
                     where = section.content[i+2]
                     desc_list = section.content[i+3]
