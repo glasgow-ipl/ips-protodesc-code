@@ -34,6 +34,7 @@ from typing import List as ListType, Union, Optional, Tuple
 import parsers.rfc.rfc as rfc
 import xml.etree.ElementTree as ET
 import sys
+import lxml.etree as etree
 
 def parse_bcp14(xmlElement) -> rfc.BCP14:
     return rfc.BCP14(xmlElement.text)
@@ -222,7 +223,41 @@ def parse_vspace(xmlElement) -> rfc.VSpace:
     return rfc.VSpace(xmlElement.attrib.get("blankLines", None))
 
 def parse_t(xmlElement) -> rfc.T:
-    return rfc.T(" ".join(xmlElement.text.strip().split()),
+    content = [" ".join(xmlElement.text.strip().split())]
+    for child in xmlElement:
+        if child.tag == "bcp14":
+            content.append(parse_bcp14(child))
+        elif child.tag == "cref":
+            content.append(parse_cref(child))
+        elif child.tag == "em":
+            content.append(parse_em(child))
+        elif child.tag == "eref":
+            content.append(parse_eref(child))
+        elif child.tag == "iref":
+            content.append(parse_iref(child))
+        elif child.tag == "relref":
+            content.append(parse_relref(child))
+        elif child.tag == "spanx":
+            content.append(parse_spanx(child))
+        elif child.tag == "strong":
+            content.append(parse_strong(child))
+        elif child.tag == "sub":
+            content.append(parse_sub(child))
+        elif child.tag == "sup":
+            content.append(parse_sup(child))
+        elif child.tag == "tt":
+            content.append(parse_tt(child))
+        elif child.tag == "vspace":
+            content.append(parse_vspace(child))
+        elif child.tag == "xref":
+            content.append(parse_xref(child))
+        tail = " ".join(child.tail.strip().split())
+        if tail != "":
+            content.append(tail)
+    tail = " ".join(xmlElement.tail.strip().split())
+    if tail != "":
+        content.append(tail)
+    return rfc.T(content,
                  xmlElement.attrib.get("anchor", None),
                  xmlElement.attrib.get("hangText", None),
                  xmlElement.attrib.get("keepWithNext", False),
