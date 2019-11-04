@@ -16,12 +16,27 @@ capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + l
 
 pdu_name = <(word:w ?(w != "is")' '?)*>:name -> str(name)[:-1]
 
+# expressions
+parens = '(' ' '? equality_expr:expr ' '? ')' -> expr
+
+primary_expr = ' '? (number:n -> new_constant("Number", n)
+             | alphanum:name -> new_fieldaccess(new_this(), name.strip())
+             | '`' <(alphanum:w ' '?)*>:name '`' -> new_fieldaccess(new_this(), name.strip())
+             | parens)
+
+multiplicative_expr = primary_expr:left (' '? ('*'|'/'|'%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+additive_expr = multiplicative_expr:left (' '? ('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+
+ordinal_expr = additive_expr:left (' '? ('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+boolean_expr = ordinal_expr:left (' '? ('&&'|'||'|'!'|'and'|'or'|'not'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+equality_expr = boolean_expr:left (' '? ('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+
 field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
 short_field_name = alphanum:name -> name.strip()
 
-field_title = field_name:full_label ('(' short_field_name:short_label ')')? ': ' (number|short_field_name):size ' ' ('bits'|'bytes'|'bit'|'byte'|pdu_name):units -> generate_bitstring_type(protocol, full_label, size, units)
+field_title = field_name:full_label ('(' short_field_name:short_label ')')? (('.' -> generate_bitstring_type(protocol, full_label, None, None)) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; present only when' equality_expr:cond)? '.' -> generate_bitstring_type(protocol, full_label, size, units))
 
 # Preamble
 
-preamble = <(word:w ?(w != "An")' '?)>? ("An "|"A ") pdu_name:name "is formatted as follows:" -> name
+preamble = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is formatted as follows:" -> name

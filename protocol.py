@@ -133,7 +133,7 @@ class MethodInvocationExpression(Expression):
     def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
         args   = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
         result = self.target.get_result_type(containing_type)
-        method = result.get_method(self.method_name) 
+        method = result.get_method(self.method_name)
         if not method.is_method_accepting(result, args):
             raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
         return method.return_type
@@ -228,7 +228,7 @@ class ContextField():
 
 class ProtocolType(ABC):
     """
-    Types exist in the context of a Protocol. 
+    Types exist in the context of a Protocol.
     The only valid way to create an object of class Type, or one of its subclasses,
     is by calling one of the following methods on a Protocol object:
      - define_bitstring()
@@ -270,7 +270,7 @@ class ProtocolType(ABC):
 #        if self.methods != obj.methods:
 #            return False
         return True
-        
+
     def is_a(self, obj):
         parents = []
         while self.parent != None:
@@ -304,7 +304,7 @@ class ProtocolType(ABC):
             method = current_type.methods.get(method_name, None)
             if current_type.parent is not None:
                 current_type = current_type.parent
-            else: 
+            else:
                 break
         if method is None:
             raise ProtocolTypeError("{} and its parents do not implement the {} method".format(self.name, method_name))
@@ -471,7 +471,7 @@ class Protocol:
         self._types["Nothing"] = Nothing()
         self._types["Boolean"] = Boolean()
         self._types["Number"] = Number()
-        
+
         # Define the standard traits:
         self._traits = {}
         self._traits["Value"] = Trait("Value", [

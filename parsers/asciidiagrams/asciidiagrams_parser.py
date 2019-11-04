@@ -12,8 +12,8 @@ def valid_type_name_convertor(name):
 
 def generate_bitstring_type(proto, name, size, units):
     name = valid_type_name_convertor(name)
-    if units == "bytes" or units == "byte":
-        size = size * 8
+    #if units == "bytes" or units == "byte":
+    #    size = size * 8
     if name not in proto.get_type_names():
         return proto.define_bitstring(name, size)
     else:
@@ -23,6 +23,33 @@ class AsciiDiagramsParser(Parser):
     def __init__(self) -> None:
         super().__init__()
 
+    def new_this(self):
+        return protocol.SelfExpression()
+
+    def new_methodinvocation(self, target, method, arguments):
+        if type(target) is protocol.MethodInvocationExpression and target.method_name == "to_integer":
+            target = target.target
+        arguments = [] if arguments == None else arguments
+        return protocol.MethodInvocationExpression(target, method, arguments)
+
+    def new_fieldaccess(self, target, field_name):
+        return self.new_methodinvocation(protocol.FieldAccessExpression(target, field_name), "to_integer", [])
+
+    def new_constant(self, type_name, value):
+        return protocol.ConstantExpression(self.proto.get_type(type_name), value)
+
+    def build_tree(self, start, pairs, expression_type):
+        ops = {"+": ("plus", "arith"), "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"), "%": ("modulo", "arith"),
+               ">=": ("ge", "ord"), ">": ("gt", "ord"), "<": ("lt", "ord"), "<=": ("le", "ord"),
+               "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"), "and": ("and", "bool"), "or": ("or", "bool"), "not": ("not", "bool"),
+               "==": ("eq", "equality"), "!=": ("ne", "equality")}
+        for pair in pairs:
+            if expression_type == "IfElse":
+                start = protocol.IfElseExpression(start, pair[1], pair[2])
+            else:
+                start = protocol.MethodInvocationExpression(pair[1], ops[pair[0]][0], [protocol.ArgumentExpression("other", start)])
+        return start
+
     def build_parser(self):
         with open("parsers/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
@@ -31,6 +58,10 @@ class AsciiDiagramsParser(Parser):
                                      "ascii_lowercase"         : string.ascii_lowercase,
                                      "ascii_letters"           : string.ascii_letters,
                                      "punctuation"             : string.punctuation,
+                                     "new_constant"            : self.new_constant,
+                                     "build_tree"              : self.build_tree,
+                                     "new_fieldaccess"         : self.new_fieldaccess,
+                                     "new_this"                : self.new_this,
                                      "generate_bitstring_type" : generate_bitstring_type,
                                      "protocol"                : self.proto
                                    })
@@ -38,8 +69,10 @@ class AsciiDiagramsParser(Parser):
     def process_section(self, section : rfc.Section, parser, structs):
         for i in range(len(section.content)):
             if type(section.content[i]) is rfc.T:
+                is_pdu = False
                 try:
                     pdu_name = parser(section.content[i].content[-1]).preamble()
+                    is_pdu = True
                     artwork = section.content[i+1]
                     where = section.content[i+2]
                     desc_list = section.content[i+3]
