@@ -12,12 +12,17 @@ def valid_type_name_convertor(name):
 
 def generate_bitstring_type(proto, name, size, units):
     name = valid_type_name_convertor(name)
-    #if units == "bytes" or units == "byte":
-    #    size = size * 8
-    if name not in proto.get_type_names():
-        return proto.define_bitstring(name, size)
+    if type(size) is protocol.ConstantExpression:
+        bitwidth = size.constant_value
+        if units == "bytes" or units == "byte":
+            bitwidth *= 8
     else:
-        return proto.get_type(name)
+        bitwidth = None
+
+    if name not in proto.get_type_names():
+        return (bitwidth, proto.define_bitstring(name, size))
+    else:
+        return (bitwidth, proto.get_type(name))
 
 class AsciiDiagramsParser(Parser):
     def __init__(self) -> None:
@@ -91,7 +96,7 @@ class AsciiDiagramsParser(Parser):
                     fields = []
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
-                        field_short_name, field_long_name, field_type = parser(title.content[0]).field_title()
+                        field_short_name, field_long_name, (field_width, field_type) = parser(title.content[0]).field_title()
 
                         # check name
                         if field_short_name != artwork_fields[i][1] and field_long_name != artwork_fields[i][1]:
@@ -100,14 +105,22 @@ class AsciiDiagramsParser(Parser):
                             else:
                                 print("** Warning ** [%s] Name mismatch: description list has field '%s'; packet header diagram has field '%s'" % (pdu_name, field_long_name, artwork_fields[i][1]))
 
+                        # check width
+                        if field_width is None:
+                            if artwork_fields[i][0] != "var":
+                                print("** Warning ** [%s::%s] Field width mismatch: description list has field as variable width; packet header diagram has field width as %d bits" % (pdu_name, field_long_name, artwork_fields[i][0]))
+                        else:
+                            if artwork_fields[i][0] == "var":
+                                print("** Warning ** [%s::%s] Field width mismatch: description list has field width as %d bits; packet header diagram has field as variable width" % (pdu_name, field_long_name, field_width))
+                            elif field_width != artwork_fields[i][0]:
+                                print("** Warning ** [%s::%s] Field width mismatch: description list has field width as %d bits; packet header diagram has field width as %d bits" % (pdu_name, field_long_name, field_width, artwork_fields[i][0]))
+
                         field = protocol.StructField(valid_field_name_convertor(field_type.name),
                               field_type,
                               protocol.ConstantExpression(self.proto.get_type("Boolean"), "True"))
                         fields.append(field)
                     structs.append(self.proto.define_struct(pdu_name, fields, [], []))
                 except Exception as e:
-                    #if is_pdu:
-                        #print(e)
                     continue
         for subsection in section.sections:
             self.process_section(subsection, parser, structs)
