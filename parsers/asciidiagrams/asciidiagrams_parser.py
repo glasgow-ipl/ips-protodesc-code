@@ -94,6 +94,11 @@ class AsciiDiagramsParser(Parser):
                     where = section.content[i+2]
                     desc_list = section.content[i+3]
                     fields = []
+
+                    # Check field counts
+                    if len(artwork_fields) != len(desc_list.content):
+                        print("** Warning ** [%s] Field count mismatch: description list has %d fields; packet header diagram has %d fields" % (pdu_name, len(desc_list.content), len(artwork_fields)))
+
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
                         field_short_name, field_long_name, (field_width, field_type) = parser(title.content[0]).field_title()
@@ -114,6 +119,7 @@ class AsciiDiagramsParser(Parser):
                                 print("** Warning ** [%s::%s] Field width mismatch: description list has field width as %d bits; packet header diagram has field as variable width" % (pdu_name, field_long_name, field_width))
                             elif field_width != artwork_fields[i][0]:
                                 print("** Warning ** [%s::%s] Field width mismatch: description list has field width as %d bits; packet header diagram has field width as %d bits" % (pdu_name, field_long_name, field_width, artwork_fields[i][0]))
+
 
                         field = protocol.StructField(valid_field_name_convertor(field_type.name),
                               field_type,
