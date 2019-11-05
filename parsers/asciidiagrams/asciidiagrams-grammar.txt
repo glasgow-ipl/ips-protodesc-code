@@ -35,8 +35,15 @@ field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
 short_field_name = alphanum:name -> name.strip()
 
-field_title = field_name:full_label ('(' short_field_name:short_label ')')? (('.' -> generate_bitstring_type(protocol, full_label, None, None)) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; present only when' equality_expr:cond)? '.' -> generate_bitstring_type(protocol, full_label, size, units))
+field_title = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label (('.' -> (full_label, short_label, generate_bitstring_type(protocol, full_label, None, None))) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; present only when' equality_expr:cond)? '.' -> (full_label, short_label, generate_bitstring_type(protocol, full_label, size, units)))
 
 # Preamble
 
 preamble = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is formatted as follows:" -> name
+
+# Diagram
+
+separator_line = ('|'|'..') ws '+-'+ '+'? <(anything:x ?(x != "|" and x != '.'))*>:ls -> None
+diagram_field_var = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls '.' -> ("var", str(ls).strip())
+diagram_field = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls -> (int((len(str(ls))+1)/2), str(ls).strip())
+diagram = <(anything:x ?(x != "|" and x != '.'))*> (separator_line|diagram_field_var|diagram_field)+:fields <(anything:x ?(x != "|" and x != '.'))*> -> proc_diagram_fields(fields)

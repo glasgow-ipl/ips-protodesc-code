@@ -50,6 +50,16 @@ class AsciiDiagramsParser(Parser):
                 start = protocol.MethodInvocationExpression(pair[1], ops[pair[0]][0], [protocol.ArgumentExpression("other", start)])
         return start
 
+    def proc_diagram_fields(self, diagram_fields):
+        clean_diagram_fields = []
+        for field in diagram_fields:
+            if field == None:
+                continue
+            if ':' in field[1]:
+                field = ("var", field[1].replace(':', '').strip())
+            clean_diagram_fields.append(field)
+        return clean_diagram_fields
+
     def build_parser(self):
         with open("parsers/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
@@ -62,6 +72,7 @@ class AsciiDiagramsParser(Parser):
                                      "build_tree"              : self.build_tree,
                                      "new_fieldaccess"         : self.new_fieldaccess,
                                      "new_this"                : self.new_this,
+                                     "proc_diagram_fields"     : self.proc_diagram_fields,
                                      "generate_bitstring_type" : generate_bitstring_type,
                                      "protocol"                : self.proto
                                    })
@@ -74,18 +85,29 @@ class AsciiDiagramsParser(Parser):
                     pdu_name = parser(section.content[i].content[-1]).preamble()
                     is_pdu = True
                     artwork = section.content[i+1]
+                    artwork_fields = parser(artwork.content.strip()).diagram()
                     where = section.content[i+2]
                     desc_list = section.content[i+3]
                     fields = []
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
-                        field_type = parser(title.content[0]).field_title()
+                        field_short_name, field_long_name, field_type = parser(title.content[0]).field_title()
+
+                        # check name
+                        if field_short_name != artwork_fields[i][1] and field_long_name != artwork_fields[i][1]:
+                            if field_short_name is not None:
+                                print("** Warning ** [%s] Name mismatch: description list has field '%s' (short label: '%s'); packet header diagram has field '%s'" % (pdu_name, field_short_name, field_long_name, artwork_fields[i][1]))
+                            else:
+                                print("** Warning ** [%s] Name mismatch: description list has field '%s'; packet header diagram has field '%s'" % (pdu_name, field_long_name, artwork_fields[i][1]))
+
                         field = protocol.StructField(valid_field_name_convertor(field_type.name),
                               field_type,
                               protocol.ConstantExpression(self.proto.get_type("Boolean"), "True"))
                         fields.append(field)
                     structs.append(self.proto.define_struct(pdu_name, fields, [], []))
                 except Exception as e:
+                    #if is_pdu:
+                        #print(e)
                     continue
         for subsection in section.sections:
             self.process_section(subsection, parser, structs)
