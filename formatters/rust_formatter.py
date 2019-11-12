@@ -31,8 +31,8 @@
 from string import ascii_letters
 import itertools
 
-from protocol import *
-from formatters.formatter import Formatter
+from src.protocol import *
+from formatter import Formatter
 
 class RustFormatter(Formatter):
     """
