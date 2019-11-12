@@ -84,11 +84,9 @@ class TestProtocol(unittest.TestCase):
         # define fields
         seq = StructField("seq",
                           seqnum,
-                          Transform("ext_seq", seqnum_trans, transform_seq),
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
         ts  = StructField("ts",
                           timestamp,
-                          None,
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         # add constraints
