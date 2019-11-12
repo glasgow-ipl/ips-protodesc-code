@@ -52,7 +52,7 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Equality",             res.traits)
         self.assertIn("Sized",                res.traits)
         self.assertIn("Value",                res.traits)
-        self.assertIn("IntegerRepresentable", res.traits)
+        self.assertIn("NumberRepresentable",  res.traits)
         # FIXME: add test for methods
 
     def test_define_array(self):
