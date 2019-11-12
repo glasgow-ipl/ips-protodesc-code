@@ -33,9 +33,9 @@ sys.path.append('.')
 
 import unittest
 
-from protocol import *
+from src.protocol import *
 
-import output_formatters.rust_writer
+import src.formatters.rust_formatter
 
 
 # =================================================================================================
@@ -61,7 +61,7 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for methods
 
         #Testing Rust code generation
-        generator = output_formatters.rust_writer.RustWriter()
+        generator = src.formatters.rust_formatter.RustFormatter()
         generator.format_bitstring(res)
         #print("".join(generator.output))
 
@@ -82,7 +82,7 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Sized",           res.traits)
         # FIXME: add test for methods
 
-        generator = output_formatters.rust_writer.RustWriter()
+        generator = src.formatters.rust_formatter.RustFormatter()
         generator.format_array(res)
         #print("".join(generator.output))
 
@@ -291,7 +291,7 @@ class TestProtocol(unittest.TestCase):
         protocol.define_pdu("stun_messagetype_split")
 
         #Testing Rust code generation
-        generator = output_formatters.rust_writer.RustWriter()
+        generator = src.formatters.rust_formatter.RustFormatter()
         generator.format_bitstring(bit_1)
         generator.format_struct(struct)
         generator.format_protocol(protocol)
@@ -380,7 +380,7 @@ class TestProtocol(unittest.TestCase):
         context_bitstring = protocol.define_bitstring("ContextBitstring", 10)
         protocol.define_context_field("ContextTestField", context_bitstring)
 
-        generator = output_formatters.rust_writer.RustWriter()
+        generator = src.formatters.rust_formatter.RustFormatter()
         generator.format_context(protocol.get_context())
         generator.format_function(transform_seq)
         generator.format_function(test_function)
