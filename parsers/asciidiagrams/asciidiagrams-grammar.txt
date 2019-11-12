@@ -16,26 +16,48 @@ capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + l
 
 pdu_name = <(word:w ?(w != "is")' '?)*>:name -> str(name)[:-1]
 
-# expressions
-parens = '(' ' '? equality_expr:expr ' '? ')' -> expr
 
-primary_expr = ' '? (number:n -> new_constant("Number", n)
-             | alphanum:name -> new_fieldaccess(new_this(), name.strip())
-             | '`' <(alphanum:w ' '?)*>:name '`' -> new_fieldaccess(new_this(), name.strip())
-             | parens)
+# expressions redo
+parens = '(' ws equality_expr:e ws ')' -> e
+value  = number:n -> new_constant("Number", n)
+       | parens
+       | field_name:name -> new_fieldaccess(new_this(), name)
 
-multiplicative_expr = primary_expr:left (' '? ('*'|'/'|'%'):operator primary_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
-additive_expr = multiplicative_expr:left (' '? ('+'|'-'):operator multiplicative_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+eq  = '==' ws bool_expr:n -> ('==', n)
+neq = '!=' ws bool_expr:n -> ('==', n)
 
-ordinal_expr = additive_expr:left (' '? ('<='|'<'|'>='|'>'):operator additive_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
-boolean_expr = ordinal_expr:left (' '? ('&&'|'||'|'!'|'and'|'or'|'not'):operator ordinal_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
-equality_expr = boolean_expr:left (' '? ('=='|'!='):operator boolean_expr:operand -> (operator, operand))*:rights -> build_tree(left, rights, "")
+and = ('&&'| ws 'and') ws ord_expr:n -> ('&&', n)
+or  = ('||'| ws 'or')  ws ord_expr:n -> ('||', n)
+not = ('!'| ws 'not')  ws ord_expr:n -> ('!',  n)
+
+leq = '<=' ws addsub_expr:n -> ('<=', n)
+lt  = '<'  ws addsub_expr:n -> ('<',  n)
+geq = '>=' ws addsub_expr:n -> ('>=', n)
+gt  = '>'  ws addsub_expr:n -> ('>',  n)
+
+add = '+' ws muldiv_expr:n -> ('+', n)
+sub = '-' ws muldiv_expr:n -> ('-', n)
+mul = '*' ws value:n -> ('*', n)
+div = '/' ws value:n -> ('/', n)
+mod = '%' ws value:n -> ('%', n)
+
+equality = (eq | neq)
+boolean  = (and | or | not)
+ordinal  = (leq | lt | geq | gt)
+addsub   = (add | sub)
+muldiv   = (mul | div | mod)
+
+equality_expr = bool_expr:left   equality*:rights -> build_tree(left, rights, "")
+bool_expr     = ord_expr:left    boolean*:rights  -> build_tree(left, rights, "")
+ord_expr      = addsub_expr:left ordinal*:rights  -> build_tree(left, rights, "")
+addsub_expr   = muldiv_expr:left addsub*:rights   -> build_tree(left, rights, "")
+muldiv_expr   = value:left       muldiv*:rights   -> build_tree(left, rights, "")
 
 field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
 short_field_name = alphanum:name -> name.strip()
 
-field_title = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label (('.' -> (full_label, short_label, generate_bitstring_type(protocol, full_label, None, None))) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; present only when' equality_expr:cond)? '.' -> (full_label, short_label, generate_bitstring_type(protocol, full_label, size, units)))
+field_title = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label (('.' -> (full_label, short_label, generate_bitstring_type(protocol, full_label, None, None))) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; present only when ' equality_expr:cond)? '.' -> (full_label, short_label, generate_bitstring_type(protocol, full_label, size, units)))
 
 # Preamble
 
