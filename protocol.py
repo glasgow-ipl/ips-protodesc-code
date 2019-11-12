@@ -220,7 +220,7 @@ class StructField():
 @dataclass(frozen=True)
 class ContextField():
     field_name : str
-    field_type : "ProtocolType"
+    field_type : "RepresentableType"
 
 
 # =================================================================================================
@@ -314,7 +314,11 @@ class InternalType(ProtocolType):
     pass
 
 class RepresentableType(ProtocolType):
-    pass
+    size : Optional[int]
+
+    def __init__(self, parent) -> None:
+        super().__init__(parent)
+        self.size = 0
 
 # Internal types follow:
 
@@ -361,8 +365,6 @@ class Nothing(RepresentableType):
 
 
 class BitString(RepresentableType):
-    size : Optional[int]
-
     def __init__(self, name: str, size: Optional[int]) -> None:
         super().__init__(None)
         self.kind = "BitString"
@@ -371,7 +373,7 @@ class BitString(RepresentableType):
 
 
 class DataUnit(RepresentableType):
-    def __init__(self, name: str, size: int) -> None:
+    def __init__(self, name: str, size: Optional[int]) -> None:
         super().__init__(None)
         self.kind  = "DataUnit"
         self.name  = name
@@ -598,7 +600,7 @@ class Protocol:
           context_field - contains the value needed for the size of DataUnit
         """
         self._validate_typename(name)
-        newtype = BitString(name, context_field.field_type.size)
+        newtype = DataUnit(name, context_field.field_type.size)
         newtype.implement_trait(self.get_trait("Sized"))
         newtype.implement_trait(self.get_trait("Value"))
         newtype.implement_trait(self.get_trait("Equality"))
@@ -714,7 +716,7 @@ class Protocol:
         self._funcs[name] = newfunc
         return newfunc
 
-    def define_context_field(self, name:str, ptype:ProtocolType):
+    def define_context_field(self, name:str, ptype:RepresentableType):
         """
         Define a context field for this protocol.
 
@@ -733,7 +735,7 @@ class Protocol:
           self  - the protocol in which the new type is defined
           pdu   - the name of a pre-existing type that is a PDU
         """
-        self._pdus[pdu] = self.get_type(pdu)
+        self._pdus[pdu] = cast(RepresentableType, self.get_type(pdu))
 
     def get_protocol_name(self) -> str:
         return self._name
@@ -753,7 +755,7 @@ class Protocol:
     def get_context(self):
         return self._context
 
-    def get_pdu(self, pdu_name: str) -> ProtocolType:
+    def get_pdu(self, pdu_name: str) -> RepresentableType:
         return self._pdus[pdu_name]
 
     def get_pdu_names(self) -> List[str]:

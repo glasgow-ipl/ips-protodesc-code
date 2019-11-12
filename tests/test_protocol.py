@@ -52,7 +52,7 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Equality",             res.traits)
         self.assertIn("Sized",                res.traits)
         self.assertIn("Value",                res.traits)
-        self.assertIn("IntegerRepresentable", res.traits)
+        self.assertIn("NumberRepresentable",  res.traits)
         # FIXME: add test for methods
 
     def test_define_array(self):
@@ -84,11 +84,9 @@ class TestProtocol(unittest.TestCase):
         # define fields
         seq = StructField("seq",
                           seqnum,
-                          Transform("ext_seq", seqnum_trans, transform_seq),
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
         ts  = StructField("ts",
                           timestamp,
-                          None,
                           ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         # add constraints
@@ -146,7 +144,7 @@ class TestProtocol(unittest.TestCase):
         self.assertIn("Sized",                res.traits)
         self.assertIn("Value",                res.traits)
         self.assertIn("Ordinal",              res.traits)
-        self.assertIn("IntegerRepresentable", res.traits)
+        self.assertIn("NumberRepresentable",  res.traits)
         # FIXME: add test for methods
 
     def test_define_function(self):
@@ -213,7 +211,6 @@ class TestProtocol(unittest.TestCase):
         # define fields
         test = StructField("test",
                            testfield,
-                           None,
                            ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         teststruct = protocol.define_struct("TestStruct", [test], [], [])
@@ -269,10 +266,10 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
 
         # Check we can parse This expressions:
-        const_expr = ConstantExpression(protocol.get_type("Size"), 2)
+        const_expr = ConstantExpression(protocol.get_type("Number"), 2)
 
         self.assertTrue(isinstance(const_expr, ConstantExpression))
-        self.assertTrue(const_expr.get_result_type(None), protocol.get_type("Size"))
+        self.assertTrue(const_expr.get_result_type(None), protocol.get_type("Number"))
 
 # =================================================================================================
 if __name__ == "__main__":
