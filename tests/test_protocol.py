@@ -267,10 +267,10 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
 
         # Check we can parse This expressions:
-        const_expr = ConstantExpression(protocol.get_type("Size"), 2)
+        const_expr = ConstantExpression(protocol.get_type("Number"), 2)
 
         self.assertTrue(isinstance(const_expr, ConstantExpression))
-        self.assertTrue(const_expr.get_result_type(None), protocol.get_type("Size"))
+        self.assertTrue(const_expr.get_result_type(None), protocol.get_type("Number"))
 
 # =================================================================================================
 if __name__ == "__main__":
