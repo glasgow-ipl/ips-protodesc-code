@@ -33,6 +33,9 @@ import argparse
 import requests
 import xml.etree.ElementTree as ET
 import os.path
+import urllib
+
+import ietfdata.datatracker as DT
 
 from protocol import *
 
@@ -123,8 +126,14 @@ def main():
             else:
                 txt = inputFile.readlines()
     else:
-        # TODO: lookup docname in DT
-        return
+        # TODO: this could be much smarter about document names; doesn't handle errors/XML not being available
+        dt = DT.DataTracker()
+        doc = dt.document_from_draft(args.docname)
+        if doc is not None:
+            with urllib.request.urlopen(ACTIVE_ID_URL + doc.name + "-" + doc.rev + ".xml") as response:
+                xml = response.read()
+        else:
+            return
 
     if xml is not None:
         rfcXml = ET.fromstring(xml)
