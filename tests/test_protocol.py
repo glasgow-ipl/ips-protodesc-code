@@ -211,7 +211,6 @@ class TestProtocol(unittest.TestCase):
         # define fields
         test = StructField("test",
                            testfield,
-                           None,
                            ConstantExpression(protocol.get_type("Boolean"), "True"))
 
         teststruct = protocol.define_struct("TestStruct", [test], [], [])
