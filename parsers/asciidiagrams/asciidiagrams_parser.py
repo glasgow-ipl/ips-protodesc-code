@@ -101,7 +101,7 @@ class AsciiDiagramsParser(Parser):
 
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
-                        field_short_name, field_long_name, (field_width, field_type) = parser(title.content[0]).field_title()
+                        field_short_name, field_long_name, is_present, (field_width, field_type) = parser(title.content[0]).field_title()
 
                         # check name
                         if field_short_name != artwork_fields[i][1] and field_long_name != artwork_fields[i][1]:
@@ -120,10 +120,12 @@ class AsciiDiagramsParser(Parser):
                             elif field_width != artwork_fields[i][0]:
                                 print("** Warning ** [%s::%s] Field width mismatch: description list has field width as %d bits; packet header diagram has field width as %d bits" % (pdu_name, field_long_name, field_width, artwork_fields[i][0]))
 
+                        if is_present is None:
+                            is_present = protocol.ConstantExpression(self.proto.get_type("Boolean"), "True")
 
                         field = protocol.StructField(valid_field_name_convertor(field_type.name),
                               field_type,
-                              protocol.ConstantExpression(self.proto.get_type("Boolean"), "True"))
+                              is_present)
                         fields.append(field)
                     structs.append(self.proto.define_struct(pdu_name, fields, [], []))
                 except Exception as e:
