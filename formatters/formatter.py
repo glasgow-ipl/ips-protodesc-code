@@ -29,7 +29,7 @@
 # =================================================================================================
 
 import abc
-from src.protocol import *
+from protocol import *
 
 class Formatter(abc.ABC):
     """
