@@ -43,6 +43,9 @@ class SimpleFormatter(Formatter):
     def generate_output(self):
         return "\n".join(self.output)
 
+    def format_expression(self, expr:Expression):
+        return "Expression ({})".format(expr)
+
     def format_bitstring(self, bitstring:BitString):
         self.output.append("BitString ({})".format(bitstring))
 

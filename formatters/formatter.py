@@ -41,6 +41,10 @@ class Formatter(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def format_expression(self, expr:Expression) -> str:
+        pass
+
+    @abc.abstractmethod
     def format_bitstring(self, bitstring:BitString, parent_pt=None):
         pass
 
