@@ -53,9 +53,9 @@ class RustFormatter(Formatter):
 
     #bitstrings are formatted as structs containing a single int to differentiate between bitstrings which serve different purposes (eg. Timestamp, SeqNum, PortNum)
     def format_bitstring(self, bitstring:BitString):
-        if bitstring.name not in self.output:
-            self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
-            self.output.extend(["struct ", bitstring.name, "(u%d);\n" % self.assign_int_size(bitstring)])
+        assert bitstring.name not in self.output
+        self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
+        self.output.extend(["struct ", bitstring.name, "(u%d);\n" % self.assign_int_size(bitstring)])
 
     #assign the smallest possible unsigned int which can accommodate the size given
     def assign_int_size(self, bitstring:BitString):
