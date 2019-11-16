@@ -51,6 +51,10 @@ class RustFormatter(Formatter):
     def generate_output(self):
         return "".join(self.output)
 
+    def format_expression(self, expr:Expression):
+        #TODO
+        return ""
+
     #bitstrings are formatted as structs containing a single int to differentiate between bitstrings which serve different purposes (eg. Timestamp, SeqNum, PortNum)
     def format_bitstring(self, bitstring:BitString):
         assert bitstring.name not in self.output

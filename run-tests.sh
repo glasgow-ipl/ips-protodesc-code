@@ -1,3 +1,4 @@
+#!/bin/sh
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
@@ -28,46 +29,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-import abc
-from protocol import *
-
-class Formatter(abc.ABC):
-    """
-    Abstract class for output formatters.
-    """
-
-    @abc.abstractmethod
-    def generate_output(self):
-        pass
-
-    @abc.abstractmethod
-    def format_expression(self, expr:Expression) -> str:
-        pass
-
-    @abc.abstractmethod
-    def format_bitstring(self, bitstring:BitString, parent_pt=None):
-        pass
-
-    @abc.abstractmethod
-    def format_struct(self, struct:Struct):
-        pass
-
-    @abc.abstractmethod
-    def format_array(self, array:Array):
-        pass
-
-    @abc.abstractmethod
-    def format_enum(self, enum:Enum):
-        pass
-
-    @abc.abstractmethod
-    def format_function(self, function:Function):
-        pass
-
-    @abc.abstractmethod
-    def format_context(self, context:Context):
-        pass
-
-    @abc.abstractmethod
-    def format_protocol(self, protocol:Protocol):
-        pass
+pipenv run pytest --junitxml=../test-results/protocol-tests.xml tests/test_protocol.py
+pipenv run pytest --junitxml=../test-results/code-generator-tests.xml tests/output_formatters/test_code_generator.py
+mypy protocol.py --junit-xml test-results/protocol-typecheck.xml

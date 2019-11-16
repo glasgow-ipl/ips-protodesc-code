@@ -18,4 +18,4 @@ pytest = "*"
 python_version = "3.7"
 
 [scripts]
-tests = "bin/run-tests.sh"
+tests = "./run-tests.sh"
