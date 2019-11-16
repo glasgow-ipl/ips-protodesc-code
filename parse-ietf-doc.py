@@ -199,7 +199,7 @@ def main():
                 output_formatter.format_context(pt)
         output_formatter.format_protocol(protocol)
     except Exception as e:
-        print("Could not format protocol with specified formatter (%s)" % (args.output_format))
+        print("*** Error *** Could not format protocol with specified formatter (%s)" % (args.output_format))
 
     # Output to file
     with open(args.output_file, "w+") as outputFile:
