@@ -76,6 +76,7 @@ class RustFormatter(Formatter):
             return 128
 
     def format_struct(self, struct:Struct):
+        assert struct.name not in self.output
         #traits need to be added up here when using !derive (eg. Eq, Ord)
         self.output.append("\n#[derive(Debug")
         for trait in struct.traits:
@@ -90,6 +91,7 @@ class RustFormatter(Formatter):
         self.output.append("}\n")
 
     def format_array(self, array:Array):
+        assert array.name not in self.output
         if array.length is None:
             self.output.append("struct %s(Vec<%s" % (array.name, array.element_type.name))
             if array.element_type.kind == "BitString":
@@ -103,12 +105,14 @@ class RustFormatter(Formatter):
         self.output.append("\n\n")
 
     def format_enum(self, enum:Enum):
+        assert enum.name not in self.output
         self.output.extend(["\nenum ", "%s {\n" % enum.name])
         for variant in enum.variants:
             self.output.append("    %s,\n" % variant.name)
         self.output.append("}\n\n")
 
     def format_function(self, function:Function):
+        assert function.name not in self.output
         self.output.append("fn {function_name}(".format(function_name=function.name))
         for param in function.parameters:
             #TODO: handle parameters which aren't just structs
