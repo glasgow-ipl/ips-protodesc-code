@@ -129,6 +129,12 @@ class AsciiDiagramsParser(Parser):
                         fields.append(field)
                     structs.append(self.proto.define_struct(pdu_name, fields, [], []))
                 except Exception as e:
+                    pass
+                try:
+                    protocol_name, pdus = parser(section.content[i].content[-1]).protocol_definition()
+                    print("Protocol", protocol_name, pdus)
+                except Exception as e:
+                    print(e)
                     continue
         for subsection in section.sections:
             self.process_section(subsection, parser, structs)

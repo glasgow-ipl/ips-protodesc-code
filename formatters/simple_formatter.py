@@ -44,10 +44,32 @@ class SimpleFormatter(Formatter):
         return "\n".join(self.output)
 
     def format_expression(self, expr:Expression):
-        return "Expression ({})".format(expr)
+        if type(expr) is ConstantExpression and type(expr.constant_type) is Number:
+            return "%s" % (expr.constant_value)
+        elif type(expr) is MethodInvocationExpression:
+            operators = {"plus": "+",
+                         "minus": "-",
+                         "multiply": "*",
+                         "divide": "/",
+                         "modulo": "%",
+                         "ge": ">=",
+                         "gt": ">",
+                         "lt": "<",
+                         "le": "<=",
+                         "and": "&&",
+                         "or": "||",
+                         "not": "!",
+                         "eq": "==",
+                         "ne": "!="}
+            if expr.method_name in operators:
+                return "(%s %s %s)" % (self.format_expression(expr.target), operators[expr.method_name], self.format_expression(expr.arg_exprs[0].arg_value))
+            elif expr.method_name == "to_integer":
+                return self.format_expression(expr.target)
+        elif type(expr) is FieldAccessExpression:
+            return expr.field_name
 
     def format_bitstring(self, bitstring:BitString):
-        self.output.append("BitString ({})".format(bitstring))
+        self.output.append("BitString ({}) [size: {} bits]".format(bitstring, self.format_expression(bitstring.size)))
 
     def format_struct(self, struct:Struct):
         self.output.append("Struct ({})".format(struct))
