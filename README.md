@@ -66,3 +66,8 @@ To run the project's test suite, run:
   If `output-format` is not specified, the output format will be inferred from
   the file type specified as `output-file`. The file extensions that map to each
   output formatter are specified above.
+ 
+## Acknowledgements
+
+This work is funded by the UK Engineering and Physical Sciences Research
+Council, under grant EP/R04144X/1. See [more information about the project](https://github.com/glasgow-ipl/ips-protodesc-code/blob/master/FUNDING.md).
