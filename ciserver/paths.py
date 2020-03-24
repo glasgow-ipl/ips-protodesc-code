@@ -53,8 +53,11 @@ class FileSysLock(contextlib.ContextDecorator):
 
         await self.pid_lock.acquire()  
         with open(self.fs.lock, 'w') as fp: 
-                json.dump( { "start_time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
+            json.dump( { "start_time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
                     "pid": self.pid }, fp)
+
+        self.fs.drafts.mkdir(exist_ok=True) 
+        self.fs.rfc.mkdir(exist_ok=True) 
         return self
 
     async def __aexit__(self, ex_type, ex, ex_tb):
@@ -67,7 +70,7 @@ class FileSysLock(contextlib.ContextDecorator):
 
 async def debug():
     async with FileSysLock( RootWorkingDir( pathlib.Path(
-                    "/home/dejice/../dejice/./work/ietf/ips-protodesc-code/ciserver"))) as r3:
+                    "/home/dejice/../dejice/./work/ietf/ips-protodesc-code/ciserver/test_dir"))) as r3:
         print(f"root = {r3.fs.root},\n"
               f"lock = {r3.fs.lock},\n"
               f"db = {r3.fs.db},\n"
