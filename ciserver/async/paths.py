@@ -15,7 +15,6 @@ class RootWorkingDir:
     root  : pathlib.Path = field( default_factory=lambda: pathlib.Path(pathlib.Path.cwd()))
     lock  : pathlib.Path = field(default=None, init=False)
     db    : pathlib.Path = field(default=None, init=False)
-    log   : pathlib.Path = field(default=None, init=False)
     rfc   : pathlib.Path = field(default=None, init=False)
     drafts: pathlib.Path = field(default=None, init=False)
     output: pathlib.Path = field(default=None, init=False)
@@ -34,7 +33,6 @@ class RootWorkingDir:
         # TODO : Also add check to see if directory is writable
         self.lock = self.root / ".lock"
         self.db = self.root / ".db"
-        self.log = self.root / ".log"
         self.rfc = self.root / "rfc"
         self.drafts = self.root / "drafts"
         self.output = self.root / "output"
@@ -44,36 +42,35 @@ class RootWorkingDir:
 class FileSysLock(contextlib.ContextDecorator):
     fs      : RootWorkingDir
     pid     : int = field(default_factory = os.getpid, init = False)
+    pid_lock: asyncio.locks.Lock = field(default_factory = asyncio.Lock, init = False )
 
-    def __enter__(self):
+    async def __aenter__(self):
         if self.fs.lock.exists():
             with open(self.fs.lock, 'r') as fp:
                 _lock = json.load(fp)
                 raise AssertionError( f"Process {_lock['pid']} holds lockfile {self.fs.lock}")
             raise AssertionError( f"Another Process holds lockfile {self.fs.lock}") 
 
+        await self.pid_lock.acquire()  
         with open(self.fs.lock, 'w') as fp: 
             json.dump( { "start_time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
                     "pid": self.pid }, fp)
-
-        if self.fs.log.exists() : 
-            assert self.fs.log.is_file(), f"Prexisting FileSys entry {self.fs.log} not a file"
-        else : 
-            self.fs.log.write_text("<<<<<<< Start Log >>>>>>>>\n")
 
         self.fs.drafts.mkdir(exist_ok=True) 
         self.fs.rfc.mkdir(exist_ok=True) 
         return self
 
-    def __exit__(self, ex_type, ex, ex_tb):
+    async def __aexit__(self, ex_type, ex, ex_tb):
         assert self.pid == os.getpid(), f"Only pid - {self.pid} allowed to remove {self.fs.lock}"
         self.fs.lock.unlink()
-        logging.debug(
+        logging.info(
             f"pid {self.pid} released {self.fs.lock} at"
             f" {datetime.strftime(datetime.utcnow(),'%Y-%m-%d %H:%M:%S')}")
+        self.pid_lock.release()
 
-def debug():
-    with FileSysLock( RootWorkingDir( pathlib.Path("/home/dejice/../dejice/./work/ietf/ips-protodesc-code/ciserver/test_dir"))) as r3:
+async def debug():
+    async with FileSysLock( RootWorkingDir( pathlib.Path(
+                    "/home/dejice/../dejice/./work/ietf/ips-protodesc-code/ciserver/test_dir"))) as r3:
         print(f"root = {r3.fs.root},\n"
               f"lock = {r3.fs.lock},\n"
               f"db = {r3.fs.db},\n"
@@ -84,4 +81,7 @@ def debug():
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
-    debug()
+
+    loop = asyncio.get_event_loop() 
+    loop.run_until_complete(debug()) 
+    loop.close()
