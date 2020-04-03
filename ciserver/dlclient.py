@@ -7,9 +7,10 @@ from dataclasses import dataclass, field
 from collections import OrderedDict
 from typing import List, Iterator, Tuple, Optional, TypeVar
 from ietfdata import datatracker
-import paths  
+import paths
 
-T = TypeVar('T') 
+T = TypeVar('T')
+
 
 @dataclass(frozen=True)
 class URI:
@@ -21,127 +22,187 @@ class DocURI(URI):
     def __post_init__(self) -> None:
         assert self.uri.startswith("https://www.ietf.org/archive/id")
 
+
 @dataclass(frozen=True)
 class URIxml(DocURI):
-    extn : str =  field(default='.xml', init=False)
+    extn: str = field(default='.xml', init=False)
 
-    def __post_init__(self) -> None :
-        assert pathlib.Path( self.uri ).suffix == self.extn, f"uri {self.uri} does not end in .xml"
+    def __post_init__(self) -> None:
+        assert pathlib.Path(
+            self.uri
+        ).suffix == self.extn, f"uri {self.uri} does not end in .xml"
+
 
 @dataclass(frozen=True)
 class xmlFile(URI):
-    extn : str =  field(default='.xml', init=False)
+    extn: str = field(default='.xml', init=False)
 
-    def __post_init__(self) -> None :
-        assert pathlib.Path( self.uri ).suffix == self.extn, f"uri {self.uri} does not end in .xml"
+    def __post_init__(self) -> None:
+        assert pathlib.Path(
+            self.uri
+        ).suffix == self.extn, f"uri {self.uri} does not end in .xml"
+
 
 @dataclass(frozen=True)
 class txtFile(URI):
-    extn : str =  field(default='.txt', init=False)
+    extn: str = field(default='.txt', init=False)
 
-    def __post_init__(self) -> None :
-        assert pathlib.Path( self.uri ).suffix == self.extn, f"uri {self.uri} does not end in .xml"
+    def __post_init__(self) -> None:
+        assert pathlib.Path(
+            self.uri
+        ).suffix == self.extn, f"uri {self.uri} does not end in .xml"
+
 
 @dataclass(frozen=True)
 class URItext(DocURI):
-    extn : str =  field(default='.txt', init=False)
+    extn: str = field(default='.txt', init=False)
 
-    def __post_init__(self) -> None :
-        assert pathlib.Path( self.uri ).suffix  == self.extn, f"uri {self.uri} does not end in .txt"
+    def __post_init__(self) -> None:
+        assert pathlib.Path(
+            self.uri
+        ).suffix == self.extn, f"uri {self.uri} does not end in .txt"
 
 
 WebURITypes = [URIxml, URItext]
 FileURITypes = [xmlFile, txtFile]
+
 
 @dataclass(frozen=True)
 class DownloadOptions:
     force: bool = False  # if set to True, override files in cache
 
 
+class DownloadURI:
+    def __init__(self, name: str, rev: str, extn: str) -> None:
+        self.name = name
+        self.rev = rev
+        self.extn = extn.split(sep=',')
+        self.webURITypes = [URIxml, URItext]
+        self.fileURITypes = [xmlFile, txtFile]
+
+    def _document_stem(self):
+        return f"{self.name}-{self.rev}"
+
+    def preferred_doctype(self, webURIBase: str,
+                          fileURIBase: str) -> Iterator[Tuple[T, T]]:
+        for web_uri, file_uri in zip(self.webURITypes, self.fileURITypes):
+            if web_uri.extn in self.extn and web_uri.extn == file_uri.extn:
+                yield web_uri( webURIBase + f"/{self._document_stem()}{web_uri.extn}"), \
+                        file_uri( fileURIBase + f"/{self.name}/{self.rev}/{self._document_stem()}{file_uri.extn}")
+
+    @property
+    def webURI(self) -> T:
+        return self._webURI
+
+    @webURI.setter
+    def webURI(self, web_uri: T) -> None:
+        if type(web_uri) not in self.webURITypes:
+            logging.critical( f"type {type(web_uri)} disallowed." \
+                    f"Only types {self.webURITypes} allowed." \
+                    f"url = {web_uri.uri}")
+        assert type(web_uri) in self.webURITypes, f"type {type(web_uri)} disallowed." \
+                                                  f"Only types {self.webURITypes} allowed." \
+                                                  f"url = {web_uri.uri}"
+        self._webURI = web_uri
+
+    @property
+    def fileURI(self) -> T:
+        return self._fileURI
+
+    @fileURI.setter
+    def fileURI(self, file_uri: T) -> None:
+        if type(file_uri) not in self.fileURITypes:
+            logging.critical( f"type {type(file_uri)} disallowed." \
+                    f"Only types {self.fileURITypes} allowed." \
+                    f"url = {web_uri.uri}")
+        assert type(file_uri) in self.fileURITypes, f"type {type(web_URI)} disallowed." \
+                                                    f"Only types {self.webURITypes} allowed." \
+                                                    f"url = {web_uri.uri}"
+        self._fileURI = file_uri
+
+    def set_used_uri(self, webURI: T, fileURI: T) -> None:
+        self.webURI = webURI
+        self.fileURI = fileURI
+
+
 @dataclass
 class DownloadClient:
     fslock: paths.FileSysLock
+    base_uri: str = "https://www.ietf.org/archive/id"
     dlopts: Optional[DownloadOptions] = field(default_factory=DownloadOptions)
 
     def __enter__(self) -> None:
-        self.session = requests.Session() 
+        self.session = requests.Session()
         return self
 
     def __exit__(self, ex_type, ex, ex_tb) -> None:
-        self.session.close() 
+        self.session.close()
         self.session = None
 
-    def _gen_alt_url(self, url:str, old_extn : str, webURI:T) -> str :
-        _index = url.rfind(old_extn)
-        assert _index != -1, f"Could not find extension {old_extn} in url {url}"
-        return webURI( url[:_index] + webURI.extn )
+    def _write_file(self, file_uri: T, data: str) -> bool:
+        written = False
+        # put  any caching and optional checking in this function
+        file_path = pathlib.Path(file_uri.uri)
+        file_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
 
-    def _write_file(self, file_uri:str , data:str) -> bool : 
-        written = False 
-        # put  any caching and optional checking in this function 
-        with open(file_uri.uri, "w") as fp :
-            fp.write( data )
+        with open(str(file_path), "w") as fp:
+            fp.write(data)
             written = True
-        return written 
+        return written
 
-    def _download_pref_url(self, url: str) -> Tuple[int, str, str, str]:
-        preferred_doctype = zip( WebURITypes, FileURITypes )
-        orig_extn = pathlib.Path(url).suffix
-
-        try :
-            while True : 
-                webURI, fileURI = next(preferred_doctype) 
-                pref_url = self._gen_alt_url(url, orig_extn, webURI ) 
-                dl = self.session.get(pref_url.uri, verify=True, stream=False) 
-                if dl.status_code != 200 :
+    def download_docs(self, urls: List[DownloadURI]) -> List[DownloadURI]:
+        docs = list()
+        for doc in urls:
+            for web_uri, file_uri in doc.preferred_doctype(
+                    self.base_uri, str(self.fslock.fs.drafts)):
+                dl = self.session.get(web_uri.uri, verify=True, stream=False)
+                if dl.status_code != 200:
                     continue
 
-                logging.debug(f"Downloaded url -- {pref_url}")
-                file_path = fileURI( self.fslock.fs.drafts / (pathlib.Path( url ).stem + fileURI.extn))
-                if self._write_file( file_path, dl.text ):
-                    return file_path  
-                else : 
+                logging.debug(f"Downloaded url -- {web_uri.uri}")
+                if self._write_file(file_uri, dl.text):
+                    doc.set_used_uri(web_uri, file_uri)
+                    docs.append(doc)
+                    logging.debug(f"Written file -- {file_uri.uri}")
+                    break
+                else:
                     logging.critical(f"Error writing File {file_path.uri}"
                                      f"after downloading url -- {pref_url}")
-                    raise RuntimeError
-        except StopIteration as si_excpt : 
-            logging.error(f"Could not find any document types corresponding to url {url}")
-            logging.error("Document types searched for = {0}".format( [ obj.extn for obj in self.dlopts.doc_pref])) 
-            return None  
 
-    def download_docs(self, urls: List[str]) -> None:
-        dl_files = list() 
-        for url in urls :
-            dl_file = self._download_pref_url(url) 
-            if dl_file != None : 
-                dl_files.append( dl_file )
+            else:
+                logging.error(f"Could not download any file type for document {doc.name}-{doc.rev}")
+
+        return docs
+
 
 def download_draft_daterange(
-        since: str = "1970-01-01T00:00:00",
-        until: str = "2038-01-19T03:14:07",
-        dlopts: DownloadOptions = DownloadOptions()) -> None:
+    since: str = "1970-01-01T00:00:00",
+    until: str = "2038-01-19T03:14:07",
+    dlopts: DownloadOptions = DownloadOptions()
+) -> None:
+
     track = datatracker.DataTracker()
     draft_itr = track.documents(since=since,
                                 until=until,
                                 doctype=track.document_type("draft"))
     urls = []
     for draft in draft_itr:
-        _url = draft.document_url()
-        if not dlopts.force:
-            # TODO : check whether the file was already downloaded
-            # We could use an initial synchronisation run to sha-256 every file in the directory
-            # to ensure consistency
-            # For now just check the file names
-            pass
-        urls.append(_url)
+        for sub_uri in draft.submissions:
+            submission = track.submission(sub_uri)
+            if submission:
+                urls.append( DownloadURI(submission.name, submission.rev,
+                                submission.file_types))
 
     # Download files
     with paths.FileSysLock( paths.RootWorkingDir(pathlib.Path.cwd() / "test_dir")) as fslock, \
-                    DownloadClient( fslock) as dlclient: 
-        logging.basicConfig(filename=fslock.fs.log, filemode='a', format="%(asctime)s | %(levelname)s : %(message)s", datefmt="%y-%m-%d %H:%M:%S", level=logging.INFO )
+                    DownloadClient( fslock, dlopts= dlopts) as dlclient:
+        logging.basicConfig(filename=fslock.fs.log,
+                            filemode='a',
+                            format="%(asctime)s | %(levelname)s : %(message)s",
+                            datefmt="%y-%m-%d %H:%M:%S",
+                            level=logging.INFO)
         dlclient.download_docs(urls)
 
 
-
 if __name__ == '__main__':
-    download_draft_daterange(since="2020-03-27T00:00:00")
+    download_draft_daterange(since="2020-04-03T00:00:00")
