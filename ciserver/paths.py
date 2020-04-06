@@ -61,6 +61,13 @@ class FileSysLock(contextlib.ContextDecorator):
         else : 
             self.fs.log.write_text("<<<<<<< Start Log >>>>>>>>\n")
 
+        if self.fs.db.exists() : 
+            assert self.fs.db.is_file(), f"Prexisting FileSys entry {self.fs.db} not a file"
+        else : 
+            with open( self.fs.db, "w" ) as fp : 
+                json.dump( { "creation time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
+                    "drafts": {} , "rfc": {} }, fp)
+
         self.fs.drafts.mkdir(exist_ok=True) 
         self.fs.rfc.mkdir(exist_ok=True) 
         return self

@@ -3,9 +3,10 @@
 import pathlib
 import requests
 import logging
+import json
 from dataclasses import dataclass, field
 from collections import OrderedDict
-from typing import List, Iterator, Tuple, Optional, TypeVar
+from typing import List, Iterator, Tuple, Optional, TypeVar, Dict
 from ietfdata import datatracker
 import paths
 
@@ -81,7 +82,7 @@ class DownloadURI:
         self.fileURITypes = [xmlFile, txtFile]
 
     def _document_stem(self):
-        return f"{self.name}-{self.rev}"
+        return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
 
     def preferred_doctype(self, webURIBase: str,
                           fileURIBase: str) -> Iterator[Tuple[T, T]]:
@@ -172,7 +173,30 @@ class DownloadClient:
             else:
                 logging.error(f"Could not download any file type for document {doc.name}-{doc.rev}")
 
-        return docs
+        return docs 
+
+    def create_db_rec( self, docs : List[DownloadURI], db_content ) -> None :
+        for d in docs : 
+            if d.name.startswith("draft") : 
+                doc_record = db_content['drafts'] 
+                doc_name = f"{d.name}-{d.rev}"
+            else : 
+                doc_record = db_content['rfc'] 
+                doc_name = f"{d.name}"
+            kv = doc_record.get(doc_name,None)
+            if kv == None :
+                doc_record[doc_name] = {"input file" : d.fileURI.uri} 
+            else :
+                kv["input file"] =  d.fileURI.uri
+
+def filter_docs( urls : List[DownloadURI],  doc_filter: Dict[str,Dict[str,str]] ) -> List[DownloadURI] : 
+    filtered_urls = [] 
+    for u in urls : 
+        cmp_str = f"{u.name}-{u.rev}" if u.name.startswith("draft") else u.name
+        if cmp_str in doc_filter : 
+            continue
+        filtered_urls.append( u )
+    return filtered_urls
 
 
 def download_draft_daterange(
@@ -193,6 +217,8 @@ def download_draft_daterange(
                 urls.append( DownloadURI(submission.name, submission.rev,
                                 submission.file_types))
 
+
+
     # Download files
     with paths.FileSysLock( paths.RootWorkingDir(pathlib.Path.cwd() / "test_dir")) as fslock, \
                     DownloadClient( fslock, dlopts= dlopts) as dlclient:
@@ -201,8 +227,21 @@ def download_draft_daterange(
                             format="%(asctime)s | %(levelname)s : %(message)s",
                             datefmt="%y-%m-%d %H:%M:%S",
                             level=logging.INFO)
-        dlclient.download_docs(urls)
+
+        filt_urls = urls 
+        with open( dlclient.fslock.fs.db , "r" ) as fp : 
+            db_content = json.load(fp) 
+            if not dlclient.dlopts.force : 
+                filt_urls = filter_docs( filt_urls, db_content['drafts'] ) 
+                filt_urls = filter_docs( filt_urls, db_content['rfc'] )
+
+        downloaded_docs = dlclient.download_docs(filt_urls) 
+        dlclient.create_db_rec(downloaded_docs ,  db_content ) 
+
+
+        with open( dlclient.fslock.fs.db , "w" ) as fp : 
+            json.dump( db_content , fp )
 
 
 if __name__ == '__main__':
-    download_draft_daterange(since="2020-04-03T00:00:00")
+    download_draft_daterange(since="2020-04-05T00:00:00")
