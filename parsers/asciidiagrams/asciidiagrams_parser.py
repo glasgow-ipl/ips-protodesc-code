@@ -5,7 +5,7 @@ import parsley
 import string
 
 def valid_field_name_convertor(name):
-    return name.lower()
+    return name.lower().replace(" ", "_")
 
 def valid_type_name_convertor(name):
     return name.capitalize().replace(" ", "_")
@@ -27,18 +27,21 @@ def generate_bitstring_type(proto, name, size, units):
 class AsciiDiagramsParser(Parser):
     def __init__(self) -> None:
         super().__init__()
+        self.field_accesses = []
 
     def new_this(self):
         return protocol.SelfExpression()
 
     def new_methodinvocation(self, target, method, arguments):
-        if type(target) is protocol.MethodInvocationExpression and target.method_name == "to_integer":
+        if type(target) is protocol.MethodInvocationExpression and target.method_name == "to_number":
             target = target.target
         arguments = [] if arguments == None else arguments
         return protocol.MethodInvocationExpression(target, method, arguments)
 
     def new_fieldaccess(self, target, field_name):
-        return self.new_methodinvocation(protocol.FieldAccessExpression(target, field_name), "to_integer", [])
+        field_access = protocol.FieldAccessExpression(target, valid_field_name_convertor(field_name))
+        self.field_accesses.append(field_access)
+        return self.new_methodinvocation(field_access, "to_number", [])
 
     def new_constant(self, type_name, value):
         return protocol.ConstantExpression(self.proto.get_type(type_name), value)
@@ -88,27 +91,37 @@ class AsciiDiagramsParser(Parser):
                 is_pdu = False
                 try:
                     pdu_name = parser(section.content[i].content[-1]).preamble()
+                    print(pdu_name)
                     is_pdu = True
                     artwork = section.content[i+1]
                     artwork_fields = parser(artwork.content.strip()).diagram()
                     where = section.content[i+2]
                     desc_list = section.content[i+3]
                     fields = []
-
+                    constraints = []
+                    self.field_name_map = {}
                     # Check field counts
                     if len(artwork_fields) != len(desc_list.content):
                         print("** Warning ** [%s] Field count mismatch: description list has %d fields; packet header diagram has %d fields" % (pdu_name, len(desc_list.content), len(artwork_fields)))
 
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
-                        field_short_name, field_long_name, is_present, (field_width, field_type) = parser(title.content[0]).field_title()
+                        field_long_name, field_short_name, value_constraint, is_present, (field_width, field_type) = parser(title.content[0]).field_title()
 
                         # check name
                         if field_short_name != artwork_fields[i][1] and field_long_name != artwork_fields[i][1]:
-                            if field_short_name is not None:
+                            if value_constraint is not None:
+                                if type(value_constraint) is protocol.MethodInvocationExpression:
+                                    if type(value_constraint.target) is protocol.ConstantExpression:
+                                        if value_constraint.target.constant_value != int(artwork_fields[i][1]):
+                                            print("** Warning ** [%s] Value constraint mismatch: description list has field with constant value %d; packet header diagram has field with constant value %d" % (pdu_name, field_long_name, value_constraint.target.constant_value, int(artwork_fields[i][1])))
+                            elif field_short_name is not None:
                                 print("** Warning ** [%s] Name mismatch: description list has field '%s' (short label: '%s'); packet header diagram has field '%s'" % (pdu_name, field_short_name, field_long_name, artwork_fields[i][1]))
                             else:
                                 print("** Warning ** [%s] Name mismatch: description list has field '%s'; packet header diagram has field '%s'" % (pdu_name, field_long_name, artwork_fields[i][1]))
+
+                        if field_short_name is not None:
+                            self.field_name_map[valid_field_name_convertor(field_short_name)] = valid_field_name_convertor(field_type.name)
 
                         # check width
                         if field_width is None:
@@ -123,12 +136,23 @@ class AsciiDiagramsParser(Parser):
                         if is_present is None:
                             is_present = protocol.ConstantExpression(self.proto.get_type("Boolean"), "True")
 
+                        if value_constraint is not None:
+                            constraints.append(value_constraint)
+
                         field = protocol.StructField(valid_field_name_convertor(field_type.name),
                               field_type,
                               is_present)
                         fields.append(field)
-                    structs.append(self.proto.define_struct(pdu_name, fields, [], []))
+                    
+                    # short field names -> long field names
+                    for field_access in self.field_accesses:
+                        print(field_access)
+                        print(field_access.field_name)
+                        field_access.field_name = self.field_name_map.get(field_access.field_name, field_access.field_name)
+                        print(field_access)
+                    structs.append(self.proto.define_struct(pdu_name, fields, constraints, []))
                 except Exception as e:
+                    print(e)
                     pass
                 try:
                     protocol_name, pdus = parser(section.content[i].content[-1]).protocol_definition()

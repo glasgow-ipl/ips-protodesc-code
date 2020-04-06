@@ -152,7 +152,7 @@ class FunctionInvocationExpression(Expression):
         return self.func.return_type
 
 
-@dataclass(frozen=True)
+@dataclass
 class FieldAccessExpression(Expression):
     """
     An expression representing access to `field` of `target`.
