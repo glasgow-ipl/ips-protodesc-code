@@ -56,7 +56,7 @@ field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
 short_field_name = alphanum:name -> name.strip()
 
-field_title = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label (('.' -> (full_label, short_label, None, generate_bitstring_type(protocol, full_label, None, None))) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> (full_label, short_label, is_present, generate_bitstring_type(protocol, full_label, size, units)))
+field_title = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label (('.' -> (full_label, short_label, None, generate_bitstring_type(protocol, full_label, None, None))) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; ' equality_expr:value_constraint -> value_constraint)?:value_constraint ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> (full_label, short_label, value_constraint, is_present, generate_bitstring_type(protocol, full_label, size, units)))
 
 # Preamble
 
