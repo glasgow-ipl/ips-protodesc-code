@@ -36,9 +36,12 @@ gt  = '>'  ws addsub_expr:n -> ('>',  n)
 
 add = '+' ws muldiv_expr:n -> ('+', n)
 sub = '-' ws muldiv_expr:n -> ('-', n)
-mul = '*' ws value:n -> ('*', n)
-div = '/' ws value:n -> ('/', n)
-mod = '%' ws value:n -> ('%', n)
+
+mul = '*' ws pow_expr:n -> ('*', n)
+div = '/' ws pow_expr:n -> ('/', n)
+mod = '%' ws pow_expr:n -> ('%', n)
+
+pow = '^' ws value:n -> ('^', n)
 
 equality = (eq | neq)
 boolean  = (and | or | not)
@@ -50,7 +53,8 @@ equality_expr = bool_expr:left   equality*:rights -> build_tree(left, rights, ""
 bool_expr     = ord_expr:left    boolean*:rights  -> build_tree(left, rights, "")
 ord_expr      = addsub_expr:left ordinal*:rights  -> build_tree(left, rights, "")
 addsub_expr   = muldiv_expr:left addsub*:rights   -> build_tree(left, rights, "")
-muldiv_expr   = value:left       muldiv*:rights   -> build_tree(left, rights, "")
+muldiv_expr   = pow_expr:left    muldiv*:rights   -> build_tree(left, rights, "")
+pow_expr      = value:left       pow*:rights      -> build_tree(left, rights, "")
 
 field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 

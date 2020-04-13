@@ -47,7 +47,7 @@ class AsciiDiagramsParser(Parser):
         return protocol.ConstantExpression(self.proto.get_type(type_name), value)
 
     def build_tree(self, start, pairs, expression_type):
-        ops = {"+": ("plus", "arith"), "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"), "%": ("modulo", "arith"),
+        ops = {"^" : ("pow", "arith"), "+": ("plus", "arith"), "-": ("minus", "arith"), "*": ("multiply", "arith"), "/": ("divide", "arith"), "%": ("modulo", "arith"),
                ">=": ("ge", "ord"), ">": ("gt", "ord"), "<": ("lt", "ord"), "<=": ("le", "ord"),
                "&&": ("and", "bool"), "||": ("or", "bool"), "!": ("not", "bool"), "and": ("and", "bool"), "or": ("or", "bool"), "not": ("not", "bool"),
                "==": ("eq", "equality"), "!=": ("ne", "equality")}
@@ -55,7 +55,7 @@ class AsciiDiagramsParser(Parser):
             if expression_type == "IfElse":
                 start = protocol.IfElseExpression(start, pair[1], pair[2])
             else:
-                start = protocol.MethodInvocationExpression(pair[1], ops[pair[0]][0], [protocol.ArgumentExpression("other", start)])
+                start = protocol.MethodInvocationExpression(start, ops[pair[0]][0], [protocol.ArgumentExpression("other", pair[1])])
         return start
 
     def proc_diagram_fields(self, diagram_fields):
@@ -143,7 +143,7 @@ class AsciiDiagramsParser(Parser):
                               field_type,
                               is_present)
                         fields.append(field)
-                    
+
                     # short field names -> long field names
                     for field_access in self.field_accesses:
                         print(field_access)
