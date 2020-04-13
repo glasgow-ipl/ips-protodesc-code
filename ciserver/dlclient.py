@@ -140,10 +140,8 @@ class DownloadClient:
         self.session.close()
         self.session = None
 
-    def _write_file(self, file_uri: T, data: str) -> bool:
+    def _write_file(self, file_path: pathlib.Path , data: str) -> bool:
         written = False
-        # put  any caching and optional checking in this function
-        file_path = pathlib.Path(file_uri.uri)
         file_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
 
         with open(str(file_path), "w") as fp:
@@ -156,12 +154,17 @@ class DownloadClient:
         for doc in urls:
             for web_uri, file_uri in doc.preferred_doctype(
                     self.base_uri, str(self.fslock.fs.drafts)):
+                filepath = pathlib.Path( file_uri.uri )
+                if not self.dlopts.force :
+                    if filepath.exists() :
+                        break 
+                    
                 dl = self.session.get(web_uri.uri, verify=True, stream=False)
                 if dl.status_code != 200:
                     continue
 
                 logging.debug(f"Downloaded url -- {web_uri.uri}")
-                if self._write_file(file_uri, dl.text):
+                if self._write_file(filepath, dl.text):
                     doc.set_used_uri(web_uri, file_uri)
                     docs.append(doc)
                     logging.debug(f"Written file -- {file_uri.uri}")
@@ -220,6 +223,7 @@ def download_draft_daterange(
                     DownloadURI(submission.name, submission.rev,
                                 submission.file_types))
 
+    downloaded_docs = None
     # Download files
     with paths.FileSysLock( paths.RootWorkingDir(pathlib.Path.cwd() / "test_dir")) as fslock, \
                     DownloadClient( fslock, dlopts= dlopts) as dlclient:
@@ -227,29 +231,16 @@ def download_draft_daterange(
                             filemode='a',
                             format="%(asctime)s | %(levelname)s : %(message)s",
                             datefmt="%Y-%m-%d %H:%M:%S",
-                            level=logging.INFO)
+                            level=logging.DEBUG)
 
-        filt_urls = urls
-        logging.debug(f"Identified urls ---> {len(filt_urls)}")
-        for i, u in enumerate(filt_urls):
+        logging.debug(f"Identified urls ---> {len(urls)}")
+        for i, u in enumerate(urls):
             logging.debug(f"[{i}] --> {u.name}-{u.rev}")
 
-        with open(dlclient.fslock.fs.db, "r") as fp:
-            db_content = json.load(fp)
-            if not dlclient.dlopts.force:
-                filt_urls = filter_docs(filt_urls, db_content['drafts'])
-                filt_urls = filter_docs(filt_urls, db_content['rfc'])
+        downloaded_docs = dlclient.download_docs(urls)
+        #dlclient.create_db_rec(downloaded_docs, db_content)
 
-        logging.debug(f"Pruned urls   ---> {len(filt_urls)}")
-        for i, u in enumerate(filt_urls):
-            logging.debug(f"[{i}] --> {u.name}-{u.rev}")
-
-        downloaded_docs = dlclient.download_docs(filt_urls)
-        dlclient.create_db_rec(downloaded_docs, db_content)
-
-        with open(dlclient.fslock.fs.db, "w") as fp:
-            json.dump(db_content, fp)
-
+    return downloaded_docs
 
 if __name__ == '__main__':
-    download_draft_daterange(since="2020-04-05T00:00:00")
+    download_draft_daterange(since="2020-04-12T00:00:00", until="2020-04-13T00:00:00")
