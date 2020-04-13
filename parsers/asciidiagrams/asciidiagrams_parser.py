@@ -60,11 +60,23 @@ class AsciiDiagramsParser(Parser):
 
     def proc_diagram_fields(self, diagram_fields):
         clean_diagram_fields = []
+        bits = 0
+        label = None
         for field in diagram_fields:
             if field == None:
+                if bits != 0 and label is not None:
+                    clean_diagram_fields.append((bits, label))
                 continue
             if ':' in field[1]:
                 field = ("var", field[1].replace(':', '').strip())
+            if field[1] == '':
+                bits = bits + field[0]
+                continue
+            if field[1] == '+                                                               +':
+                continue
+            if field[1][0] == '+' and field[1][-1] == '+':
+                label = field[1][1:-1].strip()
+                continue
             clean_diagram_fields.append(field)
         return clean_diagram_fields
 
@@ -101,12 +113,16 @@ class AsciiDiagramsParser(Parser):
                     constraints = []
                     self.field_name_map = {}
                     # Check field counts
+                    print(artwork_fields)
                     if len(artwork_fields) != len(desc_list.content):
                         print("** Warning ** [%s] Field count mismatch: description list has %d fields; packet header diagram has %d fields" % (pdu_name, len(desc_list.content), len(artwork_fields)))
 
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
-                        field_long_name, field_short_name, value_constraint, is_present, (field_width, field_type) = parser(title.content[0]).field_title()
+                        field_long_name, field_short_name, value_constraint, is_present, (field_width, field_size, field_type) = parser(title.content[0]).field_title()
+
+                        if type(field_type.size) is protocol.MethodInvocationExpression:
+                            constraints.append(field_size)
 
                         # check name
                         if field_short_name != artwork_fields[i][1] and field_long_name != artwork_fields[i][1]:
