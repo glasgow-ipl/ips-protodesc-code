@@ -52,6 +52,7 @@ class SimpleFormatter(Formatter):
                          "multiply": "*",
                          "divide": "/",
                          "modulo": "%",
+                         "pow": "^",
                          "ge": ">=",
                          "gt": ">",
                          "lt": "<",
@@ -63,7 +64,7 @@ class SimpleFormatter(Formatter):
                          "ne": "!="}
             if expr.method_name in operators:
                 return "(%s %s %s)" % (self.format_expression(expr.target), operators[expr.method_name], self.format_expression(expr.arg_exprs[0].arg_value))
-            elif expr.method_name == "to_integer":
+            elif expr.method_name == "to_number":
                 return self.format_expression(expr.target)
         elif type(expr) is FieldAccessExpression:
             return expr.field_name
@@ -73,6 +74,10 @@ class SimpleFormatter(Formatter):
 
     def format_struct(self, struct:Struct):
         self.output.append("Struct ({})".format(struct))
+        for field in struct.fields:
+            self.output.append("\tField ({})".format(field))
+        for constraint in struct.constraints:
+            self.output.append("\tConstraint ({})".format(constraint))
 
     def format_array(self, array:Array):
         self.output.append("Array ({})".format(array))

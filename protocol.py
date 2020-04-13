@@ -508,7 +508,8 @@ class Protocol:
             Function("minus",   [Parameter("self", None), Parameter("other", None)], None),
             Function("multiply",[Parameter("self", None), Parameter("other", None)], None),
             Function("divide",  [Parameter("self", None), Parameter("other", None)], None),
-            Function("modulo",  [Parameter("self", None), Parameter("other", None)], None)
+            Function("modulo",  [Parameter("self", None), Parameter("other", None)], None),
+            Function("pow",     [Parameter("self", None), Parameter("other", None)], None)
         ])
         self._traits["NumberRepresentable"] = Trait("NumberRepresentable", [
             Function("to_number", [Parameter("self", None)], self.get_type("Number"))

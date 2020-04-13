@@ -20,6 +20,7 @@ pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w !=
 parens = '(' ws equality_expr:e ws ')' -> e
 value  = number:n -> new_constant("Number", n)
        | parens
+       | method_call:method -> method
        | field_name:name -> new_fieldaccess(new_this(), name)
 
 eq  = '==' ws bool_expr:n -> ('==', n)
@@ -36,9 +37,12 @@ gt  = '>'  ws addsub_expr:n -> ('>',  n)
 
 add = '+' ws muldiv_expr:n -> ('+', n)
 sub = '-' ws muldiv_expr:n -> ('-', n)
-mul = '*' ws value:n -> ('*', n)
-div = '/' ws value:n -> ('/', n)
-mod = '%' ws value:n -> ('%', n)
+
+mul = '*' ws pow_expr:n -> ('*', n)
+div = '/' ws pow_expr:n -> ('/', n)
+mod = '%' ws pow_expr:n -> ('%', n)
+
+pow = '^' ws value:n -> ('^', n)
 
 equality = (eq | neq)
 boolean  = (and | or | not)
@@ -50,7 +54,10 @@ equality_expr = bool_expr:left   equality*:rights -> build_tree(left, rights, ""
 bool_expr     = ord_expr:left    boolean*:rights  -> build_tree(left, rights, "")
 ord_expr      = addsub_expr:left ordinal*:rights  -> build_tree(left, rights, "")
 addsub_expr   = muldiv_expr:left addsub*:rights   -> build_tree(left, rights, "")
-muldiv_expr   = value:left       muldiv*:rights   -> build_tree(left, rights, "")
+muldiv_expr   = pow_expr:left    muldiv*:rights   -> build_tree(left, rights, "")
+pow_expr      = value:left       pow*:rights      -> build_tree(left, rights, "")
+
+method_call = short_field_name:name '.' 'Size' ' ' -> new_methodinvocation(new_fieldaccess(new_this(), name), "size", [])
 
 field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
