@@ -20,6 +20,7 @@ pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w !=
 parens = '(' ws equality_expr:e ws ')' -> e
 value  = number:n -> new_constant("Number", n)
        | parens
+       | method_call:method -> method
        | field_name:name -> new_fieldaccess(new_this(), name)
 
 eq  = '==' ws bool_expr:n -> ('==', n)

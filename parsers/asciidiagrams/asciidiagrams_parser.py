@@ -20,9 +20,13 @@ def generate_bitstring_type(proto, name, size, units):
         bitwidth = None
 
     if name not in proto.get_type_names():
-        return (bitwidth, proto.define_bitstring(name, size))
+        if type(size) is protocol.ConstantExpression:
+            return (bitwidth, size, proto.define_bitstring(name, size))
+        else:
+            return (bitwidth, size, proto.define_bitstring(name, None))
     else:
-        return (bitwidth, proto.get_type(name))
+        print(bitwidth, name, size)
+        return (bitwidth, size, proto.get_type(name))
 
 class AsciiDiagramsParser(Parser):
     def __init__(self) -> None:
@@ -36,6 +40,7 @@ class AsciiDiagramsParser(Parser):
         if type(target) is protocol.MethodInvocationExpression and target.method_name == "to_number":
             target = target.target
         arguments = [] if arguments == None else arguments
+        print(target, method, arguments)
         return protocol.MethodInvocationExpression(target, method, arguments)
 
     def new_fieldaccess(self, target, field_name):
@@ -91,6 +96,7 @@ class AsciiDiagramsParser(Parser):
                                      "new_constant"            : self.new_constant,
                                      "build_tree"              : self.build_tree,
                                      "new_fieldaccess"         : self.new_fieldaccess,
+                                     "new_methodinvocation"    : self.new_methodinvocation,
                                      "new_this"                : self.new_this,
                                      "proc_diagram_fields"     : self.proc_diagram_fields,
                                      "generate_bitstring_type" : generate_bitstring_type,
@@ -138,6 +144,7 @@ class AsciiDiagramsParser(Parser):
 
                         if field_short_name is not None:
                             self.field_name_map[valid_field_name_convertor(field_short_name)] = valid_field_name_convertor(field_type.name)
+
 
                         # check width
                         if field_width is None:
