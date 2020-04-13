@@ -74,6 +74,10 @@ class SimpleFormatter(Formatter):
 
     def format_struct(self, struct:Struct):
         self.output.append("Struct ({})".format(struct))
+        for field in struct.fields:
+            self.output.append("\tField ({})".format(field))
+        for constraint in struct.constraints:
+            self.output.append("\tConstraint ({})".format(constraint))
 
     def format_array(self, array:Array):
         self.output.append("Array ({})".format(array))
