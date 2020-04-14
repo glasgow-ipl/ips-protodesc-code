@@ -1,16 +1,87 @@
 #!/usr/bin/python3
 
+import os
 import pathlib
 import requests
 import logging
 import json
+from datetime import datetime
 from dataclasses import dataclass, field
 from collections import OrderedDict
-from typing import List, Iterator, Tuple, Optional, TypeVar, Dict
+from typing import List, Iterator, Tuple, Optional, TypeVar, Dict, Union
 from ietfdata import datatracker
-import paths
 
 T = TypeVar('T')
+
+@dataclass
+class RootWorkingDir:
+    root  : pathlib.Path = field( default_factory=lambda: pathlib.Path(pathlib.Path.cwd()))
+    lock  : pathlib.Path = field(default=None, init=False)
+    db    : pathlib.Path = field(default=None, init=False)
+    log   : pathlib.Path = field(default=None, init=False)
+    rfc   : pathlib.Path = field(default=None, init=False)
+    drafts: pathlib.Path = field(default=None, init=False)
+    output: pathlib.Path = field(default=None, init=False)
+
+    def __post_init__(self) -> None:
+        self.root = self.root.resolve()
+
+        if not self.root.exists():
+            logging.error(f"Root dir <{self.root}> does not exist.")
+            if not self.root.is_dir():
+                logging.error(f"<{self.root} is not a directory")
+            raise AssertionError(f"Error writing to directory {self.root}")
+
+        assert self.root.exists(), f"Root dir <{self.root}> does not exist."
+        assert self.root.is_dir(), f"<{self.root} is not a directory"
+        # TODO : Also add check to see if directory is writable
+        self.lock = self.root / ".lock"
+        self.db = self.root / ".db"
+        self.log = self.root / ".log"
+        self.rfc = self.root / "rfc"
+        self.drafts = self.root / "drafts"
+        self.output = self.root / "output"
+
+
+@dataclass(frozen=True)
+class FileSysLock:
+    fs      : RootWorkingDir
+    pid     : int = field(default_factory = os.getpid, init = False)
+
+    def __enter__(self):
+        if self.fs.lock.exists():
+            with open(self.fs.lock, 'r') as fp:
+                _lock = json.load(fp)
+                raise AssertionError( f"Process {_lock['pid']} holds lockfile {self.fs.lock}")
+            raise AssertionError( f"Another Process holds lockfile {self.fs.lock}") 
+
+        with open(self.fs.lock, 'w') as fp: 
+            json.dump( { "start_time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
+                    "pid": self.pid }, fp)
+
+        if self.fs.log.exists() : 
+            assert self.fs.log.is_file(), f"Prexisting FileSys entry {self.fs.log} not a file"
+        else : 
+            self.fs.log.write_text("<<<<<<< Start Log >>>>>>>>\n")
+
+        if self.fs.db.exists() : 
+            assert self.fs.db.is_file(), f"Prexisting FileSys entry {self.fs.db} not a file"
+        else : 
+            with open( self.fs.db, "w" ) as fp : 
+                json.dump( { "creation time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
+                    "drafts": {} , "rfc": {} }, fp)
+
+        self.fs.drafts.mkdir(exist_ok=True) 
+        self.fs.rfc.mkdir(exist_ok=True) 
+        return self
+
+    def __exit__(self, ex_type, ex, ex_tb):
+        assert self.pid == os.getpid(), f"Only pid - {self.pid} allowed to remove {self.fs.lock}"
+        self.fs.lock.unlink()
+        logging.debug(
+            f"pid {self.pid} released {self.fs.lock} at"
+            f" {datetime.strftime(datetime.utcnow(),'%Y-%m-%d %H:%M:%S')}")
+
 
 
 @dataclass(frozen=True)
@@ -128,7 +199,7 @@ class DownloadURI:
 
 @dataclass
 class DownloadClient:
-    fslock: paths.FileSysLock
+    fslock: FileSysLock
     base_uri: str = "https://www.ietf.org/archive/id"
     dlopts: Optional[DownloadOptions] = field(default_factory=DownloadOptions)
 
@@ -149,7 +220,7 @@ class DownloadClient:
             written = True
         return written
 
-    def download_docs(self, urls: List[DownloadURI]) -> List[DownloadURI]:
+    def download_docs(self, urls: List[DownloadURI]) -> List[Union[xmlFile, txtFile]]:
         docs = list()
         for doc in urls:
             for web_uri, file_uri in doc.preferred_doctype(
@@ -165,8 +236,8 @@ class DownloadClient:
 
                 logging.debug(f"Downloaded url -- {web_uri.uri}")
                 if self._write_file(filepath, dl.text):
-                    doc.set_used_uri(web_uri, file_uri)
-                    docs.append(doc)
+                    #doc.set_used_uri(web_uri, file_uri)
+                    docs.append(file_uri)
                     logging.debug(f"Written file -- {file_uri.uri}")
                     break
                 else:
@@ -207,8 +278,9 @@ def filter_docs(urls: List[DownloadURI],
 def download_draft_daterange(
     since: str = "1970-01-01T00:00:00",
     until: str = "2038-01-19T03:14:07",
+    fs_root: str = str(pathlib.Path.cwd() / "/ietf_docs"), 
     dlopts: DownloadOptions = DownloadOptions()
-) -> None:
+) -> List[Union[xmlFile, txtFile]]:
 
     track = datatracker.DataTracker()
     draft_itr = track.documents(since=since,
@@ -223,9 +295,9 @@ def download_draft_daterange(
                     DownloadURI(submission.name, submission.rev,
                                 submission.file_types))
 
-    downloaded_docs = None
+    downloaded_docs = []
     # Download files
-    with paths.FileSysLock( paths.RootWorkingDir(pathlib.Path.cwd() / "test_dir")) as fslock, \
+    with FileSysLock( RootWorkingDir(pathlib.Path(fs_root))) as fslock, \
                     DownloadClient( fslock, dlopts= dlopts) as dlclient:
         logging.basicConfig(filename=fslock.fs.log,
                             filemode='a',
@@ -242,5 +314,23 @@ def download_draft_daterange(
 
     return downloaded_docs
 
+
+def parse_file( docs : List[Union[xmlFile, txtFile]]) -> None :
+    if len(docs) == 0 :
+        return None 
+
+    for idx, doc in enumerate(docs):
+        print(f"Downloaded file {idx} --> {doc.uri} , type = {doc.extn}")
+    return None 
+
+
+
+
+
+
+
 if __name__ == '__main__':
-    download_draft_daterange(since="2020-04-12T00:00:00", until="2020-04-13T00:00:00")
+    docs = download_draft_daterange(since="2020-04-12T00:00:00",\
+                                    until="2020-04-14T00:00:00",\
+                                    fs_root= str(pathlib.Path.cwd() / "ciserver/test_dir"))
+    parsed_docs  = parse_file( docs )
