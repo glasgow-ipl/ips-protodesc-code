@@ -64,7 +64,7 @@ def dfs_array(array: Array, type_names:List[str]):
 
 def dfs_enum(enum: Enum, type_names:List[str]):
     for variant in enum.variants:
-        dfs_protocoltype(variant)
+        dfs_protocoltype(variant, type_names)
 
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
@@ -86,6 +86,8 @@ def dfs_protocoltype(pt: ProtocolType, type_names:List[str]):
         dfs_function(pt, type_names)
     elif type(pt) is Context:
         dfs_context(pt, type_names)
+    elif pt is None:
+        return
     type_names.append(pt.name)
 
 def dfs_protocol(protocol: Protocol):
@@ -199,6 +201,7 @@ def main():
                 output_formatter.format_context(pt)
         output_formatter.format_protocol(protocol)
     except Exception as e:
+        print(e)
         print("*** Error *** Could not format protocol with specified formatter (%s)" % (args.output_format))
 
     # Output to file
