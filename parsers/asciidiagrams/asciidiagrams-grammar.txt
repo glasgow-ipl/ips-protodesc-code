@@ -5,7 +5,7 @@ punc        = anything:x ?(x in punctuation)
 digit       = anything:x ?(x in '0123456789')
 letterdigit = letter|digit
 word        = <(letter|punc|number)+>:ls -> str(ls)
-alphanum    = <(letter|number)+>:ls -> str(ls)
+alphanum    = <(letter|number|'_')+>:ls -> str(ls)
 wordnum     = <(letter|number|punc)+>:ls -> str(ls)
 
 uppercase_letter = anything:x ?(x in ascii_uppercase) -> x
@@ -21,26 +21,27 @@ parens = '(' ws equality_expr:e ws ')' -> e
 value  = number:n -> new_constant("Number", n)
        | parens
        | method_call:method -> method
-       | field_name:name -> new_fieldaccess(new_this(), name)
+       | field_access:access -> access
+       | short_field_name:name -> new_methodinvocation(new_fieldaccess(new_this(), name), "to_number", [])
 
-eq  = '==' ws bool_expr:n -> ('==', n)
-neq = '!=' ws bool_expr:n -> ('==', n)
+eq  = ws '==' ws bool_expr:n -> ('==', n)
+neq = ws '!=' ws bool_expr:n -> ('==', n)
 
-and = ('&&'| ws 'and') ws ord_expr:n -> ('&&', n)
-or  = ('||'| ws 'or')  ws ord_expr:n -> ('||', n)
-not = ('!'| ws 'not')  ws ord_expr:n -> ('!',  n)
+and = ws '&&' ws ord_expr:n -> ('&&', n)
+or  = ws '||' ws ord_expr:n -> ('||', n)
+not = ws '!'  ws ord_expr:n -> ('!',  n)
 
-leq = '<=' ws addsub_expr:n -> ('<=', n)
-lt  = '<'  ws addsub_expr:n -> ('<',  n)
-geq = '>=' ws addsub_expr:n -> ('>=', n)
-gt  = '>'  ws addsub_expr:n -> ('>',  n)
+leq = ws '<=' ws addsub_expr:n -> ('<=', n)
+lt  = ws '<'  ws addsub_expr:n -> ('<',  n)
+geq = ws '>=' ws addsub_expr:n -> ('>=', n)
+gt  = ws '>'  ws addsub_expr:n -> ('>',  n)
 
-add = '+' ws muldiv_expr:n -> ('+', n)
-sub = '-' ws muldiv_expr:n -> ('-', n)
+add = ws '+' ws muldiv_expr:n -> ('+', n)
+sub = ws '-' ws muldiv_expr:n -> ('-', n)
 
-mul = '*' ws pow_expr:n -> ('*', n)
-div = '/' ws pow_expr:n -> ('/', n)
-mod = '%' ws pow_expr:n -> ('%', n)
+mul = ws '*' ws pow_expr:n -> ('*', n)
+div = ws '/' ws pow_expr:n -> ('/', n)
+mod = ws '%' ws pow_expr:n -> ('%', n)
 
 pow = '^' ws value:n -> ('^', n)
 
@@ -57,13 +58,20 @@ addsub_expr   = muldiv_expr:left addsub*:rights   -> build_tree(left, rights, ""
 muldiv_expr   = pow_expr:left    muldiv*:rights   -> build_tree(left, rights, "")
 pow_expr      = value:left       pow*:rights      -> build_tree(left, rights, "")
 
-method_call = short_field_name:name '.' 'Size' ' ' -> new_methodinvocation(new_fieldaccess(new_this(), name), "size", [])
+method_call = short_field_name:name '.' 'Size' -> new_methodinvocation(new_fieldaccess(new_this(), name), "size", [])
+field_access = short_field_name:name '.' short_field_name:field -> new_methodinvocation(new_fieldaccess(new_fieldaccess(new_this(), name), field), "to_number", [])
 
 field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
 short_field_name = alphanum:name -> name.strip()
 
-field_title = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label (('.' -> (full_label, short_label, None, generate_bitstring_type(protocol, full_label, None, None))) | ': ' equality_expr:size (' ' ('bits'|'bytes'|'bit'|'byte'))?:units ('; ' equality_expr:value_constraint -> value_constraint)?:value_constraint ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> (full_label, short_label, value_constraint, is_present, generate_bitstring_type(protocol, full_label, size, units)))
+field_title_name_only = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label '.' -> new_field(full_label, short_label, None, None, None, None, False)
+field_title_array = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': [' pdu_name:element_type_name ']' '.' -> new_field(full_label, short_label, None, element_type_name, None, None, True)
+field_title_size = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' equality_expr:size ' ' ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, size, units, None, is_present, False)
+field_title_size_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' (equality_expr:size)? ' ' ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units '; ' equality_expr:value_constraint ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, size, units, value_constraint, is_present, False)
+field_title_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' equality_expr:value_constraint '.' ('; present only when ' equality_expr:is_present -> is_present)?:is_present -> new_field(full_label, short_label, None, None, value_constraint, is_present, False)
+
+field_title = field_title_name_only | field_title_size | field_title_size_constraint | field_title_constraint | field_title_array
 
 # Preamble
 
@@ -76,6 +84,11 @@ diagram_field_var = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls '.' -
 diagram_field = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls -> (int((len(str(ls))+1)/2), str(ls).strip())
 diagram = <(anything:x ?(x != "|" and x != '.'))*> (separator_line|diagram_field_var|diagram_field)+:fields <(anything:x ?(x != "|" and x != '.'))*> -> proc_diagram_fields(fields)
 
+# Enums
+variant_list = ("an " | "a ") pdu_name:name (', ' ('or ')? ("an " | "a ") pdu_name:names)*:names -> [name] + names
+enum = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is one of: " variant_list:names "." -> (name, names)
+
 # Protocol Definition
+
 pdu_list = pdu_name:name (', ' ('and ')? pdu_name:names)*:names -> [name] + names
 protocol_definition = <(word:w ?(w != "The")' '?)+>? "The " pdu_name:name "protocol is comprised of " pdu_list:names "PDUs." -> (name, names)
