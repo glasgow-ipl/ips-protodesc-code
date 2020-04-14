@@ -11,6 +11,10 @@ from collections import OrderedDict
 from typing import List, Iterator, Tuple, Optional, TypeVar, Dict, Union
 from ietfdata import datatracker
 
+
+import xml.etree.ElementTree as domET
+from parsers.rfc import rfc_xml_parser,rfc_txt_parser,rfc
+
 T = TypeVar('T')
 
 @dataclass
@@ -315,13 +319,54 @@ def download_draft_daterange(
     return downloaded_docs
 
 
-def parse_file( docs : List[Union[xmlFile, txtFile]]) -> None :
-    if len(docs) == 0 :
-        return None 
+@dataclass(frozen = True) 
+class ProcessDoc: 
+    docs : List[Union[xmlFile, txtFile]] 
+    fs_root : pathlib.Path = str(pathlib.Path.cwd() / "/ietf_docs")
 
-    for idx, doc in enumerate(docs):
-        print(f"Downloaded file {idx} --> {doc.uri} , type = {doc.extn}")
-    return None 
+
+    def _read_content(self,  doc : Union[xmlFile, txtFile]) -> Tuple[Union[None, rfc.RFC], Union[None,str]] : 
+        is_xml  = lambda tdoc :  True if type(doc) is  xmlFile else False
+        content, err = None, None
+        
+        with open( doc.uri, "r") as in_fp :
+            if is_xml(doc) : 
+                file_content  = in_fp.read() 
+                try : 
+                    xml = domET.fromstring(file_content) 
+                    content = rfc_xml_parser.parse_rfc(xml)
+                except domET.ParseError as _pe :
+                    # ToDo -- generate an error class to hold error data 
+                    logging.error(f"Parse error parsing {doc.uri} : error - {_pe}")
+                    err  = str(_pe)
+            else : # only other option is text currently
+                lines = in_fp.readlines() 
+                content = rfc_txt_parser.parse_rfc(lines)
+        return (content,err)
+
+
+    
+    def parse_files( self ) -> None : 
+        with FileSysLock( RootWorkingDir(pathlib.Path(self.fs_root))) as fs_sys : 
+            logging.basicConfig(filename=fs_sys.fs.log,
+                            filemode='a',
+                            format="%(asctime)s | %(levelname)s : %(message)s",
+                            datefmt="%Y-%m-%d %H:%M:%S",
+                            level=logging.DEBUG)
+
+            for doc in self.docs: 
+                print(f"Downloaded file -> {doc.uri} , type = {doc.extn}") 
+                pt = pathlib.Path( doc.uri )
+                if not pt.exists() or not pt.is_file:
+                    logging.error(f"file {doc.uri} does not exist. Skipping") 
+                    continue
+
+                content, err  = self._read_content( doc )
+                if content == None : 
+                    print(f"outer error = {err}")
+                    continue 
+                print(f"content = \n {content}")
+        return None 
 
 
 
@@ -330,7 +375,13 @@ def parse_file( docs : List[Union[xmlFile, txtFile]]) -> None :
 
 
 if __name__ == '__main__':
-    docs = download_draft_daterange(since="2020-04-12T00:00:00",\
-                                    until="2020-04-14T00:00:00",\
-                                    fs_root= str(pathlib.Path.cwd() / "ciserver/test_dir"))
-    parsed_docs  = parse_file( docs )
+
+    default_path = str(pathlib.Path.cwd() / "ciserver/test_dir")
+    #docs = download_draft_daterange(since="2020-04-12T00:00:00",\
+    #                                until="2020-04-14T00:00:00",\
+    #                                fs_root= default_path )
+    docs = [ xmlFile( "/home/dejice/work/ietf/ips-protodesc-code/ciserver/test_dir/drafts/draft-ietf-idr-rfc5575bis/20/draft-ietf-idr-rfc5575bis-20.xml" )] 
+    docs.append( xmlFile( "/home/dejice/work/ietf/ips-protodesc-code/examples/draft-mcquistin-augmented-ascii-diagrams.xml" )) 
+    execute  = ProcessDoc( docs , default_path)
+    execute.parse_files()
+
