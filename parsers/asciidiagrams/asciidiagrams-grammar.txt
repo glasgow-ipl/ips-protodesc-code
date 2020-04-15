@@ -14,7 +14,7 @@ number           = <digit+>:ds -> int(ds)
 
 capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
 
-pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w != "and" and w != "or")' '?)>*:name -> stem("".join(name).strip())
+pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w != "and" and w != "or" and w != "using")' '?)>*:name -> stem("".join(name).strip())
 
 # expressions redo
 parens = '(' ws equality_expr:e ws ')' -> e
@@ -96,6 +96,11 @@ function = <(word:w ?(w != "The")' '?)+>? 'The ' short_field_name:name "function
 parameter = (short_field_name:name ': ' pdu_name:type) -> (name, type)
 parameter_list = parameter:p (',' ws parameter:ps)*:ps -> [p] + ps
 function_signature = 'func ' short_field_name:name '(' parameter_list:params ')' ws '->'  ws pdu_name:return_type anything* -> (name, params, return_type)
+
+# Function use
+pdu_list_comma = pdu_name:name (', ' pdu_name:names)*:names -> [name] + names
+serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:from_type "is serialised to " ("an " | "a ") pdu_name:to_type 'using the ' short_field_name:func_name ' function.' -> (from_type, to_type, func_name)
+parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:to_type "is parsed from " ("an " | "a ") pdu_name:from_type 'using the ' short_field_name:func_name  ' function.' -> (from_type, to_type, func_name)
 
 # Protocol Definition
 

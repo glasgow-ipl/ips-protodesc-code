@@ -65,11 +65,16 @@ def dfs_array(array: Array, type_names:List[str]):
 def dfs_enum(enum: Enum, type_names:List[str]):
     for variant in enum.variants:
         dfs_protocoltype(variant, type_names)
+    type_names.append(enum.name)
+    dfs_protocoltype(enum.parse_from, type_names)
+    dfs_protocoltype(enum.serialise_to, type_names)
 
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
-        dfs_protocoltype(parameter.param_type)
-    dfs_protocoltype(function.return_type)
+        if parameter.param_type.name not in type_names:
+            dfs_protocoltype(parameter.param_type, type_names)
+    if function.return_type.name not in type_names:
+        dfs_protocoltype(function.return_type, type_names)
 
 def dfs_context(context: Context, type_names:List[str]):
     for field in context.fields:
@@ -186,19 +191,20 @@ def main():
     # Format the protocol using output formatter
     try:
         for type_name in type_names:
-            pt = protocol.get_type(type_name)
-            if type(pt) is BitString:
-                output_formatter.format_bitstring(pt)
-            elif type(pt) is Struct:
-                output_formatter.format_struct(pt)
-            elif type(pt) is Array:
-                output_formatter.format_array(pt)
-            elif type(pt) is Enum:
-                output_formatter.format_enum(pt)
-            elif type(pt) is Function:
-                output_formatter.format_function(pt)
-            elif type(pt) is Context:
-                output_formatter.format_context(pt)
+            if protocol.has_type(type_name):
+                pt = protocol.get_type(type_name)
+                if type(pt) is BitString:
+                    output_formatter.format_bitstring(pt)
+                elif type(pt) is Struct:
+                    output_formatter.format_struct(pt)
+                elif type(pt) is Array:
+                    output_formatter.format_array(pt)
+                elif type(pt) is Enum:
+                    output_formatter.format_enum(pt)
+                elif type(pt) is Context:
+                    output_formatter.format_context(pt)
+            elif protocol.has_func(type_name):
+                output_formatter.format_function(protocol.get_func(type_name))
         output_formatter.format_protocol(protocol)
     except Exception as e:
         print("*** Error *** Could not format protocol with specified formatter (%s)" % (args.output_format))
