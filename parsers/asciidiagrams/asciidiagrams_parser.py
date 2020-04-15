@@ -4,6 +4,12 @@ import protocol
 import parsley
 import string
 
+def stem(phrase):
+    if phrase[-1] == 's':
+        return phrase[:-1]
+    else:
+        return phrase
+
 def valid_field_name_convertor(name):
     if name is not None:
         return name.lower().replace(" ", "_")
@@ -83,6 +89,7 @@ class AsciiDiagramsParser(Parser):
                                      "new_this"                : self.new_this,
                                      "new_field"               : self.new_field,
                                      "proc_diagram_fields"     : self.proc_diagram_fields,
+                                     "stem"                    : stem,
                                      "protocol"                : self.proto
                                    })
 

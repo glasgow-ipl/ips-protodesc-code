@@ -14,7 +14,7 @@ number           = <digit+>:ds -> int(ds)
 
 capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
 
-pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w != "and")' '?)>*:name -> "".join(name).strip()
+pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w != "and")' '?)>*:name -> stem("".join(name).strip())
 
 # expressions redo
 parens = '(' ws equality_expr:e ws ')' -> e
@@ -88,7 +88,13 @@ diagram = <(anything:x ?(x != "|" and x != '.'))*> (separator_line|diagram_field
 variant_list = ("an " | "a ") pdu_name:name (', ' ('or ')? ("an " | "a ") pdu_name:names)*:names -> [name] + names
 enum = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is one of: " variant_list:names "." -> (name, names)
 
+# Functions
+function = <(word:w ?(w != "The")' '?)+>? 'The ' short_field_name:name "function is defined as:" -> (name)
+parameter = (short_field_name:name ': ' pdu_name:type) -> (name, type)
+parameter_list = parameter:p (',' ws parameter:ps)*:ps -> [p] + ps
+function_signature = 'func ' short_field_name:name '(' parameter_list:params ')' ws '->'  ws pdu_name:return_type anything* -> (name, params, return_type)
+
 # Protocol Definition
 
 pdu_list = pdu_name:name (', ' ('and ')? pdu_name:names)*:names -> [name] + names
-protocol_definition = <(word:w ?(w != "The")' '?)+>? "The " pdu_name:name "protocol is comprised of " pdu_list:names "PDUs." -> (name, names)
+protocol_definition = <(word:w ?(w != 'The' and w != "This")' '?)+>? 'This document describes the ' pdu_name:p_name 'protocol. The ' pdu_name:name 'protocol uses ' pdu_list:names '.' -> (name, names)
