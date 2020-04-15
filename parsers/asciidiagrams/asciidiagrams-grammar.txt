@@ -14,7 +14,7 @@ number           = <digit+>:ds -> int(ds)
 
 capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
 
-pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w != "and")' '?)>*:name -> stem("".join(name).strip())
+pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w != "and" and w != "or")' '?)>*:name -> stem("".join(name).strip())
 
 # expressions redo
 parens = '(' ws equality_expr:e ws ')' -> e
@@ -86,7 +86,10 @@ diagram = <(anything:x ?(x != "|" and x != '.'))*> (separator_line|diagram_field
 
 # Enums
 variant_list = ("an " | "a ") pdu_name:name (', ' ('or ')? ("an " | "a ") pdu_name:names)*:names -> [name] + names
-enum = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is one of: " variant_list:names "." -> (name, names)
+enum_more_than_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is one of: " variant_list:names "." -> (name, names)
+enum_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is either " ("an " | "a ") pdu_name:var1 'or ' ("an " | "a ") pdu_name:var2 "." -> (name, [var1, var2])
+
+enum = enum_two | enum_more_than_two
 
 # Functions
 function = <(word:w ?(w != "The")' '?)+>? 'The ' short_field_name:name "function is defined as:" -> (name)
