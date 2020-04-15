@@ -12,7 +12,9 @@ from typing import List, Iterator, Tuple, Optional, TypeVar, Dict, Union
 from ietfdata import datatracker
 
 
-import xml.etree.ElementTree as domET
+#import xml.etree.ElementTree as domET
+from lxml import etree 
+
 from parsers.rfc import rfc_xml_parser,rfc_txt_parser,rfc
 
 T = TypeVar('T')
@@ -329,13 +331,15 @@ class ProcessDoc:
         is_xml  = lambda tdoc :  True if type(doc) is  xmlFile else False
         content, err = None, None
         
-        with open( doc.uri, "r") as in_fp :
+        with open( doc.uri, "rb") as in_fp :
             if is_xml(doc) : 
                 file_content  = in_fp.read() 
                 try : 
-                    xml = domET.fromstring(file_content) 
+                    #xml = domET.fromstring(file_content) 
+                    parser = etree.XMLParser(load_dtd=True,no_network=False, resolve_entities=False)
+                    xml = etree.fromstring(file_content, parser=parser)
                     content = rfc_xml_parser.parse_rfc(xml)
-                except domET.ParseError as _pe :
+                except etree.ParseError as _pe :
                     # ToDo -- generate an error class to hold error data 
                     logging.error(f"Parse error parsing {doc.uri} : error - {_pe}")
                     err  = str(_pe)
@@ -365,7 +369,8 @@ class ProcessDoc:
                 if content == None : 
                     print(f"outer error = {err}")
                     continue 
-                print(f"content = \n {content}")
+                else : 
+                    print(f"content = \n {content}")
         return None 
 
 
@@ -381,7 +386,7 @@ if __name__ == '__main__':
     #                                until="2020-04-14T00:00:00",\
     #                                fs_root= default_path )
     docs = [ xmlFile( "/home/dejice/work/ietf/ips-protodesc-code/ciserver/test_dir/drafts/draft-ietf-idr-rfc5575bis/20/draft-ietf-idr-rfc5575bis-20.xml" )] 
-    docs.append( xmlFile( "/home/dejice/work/ietf/ips-protodesc-code/examples/draft-mcquistin-augmented-ascii-diagrams.xml" )) 
+    #docs.append( xmlFile( "/home/dejice/work/ietf/ips-protodesc-code/examples/draft-mcquistin-augmented-ascii-diagrams.xml" )) 
     execute  = ProcessDoc( docs , default_path)
     execute.parse_files()
 
