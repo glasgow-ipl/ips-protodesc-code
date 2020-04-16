@@ -91,6 +91,9 @@ enum_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name
 
 enum = enum_two | enum_more_than_two
 
+# Context use
+context_use = <(word:w ?(w != "On")' '?)+>? ('On receipt, the value of ' equality_expr:field_name ' is stored as ' pdu_name:context_field_name '.' -> (field_name, context_field_name))?:context_use -> context_use
+
 # Functions
 function = <(word:w ?(w != "The")' '?)+>? 'The ' short_field_name:name "function is defined as:" -> (name)
 parameter = (short_field_name:name ': ' pdu_name:type) -> (name, type)
@@ -99,7 +102,7 @@ function_signature = 'func ' short_field_name:name '(' parameter_list:params ')'
 
 # Function use
 pdu_list_comma = pdu_name:name (', ' pdu_name:names)*:names -> [name] + names
-serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:from_type "is serialised to " ("an " | "a ") pdu_name:to_type 'using the ' short_field_name:func_name ' function.' -> (from_type, to_type, func_name)
+serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:from_type "is serialised to " ("an " | "a ") pdu_name:to_type 'using the ' short_field_name:func_name ' function.' -> (from_type, to_type, func_name2)
 parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:to_type "is parsed from " ("an " | "a ") pdu_name:from_type 'using the ' short_field_name:func_name  ' function.' -> (from_type, to_type, func_name)
 
 # Protocol Definition

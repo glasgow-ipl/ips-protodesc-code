@@ -346,6 +346,7 @@ class Context(InternalType):
 
     def __init__(self) -> None:
         super().__init__(None)
+        self.name   = "Context"
         self.kind   = "Context"
         self.fields = []
 

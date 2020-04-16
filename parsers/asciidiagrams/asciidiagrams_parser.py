@@ -113,6 +113,8 @@ class AsciiDiagramsParser(Parser):
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
                         field = parser(title.content[0]).field_title()
+                        context_field = parser(desc.content[0]).context_use()
+                        field["context_field"] = context_field
                         if field["short_label"] is not None:
                             name_map[field["short_label"]] = field["full_label"]
                         fields[field["full_label"]] = field
@@ -164,6 +166,10 @@ class AsciiDiagramsParser(Parser):
             if type(expr) is not str:
                 return expr
             return self.structs[pdu_name]["name_map"].get(valid_field_name_convertor(expr), valid_field_name_convertor(expr))
+        elif expr[0] == "contextaccess":
+            return protocol.ContextAccessExpression(self.proto.get_context(), valid_field_name_convertor(expr[1]))
+        elif expr[0] == "setvalue":
+            return protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), "set", [protocol.ArgumentExpression("value", self.build_expr(expr[2], pdu_name))])
         elif expr[0] == "const":
             return protocol.ConstantExpression(self.build_type(expr[1]), self.build_expr(expr[2], pdu_name))
         elif expr[0] == "method":
@@ -179,6 +185,7 @@ class AsciiDiagramsParser(Parser):
     def build_struct(self, struct_name):
         fields = []
         constraints = []
+        actions = []
         for field in self.structs[struct_name]["fields"]:
             field = self.structs[struct_name]["fields"][field]
             size_expr = None
@@ -211,11 +218,15 @@ class AsciiDiagramsParser(Parser):
                 ispresent_expr = self.build_expr(field["is_present"], struct_name)
             else:
                 ispresent_expr = self.build_expr(("const", "Boolean", True), struct_name)
+            if field["context_field"] is not None:
+                self.proto.define_context_field(valid_field_name_convertor(field["context_field"][1]), self.build_type("Number"))
+                action = self.build_expr(("setvalue", ("contextaccess", field["context_field"][1]), field["context_field"][0]), struct_name)
+                actions.append(action)
             struct_field = protocol.StructField(field["full_label"],
                                                 field_type,
                                                 ispresent_expr)
             fields.append(struct_field)
-        struct = self.proto.define_struct(struct_name, fields, constraints, [])
+        struct = self.proto.define_struct(struct_name, fields, constraints, actions)
         return struct
 
     def build_enum(self, type_name):
