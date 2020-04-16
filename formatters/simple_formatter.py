@@ -78,6 +78,8 @@ class SimpleFormatter(Formatter):
             self.output.append("\tField ({})".format(field))
         for constraint in struct.constraints:
             self.output.append("\tConstraint ({})".format(constraint))
+        for action in struct.actions:
+            self.output.append("\tAction ({})".format(action))
 
     def format_array(self, array:Array):
         self.output.append("Array ({})".format(array))
@@ -90,6 +92,9 @@ class SimpleFormatter(Formatter):
 
     def format_context(self, context:Context):
         self.output.append("Context ({})".format(context))
+        for field in context.fields:
+            self.output.append("\tField ({})".format(field))
 
     def format_protocol(self, protocol:Protocol):
+        self.format_context(protocol.get_context())
         self.output.append("Protocol ({})\n".format(protocol.get_protocol_name()))
