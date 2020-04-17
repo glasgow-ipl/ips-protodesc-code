@@ -152,7 +152,7 @@ class FunctionInvocationExpression(Expression):
         return self.func.return_type
 
 
-@dataclass
+@dataclass(frozen=True)
 class FieldAccessExpression(Expression):
     """
     An expression representing access to `field` of `target`.
@@ -314,11 +314,15 @@ class InternalType(ProtocolType):
     pass
 
 class RepresentableType(ProtocolType):
-    size : Optional[int]
+    size         : Optional[int]
+    parse_from   : Optional[Function]
+    serialise_to : Optional[Function]
 
     def __init__(self, parent) -> None:
         super().__init__(parent)
         self.size = 0
+        self.parse_from = None
+        self.serialise_to = None
 
 # Internal types follow:
 
@@ -342,6 +346,7 @@ class Context(InternalType):
 
     def __init__(self) -> None:
         super().__init__(None)
+        self.name   = "Context"
         self.kind   = "Context"
         self.fields = []
 
@@ -454,6 +459,13 @@ class Enum(RepresentableType):
         self.name     = name
         self.variants = variants
 
+    def set_serialise_to_func(self, func: Function) -> None:
+        #FIXME: check function signature matches IR spec
+        self.serialise_to = func
+
+    def set_parse_from_func(self, func: Function) -> None:
+        #FIXME: check function signature matches IR spec
+        self.parse_from = func
 
 # =================================================================================================
 
@@ -746,6 +758,9 @@ class Protocol:
 
     def get_type(self, type_name: str) -> ProtocolType:
         return self._types[type_name]
+
+    def has_func(self, func_name: str) -> bool:
+        return func_name in self._funcs
 
     def get_func(self, func_name: str) -> Function:
         return self._funcs[func_name]

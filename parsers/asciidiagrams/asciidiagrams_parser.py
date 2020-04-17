@@ -4,6 +4,12 @@ import protocol
 import parsley
 import string
 
+def stem(phrase):
+    if phrase[-1] == 's':
+        return phrase[:-1]
+    else:
+        return phrase
+
 def valid_field_name_convertor(name):
     if name is not None:
         return name.lower().replace(" ", "_")
@@ -11,6 +17,8 @@ def valid_field_name_convertor(name):
         return None
 
 def valid_type_name_convertor(name):
+    if name[0].isdigit():
+        name = "T" + name
     return name.capitalize().replace(" ", "_")
 
 class AsciiDiagramsParser(Parser):
@@ -55,12 +63,12 @@ class AsciiDiagramsParser(Parser):
                 continue
             if ':' in field[1]:
                 field = ("var", field[1].replace(':', '').strip())
-            if field[1] == '':
+            if field[1] == '' and type(field[0]) is int:
                 bits = bits + field[0]
                 continue
             if field[1] == '+                                                               +':
                 continue
-            if field[1][0] == '+' and field[1][-1] == '+':
+            if len(field[1]) > 0 and field[1][0] == '+' and field[1][-1] == '+':
                 label = field[1][1:-1].strip()
                 continue
             clean_diagram_fields.append(field)
@@ -69,6 +77,9 @@ class AsciiDiagramsParser(Parser):
     def build_parser(self):
         self.structs = {}
         self.enums = {}
+        self.functions = {}
+        self.serialise_to = {}
+        self.parse_from = {}
         with open("parsers/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
                                    {
@@ -83,6 +94,7 @@ class AsciiDiagramsParser(Parser):
                                      "new_this"                : self.new_this,
                                      "new_field"               : self.new_field,
                                      "proc_diagram_fields"     : self.proc_diagram_fields,
+                                     "stem"                    : stem,
                                      "protocol"                : self.proto
                                    })
 
@@ -101,6 +113,8 @@ class AsciiDiagramsParser(Parser):
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
                         field = parser(title.content[0]).field_title()
+                        context_field = parser(desc.content[0]).context_use()
+                        field["context_field"] = context_field
                         if field["short_label"] is not None:
                             name_map[field["short_label"]] = field["full_label"]
                         fields[field["full_label"]] = field
@@ -112,8 +126,27 @@ class AsciiDiagramsParser(Parser):
                     pass
 
                 try:
+                    function_name = parser(section.content[i].content[-1]).function()
+                    function_def = parser(section.content[i+1].content.strip()).function_signature()
+                    self.functions[valid_field_name_convertor(function_name)] = function_def
+                except Exception as e:
+                    pass
+
+                try:
                     enum_name, variants = parser(section.content[i].content[-1]).enum()
                     self.enums[valid_type_name_convertor(enum_name)] = [valid_type_name_convertor(variant) for variant in variants]
+                except Exception as e:
+                    pass
+
+                try:
+                    from_type, to_type, func_name = parser(section.content[i].content[-1]).serialised_to_func()
+                    self.serialise_to[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
+                except Exception as e:
+                    pass
+
+                try:
+                    from_type, to_type, func_name = parser(section.content[i].content[-1]).parsed_from_func()
+                    self.parse_from[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
                 except Exception as e:
                     pass
 
@@ -133,6 +166,10 @@ class AsciiDiagramsParser(Parser):
             if type(expr) is not str:
                 return expr
             return self.structs[pdu_name]["name_map"].get(valid_field_name_convertor(expr), valid_field_name_convertor(expr))
+        elif expr[0] == "contextaccess":
+            return protocol.ContextAccessExpression(self.proto.get_context(), valid_field_name_convertor(expr[1]))
+        elif expr[0] == "setvalue":
+            return protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), "set", [protocol.ArgumentExpression("value", self.build_expr(expr[2], pdu_name))])
         elif expr[0] == "const":
             return protocol.ConstantExpression(self.build_type(expr[1]), self.build_expr(expr[2], pdu_name))
         elif expr[0] == "method":
@@ -148,6 +185,7 @@ class AsciiDiagramsParser(Parser):
     def build_struct(self, struct_name):
         fields = []
         constraints = []
+        actions = []
         for field in self.structs[struct_name]["fields"]:
             field = self.structs[struct_name]["fields"][field]
             size_expr = None
@@ -180,11 +218,15 @@ class AsciiDiagramsParser(Parser):
                 ispresent_expr = self.build_expr(field["is_present"], struct_name)
             else:
                 ispresent_expr = self.build_expr(("const", "Boolean", True), struct_name)
+            if field["context_field"] is not None:
+                self.proto.define_context_field(valid_field_name_convertor(field["context_field"][1]), self.build_type("Number"))
+                action = self.build_expr(("setvalue", ("contextaccess", field["context_field"][1]), field["context_field"][0]), struct_name)
+                actions.append(action)
             struct_field = protocol.StructField(field["full_label"],
                                                 field_type,
                                                 ispresent_expr)
             fields.append(struct_field)
-        struct = self.proto.define_struct(struct_name, fields, constraints, [])
+        struct = self.proto.define_struct(struct_name, fields, constraints, actions)
         return struct
 
     def build_enum(self, type_name):
@@ -192,7 +234,22 @@ class AsciiDiagramsParser(Parser):
         for variant in self.enums[type_name]:
             variants.append(self.build_type(variant))
         enum = self.proto.define_enum(type_name, variants)
+        if type_name in self.serialise_to:
+            func_type = self.build_type(self.serialise_to[type_name][1])
+            enum.set_serialise_to_func(func_type)
+        if type_name in self.parse_from:
+            func_type = self.build_type(self.parse_from[type_name][1])
+            enum.set_parse_from_func(func_type)
         return enum
+
+    def build_function(self, type_name):
+        name = type_name
+        parameters = []
+        for param_name, param_type_name in self.functions[type_name][1]:
+            param_type = self.build_type(valid_type_name_convertor(param_type_name))
+            parameters.append(protocol.Parameter(param_name, param_type))
+        function = self.proto.define_function(name, parameters, self.build_type(valid_type_name_convertor(self.functions[type_name][2])))
+        return function
 
     def build_type(self, type_name):
         if self.proto.has_type(type_name):
@@ -201,6 +258,10 @@ class AsciiDiagramsParser(Parser):
             return self.build_struct(type_name)
         elif type_name in self.enums:
             return self.build_enum(type_name)
+        elif type_name in self.functions:
+            return self.build_function(type_name)
+        else:
+            raise Exception("Unknown type: %s" % (type_name))
 
     def build_protocol(self, proto: protocol.Protocol, input: rfc.RFC, name: str=None) -> protocol.Protocol:
         # if a Protocol hasn't been passed in, then instantiate one
