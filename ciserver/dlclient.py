@@ -1,5 +1,90 @@
 #!/usr/bin/python3
 
+
+import requests
+import pathlib
+from dataclasses import dataclass, field
+from typing import Optional, List
+#List, Iterator, Tuple, Optional, TypeVar, Dict, Union
+import ciserver.fs as filesys
+from ietfdata import datatracker
+
+@dataclass(frozen=True)
+class DownloadOptions:
+    force: bool = False  # if set to True, override files in cache
+
+
+@dataclass
+class IETF_URI: 
+    name : str 
+    extn : str 
+    rev  : str  = field(default=None)
+
+    def _document_name(self):
+        return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
+
+    def filepath(self, root : pathlib.Path ) -> pathlib.Path :
+        fpath = root / "draft" if self.name.startswith("draft") else root / "rfc" 
+
+        if self.rev : 
+            fpath = fpath / self.name / self.rev / f"{self._document_name()}{self.extn}"
+        else : 
+            fpath = fpath / self.name / f"{self._document_name()}{self.extn}"
+        return fpath 
+
+    def url(self, base ):
+        return base + self._document_name() 
+
+
+
+
+
+@dataclass
+class DownloadClient:
+    fs: filesys.RootWorkingDir
+    base_uri: str = "https://www.ietf.org/archive/id"
+    dlopts: Optional[DownloadOptions] = field(default_factory=DownloadOptions)
+
+    def __enter__(self) -> None:
+        self.session = requests.Session()
+        return self
+
+    def __exit__(self, ex_type, ex, ex_tb) -> None:
+        self.session.close()
+        self.session = None
+
+    def _write_file(self, file_path: pathlib.Path , data: str) -> bool:
+        written = False
+        file_path.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+
+        with open(str(file_path), "w") as fp:
+            fp.write(data)
+            written = True
+        return written
+
+    def download_files(self, urls: List[IETF_URI]) -> List[IETF_URI]:
+        doclist = list()
+        for doc in urls: 
+            if not self.dlopts.force : 
+                if doc.filepath.exists() : 
+                    continue 
+
+            dl = self.session.get(doc.url() , verify=True, stream=False) 
+            if dl.status_code != 200: 
+                print(f"Error : {dl.status_code} while downloading web_uri.uri")
+                continue 
+
+            in_file = doc.filepath()
+            if self._write_file(in_file, dl.text): 
+                doclist.append(doc)
+                print(f"Stored input file {in_file}")
+            else : 
+                print("Error storing input file {in_file}")
+        return doclist
+
+
+
+"""
 import os
 import pathlib
 import requests
@@ -18,77 +103,6 @@ from lxml import etree
 from parsers.rfc import rfc_xml_parser,rfc_txt_parser,rfc
 
 T = TypeVar('T')
-
-@dataclass
-class RootWorkingDir:
-    root  : pathlib.Path = field( default_factory=lambda: pathlib.Path(pathlib.Path.cwd()))
-    lock  : pathlib.Path = field(default=None, init=False)
-    db    : pathlib.Path = field(default=None, init=False)
-    log   : pathlib.Path = field(default=None, init=False)
-    rfc   : pathlib.Path = field(default=None, init=False)
-    drafts: pathlib.Path = field(default=None, init=False)
-    output: pathlib.Path = field(default=None, init=False)
-
-    def __post_init__(self) -> None:
-        self.root = self.root.resolve()
-
-        if not self.root.exists():
-            logging.error(f"Root dir <{self.root}> does not exist.")
-            if not self.root.is_dir():
-                logging.error(f"<{self.root} is not a directory")
-            raise AssertionError(f"Error writing to directory {self.root}")
-
-        assert self.root.exists(), f"Root dir <{self.root}> does not exist."
-        assert self.root.is_dir(), f"<{self.root} is not a directory"
-        # TODO : Also add check to see if directory is writable
-        self.lock = self.root / ".lock"
-        self.db = self.root / ".db"
-        self.log = self.root / ".log"
-        self.rfc = self.root / "rfc"
-        self.drafts = self.root / "drafts"
-        self.output = self.root / "output"
-
-
-@dataclass(frozen=True)
-class FileSysLock:
-    fs      : RootWorkingDir
-    pid     : int = field(default_factory = os.getpid, init = False)
-
-    def __enter__(self):
-        if self.fs.lock.exists():
-            with open(self.fs.lock, 'r') as fp:
-                _lock = json.load(fp)
-                raise AssertionError( f"Process {_lock['pid']} holds lockfile {self.fs.lock}")
-            raise AssertionError( f"Another Process holds lockfile {self.fs.lock}") 
-
-        with open(self.fs.lock, 'w') as fp: 
-            json.dump( { "start_time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
-                    "pid": self.pid }, fp)
-
-        if self.fs.log.exists() : 
-            assert self.fs.log.is_file(), f"Prexisting FileSys entry {self.fs.log} not a file"
-        else : 
-            self.fs.log.write_text("<<<<<<< Start Log >>>>>>>>\n")
-
-        if self.fs.db.exists() : 
-            assert self.fs.db.is_file(), f"Prexisting FileSys entry {self.fs.db} not a file"
-        else : 
-            with open( self.fs.db, "w" ) as fp : 
-                json.dump( { "creation time": datetime.strftime(datetime.utcnow(), "%Y-%m-%d %H:%M:%S"), 
-                    "drafts": {} , "rfc": {} }, fp)
-
-        self.fs.drafts.mkdir(exist_ok=True) 
-        self.fs.rfc.mkdir(exist_ok=True) 
-        return self
-
-    def __exit__(self, ex_type, ex, ex_tb):
-        assert self.pid == os.getpid(), f"Only pid - {self.pid} allowed to remove {self.fs.lock}"
-        self.fs.lock.unlink()
-        logging.debug(
-            f"pid {self.pid} released {self.fs.lock} at"
-            f" {datetime.strftime(datetime.utcnow(),'%Y-%m-%d %H:%M:%S')}")
-
-
 
 @dataclass(frozen=True)
 class URI:
@@ -129,6 +143,7 @@ class txtFile(URI):
         assert pathlib.Path(
             self.uri
         ).suffix == self.extn, f"uri {self.uri} does not end in .xml"
+
 
 
 @dataclass(frozen=True)
@@ -372,6 +387,7 @@ class ProcessDoc:
                 else : 
                     print(f"content = \n {content}")
         return None 
+"""
 
 
 
