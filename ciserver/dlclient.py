@@ -24,19 +24,14 @@ class IETF_URI:
         return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
 
     def filepath(self, root : pathlib.Path ) -> pathlib.Path :
-        fpath = root / "draft" if self.name.startswith("draft") else root / "rfc" 
-
         if self.rev : 
-            fpath = fpath / self.name / self.rev / f"{self._document_name()}{self.extn}"
+            fpath = root / self.name / self.rev / f"{self._document_name()}{self.extn}"
         else : 
-            fpath = fpath / self.name / f"{self._document_name()}{self.extn}"
+            fpath = root / self.name / f"{self._document_name()}{self.extn}"
         return fpath 
 
     def url(self, base ):
-        return base + self._document_name() 
-
-
-
+        return base + f"/{self._document_name()}{self.extn}"
 
 
 @dataclass
@@ -62,24 +57,29 @@ class DownloadClient:
             written = True
         return written
 
+    def _resolve_file_root(self, doc : IETF_URI ) -> pathlib.Path :
+        return self.fs.draft if doc.name.startswith("draft") else self.fs.rfc 
+
+
     def download_files(self, urls: List[IETF_URI]) -> List[IETF_URI]:
         doclist = list()
         for doc in urls: 
+            infile = doc.filepath(self._resolve_file_root(doc))
+
             if not self.dlopts.force : 
-                if doc.filepath.exists() : 
+                if infile.exists() : 
                     continue 
 
-            dl = self.session.get(doc.url() , verify=True, stream=False) 
+            dl = self.session.get(doc.url(self.base_uri) , verify=True, stream=False) 
             if dl.status_code != 200: 
-                print(f"Error : {dl.status_code} while downloading web_uri.uri")
+                print(f"Error : {dl.status_code} while downloading {doc.url(self.base_uri)}")
                 continue 
 
-            in_file = doc.filepath()
-            if self._write_file(in_file, dl.text): 
+            if self._write_file(infile, dl.text): 
                 doclist.append(doc)
-                print(f"Stored input file {in_file}")
+                print(f"Stored input file {infile}")
             else : 
-                print("Error storing input file {in_file}")
+                print("Error storing input file {infile}")
         return doclist
 
 

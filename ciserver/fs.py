@@ -41,9 +41,16 @@ class RootWorkingDir:
         #self.log = self.root / ".log"
         self.sync = self.root / ".sync"
         self.rfc = self.root / "rfc"
-        self.drafts = self.root / "drafts"
+        self.draft = self.root / "draft"
         self.output = self.root / "output"
+        self.draft_out = self.root / "output" / "draft"
+        self.rfc_out = self.root / "output" / "rfc" 
 
+        self.draft.mkdir(exist_ok=True) 
+        self.rfc.mkdir(exist_ok=True) 
+        self.output.mkdir(exist_ok=True) 
+        self.draft_out.mkdir(exist_ok=True)
+        self.rfc_out.mkdir(exist_ok=True)
 
     def __enter__(self):
         self.sync_time = datetime.utcnow()
