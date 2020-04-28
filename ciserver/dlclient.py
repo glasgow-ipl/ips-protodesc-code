@@ -19,19 +19,27 @@ class IETF_URI:
     name : str 
     extn : str 
     rev  : str  = field(default=None)
+    dtype: str  = field(default=None)
 
     def _document_name(self):
         return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
 
-    def filepath(self, root : pathlib.Path ) -> pathlib.Path :
+    def gen_filepath(self, root : pathlib.Path ) -> pathlib.Path :
         if self.rev : 
-            fpath = root / self.name / self.rev / f"{self._document_name()}{self.extn}"
+            self.infile = root / self.name / self.rev / f"{self._document_name()}{self.extn}"
         else : 
-            fpath = root / self.name / f"{self._document_name()}{self.extn}"
-        return fpath 
+            self.infile = root / self.name / f"{self._document_name()}{self.extn}"
+        return self.infile 
 
     def url(self, base ):
         return base + f"/{self._document_name()}{self.extn}"
+
+    def set_filepath(self, filename : pathlib.Path ) -> pathlib.Path :
+        self.infile = filename 
+        return filename 
+
+    def get_filepath( self ) -> Optional[pathlib.Path] :
+        return getattr(self, "infile", None)
 
 
 @dataclass
@@ -58,13 +66,13 @@ class DownloadClient:
         return written
 
     def _resolve_file_root(self, doc : IETF_URI ) -> pathlib.Path :
-        return self.fs.draft if doc.name.startswith("draft") else self.fs.rfc 
+        return self.fs.draft if doc.dtype == "draft" else self.fs.rfc 
 
 
     def download_files(self, urls: List[IETF_URI]) -> List[IETF_URI]:
         doclist = list()
         for doc in urls: 
-            infile = doc.filepath(self._resolve_file_root(doc))
+            infile = doc.gen_filepath(self._resolve_file_root(doc))
 
             if not self.dlopts.force : 
                 if infile.exists() : 

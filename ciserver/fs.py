@@ -22,8 +22,8 @@ from lxml import etree
 
 @dataclass
 class RootWorkingDir:
+    root  : pathlib.Path
     doctypes : List[str]  = field( default_factory = lambda: [ "rfc", "draft" ] )
-    root  : pathlib.Path = field( default_factory = lambda: pathlib.Path(pathlib.Path.cwd() / "ietf_data_cache"))
 
     def __post_init__(self) -> None:
         self.root = self.root.resolve()
