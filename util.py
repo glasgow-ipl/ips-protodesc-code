@@ -6,7 +6,7 @@ import re
 import functools
 from datetime import datetime 
 from typing import List,Tuple
-from ietfdata import datatracker
+from ietfdata import datatracker, rfcindex
 import ciserver.fs as fs
 import ciserver.dlclient as dl
 
@@ -34,22 +34,22 @@ class PositionalArg :
     def __init__(self, arg ): 
        self.arg = arg
 
-
     def _match_name( self , fname : str ) -> Tuple[str,str,str,str] :
         extn_str = functools.reduce( lambda x,y : x + f'|{y}', valid_extns) 
         # document with revision 
         regex_rev = re.compile(f"(?P<dtype>draft-|Draft-|DRAFT-)"
                                f"(?P<name>[a-zA-Z0-9_\-]+)"
                                f"-(?P<rev>[0-9]+)"
-                               f"(?P<extn>{extn_str})?")
+                               f"(?P<extn>{extn_str})?$")
         # document without revision
         regex_std = re.compile(f"(?P<dtype>draft-|Draft-|DRAFT-|rfc|RFC|Rfc)?"
                                f"(?P<name>[a-zA-Z0-9_\-]+)"
-                               f"(?P<extn>{extn_str})?")
+                               f"(?P<extn>{extn_str})?$")
 
         _match = regex_rev.match(fname) 
         if _match != None : 
-            return ( "draft", _match.group("name") , _match.group("rev") , _match.group("extn")) 
+            print(f"draft-regex : , {_match.group('dtype') + _match.group('name')} , {_match.group('rev')} , {_match.group('extn')}")
+            return ( "draft", _match.group('dtype') + _match.group("name") , _match.group("rev") , _match.group("extn")) 
 
         _match = regex_std.match(fname) 
         if _match != None :
@@ -59,7 +59,8 @@ class PositionalArg :
                     dtype = "draft"
                 elif _match.group('dtype').lower() == "rfc" : 
                     dtype = "rfc"
-            return ( dtype , _match.group("name") , None , _match.group("extn")) 
+            print(f"draft-std : , {_match.group('dtype') + _match.group('name')} , {_match.group('extn')}")
+            return ( dtype , _match.group("dtype")  + _match.group("name") , None , _match.group("extn")) 
         return None
 
     def resolve_argtype(self): 
@@ -83,10 +84,48 @@ class PositionalArg :
             rname  = self._match_name(fp.name)
             assert rname != None, f"remote-uri {self.arg} misformed. Cannot resolve with datatracker"
             dtype, name , rev , extn = rname
-            assert dtype in ['draft', 'rfc' ], f"only draft,rfc supported. Could not resolve document type {dtype}"
-            assert False, f"search data tracker for {name} of type {dtype}"
-
+            urls += self._query_datatracker( dtype, name , rev , extn )
         return ( ret_type , urls ) 
+
+    def _query_datatracker(self, doctype, name, rev, extn): 
+        assert doctype in ['draft', 'rfc'], f"Could not resolve document type {dtype}.Only draft,rfc supported." 
+        urls = [] 
+
+        if doctype == 'draft' : 
+            trk = datatracker.DataTracker()
+            print(f"draft name = {name}")
+            draft = trk.document_from_draft( name )
+            assert draft != None, f"Could not resolve remote draft -- name = {name} , rev = {rev}, extension = {extn}"
+            for uri in draft.submissions :
+                submission = trk.submission(uri)
+                if not submission :
+                    continue
+
+                if rev and rev != submission.rev : 
+                    continue 
+
+                if extn == None : 
+                    urls += [ dl.IETF_URI( submission.name , _ext,  rev= submission.rev, dtype="draft" ) 
+                                         for _ext in submission.file_types.split(sep=',') if _ext in valid_extns ] 
+                elif extn in valid_extns and extn in submission.file_types.split(sep=',') : 
+                    urls.append( dl.IETF_URI( submission.name , extn ,  rev= submission.rev, dtype="draft" ))
+
+        elif doctype == 'rfc' : 
+            trk = rfcindex.RFCIndex()
+            rfc = trk.rfc( name.upper() )
+            assert rfc != None, f"Invalid rfc -- {name}"
+            #print(f"Found document  ----- \n{rfc} \nname = {name} \nformats = {rfc.formats}")
+            rfc_extn_convert = lambda _ext :  ".txt" if _ext == "ascii" else f".{_ext.lower()}" 
+            rfc_extensions = [ rfc_extn_convert(_ext.lower()) for _ext in rfc.formats ] 
+            dt_extns = [ _ext for _ext in rfc_extensions if _ext in valid_extns ] 
+            if extn : 
+                assert extn in dt_extns, f"File format extn of {name}{extn} not amongst {dt_extns}"
+                urls.append( dl.IETF_URI( name , extn,  rev= None, dtype="rfc" ))
+            else :
+                urls += [ dl.IETF_URI( name , _extn,  rev= None, dtype="rfc" ) for _extn in dt_extns ]
+        return urls 
+
+
 
 
 def parse_cmdline():
@@ -164,12 +203,20 @@ def parse_cmdline():
             elif uri_type == 'local' : 
                 local += urls 
 
-        for i, r in enumerate(remote) : 
-            print(f"remote [{i}] ->  {r}") 
-        print(f"-----------------------------------") 
-        for i, r in enumerate(local) : 
-            print(f"local [{i}] ->  {r}") 
-        print(f"-----------------------------------") 
+        #for i, r in enumerate(remote) : 
+        #    print(f"remote [{i}] ->  {r}") 
+        #print(f"-----------------------------------") 
+        #for i, r in enumerate(local) : 
+        #    print(f"local [{i}] ->  {r} --> file = {r.get_filepath()}") 
+        #print(f"-----------------------------------") 
+
+        with fs.RootWorkingDir(root= root_dir) as rwd, dl.DownloadClient(fs=rwd) as dlclient :
+            dlclient.download_files( remote )
+            infiles += remote 
+        for idx, inf in enumerate(infiles):
+            print(f"File [{idx}]  --> {inf.get_filepath()}")
+
+
 
 if __name__ == '__main__':
     parse_cmdline()
