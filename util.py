@@ -48,7 +48,6 @@ class PositionalArg :
 
         _match = regex_rev.match(fname) 
         if _match != None : 
-            print(f"draft-regex : , {_match.group('dtype') + _match.group('name')} , {_match.group('rev')} , {_match.group('extn')}")
             return ( "draft", _match.group('dtype') + _match.group("name") , _match.group("rev") , _match.group("extn")) 
 
         _match = regex_std.match(fname) 
@@ -59,7 +58,6 @@ class PositionalArg :
                     dtype = "draft"
                 elif _match.group('dtype').lower() == "rfc" : 
                     dtype = "rfc"
-            print(f"draft-std : , {_match.group('dtype') + _match.group('name')} , {_match.group('extn')}")
             return ( dtype , _match.group("dtype")  + _match.group("name") , None , _match.group("extn")) 
         return None
 
