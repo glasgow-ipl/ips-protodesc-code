@@ -20,6 +20,7 @@ class IETF_URI:
     extn : str 
     rev  : str  = field(default=None)
     dtype: str  = field(default=None)
+    url  : str  = field(default=None)
 
     def _document_name(self):
         return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
@@ -31,10 +32,10 @@ class IETF_URI:
             self.infile = root / self.name / f"{self._document_name()}{self.extn}"
         return self.infile 
 
-    def url(self):
-        base_url = { "draft" : "https://www.ietf.org/archive/id" , 
-                     "rfc"   : "https://www.rfc-editor.org/rfc" } 
-        return base_url[self.dtype] + f"/{self._document_name()}{self.extn}"
+    #def url(self):
+    #    base_url = { "draft" : "https://www.ietf.org/archive/id" , 
+    #                 "rfc"   : "https://www.rfc-editor.org/rfc" } 
+    #    return base_url[self.dtype] + f"/{self._document_name()}{self.extn}"
 
     def set_filepath(self, filename : pathlib.Path ) -> pathlib.Path :
         self.infile = filename 
@@ -79,7 +80,7 @@ class DownloadClient:
                 if infile.exists() : 
                     continue 
 
-            dl = self.session.get(doc.url() , verify=True, stream=False) 
+            dl = self.session.get(doc.url , verify=True, stream=False) 
             if dl.status_code != 200: 
                 print(f"Error : {dl.status_code} while downloading {doc.url(self.base_uri)}")
                 continue 

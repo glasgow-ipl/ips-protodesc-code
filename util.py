@@ -24,8 +24,14 @@ def fetch_new_drafts( since : datetime ) -> List[dl.IETF_URI] :
             if not submission :
                 break 
 
-            urls += [ dl.IETF_URI( submission.name , extn,  rev= submission.rev, dtype="draft" ) 
-                             for extn in submission.file_types.split(sep=',') if extn in valid_extns ] 
+            urls += [ dl.IETF_URI( submission.name, 
+                                   _extn,  
+                                   rev= submission.rev, 
+                                   dtype="draft" ,
+                                   url = _url) 
+                      for _extn, _url  in submission.urls()
+                          if _extn in valid_extns 
+                    ] 
     return urls
 
 
@@ -91,7 +97,6 @@ class PositionalArg :
 
         if doctype == 'draft' : 
             trk = datatracker.DataTracker()
-            print(f"draft name = {name}")
             draft = trk.document_from_draft( name )
             assert draft != None, f"Could not resolve remote draft -- name = {name} , rev = {rev}, extension = {extn}"
             for uri in draft.submissions :
@@ -103,24 +108,35 @@ class PositionalArg :
                     continue 
 
                 if extn == None : 
-                    urls += [ dl.IETF_URI( submission.name , _ext,  rev= submission.rev, dtype="draft" ) 
-                                         for _ext in submission.file_types.split(sep=',') if _ext in valid_extns ] 
-                elif extn in valid_extns and extn in submission.file_types.split(sep=',') : 
-                    urls.append( dl.IETF_URI( submission.name , extn ,  rev= submission.rev, dtype="draft" ))
+                    urls += [ dl.IETF_URI( submission.name , _ext,  rev= submission.rev, dtype="draft" , url = _url) 
+                                         for _ext, _url in submission.urls() if _ext in valid_extns ] 
+                elif extn in valid_extns : 
+                    for _sub_extn, _sub_url in submission.urls() : 
+                        if _sub_extn != extn : 
+                            continue 
+                        urls.append( dl.IETF_URI( submission.name , extn ,  rev= submission.rev, dtype="draft" , url = _sub_url))
 
         elif doctype == 'rfc' : 
             trk = rfcindex.RFCIndex()
             rfc = trk.rfc( name.upper() )
             assert rfc != None, f"Invalid rfc -- {name}"
-            #print(f"Found document  ----- \n{rfc} \nname = {name} \nformats = {rfc.formats}")
+
+            extn_rfc_convert = lambda _ext :  "ASCII" if _ext == ".txt" else _ext[1:].upper() 
             rfc_extn_convert = lambda _ext :  ".txt" if _ext == "ascii" else f".{_ext.lower()}" 
+
             rfc_extensions = [ rfc_extn_convert(_ext.lower()) for _ext in rfc.formats ] 
             dt_extns = [ _ext for _ext in rfc_extensions if _ext in valid_extns ] 
+
             if extn : 
                 assert extn in dt_extns, f"File format extn of {name}{extn} not amongst {dt_extns}"
-                urls.append( dl.IETF_URI( name , extn,  rev= None, dtype="rfc" ))
+                urls.append( dl.IETF_URI( name , extn,  rev= None, dtype="rfc" , url = rfc.content_url( extn_rfc_convert(extn))))
             else :
-                urls += [ dl.IETF_URI( name , _extn,  rev= None, dtype="rfc" ) for _extn in dt_extns ]
+                urls += [ dl.IETF_URI( name , 
+                                       _extn,  
+                                       rev= None, 
+                                       dtype="rfc" ,
+                                       url = rfc.content_url( extn_rfc_convert(_extn))) 
+                          for _extn in dt_extns ]
         return urls 
 
 
@@ -161,6 +177,7 @@ def parse_cmdline():
     )
     ap.add_argument("uri",
                     metavar='uri',
+
                     nargs="*",
                     help="provide draft[-rev][.extn]/ rfc[.extn]/ file-name ")
 
@@ -218,21 +235,3 @@ def parse_cmdline():
 
 if __name__ == '__main__':
     parse_cmdline()
-
-
-#drafts = [ dl.IETF_URI(name='draft-bormann-t2trg-sworn', extn='.txt', rev='00'), 
-#         dl.IETF_URI(name='draft-bormann-t2trg-sworn', extn='.txt', rev='01'), 
-#         dl.IETF_URI(name='draft-bormann-t2trg-sworn', extn='.txt', rev='02'), 
-#         dl.IETF_URI(name='draft-bormann-t2trg-sworn', extn='.txt', rev='03'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.txt', rev='00'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.xml', rev='00'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.txt', rev='01'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.xml', rev='01'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.txt', rev='02'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.xml', rev='02'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.txt', rev='03'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.xml', rev='03'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.txt', rev='04'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.xml', rev='04'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.xml', rev='05'), 
-#         dl.IETF_URI(name='draft-www-bess-yang-vpn-service-pm', extn='.xml', rev='06') ]
