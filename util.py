@@ -129,7 +129,7 @@ class IETF_URI:
 
 @dataclass
 class DownloadClient:
-    fs: RootWorkingDir
+    fs   : RootWorkingDir
     dlopts: Optional[DownloadOptions] = field(default_factory=DownloadOptions)
 
     def __enter__(self) -> None:
@@ -178,8 +178,7 @@ def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
     trk = datatracker.DataTracker()
     draft_itr = trk.documents(
         since=since.strftime("%Y-%m-%dT%H:%M:%S"),
-        doctype=trk.document_type(
-            datatracker.DocumentTypeURI("/api/v1/name/doctypename/draft/")))
+        doctype=trk.document_type(datatracker.DocumentTypeURI("/api/v1/name/doctypename/draft/")))
 
     urls = []
     for draft in draft_itr:
@@ -193,8 +192,26 @@ def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
                                rev=submission.rev,
                                dtype="draft",
                                url=_url) 
-                      for _extn, _url in submission.urls()
-                          if _extn in valid_extns ]
+                      for _extn, _url in submission.urls() 
+                          if _extn in valid_extns
+                    ]
+    return urls
+
+
+def fetch_new_rfcs(since: datetime) -> List[IETF_URI]:
+    rfcIndex = rfcindex.RFCIndex()
+    rfc_extn_convert = lambda _ext: ".txt" if _ext in [ "ASCII", "TEXT" ] else f".{_ext.lower()}"
+    urls = []
+    for rfc in rfcIndex.rfcs(since=since.strftime("%Y-%m")):
+        for fmt in rfc.formats:
+            extn = rfc_extn_convert(fmt)
+            if extn not in valid_extns:
+                continue
+            urls.append( IETF_URI(rfc.doc_id.lower(),
+                                  extn,
+                                  rev=None,
+                                  dtype="rfc",
+                                  url=rfc.content_url(fmt)))
     return urls
 
 
@@ -281,7 +298,7 @@ class PositionalArg:
                                        rev=submission.rev,
                                        dtype="draft",
                                        url=_url) 
-                              for _ext, _url in submission.urls()
+                              for _ext, _url in submission.urls() 
                                   if _ext in valid_extns
                             ]
                 elif extn in valid_extns:
@@ -299,10 +316,10 @@ class PositionalArg:
             rfc = trk.rfc(name.upper())
             assert rfc != None, f"Invalid rfc -- {name}"
 
-            extn_rfc_convert = lambda _ext: "ASCII" if _ext == ".txt" else _ext[1:].upper()
-            rfc_extn_convert = lambda _ext: ".txt" if _ext == "ascii" else f".{_ext.lower()}"
+            extn_rfc_convert = lambda _ext: "ASCII" if _ext == ".txt" else _ext[ 1:].upper()
+            rfc_extn_convert = lambda _ext: ".txt" if _ext in ["ASCII", "TEXT"] else f".{_ext.lower()}"
 
-            rfc_extensions = [ rfc_extn_convert(_ext.lower()) for _ext in rfc.formats ]
+            rfc_extensions = [rfc_extn_convert(_ext) for _ext in rfc.formats]
             dt_extns = [_ext for _ext in rfc_extensions if _ext in valid_extns]
 
             if extn:
@@ -318,7 +335,7 @@ class PositionalArg:
                                    rev=None,
                                    dtype="rfc",
                                    url=rfc.content_url(extn_rfc_convert(_extn)))
-                          for _extn in dt_extns 
+                          for _extn in dt_extns
                         ]
         return urls
 
@@ -326,7 +343,7 @@ class PositionalArg:
 def parse_cmdline():
     epoch = '1970-01-01 00:00:00'
     ap = argparse.ArgumentParser(description=f"Parse ietf drafts and rfcs "
-                                 f"and autogenerate protocol parsers")
+                                             f"and autogenerate protocol parsers")
 
     ap.add_argument(
         "-nd",
@@ -336,7 +353,7 @@ def parse_cmdline():
         const=epoch,
         help=f"Get all new drafts from ietf data tracker. "
         f"If from date is provided, pick up drafts from given date "
-        f"(fmt 'yyyy-mm-dd hh:mm:ss'). ")
+        f"(fmt 'yyyy-mm-dd hh:mm:ss').")
     ap.add_argument(
         "-nr",
         "--newrfc",
@@ -352,6 +369,11 @@ def parse_cmdline():
                     nargs=1,
                     default=str(pathlib.Path().cwd() / "ietf_data_cache"),
                     help=f"Root directory for all files")
+    ap.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help=f"Downloaded files will overwrite files in data directory")
     ap.add_argument("uri",
                     metavar='uri',
                     nargs="*",
@@ -361,33 +383,39 @@ def parse_cmdline():
     infiles = []
 
     root_dir = pathlib.Path(_obj.dir[0])
+    dlopts = DownloadOptions(force=_obj.force)
 
     if _obj.newdraft:
         fromdate = datetime.strptime(_obj.newdraft, "%Y-%m-%d %H:%M:%S")
-        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(fs=rwd) as dlclient:
+        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(fs=rwd, dlopts=dlopts) as dlclient:
             # preprocessing before actual parser call
             drafts = fetch_new_drafts( rwd.prev_sync_time( 'draft', None if _obj.newdraft == epoch else _obj.newdraft))
-            for u in drafts:
-                print(f"Draft --> {u}")
+            for _idx, u in enumerate(drafts):
+                print(f"Draft [{_idx}] --> {u}")
             dlclient.download_files(drafts)
 
             infiles += drafts
 
             # post-processing starts here
+            # update meta data within cached filesys
             rwd.update_sync_time("draft")
     elif _obj.newrfc:
-        print(f"We got nr = {_obj.newrfc}")
-        # preprocessing before actual parser call
+        fromdate = datetime.strptime(_obj.newrfc, "%Y-%m-%d %H:%M:%S")
+        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(fs=rwd, dlopts=dlopts) as dlclient:
+            # preprocessing before actual parser call
+            rfcs = fetch_new_rfcs( rwd.prev_sync_time('rfc', None if _obj.newrfc == epoch else _obj.newrfc))
+            for _idx, u in enumerate(rfcs):
+                print(f"RFC [{_idx}]  --> {u}")
+            dlclient.download_files(rfcs)
 
-        # to-do call parser
+            infiles += rfcs
 
-        # post-processing starts here
-        rwd.update_sync_time("rfc")
+            # post-processing starts here
+            # update meta data within cached filesys
+            rwd.update_sync_time("rfc")
     elif _obj.uri:
         remote, local = [], []
         for arg in [PositionalArg(uri) for uri in _obj.uri]:
-            #with RootWorkingDir(root= root_dir) as rwd :
-            #with DownloadClient(fs=rwd) as dlclient :
             uri_type, urls = arg.resolve_argtype()
             if uri_type == 'remote':
                 remote += urls
@@ -396,14 +424,8 @@ def parse_cmdline():
         else:
             infiles += local
 
-        #for i, r in enumerate(remote) :
-        #    print(f"remote [{i}] ->  {r}")
-        #print(f"-----------------------------------")
-        #for i, r in enumerate(local) :
-        #    print(f"local [{i}] ->  {r} --> file = {r.get_filepath()}")
-        #print(f"-----------------------------------")
-
-        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(fs=rwd) as dlclient:
+        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(
+                fs=rwd, dlopts=dlopts) as dlclient:
             dlclient.download_files(remote)
             infiles += remote
 
