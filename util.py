@@ -16,7 +16,21 @@ valid_extns = [".xml", ".txt"]
 
 
 @dataclass
-class RootWorkingDir:
+class RootWorkingDir: 
+    """=================================================================================================================================
+    Root directory under which all input files will be stored.  
+    Specified on the command-line using using -d option 
+    ... defaults to current-working-dir>/ietf_data_cache 
+      
+    File structure is as follows : 
+    root --- 
+     |-- .sync  - file holding last polled time for rfcs and drafts. 
+     |-- draft/draft-<draft-name>/<rev>/<input-draft-file>.<extn>
+     |-- rfc/<rfcname>/<input-rfc-file>.<extn>
+     |-- output  - holds the results of parser generator
+           |-- draft/draft-<draft-name>/<rev>/<output-draft-file>.<extn>
+           |-- rfc/<rfcname>/<output-rfc-file>.<extn>
+    """
     root    : pathlib.Path
     doctypes: List[str] = field(default_factory=lambda: ["rfc", "draft"])
 
@@ -43,6 +57,7 @@ class RootWorkingDir:
         self.rfc_out.mkdir(exist_ok=True)
 
     def __enter__(self):
+        """Context manager constructor"""
         self.sync_time = datetime.utcnow()
         self._meta = None
         if self.sync.exists():
@@ -50,7 +65,8 @@ class RootWorkingDir:
                 self._meta = json.load(fp)
         return self
 
-    def __exit__(self, ex_type, ex, ex_tb):
+    def __exit__(self, ex_type, ex, ex_tb): 
+        """Context manager destructor"""
         #print(f"ex-type --> {ex_type}, type --> {type(ex_type)}")
         #print(f"ex --> {ex}, type --> {type(ex)}")
         #print(f"ex-tb  --> {ex_tb}, type --> {type(ex_tb)}")
@@ -58,7 +74,14 @@ class RootWorkingDir:
 
     def prev_sync_time(self,
                        doc_type: str,
-                       override: Optional[str] = None) -> datetime:
+                       override: Optional[str] = None) -> datetime: 
+        """Returns last known time that parser tool was executed 
+        within the context of this working directory
+        
+        If command-line override is provided for start time
+        use it.  Otherwise if tool is executed for the first time
+        return start time as epoch. 
+        """
         if override:
             return datetime.strptime(override, "%Y-%m-%d %H:%M:%S")
 
@@ -81,11 +104,13 @@ class RootWorkingDir:
                             second=0)
 
     def _new_sync(self) -> Dict[str, str]:
+        """contruct and return a default json format for the .sync file"""
         start = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0)
         dt = start.strftime("%Y-%m-%d %H:%M:%S")
         return {"rfc": dt, "draft": dt}
 
     def update_sync_time(self, doc_type: str) -> None:
+        """Insert / Update current time processing root directory was accessed"""
         if self._meta == None:
             self._meta = self._new_sync()
 
@@ -98,11 +123,18 @@ class RootWorkingDir:
 
 @dataclass(frozen=True)
 class DownloadOptions:
+    """Consolidated list of options to control download client""" 
     force: bool = False  # if set to True, override files in cache
 
 
 @dataclass
 class IETF_URI:
+    """Container class to hold data about each document that is processed. 
+    dtype - can be one of "draft" or "rfc"
+    url - to be utilised in case document has to be accessed from a remote server.
+          Not utilised for local files
+    rev - only utilised in the case of drafts
+    """
     name : str
     extn : str
     rev  : str = field(default=None)
@@ -113,6 +145,9 @@ class IETF_URI:
         return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
 
     def gen_filepath(self, root: pathlib.Path) -> pathlib.Path:
+        """generate exact filepath from base of root for file
+        based on whether document type has a revision or not
+        """
         if self.rev:
             self.infile = root / self.name / self.rev / f"{self._document_name()}{self.extn}"
         else:
@@ -120,6 +155,10 @@ class IETF_URI:
         return self.infile
 
     def set_filepath(self, filename: pathlib.Path) -> pathlib.Path:
+        """override the standard path of an input file 
+        and set the input file to an ad-hoc local file location. 
+        Used when specifying local files as positional arguments to tool. 
+        """
         self.infile = filename
         return filename
 
@@ -129,14 +168,17 @@ class IETF_URI:
 
 @dataclass
 class DownloadClient:
+    """Client to download remote URL resources in batch"""
     fs   : RootWorkingDir
     dlopts: Optional[DownloadOptions] = field(default_factory=DownloadOptions)
 
     def __enter__(self) -> None:
+        """Context manager constructor"""
         self.session = requests.Session()
         return self
 
     def __exit__(self, ex_type, ex, ex_tb) -> None:
+        """Context manager destructor"""
         self.session.close()
         self.session = None
 
@@ -153,6 +195,7 @@ class DownloadClient:
         return self.fs.draft if doc.dtype == "draft" else self.fs.rfc
 
     def download_files(self, urls: List[IETF_URI]) -> List[IETF_URI]:
+        """Batch download remote url objects"""
         doclist = list()
         for doc in urls:
             infile = doc.gen_filepath(self._resolve_file_root(doc))
@@ -175,6 +218,7 @@ class DownloadClient:
 
 
 def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
+    """Fetch all new drafts since time 'since'""" 
     trk = datatracker.DataTracker()
     draft_itr = trk.documents(
         since=since.strftime("%Y-%m-%dT%H:%M:%S"),
@@ -199,6 +243,7 @@ def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
 
 
 def fetch_new_rfcs(since: datetime) -> List[IETF_URI]:
+    """Fetch all new rfcs since time 'since'""" 
     rfcIndex = rfcindex.RFCIndex()
     rfc_extn_convert = lambda _ext: ".txt" if _ext in [ "ASCII", "TEXT" ] else f".{_ext.lower()}"
     urls = []
@@ -216,10 +261,28 @@ def fetch_new_rfcs(since: datetime) -> List[IETF_URI]:
 
 
 class PositionalArg:
+    """Resolve various modes of positional arguments 
+    1. If positional argument is a local file 
+       parse and generate code for this file
+    2. If not a local file, then it is a remote draft/rfc name. 
+        a) If a specific file type is specified, 
+           download only the requested file type.
+           In the case of drafts, unless a specific revision 
+           is requested download all revisions of the draft 
+           with the requested file-type. 
+        b) Otherwise download all file types. In the case of
+           drafts, unless a specific revision is specified, 
+           download all allowed input file types of all revisions 
+           of drafts. 
+    """
     def __init__(self, arg):
         self.arg = arg
 
     def _match_name(self, fname: str) -> Tuple[str, str, str, str]:
+        """Resolve whether spefified name is a draft or rfc and whether
+        a revision has been specified. Also determine file 
+        extension if specified
+        """
         extn_str = functools.reduce(lambda x, y: x + f'|{y}', valid_extns)
         # document with revision
         regex_rev = re.compile(f"(?P<dtype>draft-|Draft-|DRAFT-)"
@@ -257,7 +320,7 @@ class PositionalArg:
         fp = pathlib.Path(self.arg).resolve()
 
         if fp.exists() and fp.is_file():
-            # Actual file passed in
+            # This is a local file. Use as is
             assert fp.suffix in valid_extns, f"File {fp} does not have a valid extension type -- {valid_extns}"
             ret_type = "local"
             rname = self._match_name(fp.name)
@@ -266,9 +329,11 @@ class PositionalArg:
                 ietf_uri = IETF_URI(name, extn, rev=rev, dtype=dtype)
             else:
                 ietf_uri = IETF_URI(fp.stem, fp.suffix, rev=None, dtype=None)
-            ietf_uri.set_filepath(fp)
+            ietf_uri.set_filepath(fp)   # override standard file-system structure 
             urls.append(ietf_uri)
         else:
+            # Remote file - resolve all details from draft/rfc name 
+            # and fetch all relevant input files
             ret_type = "remote"
             rname = self._match_name(fp.name)
             assert rname != None, f"remote-uri {self.arg} misformed. Cannot resolve with datatracker"
@@ -316,7 +381,8 @@ class PositionalArg:
             rfc = trk.rfc(name.upper())
             assert rfc != None, f"Invalid rfc -- {name}"
 
-            extn_rfc_convert = lambda _ext: "ASCII" if _ext == ".txt" else _ext[ 1:].upper()
+            rfc_txt_label = lambda fmt: ("ASCII" if "ASCII" in fmt else "TEXT" )
+            extn_rfc_convert = lambda _ext: rfc_txt_label(rfc.formats) if _ext == ".txt" else _ext[ 1:].upper()
             rfc_extn_convert = lambda _ext: ".txt" if _ext in ["ASCII", "TEXT"] else f".{_ext.lower()}"
 
             rfc_extensions = [rfc_extn_convert(_ext) for _ext in rfc.formats]
