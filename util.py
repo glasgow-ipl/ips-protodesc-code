@@ -433,8 +433,11 @@ def parse_cmdline():
                     "--dir",
                     metavar="dir",
                     nargs=1,
-                    default=str(pathlib.Path().cwd() / "ietf_data_cache"),
-                    help=f"Root directory for all files")
+                    default=[str(pathlib.Path().cwd() / "ietf_data_cache")],
+                    help=f"Root directory for all files. "
+                         f"This has to be a pre-existing directory. " 
+                         f"Defaults to ietf_data_cache within "
+                         f"current working directory")
     ap.add_argument(
         "-f",
         "--force",
@@ -443,7 +446,16 @@ def parse_cmdline():
     ap.add_argument("uri",
                     metavar='uri',
                     nargs="*",
-                    help="provide draft[-rev][.extn]/ rfc[.extn]/ file-name ")
+                    help=f"Provide draft/rfc/filenames. "
+                         f"If name exists as a file, treat it as a local file. " 
+                         f"If not search ietf datatracker / rfc-index and download file. "
+                         f"If a file-extension is specified only that particular "
+                         f"file-type is downloaded. Otherwise all file types that "
+                         f"can be parsed are downloaded. "
+                         f"If a revision is specified for drafts, only that revision "
+                         f"will downloaded. Otherwise all revisions will be downloaded. "
+                         f"draft format : draft[-rev][.extn]."
+                         f"rfc format : rfc[.extn]")
 
     _obj = ap.parse_args()
     infiles = []
@@ -457,7 +469,7 @@ def parse_cmdline():
             # preprocessing before actual parser call
             drafts = fetch_new_drafts( rwd.prev_sync_time( 'draft', None if _obj.newdraft == epoch else _obj.newdraft))
             for _idx, u in enumerate(drafts):
-                print(f"Draft [{_idx}] --> {u}")
+                print(f"Fetch draft [{_idx}] --> {u}")
             dlclient.download_files(drafts)
 
             infiles += drafts
@@ -471,7 +483,7 @@ def parse_cmdline():
             # preprocessing before actual parser call
             rfcs = fetch_new_rfcs( rwd.prev_sync_time('rfc', None if _obj.newrfc == epoch else _obj.newrfc))
             for _idx, u in enumerate(rfcs):
-                print(f"RFC [{_idx}]  --> {u}")
+                print(f"Fetch rfc [{_idx}]  --> {u}")
             dlclient.download_files(rfcs)
 
             infiles += rfcs
@@ -497,6 +509,7 @@ def parse_cmdline():
 
         for idx, inf in enumerate(infiles):
             print(f"File [{idx}]  --> {inf.get_filepath()}")
+    return infiles
 
 
 if __name__ == '__main__':
