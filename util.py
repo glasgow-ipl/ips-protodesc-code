@@ -13,10 +13,11 @@ from ietfdata import datatracker, rfcindex
 
 # supported document extensions
 valid_extns = [".xml", ".txt"]
+output_formats = ["simple", "rust"]
 
 
 @dataclass
-class RootWorkingDir: 
+class RootWorkingDir:
     """=================================================================================================================================
     Root directory under which all input files will be stored.  
     Specified on the command-line using using -d option 
@@ -65,7 +66,7 @@ class RootWorkingDir:
                 self._meta = json.load(fp)
         return self
 
-    def __exit__(self, ex_type, ex, ex_tb): 
+    def __exit__(self, ex_type, ex, ex_tb):
         """Context manager destructor"""
         #print(f"ex-type --> {ex_type}, type --> {type(ex_type)}")
         #print(f"ex --> {ex}, type --> {type(ex)}")
@@ -74,7 +75,7 @@ class RootWorkingDir:
 
     def prev_sync_time(self,
                        doc_type: str,
-                       override: Optional[str] = None) -> datetime: 
+                       override: Optional[str] = None) -> datetime:
         """Returns last known time that parser tool was executed 
         within the context of this working directory
         
@@ -123,7 +124,7 @@ class RootWorkingDir:
 
 @dataclass(frozen=True)
 class DownloadOptions:
-    """Consolidated list of options to control download client""" 
+    """Consolidated list of options to control download client"""
     force: bool = False  # if set to True, override files in cache
 
 
@@ -162,14 +163,30 @@ class IETF_URI:
         self.infile = filename
         return filename
 
-    def get_filepath(self) -> Optional[pathlib.Path]:
+    def get_filepath_in(self) -> Optional[pathlib.Path]:
         return getattr(self, "infile", None)
+
+    def gen_filepath_out(self, root: pathlib.Path,
+                         output_extn: str) -> pathlib.Path:
+        """Generate the output file path. The extension is passed in
+        by the caller"""
+
+        infile = self.get_filepath_in()
+        outfile = None
+        assert infile != None, f"No input file found for '{str(self)}'"
+        out_dir = lambda _root: _root / "output" / self.name / self.rev if self.rev else _root / "output" / self.name
+
+        if root in infile.parents:
+            outfile = outdir(root) / f"{self._document_name()}{output_extn}"
+        else:
+            outfile = outdir(infile.parent) / f"{self._document_name()}{output_extn}"
+        return outfile
 
 
 @dataclass
 class DownloadClient:
     """Client to download remote URL resources in batch"""
-    fs   : RootWorkingDir
+    fs    : RootWorkingDir
     dlopts: Optional[DownloadOptions] = field(default_factory=DownloadOptions)
 
     def __enter__(self) -> None:
@@ -218,11 +235,12 @@ class DownloadClient:
 
 
 def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
-    """Fetch all new drafts since time 'since'""" 
+    """Fetch all new drafts since time 'since'"""
     trk = datatracker.DataTracker()
     draft_itr = trk.documents(
         since=since.strftime("%Y-%m-%dT%H:%M:%S"),
-        doctype=trk.document_type(datatracker.DocumentTypeURI("/api/v1/name/doctypename/draft/")))
+        doctype=trk.document_type(
+            datatracker.DocumentTypeURI("/api/v1/name/doctypename/draft/")))
 
     urls = []
     for draft in draft_itr:
@@ -236,27 +254,30 @@ def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
                                rev=submission.rev,
                                dtype="draft",
                                url=_url) 
-                      for _extn, _url in submission.urls() 
+                      for _extn, _url in submission.urls()
                           if _extn in valid_extns
                     ]
     return urls
 
 
 def fetch_new_rfcs(since: datetime) -> List[IETF_URI]:
-    """Fetch all new rfcs since time 'since'""" 
+    """Fetch all new rfcs since time 'since'"""
     rfcIndex = rfcindex.RFCIndex()
-    rfc_extn_convert = lambda _ext: ".txt" if _ext in [ "ASCII", "TEXT" ] else f".{_ext.lower()}"
+    rfc_extn_convert = lambda _ext: ".txt" if _ext in [
+        "ASCII", "TEXT"
+    ] else f".{_ext.lower()}"
     urls = []
     for rfc in rfcIndex.rfcs(since=since.strftime("%Y-%m")):
         for fmt in rfc.formats:
             extn = rfc_extn_convert(fmt)
             if extn not in valid_extns:
                 continue
-            urls.append( IETF_URI(rfc.doc_id.lower(),
-                                  extn,
-                                  rev=None,
-                                  dtype="rfc",
-                                  url=rfc.content_url(fmt)))
+            urls.append(
+                IETF_URI(rfc.doc_id.lower(),
+                         extn,
+                         rev=None,
+                         dtype="rfc",
+                         url=rfc.content_url(fmt)))
     return urls
 
 
@@ -298,7 +319,7 @@ class PositionalArg:
         if _match != None:
             return ("draft", 
                     _match.group('dtype') + _match.group("name"),
-                    _match.group("rev"), 
+                    _match.group("rev"),
                     _match.group("extn"))
 
         _match = regex_std.match(fname)
@@ -329,10 +350,11 @@ class PositionalArg:
                 ietf_uri = IETF_URI(name, extn, rev=rev, dtype=dtype)
             else:
                 ietf_uri = IETF_URI(fp.stem, fp.suffix, rev=None, dtype=None)
-            ietf_uri.set_filepath(fp)   # override standard file-system structure 
+            ietf_uri.set_filepath(
+                fp)  # override standard file-system structure
             urls.append(ietf_uri)
         else:
-            # Remote file - resolve all details from draft/rfc name 
+            # Remote file - resolve all details from draft/rfc name
             # and fetch all relevant input files
             ret_type = "remote"
             rname = self._match_name(fp.name)
@@ -363,7 +385,7 @@ class PositionalArg:
                                        rev=submission.rev,
                                        dtype="draft",
                                        url=_url) 
-                              for _ext, _url in submission.urls() 
+                              for _ext, _url in submission.urls()
                                   if _ext in valid_extns
                             ]
                 elif extn in valid_extns:
@@ -381,8 +403,8 @@ class PositionalArg:
             rfc = trk.rfc(name.upper())
             assert rfc != None, f"Invalid rfc -- {name}"
 
-            rfc_txt_label = lambda fmt: ("ASCII" if "ASCII" in fmt else "TEXT" )
-            extn_rfc_convert = lambda _ext: rfc_txt_label(rfc.formats) if _ext == ".txt" else _ext[ 1:].upper()
+            rfc_txt_label = lambda fmt: ("ASCII" if "ASCII" in fmt else "TEXT")
+            extn_rfc_convert = lambda _ext: rfc_txt_label(rfc.formats) if _ext == ".txt" else _ext[1:].upper()
             rfc_extn_convert = lambda _ext: ".txt" if _ext in ["ASCII", "TEXT"] else f".{_ext.lower()}"
 
             rfc_extensions = [rfc_extn_convert(_ext) for _ext in rfc.formats]
@@ -406,10 +428,25 @@ class PositionalArg:
         return urls
 
 
-def parse_cmdline():
+@dataclass
+class OptionContainer:
+    """Container holding all relevant command-line options 
+    for further processing"""
+    root_dir  : pathlib.Path
+    dlopts    : DownloadOptions
+    output_fmt: List[str]
+    infiles   : List[IETF_URI]
+
+    def __post_init__(self) -> None:
+        assert self.root_dir.exists() and self.root_dir.is_dir(), f"Cannot write to {self.root_dir}"
+        for ofmt in self.output_fmt:
+            assert ofmt in output_formats, f"output fmt {ofmt} not in {output_formats}"
+
+
+def parse_cmdline() -> OptionContainer:
     epoch = '1970-01-01 00:00:00'
     ap = argparse.ArgumentParser(description=f"Parse ietf drafts and rfcs "
-                                             f"and autogenerate protocol parsers")
+                                 f"and autogenerate protocol parsers")
 
     ap.add_argument(
         "-nd",
@@ -435,58 +472,65 @@ def parse_cmdline():
                     nargs=1,
                     default=[str(pathlib.Path().cwd() / "ietf_data_cache")],
                     help=f"Root directory for all files. "
-                         f"This has to be a pre-existing directory. " 
+                         f"This has to be a pre-existing directory. "
                          f"Defaults to ietf_data_cache within "
                          f"current working directory")
+    ap.add_argument("-of",
+                    "--outformat",
+                    metavar="format",
+                    nargs=1,
+                    default="simple,rust".split(sep=','),
+                    help=f"comma delimited list of output formats. "
+                         f"current output formats are simple,rust")
     ap.add_argument(
         "-f",
         "--force",
         action="store_true",
         help=f"Downloaded files will overwrite files in data directory")
-    ap.add_argument("uri",
-                    metavar='uri',
-                    nargs="*",
-                    help=f"Provide draft/rfc/filenames. "
-                         f"If name exists as a file, treat it as a local file. " 
-                         f"If not search ietf datatracker / rfc-index and download file. "
-                         f"If a file-extension is specified only that particular "
-                         f"file-type is downloaded. Otherwise all file types that "
-                         f"can be parsed are downloaded. "
-                         f"If a revision is specified for drafts, only that revision "
-                         f"will downloaded. Otherwise all revisions will be downloaded. "
-                         f"draft format : draft[-rev][.extn]."
-                         f"rfc format : rfc[.extn]")
+    ap.add_argument(
+        "uri",
+        metavar='uri',
+        nargs="*",
+        help=f"Provide draft/rfc/filenames. "
+             f"If name exists as a file, treat it as a local file. "
+             f"If not search ietf datatracker / rfc-index and download file. "
+             f"If a file-extension is specified only that particular "
+             f"file-type is downloaded. Otherwise all file types that "
+             f"can be parsed are downloaded. "
+             f"If a revision is specified for drafts, only that revision "
+             f"will downloaded. Otherwise all revisions will be downloaded. "
+             f"draft format : draft[-rev][.extn]."
+             f"rfc format : rfc[.extn]")
 
     _obj = ap.parse_args()
-    infiles = []
-
-    root_dir = pathlib.Path(_obj.dir[0])
-    dlopts = DownloadOptions(force=_obj.force)
+    opt = OptionContainer(pathlib.Path(_obj.dir[0]),
+                          DownloadOptions(force=_obj.force), 
+                          _obj.outformat, [])
 
     if _obj.newdraft:
         fromdate = datetime.strptime(_obj.newdraft, "%Y-%m-%d %H:%M:%S")
-        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(fs=rwd, dlopts=dlopts) as dlclient:
+        with RootWorkingDir(root=opt.root_dir) as rwd, DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
-            drafts = fetch_new_drafts( rwd.prev_sync_time( 'draft', None if _obj.newdraft == epoch else _obj.newdraft))
+            drafts = fetch_new_drafts(rwd.prev_sync_time('draft',None if _obj.newdraft == epoch else _obj.newdraft))
             for _idx, u in enumerate(drafts):
                 print(f"Fetch draft [{_idx}] --> {u}")
             dlclient.download_files(drafts)
 
-            infiles += drafts
+            opt.infiles += drafts
 
             # post-processing starts here
             # update meta data within cached filesys
             rwd.update_sync_time("draft")
     elif _obj.newrfc:
         fromdate = datetime.strptime(_obj.newrfc, "%Y-%m-%d %H:%M:%S")
-        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(fs=rwd, dlopts=dlopts) as dlclient:
+        with RootWorkingDir(root=opt.root_dir) as rwd,DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
-            rfcs = fetch_new_rfcs( rwd.prev_sync_time('rfc', None if _obj.newrfc == epoch else _obj.newrfc))
+            rfcs = fetch_new_rfcs(rwd.prev_sync_time('rfc', None if _obj.newrfc == epoch else _obj.newrfc))
             for _idx, u in enumerate(rfcs):
                 print(f"Fetch rfc [{_idx}]  --> {u}")
             dlclient.download_files(rfcs)
 
-            infiles += rfcs
+            opt.infiles += rfcs
 
             # post-processing starts here
             # update meta data within cached filesys
@@ -500,16 +544,15 @@ def parse_cmdline():
             elif uri_type == 'local':
                 local += urls
         else:
-            infiles += local
+            opt.infiles += local
 
-        with RootWorkingDir(root=root_dir) as rwd, DownloadClient(
-                fs=rwd, dlopts=dlopts) as dlclient:
+        with RootWorkingDir(root=opt.root_dir) as rwd, DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             dlclient.download_files(remote)
-            infiles += remote
+            opt.infiles += remote
 
-        for idx, inf in enumerate(infiles):
-            print(f"File [{idx}]  --> {inf.get_filepath()}")
-    return infiles
+        for idx, inf in enumerate(opt.infiles):
+            print(f"File [{idx}]  --> {inf.get_filepath_in()}")
+    return opt
 
 
 if __name__ == '__main__':

@@ -29,7 +29,10 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+import sys
 import argparse
+import util
+from typing import Optional
 import requests
 import xml.etree.ElementTree as ET
 import os.path
@@ -109,13 +112,74 @@ def dfs_protocol(protocol: Protocol):
 
     return type_names_dedupe
 
-def main():
-    argparser = argparse.ArgumentParser()
 
-    argparser.add_argument("--docname",       type=str, required=True)
-    argparser.add_argument("--output-format", type=str, required=False, help="If not specified, the output format will be inferred from the output filename's extension")
-    argparser.add_argument("--output-file",   type=str, required=True)
 
+def parse_input_file( doc : util.IETF_URI ) -> Optional[rfc.RFC] : 
+    content = None 
+    if doc.extn == '.xml' : 
+        with open( doc.get_filepath_in() , 'r') as infile : 
+            raw_content = infile.read() 
+            xml_tree = ET.fromstring(raw_content) 
+            content = parsers.rfc.rfc_xml_parser.parse_rfc(xml_tree) 
+    elif doc.extn == '.txt' : 
+        with open( doc.get_filepath_in() , 'r') as infile : 
+            raw_content = infile.readlines() 
+            content = parsers.rfc.rfc_txt_parser.parse_rfc(raw_content)
+    return content
+
+def main1():
+    # Set up optional component parsers
+    # TODO : Currently we have only one parser. When multiple parsers
+    # for each sub-subcomponent are available, loop through them and initialise
+    #dom_parser = { "asciidiagrams" : parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser() }
+    dom_parser = parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser()
+    output_formatter = {
+            "simple" : (".txt", formatters.simple_formatter.SimpleFormatter()),
+            "rust"   : (".rs" , formatters.rust_formatter.RustFormatter())
+            }
+
+    opt = util.parse_cmdline()
+    for idx, doc in enumerate(opt.infiles):
+        print(f"document [{idx}] --> {doc} --> {doc.get_filepath_in()}")
+        parsed_content = parse_input_file( doc )
+        if parsed_content == None :
+            print(f"Error : Parsing {doc.get_filepath()} -> container = {doc}")
+            continue
+        protocol = dom_parser.build_protocol(  None , parsed_content )
+        type_names = dfs_protocol(protocol)
+        for o_fmt in opt.output_fmt :
+            formatter = output_formatter[o_fmt]
+
+            try:
+                for type_name in type_names:
+                    if protocol.has_type(type_name):
+                        pt = protocol.get_type(type_name)
+                        if type(pt) is BitString:
+                           formatter.format_bitstring(pt)
+                        elif type(pt) is Struct:
+                            formatter.format_struct(pt)
+                        elif type(pt) is Array:
+                            formatter.format_array(pt)
+                        elif type(pt) is Enum:
+                            formatter.format_enum(pt)
+                        elif type(pt) is Context:
+                            formatter.format_context(pt)
+                    elif protocol.has_func(type_name):
+                        formatter.format_function(protocol.get_func(type_name))
+                formatter.format_protocol(protocol)
+            except Exception as e:
+                print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter")
+            # Output to file
+            with open(doc.gen_filepath_out( opt.root_dir, output_formatter[o_fmt]), "w+") as out_file:
+                out_file.write(formatter.generate_output())
+
+
+
+def main(): 
+    argparser = argparse.ArgumentParser() 
+    argparser.add_argument("--docname",       type=str, required=True) 
+    argparser.add_argument("--output-format", type=str, required=False, help="If not specified, the output format will be inferred from the output filename's extension") 
+    argparser.add_argument("--output-file",   type=str, required=True) 
     args = argparser.parse_args()
 
     xml = None
@@ -214,4 +278,4 @@ def main():
         outputFile.write(output_formatter.generate_output())
 
 if __name__ == "__main__":
-    main()
+    main1()
