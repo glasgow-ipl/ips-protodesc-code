@@ -29,16 +29,9 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-import sys
-import argparse
 import util
 from typing import Optional
-import requests
 import xml.etree.ElementTree as ET
-import os.path
-import urllib
-
-import ietfdata.datatracker as DT
 
 from protocol import *
 
@@ -53,8 +46,6 @@ import parsers.asciidiagrams.asciidiagrams_parser
 import formatters.formatter
 import formatters.simple_formatter
 import formatters.rust_formatter
-
-ACTIVE_ID_URL = "https://www.ietf.org/id/"
 
 # Protocol DFS
 
@@ -127,7 +118,7 @@ def parse_input_file( doc : util.IETF_URI ) -> Optional[rfc.RFC] :
             content = parsers.rfc.rfc_txt_parser.parse_rfc(raw_content)
     return content
 
-def main1():
+def main():
     # Set up optional component parsers
     # TODO : Currently we have only one parser. When multiple parsers
     # for each sub-subcomponent are available, loop through them and initialise
@@ -145,11 +136,12 @@ def main1():
         if parsed_content == None :
             print(f"Error : Parsing {doc.get_filepath()} -> container = {doc}")
             continue
+
         protocol = dom_parser.build_protocol(  None , parsed_content )
         type_names = dfs_protocol(protocol)
-        for o_fmt in opt.output_fmt :
-            formatter = output_formatter[o_fmt]
 
+        for o_fmt in opt.output_fmt :
+            out_extn, formatter = output_formatter[o_fmt]
             try:
                 for type_name in type_names:
                     if protocol.has_type(type_name):
@@ -169,113 +161,13 @@ def main1():
                 formatter.format_protocol(protocol)
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter")
-            # Output to file
-            with open(doc.gen_filepath_out( opt.root_dir, output_formatter[o_fmt]), "w+") as out_file:
-                out_file.write(formatter.generate_output())
 
+            output_file = doc.gen_filepath_out( opt.root_dir, out_extn)
+            output_file.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+            with open(output_file, "w") as out_fp:
+                out_fp.write(formatter.generate_output())
+                print(f"Generated {o_fmt} output :\ninput doc = {doc.get_filepath_in()},\n--- output file = {output_file}")
 
-
-def main(): 
-    argparser = argparse.ArgumentParser() 
-    argparser.add_argument("--docname",       type=str, required=True) 
-    argparser.add_argument("--output-format", type=str, required=False, help="If not specified, the output format will be inferred from the output filename's extension") 
-    argparser.add_argument("--output-file",   type=str, required=True) 
-    args = argparser.parse_args()
-
-    xml = None
-    txt = None
-    parsed_rfc = None
-
-    # ============================================================================================
-    # RFC -> RFC DOM
-    # ============================================================================================
-
-    if os.path.exists(args.docname):
-        with open(args.docname) as inputFile:
-            if args.docname[-3:] == "xml":
-                xml = inputFile.read()
-            else:
-                txt = inputFile.readlines()
-    else:
-        # TODO: this could be much smarter about document names; doesn't handle errors/XML not being available
-        dt = DT.DataTracker()
-        doc = dt.document_from_draft(args.docname)
-        if doc is not None:
-            with urllib.request.urlopen(ACTIVE_ID_URL + doc.name + "-" + doc.rev + ".xml") as response:
-                xml = response.read()
-        else:
-            return
-
-    if xml is not None:
-        rfcXml = ET.fromstring(xml)
-        parsed_rfc = parsers.rfc.rfc_xml_parser.parse_rfc(rfcXml)
-    elif txt is not None:
-        parsed_rfc = parsers.rfc.rfc_txt_parser.parse_rfc(txt)
-
-    # ============================================================================================
-    # RFC DOM -> Protocol
-    # ============================================================================================
-
-    dom_parsers = ["asciidiagrams"]
-
-    construct_dom_parser = {
-                            "asciidiagrams"     : parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser(),
-                           }
-
-    protocol = None
-
-    for dom_parser_name in dom_parsers:
-        dom_parser = construct_dom_parser[dom_parser_name]
-        protocol = dom_parser.build_protocol(protocol, parsed_rfc)
-
-    # ============================================================================================
-    # Protocol -> output
-    # ============================================================================================
-
-    type_names = dfs_protocol(protocol)
-
-    output_file_ext = args.output_file.split(".")[-1]
-
-    file_exts = {
-        "rs"  : "rust_formatter",
-        "txt" : "simple_formatter"
-    }
-
-    if args.output_format is None:
-        output_file_ext = args.output_file.split(".")[-1]
-        args.output_format = file_exts.get(output_file_ext, "simpleprinter")
-
-    construct_output_formatter = {
-                                  "simple_formatter" : formatters.simple_formatter.SimpleFormatter(),
-                                  "rust_formatter"   : formatters.rust_formatter.RustFormatter()
-                                 }
-
-    output_formatter = construct_output_formatter[args.output_format]
-
-    # Format the protocol using output formatter
-    try:
-        for type_name in type_names:
-            if protocol.has_type(type_name):
-                pt = protocol.get_type(type_name)
-                if type(pt) is BitString:
-                    output_formatter.format_bitstring(pt)
-                elif type(pt) is Struct:
-                    output_formatter.format_struct(pt)
-                elif type(pt) is Array:
-                    output_formatter.format_array(pt)
-                elif type(pt) is Enum:
-                    output_formatter.format_enum(pt)
-                elif type(pt) is Context:
-                    output_formatter.format_context(pt)
-            elif protocol.has_func(type_name):
-                output_formatter.format_function(protocol.get_func(type_name))
-        output_formatter.format_protocol(protocol)
-    except Exception as e:
-        print("*** Error *** Could not format protocol with specified formatter (%s)" % (args.output_format))
-
-    # Output to file
-    with open(args.output_file, "w+") as outputFile:
-        outputFile.write(output_formatter.generate_output())
 
 if __name__ == "__main__":
-    main1()
+    main()

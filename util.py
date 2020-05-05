@@ -174,9 +174,10 @@ class IETF_URI:
         infile = self.get_filepath_in()
         outfile = None
         assert infile != None, f"No input file found for '{str(self)}'"
-        out_dir = lambda _root: _root / "output" / self.name / self.rev if self.rev else _root / "output" / self.name
+        outdir = lambda _root: _root / "output" / self.name / self.rev if self.rev else _root / "output" / self.name
 
-        if root in infile.parents:
+        root = root.resolve()
+        if str(root) in [ str(parent) for parent in infile.parents]:
             outfile = outdir(root) / f"{self._document_name()}{output_extn}"
         else:
             outfile = outdir(infile.parent) / f"{self._document_name()}{output_extn}"
