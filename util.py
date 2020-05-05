@@ -510,7 +510,7 @@ def parse_cmdline() -> OptionContainer:
                     "--outformat",
                     metavar="format",
                     nargs=1,
-                    default="simple,rust".split(sep=','),
+                    default=["simple,rust"], 
                     help=f"comma delimited list of output formats. "
                          f"current output formats are simple,rust")
     ap.add_argument(
@@ -536,7 +536,7 @@ def parse_cmdline() -> OptionContainer:
     _obj = ap.parse_args()
     opt = OptionContainer(pathlib.Path(_obj.dir[0]),
                           DownloadOptions(force=_obj.force), 
-                          _obj.outformat, [])
+                          _obj.outformat[0].split(sep=','), [])
 
     if _obj.newdraft:
         fromdate = datetime.strptime(_obj.newdraft, "%Y-%m-%d %H:%M:%S")
