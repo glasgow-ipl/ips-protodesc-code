@@ -109,11 +109,10 @@ class AsciiDiagramsParser(Parser):
                     desc_list = section.content[i+3]
                     fields = {}
                     name_map = {}
-
                     for i in range(len(desc_list.content)):
                         title, desc = desc_list.content[i]
-                        field = parser(title.content[0]).field_title()
-                        context_field = parser(desc.content[0]).context_use()
+                        field = parser(title.content[-1]).field_title()
+                        context_field = parser(desc.content[-1]).context_use()
                         field["context_field"] = context_field
                         if field["short_label"] is not None:
                             name_map[field["short_label"]] = field["full_label"]
