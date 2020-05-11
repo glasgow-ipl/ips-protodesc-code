@@ -64,13 +64,17 @@ class RustFormatter(Formatter):
     #assign the smallest possible unsigned int which can accommodate the size given
     def assign_int_size(self, bitstring:BitString):
         #TODO: determine how to handle bitstrings which aren't given an explicit size
-        if bitstring.size <= 8:
+        #exception was being thrown here when a BitString had size None
+        #TODO: see if there's a better way of handling this than just writing a u8
+        if bitstring.size is None:
             return 8
-        elif bitstring.size <= 16:
+        elif bitstring.size.constant_value <= 8:
+            return 8
+        elif bitstring.size.constant_value <= 16:
             return 16
-        elif bitstring.size <= 32:
+        elif bitstring.size.constant_value <= 32:
             return 32
-        elif bitstring.size <= 64:
+        elif bitstring.size.constant_value <= 64:
             return 64
         else:
             return 128
