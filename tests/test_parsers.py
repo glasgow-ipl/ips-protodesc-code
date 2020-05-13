@@ -53,5 +53,6 @@ class TestParsers(unittest.TestCase):
     def test_asciidiagram_parser(self):
         ascii_diagram_parser = parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser()
         protocol = ascii_diagram_parser.build_protocol(None, self.content)
+        self.assertEqual(protocol.get_protocol_name(),  "Example")
         self.assertEqual(len(protocol.get_pdu_names()), 4)
         #TODO
