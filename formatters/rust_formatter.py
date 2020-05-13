@@ -64,13 +64,17 @@ class RustFormatter(Formatter):
     #assign the smallest possible unsigned int which can accommodate the size given
     def assign_int_size(self, bitstring:BitString):
         #TODO: determine how to handle bitstrings which aren't given an explicit size
-        if bitstring.size <= 8:
+        #exception was being thrown here when a BitString had size None
+        #TODO: see if there's a better way of handling this than just writing a u8
+        if bitstring.size is None:
             return 8
-        elif bitstring.size <= 16:
+        elif bitstring.size.constant_value <= 8:
+            return 8
+        elif bitstring.size.constant_value <= 16:
             return 16
-        elif bitstring.size <= 32:
+        elif bitstring.size.constant_value <= 32:
             return 32
-        elif bitstring.size <= 64:
+        elif bitstring.size.constant_value <= 64:
             return 64
         else:
             return 128
@@ -183,13 +187,17 @@ class RustFormatter(Formatter):
                 for i in range(len(protocol.get_type(item).fields)):
                     self.output.append("{f_name}: {closure_term}, ".format(f_name=protocol.get_type(item).fields[i].field_name, closure_term=closure_terms[i]))
                 self.output.append("})(input)")
-
+                #there are far more Expression items in constraints now
+                #the original process of looping over all items no longer works
+                #TODO: find a way of dealing with nested expressions
+                #for constraint in protocol.get_type(item).constraints:
                 for constraint in protocol.get_type(item).constraints:
                     #TODO: change from hardcoded '.0' to handle fields with more than one element (ie. arrays or tuples)
                     if protocol.get_type(item).constraints.index(constraint) == 0:
-                        self.output.append(" {{\n        Ok((remain, parsed_value)) => \n        if parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
+                        self.output.append(" {{\n        Ok((remain, parsed_value)) => \n        if parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.target.field_name))
                     else:
-                        self.output.append(" parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.field_name))
+                        #TODO: make target.target fix less fragile, only works for QUIC example
+                        self.output.append(" parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.target.field_name))
                     #TODO: refactor this into something less bloated
                     if constraint.method_name == "eq":
                         self.output.append("== ")
@@ -203,7 +211,20 @@ class RustFormatter(Formatter):
                         self.output.append("> ")
                     elif constraint.method_name == "ge":
                         self.output.append(">= ")
-                    self.output.append("{term} ".format(term=constraint.arg_exprs[0].arg_value.constant_value))
+                    #not proud of what's happened here - band-aid fix for the QUIC example
+                    #TODO: refactor this into something much less fragile
+                    try:
+                        self.output.append("{term} ".format(term=constraint.arg_exprs[0].arg_value.constant_value))
+                    except:
+                        pass
+                    try:
+                        self.output.append("{term} ".format(term=constraint.arg_exprs[0].arg_value.target.field_name))
+                    except:
+                        pass
+                    print("term appended")
+                    print("item type: %s" % protocol.get_type(item))
+                    print("constraint index: %d" % protocol.get_type(item).constraints.index(constraint))
+                    print("constraints len: %d" % len(protocol.get_type(item).constraints))
                     if protocol.get_type(item).constraints.index(constraint)+1 == len(protocol.get_type(item).constraints):
                         self.output.append("{{\n            Ok((remain, parsed_value))\n        }} else {{\n            Err(Error((remain, ErrorKind::Verify)))\n        }}\n        Err(e) => {{\n            Err(e)\n        }}\n    }}".format())
                     else:
