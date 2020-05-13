@@ -1,4 +1,3 @@
-#!/bin/sh
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
@@ -29,7 +28,30 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-pipenv run pytest --junitxml=../test-results/protocol-tests.xml tests/test_protocol.py
-pipenv run pytest --junitxml=../test-results/parser-tests.xml tests/test_parsers.py
-#pipenv run pytest --junitxml=../test-results/code-generator-tests.xml tests/output_formatters/test_code_generator.py
-mypy protocol.py --junit-xml test-results/protocol-typecheck.xml
+import sys
+import unittest
+import xml.etree.ElementTree as ET
+
+sys.path.append('.')
+
+from protocol import *
+
+# RFC DOM input parsers
+import parsers.parser
+import parsers.rfc.rfc as rfc
+import parsers.rfc.rfc_txt_parser
+import parsers.rfc.rfc_xml_parser
+import parsers.asciidiagrams.asciidiagrams_parser
+
+class TestParsers(unittest.TestCase):
+    def setUp(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as example_file:
+            raw_content = example_file.read()
+            xml_tree = ET.fromstring(raw_content)
+            self.content = parsers.rfc.rfc_xml_parser.parse_rfc(xml_tree)
+
+    def test_asciidiagram_parser(self):
+        ascii_diagram_parser = parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser()
+        protocol = ascii_diagram_parser.build_protocol(None, self.content)
+        self.assertEqual(len(protocol.get_pdu_names()), 4)
+        #TODO
