@@ -47,6 +47,59 @@ import formatters.formatter
 import formatters.simple_formatter
 import formatters.rust_formatter
 
+# Expression DFS
+
+def dfs_expression(formatter: formatters.formatter, expr: Expression) -> Any:
+    expr_type = type(expr)
+    if expr_type is ArgumentExpression:
+        return dfs_argumentexpression(formatter, expr)
+    elif expr_type is MethodInvocationExpression:
+        return dfs_methodinvocationexpr(formatter, expr)
+    elif expr_type is FunctionInvocationExpression:
+        return dfs_functioninvocationexpr(formatter, expr)
+    elif expr_type is FieldAccessExpression:
+        return dfs_fieldaccessexpr(formatter, expr)
+    elif expr_type is ContextAccessExpression:
+        return dfs_contextaccessexpr(formatter, expr)
+    elif expr_type is IfElseExpression:
+        return dfs_ifelseexpr(formatter, expr)
+    elif expr_type is SelfExpression:
+        return dfs_selfexpr(formatter, expr)
+    elif expr_type is ConstantExpression:
+        return dfs_constantexpr(formatter, expr)
+
+def dfs_argumentexpression(formatter: formatters.formatter, expr: ArgumentExpression) -> Any:
+    arg_value = dfs_expression(formatter, expr.arg_value)
+    return formatter.format_argumentexpression(expr.arg_name, arg_value)
+
+def dfs_methodinvocationexpr(formatter: formatters.formatter, expr: MethodInvocationExpression) -> Any:
+    target = dfs_expression(formatter, expr.target)
+    arg_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.arg_exprs]
+    return formatter.format_methodinvocationexpr(target, expr.method_name, arg_exprs)
+
+def dfs_functioninvocationexpr(formatter: formatters.formatter, expr: FunctionInvocationExpression) -> Any:
+    args_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.args_exprs]
+    return formatter.format_functioninvocationexpr(expr.func.name, args_exprs)
+
+def dfs_fieldaccessexpr(formatter: formatters.formatter, expr: FieldAccessExpression) -> Any:
+    target = dfs_expression(formatter, expr.target)
+    return formatter.format_fieldaccessexpr(target, expr.field_name)
+
+def dfs_contextaccessexpr(formatter: formatters.formatter, expr: ContextAccessExpression) -> Any:
+    return formatter.format_contextaccessexpr(formatter, expr.field_name)
+
+def dfs_ifelseexpr(formatter: formatters.formatter, expr: IfElseExpression) -> Any:
+    condition = dfs_expression(formatter, expr.condition)
+    if_true = dfs_expression(formatter, expr.if_true)
+    if_false = dfs_expression(formatter, expr.if_false)
+    return formatter.format_ifelseexpr(self, condition, if_true, if_false)
+
+def dfs_selfexpr(formatter: formatters.formatter, expr: SelfExpression) -> Any:
+    return formatter.format_selfexpr()
+
+def dfs_constantexpr(formatter: formatters.formatter, expr: ConstantExpression) -> Any:
+    return formatter.format_constantexpr(expr.constant_type.name, expr.constant_value)
+
 # Protocol DFS
 
 def dfs_struct(struct: Struct, type_names:List[str]):
@@ -105,16 +158,16 @@ def dfs_protocol(protocol: Protocol):
 
 
 
-def parse_input_file( doc : util.IETF_URI ) -> Optional[rfc.RFC] : 
-    content = None 
-    if doc.extn == '.xml' : 
-        with open( doc.get_filepath_in() , 'r') as infile : 
-            raw_content = infile.read() 
-            xml_tree = ET.fromstring(raw_content) 
-            content = parsers.rfc.rfc_xml_parser.parse_rfc(xml_tree) 
-    elif doc.extn == '.txt' : 
-        with open( doc.get_filepath_in() , 'r') as infile : 
-            raw_content = infile.readlines() 
+def parse_input_file( doc : util.IETF_URI ) -> Optional[rfc.RFC] :
+    content = None
+    if doc.extn == '.xml' :
+        with open( doc.get_filepath_in() , 'r') as infile :
+            raw_content = infile.read()
+            xml_tree = ET.fromstring(raw_content)
+            content = parsers.rfc.rfc_xml_parser.parse_rfc(xml_tree)
+    elif doc.extn == '.txt' :
+        with open( doc.get_filepath_in() , 'r') as infile :
+            raw_content = infile.readlines()
             content = parsers.rfc.rfc_txt_parser.parse_rfc(raw_content)
     return content
 
@@ -126,7 +179,7 @@ def main():
     dom_parser = parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser()
     output_formatter = {
             "simple" : (".txt", formatters.simple_formatter.SimpleFormatter()),
-            "rust"   : (".rs" , formatters.rust_formatter.RustFormatter())
+            #"rust"   : (".rs" , formatters.rust_formatter.RustFormatter())
             }
 
     opt = util.parse_cmdline()
@@ -147,9 +200,14 @@ def main():
                     if protocol.has_type(type_name):
                         pt = protocol.get_type(type_name)
                         if type(pt) is BitString:
-                           formatter.format_bitstring(pt)
+                            size_expr = dfs_expression(formatter, pt.size)
+                            formatter.format_bitstring(pt, formatter.format_expression(size_expr))
                         elif type(pt) is Struct:
-                            formatter.format_struct(pt)
+                            constraints = []
+                            for constraint in pt.constraints:
+                                expr = dfs_expression(formatter, constraint)
+                                constraints.append(formatter.format_expression(expr))
+                            formatter.format_struct(pt, constraints)
                         elif type(pt) is Array:
                             formatter.format_array(pt)
                         elif type(pt) is Enum:
@@ -159,10 +217,11 @@ def main():
                     elif protocol.has_func(type_name):
                         formatter.format_function(protocol.get_func(type_name))
             except Exception as e:
+                raise e
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt.kind.lower()} failed)")
                 continue
             try:
-                formatter.format_protocol(protocol)           
+                formatter.format_protocol(protocol)
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_protocol failed)")
                 continue

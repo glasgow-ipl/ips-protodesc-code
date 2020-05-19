@@ -43,40 +43,45 @@ class SimpleFormatter(Formatter):
     def generate_output(self):
         return "\n".join(self.output)
 
-    def format_expression(self, expr:Expression):
-        if type(expr) is ConstantExpression and type(expr.constant_type) is Number:
-            return "%s" % (expr.constant_value)
-        elif type(expr) is MethodInvocationExpression:
-            operators = {"plus": "+",
-                         "minus": "-",
-                         "multiply": "*",
-                         "divide": "/",
-                         "modulo": "%",
-                         "pow": "^",
-                         "ge": ">=",
-                         "gt": ">",
-                         "lt": "<",
-                         "le": "<=",
-                         "and": "&&",
-                         "or": "||",
-                         "not": "!",
-                         "eq": "==",
-                         "ne": "!="}
-            if expr.method_name in operators:
-                return "(%s %s %s)" % (self.format_expression(expr.target), operators[expr.method_name], self.format_expression(expr.arg_exprs[0].arg_value))
-            elif expr.method_name == "to_number":
-                return self.format_expression(expr.target)
-        elif type(expr) is FieldAccessExpression:
-            return expr.field_name
+    def format_argumentexpression(self, arg_name: str, arg_value: Any) -> Any:
+        return "{}={}".format(arg_name, arg_value)
 
-    def format_bitstring(self, bitstring:BitString):
-        self.output.append("BitString ({}) [size: {} bits]".format(bitstring, self.format_expression(bitstring.size)))
+    def format_methodinvocationexpr(self, target: Any, method_name: str, arg_exprs: List[Any]) -> Any:
+        if len(arg_exprs) == 0:
+            arg_exprs_str = ""
+        else:
+            arg_exprs_str = ",".join(arg_exprs)
+        return "{}.{}({})".format(target, method_name, arg_exprs_str)
 
-    def format_struct(self, struct:Struct):
+    def format_functioninvocationexpr(self, func_name: str, args_exprs: List[Any]) -> Any:
+        return "{}({})".format(func_name, args_exprs)
+
+    def format_fieldaccessexpr(self, target: Any, field_name: str) -> Any:
+        return "{}.{}".format(target, field_name)
+
+    def format_contextaccessexpr(self, field_name: str) -> Any:
+        return "Context.{}".format(field_name)
+
+    def format_ifelseexpr(self, condition: Any, if_true: Any, if_false: Any) -> Any:
+        return "({}) ? {} : {}".format(condition, if_true, if_false)
+
+    def format_selfexpr(self) -> Any:
+        return "Self"
+
+    def format_constantexpr(self, constant_type: str, constant_value: Any) -> Any:
+        return str(constant_value)
+
+    def format_expression(self, expr:Any):
+        return str(expr)
+
+    def format_bitstring(self, bitstring:BitString, size: str):
+        self.output.append("BitString ({}) [size: {} bits]".format(bitstring, size))
+
+    def format_struct(self, struct:Struct, constraints: List[str]):
         self.output.append("Struct ({})".format(struct))
         for field in struct.fields:
             self.output.append("\tField ({})".format(field))
-        for constraint in struct.constraints:
+        for constraint in constraints:
             self.output.append("\tConstraint ({})".format(constraint))
         for action in struct.actions:
             self.output.append("\tAction ({})".format(action))

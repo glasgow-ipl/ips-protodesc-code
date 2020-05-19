@@ -41,15 +41,47 @@ class Formatter(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def format_expression(self, expr:Expression) -> str:
+    def format_expression(self, carry: Any) -> str:
         pass
 
     @abc.abstractmethod
-    def format_bitstring(self, bitstring:BitString, parent_pt=None):
+    def format_argumentexpression(self, arg_name: str, arg_value: Any) -> Any:
         pass
 
     @abc.abstractmethod
-    def format_struct(self, struct:Struct):
+    def format_methodinvocationexpr(self, target: Any, method_name: str, arg_exprs: List[Any]) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def format_functioninvocationexpr(self, func_name: str, args_exprs: List[Any]) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def format_fieldaccessexpr(self, target: Any, field_name: str) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def format_contextaccessexpr(self, field_name: str) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def format_ifelseexpr(self, condition: Any, if_true: Any, if_false: Any) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def format_selfexpr(self) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def format_constantexpr(self, constant_type: str, constant_value: Any) -> Any:
+        pass
+
+    @abc.abstractmethod
+    def format_bitstring(self, bitstring:BitString, size: str, parent_pt=None):
+        pass
+
+    @abc.abstractmethod
+    def format_struct(self, struct:Struct, constraints: List[str]):
         pass
 
     @abc.abstractmethod
