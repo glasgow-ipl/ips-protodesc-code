@@ -49,13 +49,13 @@ output_formats = ["simple", "rust"]
 @dataclass
 class RootWorkingDir:
     """=================================================================================================================================
-    Root directory under which all input files will be stored.  
-    Specified on the command-line using using -d option 
-    ... defaults to current-working-dir>/ietf_data_cache 
-      
-    File structure is as follows : 
-    root --- 
-     |-- .sync  - file holding last polled time for rfcs and drafts. 
+    Root directory under which all input files will be stored.
+    Specified on the command-line using using -d option
+    ... defaults to current-working-dir>/ietf_data_cache
+
+    File structure is as follows :
+    root ---
+     |-- .sync  - file holding last polled time for rfcs and drafts.
      |-- draft/draft-<draft-name>/<rev>/<input-draft-file>.<extn>
      |-- rfc/<rfcname>/<input-rfc-file>.<extn>
      |-- output  - holds the results of parser generator
@@ -106,12 +106,12 @@ class RootWorkingDir:
     def prev_sync_time(self,
                        doc_type: str,
                        override: Optional[str] = None) -> datetime:
-        """Returns last known time that parser tool was executed 
+        """Returns last known time that parser tool was executed
         within the context of this working directory
-        
+
         If command-line override is provided for start time
         use it.  Otherwise if tool is executed for the first time
-        return start time as epoch. 
+        return start time as epoch.
         """
         if override:
             return datetime.strptime(override, "%Y-%m-%d %H:%M:%S")
@@ -160,7 +160,7 @@ class DownloadOptions:
 
 @dataclass
 class IETF_URI:
-    """Container class to hold data about each document that is processed. 
+    """Container class to hold data about each document that is processed.
     dtype - can be one of "draft" or "rfc"
     url - to be utilised in case document has to be accessed from a remote server.
           Not utilised for local files
@@ -186,9 +186,9 @@ class IETF_URI:
         return self.infile
 
     def set_filepath(self, filename: pathlib.Path) -> pathlib.Path:
-        """override the standard path of an input file 
-        and set the input file to an ad-hoc local file location. 
-        Used when specifying local files as positional arguments to tool. 
+        """override the standard path of an input file
+        and set the input file to an ad-hoc local file location.
+        Used when specifying local files as positional arguments to tool.
         """
         self.infile = filename
         return filename
@@ -284,7 +284,7 @@ def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
                                _extn,
                                rev=submission.rev,
                                dtype="draft",
-                               url=_url) 
+                               url=_url)
                       for _extn, _url in submission.urls()
                           if _extn in valid_extns
                     ]
@@ -313,26 +313,26 @@ def fetch_new_rfcs(since: datetime) -> List[IETF_URI]:
 
 
 class PositionalArg:
-    """Resolve various modes of positional arguments 
-    1. If positional argument is a local file 
+    """Resolve various modes of positional arguments
+    1. If positional argument is a local file
        parse and generate code for this file
-    2. If not a local file, then it is a remote draft/rfc name. 
-        a) If a specific file type is specified, 
+    2. If not a local file, then it is a remote draft/rfc name.
+        a) If a specific file type is specified,
            download only the requested file type.
-           In the case of drafts, unless a specific revision 
-           is requested download all revisions of the draft 
-           with the requested file-type. 
+           In the case of drafts, unless a specific revision
+           is requested download all revisions of the draft
+           with the requested file-type.
         b) Otherwise download all file types. In the case of
-           drafts, unless a specific revision is specified, 
-           download all allowed input file types of all revisions 
-           of drafts. 
+           drafts, unless a specific revision is specified,
+           download all allowed input file types of all revisions
+           of drafts.
     """
     def __init__(self, arg):
         self.arg = arg
 
     def _match_name(self, fname: str) -> Tuple[str, str, str, str]:
         """Resolve whether spefified name is a draft or rfc and whether
-        a revision has been specified. Also determine file 
+        a revision has been specified. Also determine file
         extension if specified
         """
         extn_str = functools.reduce(lambda x, y: x + f'|{y}', valid_extns)
@@ -348,7 +348,7 @@ class PositionalArg:
 
         _match = regex_rev.match(fname)
         if _match != None:
-            return ("draft", 
+            return ("draft",
                     _match.group('dtype') + _match.group("name"),
                     _match.group("rev"),
                     _match.group("extn"))
@@ -361,8 +361,8 @@ class PositionalArg:
                     dtype = "draft"
                 elif _match.group('dtype').lower() == "rfc":
                     dtype = "rfc"
-            return (dtype, 
-                    _match.group("dtype") + _match.group("name"), 
+            return (dtype,
+                    _match.group("dtype") + _match.group("name"),
                     None,
                     _match.group("extn"))
         return None
@@ -415,7 +415,7 @@ class PositionalArg:
                                        _ext,
                                        rev=submission.rev,
                                        dtype="draft",
-                                       url=_url) 
+                                       url=_url)
                               for _ext, _url in submission.urls()
                                   if _ext in valid_extns
                             ]
@@ -461,7 +461,7 @@ class PositionalArg:
 
 @dataclass
 class OptionContainer:
-    """Container holding all relevant command-line options 
+    """Container holding all relevant command-line options
     for further processing"""
     root_dir  : pathlib.Path
     dlopts    : DownloadOptions
@@ -469,6 +469,7 @@ class OptionContainer:
     infiles   : List[IETF_URI]
 
     def __post_init__(self) -> None:
+        self.root_dir.mkdir(parents=True, exist_ok=True)
         assert self.root_dir.exists() and self.root_dir.is_dir(), f"Cannot write to {self.root_dir}"
         for ofmt in self.output_fmt:
             assert ofmt in output_formats, f"output fmt {ofmt} not in {output_formats}"
@@ -510,7 +511,7 @@ def parse_cmdline() -> OptionContainer:
                     "--outformat",
                     metavar="format",
                     nargs=1,
-                    default=["simple,rust"], 
+                    default=["simple,rust"],
                     help=f"comma delimited list of output formats. "
                          f"current output formats are simple,rust")
     ap.add_argument(
@@ -535,7 +536,7 @@ def parse_cmdline() -> OptionContainer:
 
     _obj = ap.parse_args()
     opt = OptionContainer(pathlib.Path(_obj.dir[0]),
-                          DownloadOptions(force=_obj.force), 
+                          DownloadOptions(force=_obj.force),
                           _obj.outformat[0].split(sep=','), [])
 
     if _obj.newdraft:
