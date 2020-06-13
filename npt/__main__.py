@@ -1,6 +1,6 @@
 #!/usr/bin/env python3.7
 # =================================================================================================
-# Copyright (C) 2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,27 +29,29 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-import util
 from typing import Optional
 import xml.etree.ElementTree as ET
 
+
+
+import util
+
 from protocol import *
 
-# RFC DOM input parsers
-import parsers.parser
-import parsers.rfc.rfc as rfc
-import parsers.rfc.rfc_txt_parser
-import parsers.rfc.rfc_xml_parser
-import parsers.asciidiagrams.asciidiagrams_parser
+import rfc
 
-# Output formatters
-import formatters.formatter
-import formatters.simple_formatter
-import formatters.rust_formatter
+import parser
+import parser_asciidiagrams
+import parser_rfc_txt
+import parser_rfc_xml
+
+import formatter
+import formatter_rust
+import formatter_simple
 
 # Expression DFS
 
-def dfs_expression(formatter: formatters.formatter, expr: Expression) -> Any:
+def dfs_expression(formatter: formatter, expr: Expression) -> Any:
     expr_type = type(expr)
     if expr_type is ArgumentExpression:
         return dfs_argumentexpression(formatter, expr)
@@ -68,36 +70,36 @@ def dfs_expression(formatter: formatters.formatter, expr: Expression) -> Any:
     elif expr_type is ConstantExpression:
         return dfs_constantexpr(formatter, expr)
 
-def dfs_argumentexpression(formatter: formatters.formatter, expr: ArgumentExpression) -> Any:
+def dfs_argumentexpression(formatter: formatter, expr: ArgumentExpression) -> Any:
     arg_value = dfs_expression(formatter, expr.arg_value)
     return formatter.format_argumentexpression(expr.arg_name, arg_value)
 
-def dfs_methodinvocationexpr(formatter: formatters.formatter, expr: MethodInvocationExpression) -> Any:
+def dfs_methodinvocationexpr(formatter: formatter, expr: MethodInvocationExpression) -> Any:
     target = dfs_expression(formatter, expr.target)
     arg_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.arg_exprs]
     return formatter.format_methodinvocationexpr(target, expr.method_name, arg_exprs)
 
-def dfs_functioninvocationexpr(formatter: formatters.formatter, expr: FunctionInvocationExpression) -> Any:
+def dfs_functioninvocationexpr(formatter: formatter, expr: FunctionInvocationExpression) -> Any:
     args_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.args_exprs]
     return formatter.format_functioninvocationexpr(expr.func.name, args_exprs)
 
-def dfs_fieldaccessexpr(formatter: formatters.formatter, expr: FieldAccessExpression) -> Any:
+def dfs_fieldaccessexpr(formatter: formatter, expr: FieldAccessExpression) -> Any:
     target = dfs_expression(formatter, expr.target)
     return formatter.format_fieldaccessexpr(target, expr.field_name)
 
-def dfs_contextaccessexpr(formatter: formatters.formatter, expr: ContextAccessExpression) -> Any:
+def dfs_contextaccessexpr(formatter: formatter, expr: ContextAccessExpression) -> Any:
     return formatter.format_contextaccessexpr(formatter, expr.field_name)
 
-def dfs_ifelseexpr(formatter: formatters.formatter, expr: IfElseExpression) -> Any:
+def dfs_ifelseexpr(formatter: formatter, expr: IfElseExpression) -> Any:
     condition = dfs_expression(formatter, expr.condition)
     if_true = dfs_expression(formatter, expr.if_true)
     if_false = dfs_expression(formatter, expr.if_false)
     return formatter.format_ifelseexpr(self, condition, if_true, if_false)
 
-def dfs_selfexpr(formatter: formatters.formatter, expr: SelfExpression) -> Any:
+def dfs_selfexpr(formatter: formatter, expr: SelfExpression) -> Any:
     return formatter.format_selfexpr()
 
-def dfs_constantexpr(formatter: formatters.formatter, expr: ConstantExpression) -> Any:
+def dfs_constantexpr(formatter: formatter, expr: ConstantExpression) -> Any:
     return formatter.format_constantexpr(expr.constant_type.name, expr.constant_value)
 
 # Protocol DFS
@@ -176,10 +178,10 @@ def main():
     # TODO : Currently we have only one parser. When multiple parsers
     # for each sub-subcomponent are available, loop through them and initialise
     #dom_parser = { "asciidiagrams" : parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser() }
-    dom_parser = parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser()
+    dom_parser = parser_asciidiagrams.AsciiDiagramsParser()
     output_formatter = {
-            "simple" : (".txt", formatters.simple_formatter.SimpleFormatter()),
-            #"rust"   : (".rs" , formatters.rust_formatter.RustFormatter())
+            "simple" : (".txt", formatter_simple.SimpleFormatter()),
+            #"rust"   : (".rs" , formatter_rust.RustFormatter())
             }
 
     opt = util.parse_cmdline()

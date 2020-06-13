@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,8 +31,8 @@
 from string import ascii_letters
 import itertools
 
-from protocol import *
-from formatters.formatter import Formatter
+from protocol  import *
+from formatter import Formatter
 
 class RustFormatter(Formatter):
     """

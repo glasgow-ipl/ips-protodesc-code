@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,8 @@
 import abc
 from protocol import Protocol
 from typing import Dict, List, Tuple, Optional, Any, Union
-import parsers.rfc.rfc as rfc
+
+import rfc as rfc
 
 class Parser(abc.ABC):
 

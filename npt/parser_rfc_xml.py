@@ -1,6 +1,5 @@
-#!/usr/bin/env python3.7
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -31,7 +30,7 @@
 
 from typing import List as ListType, Union, Optional, Tuple
 
-import parsers.rfc.rfc as rfc
+import rfc
 import xml.etree.ElementTree as ET
 import sys
 import lxml.etree as etree

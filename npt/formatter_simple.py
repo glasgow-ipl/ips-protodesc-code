@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,8 @@
 # =================================================================================================
 
 import abc
-from formatters.formatter import Formatter
-from protocol import *
+from protocol  import *
+from formatter import Formatter
 
 class SimpleFormatter(Formatter):
     output: List[str]
