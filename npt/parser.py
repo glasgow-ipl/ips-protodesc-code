@@ -29,10 +29,10 @@
 # =================================================================================================
 
 import abc
-from protocol import Protocol
-from typing import Dict, List, Tuple, Optional, Any, Union
+from typing       import Dict, List, Tuple, Optional, Any, Union
+from npt.protocol import Protocol
 
-import rfc as rfc
+import npt.rfc as rfc
 
 class Parser(abc.ABC):
 
