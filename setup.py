@@ -13,6 +13,9 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/glasgow-ipl/ips-protodesc-code",
     packages = ['npt'],
+    package_data = {
+        'npt': ['py.typed'],
+    },
     entry_points = {
         'console_scripts': [
             'npt = npt.__main__:main'
