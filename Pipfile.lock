@@ -49,11 +49,11 @@
         },
         "ietfdata": {
             "hashes": [
-                "sha256:37a8db5820490ea61d5a480a338f1a3cdedf038774c9060773f0a2321b5eb80b",
-                "sha256:cd1c662ce1ce37ad92b93d3e6ef43a0f26d4ac256baea75de2094214b9883d03"
+                "sha256:bc94dc278b80078ed5150f634acf0020512bcf170478b588ab5dab3898e31226",
+                "sha256:f1f78b2e8ba1831077081d1c7cc1d302c38074c77b9a3b0a36e0ceeeee6a8eec"
             ],
             "index": "pypi",
-            "version": "==0.3.0"
+            "version": "==0.3.1"
         },
         "lxml": {
             "hashes": [
@@ -250,10 +250,10 @@
         },
         "pyparsing": {
             "hashes": [
-                "sha256:c203ec8783bf771a155b207279b9bccb8dea02d8f0c9e5f8ead507bc3246ecc1",
-                "sha256:ef9d7589ef3c200abe66653d3f1ab1033c3c419ae9b9bdb1240a85b024efc88b"
+                "sha256:67199f0c41a9c702154efb0e7a8cc08accf830eb003b4d9fa42c4059002e2492",
+                "sha256:700d17888d441604b0bd51535908dcb297561b040819cccde647a92439db5a2a"
             ],
-            "version": "==2.4.7"
+            "version": "==3.0.0a1"
         },
         "pytest": {
             "hashes": [
