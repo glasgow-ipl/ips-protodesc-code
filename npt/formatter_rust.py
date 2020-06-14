@@ -56,7 +56,7 @@ class RustFormatter(Formatter):
         return ""
 
     #bitstrings are formatted as structs containing a single int to differentiate between bitstrings which serve different purposes (eg. Timestamp, SeqNum, PortNum)
-    def format_bitstring(self, bitstring:BitString):
+    def format_bitstring(self, bitstring:BitString, size:str):
         assert bitstring.name not in self.output
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
         self.output.extend(["struct ", bitstring.name, "(u%d);\n" % self.assign_int_size(bitstring)])
@@ -68,18 +68,19 @@ class RustFormatter(Formatter):
         #TODO: see if there's a better way of handling this than just writing a u8
         if bitstring.size is None:
             return 8
-        elif bitstring.size.constant_value <= 8:
+        elif bitstring.size <= 8:
             return 8
-        elif bitstring.size.constant_value <= 16:
+        elif bitstring.size <= 16:
             return 16
-        elif bitstring.size.constant_value <= 32:
+        elif bitstring.size <= 32:
             return 32
-        elif bitstring.size.constant_value <= 64:
+        elif bitstring.size <= 64:
             return 64
         else:
             return 128
 
-    def format_struct(self, struct:Struct):
+    def format_struct(self, struct: Struct, constraints: List[str]):
+        # FIXME: need to handle constraints
         assert struct.name not in self.output
         #traits need to be added up here when using !derive (eg. Eq, Ord)
         self.output.append("\n#[derive(Debug")
