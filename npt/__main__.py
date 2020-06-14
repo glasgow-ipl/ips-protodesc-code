@@ -29,77 +29,72 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from typing import Optional
+from typing import Optional, List, Any
+
 import xml.etree.ElementTree as ET
 
+import npt.parser
+import npt.parser_rfc_txt
+import npt.parser_rfc_xml
+import npt.rfc
+import npt.util
 
-
-import util
-
-from protocol import *
-
-import rfc
-
-import parser
-import parser_asciidiagrams
-import parser_rfc_txt
-import parser_rfc_xml
-
-import formatter
-import formatter_rust
-import formatter_simple
+from npt.formatter            import Formatter
+from npt.formatter_rust       import RustFormatter
+from npt.formatter_simple     import SimpleFormatter
+from npt.parser_asciidiagrams import AsciiDiagramsParser
+from npt.protocol             import *
 
 # Expression DFS
 
-def dfs_expression(formatter: formatter, expr: Expression) -> Any:
-    expr_type = type(expr)
-    if expr_type is ArgumentExpression:
+def dfs_expression(formatter: Formatter, expr: Expression) -> Any:
+    if type(expr) is ArgumentExpression:
         return dfs_argumentexpression(formatter, expr)
-    elif expr_type is MethodInvocationExpression:
+    elif type(expr) is MethodInvocationExpression:
         return dfs_methodinvocationexpr(formatter, expr)
-    elif expr_type is FunctionInvocationExpression:
+    elif type(expr) is FunctionInvocationExpression:
         return dfs_functioninvocationexpr(formatter, expr)
-    elif expr_type is FieldAccessExpression:
+    elif type(expr) is FieldAccessExpression:
         return dfs_fieldaccessexpr(formatter, expr)
-    elif expr_type is ContextAccessExpression:
+    elif type(expr) is ContextAccessExpression:
         return dfs_contextaccessexpr(formatter, expr)
-    elif expr_type is IfElseExpression:
+    elif type(expr) is IfElseExpression:
         return dfs_ifelseexpr(formatter, expr)
-    elif expr_type is SelfExpression:
+    elif type(expr) is SelfExpression:
         return dfs_selfexpr(formatter, expr)
-    elif expr_type is ConstantExpression:
+    elif type(expr) is ConstantExpression:
         return dfs_constantexpr(formatter, expr)
 
-def dfs_argumentexpression(formatter: formatter, expr: ArgumentExpression) -> Any:
+def dfs_argumentexpression(formatter: Formatter, expr: ArgumentExpression) -> Any:
     arg_value = dfs_expression(formatter, expr.arg_value)
     return formatter.format_argumentexpression(expr.arg_name, arg_value)
 
-def dfs_methodinvocationexpr(formatter: formatter, expr: MethodInvocationExpression) -> Any:
+def dfs_methodinvocationexpr(formatter: Formatter, expr: MethodInvocationExpression) -> Any:
     target = dfs_expression(formatter, expr.target)
     arg_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.arg_exprs]
     return formatter.format_methodinvocationexpr(target, expr.method_name, arg_exprs)
 
-def dfs_functioninvocationexpr(formatter: formatter, expr: FunctionInvocationExpression) -> Any:
+def dfs_functioninvocationexpr(formatter: Formatter, expr: FunctionInvocationExpression) -> Any:
     args_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.args_exprs]
     return formatter.format_functioninvocationexpr(expr.func.name, args_exprs)
 
-def dfs_fieldaccessexpr(formatter: formatter, expr: FieldAccessExpression) -> Any:
+def dfs_fieldaccessexpr(formatter: Formatter, expr: FieldAccessExpression) -> Any:
     target = dfs_expression(formatter, expr.target)
     return formatter.format_fieldaccessexpr(target, expr.field_name)
 
-def dfs_contextaccessexpr(formatter: formatter, expr: ContextAccessExpression) -> Any:
+def dfs_contextaccessexpr(formatter: Formatter, expr: ContextAccessExpression) -> Any:
     return formatter.format_contextaccessexpr(formatter, expr.field_name)
 
-def dfs_ifelseexpr(formatter: formatter, expr: IfElseExpression) -> Any:
+def dfs_ifelseexpr(formatter: Formatter, expr: IfElseExpression) -> Any:
     condition = dfs_expression(formatter, expr.condition)
     if_true = dfs_expression(formatter, expr.if_true)
     if_false = dfs_expression(formatter, expr.if_false)
     return formatter.format_ifelseexpr(self, condition, if_true, if_false)
 
-def dfs_selfexpr(formatter: formatter, expr: SelfExpression) -> Any:
+def dfs_selfexpr(formatter: Formatter, expr: SelfExpression) -> Any:
     return formatter.format_selfexpr()
 
-def dfs_constantexpr(formatter: formatter, expr: ConstantExpression) -> Any:
+def dfs_constantexpr(formatter: Formatter, expr: ConstantExpression) -> Any:
     return formatter.format_constantexpr(expr.constant_type.name, expr.constant_value)
 
 # Protocol DFS
@@ -160,17 +155,17 @@ def dfs_protocol(protocol: Protocol):
 
 
 
-def parse_input_file( doc : util.IETF_URI ) -> Optional[rfc.RFC] :
+def parse_input_file( doc : npt.util.IETF_URI ) -> Optional[npt.rfc.RFC] :
     content = None
     if doc.extn == '.xml' :
         with open( doc.get_filepath_in() , 'r') as infile :
             raw_content = infile.read()
             xml_tree = ET.fromstring(raw_content)
-            content = parsers.rfc.rfc_xml_parser.parse_rfc(xml_tree)
+            content = npt.parser_rfc_xml.parse_rfc(xml_tree)
     elif doc.extn == '.txt' :
         with open( doc.get_filepath_in() , 'r') as infile :
             raw_content = infile.readlines()
-            content = parsers.rfc.rfc_txt_parser.parse_rfc(raw_content)
+            content = npt.parser_rfc_txt.parse_rfc(raw_content)
     return content
 
 def main():
@@ -178,13 +173,13 @@ def main():
     # TODO : Currently we have only one parser. When multiple parsers
     # for each sub-subcomponent are available, loop through them and initialise
     #dom_parser = { "asciidiagrams" : parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser() }
-    dom_parser = parser_asciidiagrams.AsciiDiagramsParser()
+    dom_parser = AsciiDiagramsParser()
     output_formatter = {
-            "simple" : (".txt", formatter_simple.SimpleFormatter()),
-            #"rust"   : (".rs" , formatter_rust.RustFormatter())
+            "simple" : (".txt", SimpleFormatter()),
+            #"rust"   : (".rs" , RustFormatter())
             }
 
-    opt = util.parse_cmdline()
+    opt = npt.util.parse_cmdline()
     for idx, doc in enumerate(opt.infiles):
         print(f"document [{idx}] --> {doc} --> {doc.get_filepath_in()}")
         parsed_content = parse_input_file( doc )
