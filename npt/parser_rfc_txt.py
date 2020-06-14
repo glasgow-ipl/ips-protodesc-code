@@ -31,7 +31,8 @@
 import sys
 import parsley
 import string
-import rfc
+
+import npt.rfc as rfc
 
 def depaginate(lines):
     depaginated_lines = []
