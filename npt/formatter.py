@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,9 @@
 # =================================================================================================
 
 import abc
-from protocol import *
+
+from typing       import Optional, List, Any
+from npt.protocol import *
 
 class Formatter(abc.ABC):
     """
@@ -103,3 +105,4 @@ class Formatter(abc.ABC):
     @abc.abstractmethod
     def format_protocol(self, protocol:Protocol):
         pass
+
