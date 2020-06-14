@@ -77,8 +77,11 @@ def parse_relref(xmlElement: ET.Element) -> rfc.RelRef:
 
 
 def parse_eref(xmlElement: ET.Element) -> rfc.ERef:
-    assert xmlElement.text is not None
-    return rfc.ERef(rfc.Text(xmlElement.text), xmlElement.attrib["target"])
+    if xmlElement.text is not None:
+        eref = rfc.Text(xmlElement.text)
+    else:
+        eref = None
+    return rfc.ERef(eref, xmlElement.attrib["target"])
 
 
 def parse_iref(xmlElement: ET.Element) -> rfc.IRef:
@@ -88,8 +91,11 @@ def parse_iref(xmlElement: ET.Element) -> rfc.IRef:
                     xmlElement.attrib.get("subitem"))
 
 def parse_xref(xmlElement: ET.Element) -> rfc.XRef:
-    assert xmlElement.text is not None
-    return rfc.XRef(rfc.Text(xmlElement.text),
+    if xmlElement.text is not None:
+        text = rfc.Text(xmlElement.text)
+    else:
+        text = None
+    return rfc.XRef(text,
                     xmlElement.attrib.get("format"),
                     xmlElement.attrib.get("pageno") == "true",
                     xmlElement.attrib["target"])
@@ -594,11 +600,20 @@ def parse_dt(xmlElement: ET.Element) -> rfc.DT:
     return rfc.DT(content, xmlElement.attrib.get("anchor"))
 
 
-def parse_dl(xmlElement: ET.Element) -> rfc.DL:
+def parse_dl(xmlElement) -> rfc.DL:
     content : ListType[Tuple[rfc.DT, rfc.DD]] = []
-    iter = xmlElement.iter()
-    for elem in iter:
-        content.append((parse_dt(elem), parse_dd(next(iter))))
+    dt = None
+    dd = None
+    for dlChild in xmlElement:
+        if dlChild.tag == "dt":
+            assert dd == None
+            dt = parse_dt(dlChild)
+        elif dlChild.tag == "dd":
+            assert dt is not None
+            dd = parse_dd(dlChild)
+            content.append((dt, dd))
+            dt = None
+            dd = None
     return rfc.DL(content,
                   xmlElement.attrib.get("anchor"),
                   not xmlElement.attrib.get("hanging") == "false",
@@ -1102,8 +1117,11 @@ def parse_address(xmlElement: ET.Element) -> rfc.Address:
 
 
 def parse_organization(xmlElement: ET.Element) -> rfc.Organization:
-    assert xmlElement.text is not None
-    return rfc.Organization(rfc.Text(xmlElement.text), xmlElement.attrib.get("abbrev", None), xmlElement.attrib.get("ascii", None))
+    if xmlElement.text is not None:
+        organisation = rfc.Text(xmlElement.text)
+    else:
+        organisation = None
+    return rfc.Organization(organisation, xmlElement.attrib.get("abbrev", None), xmlElement.attrib.get("ascii", None))
 
 
 def parse_author(xmlElement: ET.Element) -> rfc.Author:
