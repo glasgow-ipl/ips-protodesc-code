@@ -114,7 +114,7 @@ class XRef(Elem):
     """
     RFC 7991 Section 2.66
     """
-    content : Text
+    content : Optional[Text]
     format  : Optional[str]
     pageno  : Optional[bool]
     target  : str
@@ -639,7 +639,7 @@ class Organization(Elem):
     """
     RFC 7991 Section 2.35
     """
-    content : Text
+    content : Optional[Text]
     abbrev  : Optional[str]
     ascii   : Optional[str]
 
