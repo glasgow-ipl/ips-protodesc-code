@@ -28,12 +28,13 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from parser import Parser
-
-import rfc
-import protocol
-import parsley
 import string
+import parsley
+
+import npt.rfc
+import npt.protocol
+
+from npt.parser import Parser
 
 def stem(phrase):
     if phrase[-1] == 's':
