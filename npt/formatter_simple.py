@@ -29,8 +29,9 @@
 # =================================================================================================
 
 import abc
-from protocol  import *
-from formatter import Formatter
+from typing        import Optional, List, Any
+from npt.protocol  import *
+from npt.formatter import Formatter
 
 class SimpleFormatter(Formatter):
     output: List[str]
