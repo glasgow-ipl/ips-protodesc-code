@@ -617,7 +617,7 @@ class Facsimile(Elem):
     """
     RFC 7991 Section 3.2
     """
-    content : str
+    content : Text
 
 @dataclass
 class Address(Elem):
@@ -704,7 +704,7 @@ class Workgroup(Elem):
     """
     RFC 7991 Section 2.65
     """
-    content : str
+    content : Text
 
 @dataclass
 class Keyword(Elem):
@@ -772,7 +772,7 @@ class Annotation(Elem):
     """
     RFC 7991 Section 2.3
     """
-    content : ListType[Union[BCP14, CRef, EM, ERef, IRef, RelRef, SpanX, Strong, Sub, Sup, TT, XRef]]
+    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, SpanX, Strong, Sub, Sup, TT, XRef]]
 
 @dataclass
 class RefContent(Elem):
@@ -857,7 +857,7 @@ class RFC(Elem):
     middle         : Middle
     back           : Optional[Back]
     category       : Optional[str]
-    consensus      : Optional[str]
+    consensus      : Optional[bool]
     docName        : Optional[str]
     indexInclude   : Optional[bool] 
     ipr            : Optional[str]
