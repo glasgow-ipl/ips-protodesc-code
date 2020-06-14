@@ -32,4 +32,4 @@
 pipenv run pytest --junitxml=test-results/protocol-tests.xml tests/test_protocol.py
 pipenv run pytest --junitxml=test-results/parser-tests.xml tests/test_parsers.py
 #pipenv run pytest --junitxml=test-results/code-generator-tests.xml tests/output_formatters/test_code_generator.py
-mypy protocol.py --junit-xml test-results/protocol-typecheck.xml
+mypy npt/protocol.py --junit-xml test-results/protocol-typecheck.xml
