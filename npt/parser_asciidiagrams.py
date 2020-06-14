@@ -31,8 +31,9 @@
 import string
 import parsley
 
-import npt.rfc
+import npt.rfc as rfc
 import npt.protocol
+
 
 from npt.parser import Parser
 
@@ -112,7 +113,7 @@ class AsciiDiagramsParser(Parser):
         self.functions = {}
         self.serialise_to = {}
         self.parse_from = {}
-        with open("parsers/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
+        with open("npt/grammar_asciidiagrams.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
                                    {
                                      "ascii_uppercase"         : string.ascii_uppercase,
@@ -181,12 +182,12 @@ class AsciiDiagramsParser(Parser):
                 except Exception as e:
                     pass
 
-                try:
-                    protocol_name, pdus = parser(section.content[i].content[-1]).protocol_definition()
-                    self.protocol_name = protocol_name
-                    self.pdus = [valid_type_name_convertor(pdu) for pdu in pdus]
-                except Exception as e:
-                    continue
+                #try:
+                protocol_name, pdus = parser(section.content[i].content[-1]).protocol_definition()
+                self.protocol_name = protocol_name
+                self.pdus = [valid_type_name_convertor(pdu) for pdu in pdus]
+                #except Exception as e:
+                #    continue
         for subsection in section.sections:
             self.process_section(subsection, parser, structs)
 
@@ -294,10 +295,10 @@ class AsciiDiagramsParser(Parser):
         else:
             raise Exception("Unknown type: %s" % (type_name))
 
-    def build_protocol(self, proto: protocol.Protocol, input: rfc.RFC, name: str=None) -> protocol.Protocol:
+    def build_protocol(self, proto: npt.protocol.Protocol, input: rfc.RFC, name: str=None) -> npt.protocol.Protocol:
         # if a Protocol hasn't been passed in, then instantiate one
         if proto is None:
-            self.proto = protocol.Protocol()
+            self.proto = npt.protocol.Protocol()
         else:
             self.proto = proto
 
