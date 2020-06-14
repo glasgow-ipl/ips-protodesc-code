@@ -79,7 +79,7 @@ class Formatter(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def format_bitstring(self, bitstring:BitString, size: str, parent_pt=None):
+    def format_bitstring(self, bitstring: BitString, size: str):
         pass
 
     @abc.abstractmethod
