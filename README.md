@@ -1,25 +1,24 @@
-The Glasgow Network Protocol Tool
+The Network Protocol Tool (npt)
 =================================
-
 
 Overview
 --------
 
- The source code contained in this directory is broadly split into three
+ The source code contained in the `npt` directory is broadly split into three
  categories:
 
-  - input parsers (`/parsers`), that take a protocol described in a
+  - input parsers (`parser_*.py`), that take a protocol described in a
     given format, and generate the intermediate representation;
 
-  - a helper class (`protocol.py`), that is used to
+  - helper classes (`rfc.py`, `protocol.py`, and `util.py`), that are used to
     construct and inspect the intermediate representation; and
 
-  - output formatters (`/formatters`), that take the intermediate
+  - output formatters (`formatter_*.py`), that take the intermediate
     representation, and produce output in a given format.
 
  Additionally, there is a directory of examples (`/examples`), containing a
  number of protocol definitions in each of the input parsers, and a helper
- script (`parse-ietf-doc.py`) that performs the end-to-end process of
+ script that performs the end-to-end process of
  taking a protocol description, and generating output in a specified format.
 
  Getting started
@@ -47,15 +46,13 @@ To run the project's test suite, run:
  Generating a protocol description
  ---------------------------------
 
- The `parse-ietf-doc.py` script takes a protocol standards document,
- generates the intermediary representation, and produces
- output. It can be executed in three modes using the following options :
+ npt can be executed in three modes using the following options :
 
  1. **All new IETF drafts** : **-nd** [*from*], **--newdraft** [*from*]
     *Fetch new drafts since the last time tool was executed*.
     Example invocation :
     ```
-    python parse-ietf-doc.py -d <root-dir> --newdraft [from]
+    python npt -d <root-dir> --newdraft [from]
     ```
     If *from* is specified, all new IETF Drafts submitted since time *from*
     will be downloaded and processed.
@@ -76,7 +73,7 @@ To run the project's test suite, run:
     *Fetch new RFCs since the last time tool was executed*.
     Example invocation :
     ```
-    python parse-ietf-doc.py -d <root-dir> --newrfc [from]
+    python npt -d <root-dir> --newrfc [from]
     ```
     If *from* is specified, all new IETF RFCs submitted since time *from*
     will be downloaded and processed.
@@ -97,7 +94,7 @@ To run the project's test suite, run:
     Example invocation :
 
     ```
-    python parse-ietf-doc.py -d <root-dir>  draftname-[rev][.extn] rfcname[.extn] local-file
+    python npt -d <root-dir>  draftname-[rev][.extn] rfcname[.extn] local-file
     ```
     Resolution of the input source occurs in the following order :
     * If the document is provided as a local file-path and the file exists,
@@ -168,13 +165,13 @@ To run the project's test suite, run:
 
 
  ```
- python parse-ietf-doc.py  [-h | --help ]
-                           [-nd | --newdraft [from]]
-                           [-nr [from]]
-                           [-d dir]
-                           [-of format]
-                           [-f]
-                           [uri [uri ...]]
+ python npt [-h | --help ]
+            [-nd | --newdraft [from]]
+            [-nr [from]]
+            [-d dir]
+            [-of format]
+            [-f]
+            [uri [uri ...]]
 
 
  positional arguments:
@@ -209,7 +206,7 @@ optional arguments:
                         directory
 
  ```
- 
+
 ## Acknowledgements
 
 This work is funded by the UK Engineering and Physical Sciences Research
