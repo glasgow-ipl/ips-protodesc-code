@@ -38,7 +38,7 @@ from dataclasses import dataclass
 
 class Elem:
     pass
-    
+
 # =================================================================================================
 # SVG element
 # =================================================================================================
@@ -53,7 +53,7 @@ class SVG(Elem):
 
 @dataclass
 class Text(Elem):
-    content : str 
+    content : str
 
 # =================================================================================================
 # BCP14 element
@@ -64,7 +64,7 @@ class BCP14(Elem):
     """
     RFC 7991 Section 2.9
     """
-    content : Text  
+    content : Text
 
 # =================================================================================================
 # EM element
@@ -97,7 +97,7 @@ class ERef(Elem):
     """
     RFC 7991 Section 2.24
     """
-    content : Text
+    content : Optional[Text]
     target  : str
 
 @dataclass
@@ -164,7 +164,7 @@ class Sup(Elem):
 # =================================================================================================
 # SpanX element
 # =================================================================================================
-    
+
 @dataclass
 class SpanX(Elem):
     """
@@ -185,7 +185,7 @@ class List(Elem):
     RFC 7991 Section 3.4
     """
     content    : ListType["T"]
-    counter    : Optional[str] 
+    counter    : Optional[str]
     hangIndent : Optional[str]
     style      : Optional[str]
 
@@ -411,7 +411,7 @@ class TH(Elem):
     """
     RFC 7991 Section 2.58
     """
-    content : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]], 
+    content : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]],
                     ListType[Union[Text, BCP14, BR, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
     align   : Optional[str]
     anchor  : Optional[str]
@@ -436,7 +436,7 @@ class TR(Elem):
     RFC 7991 Section 2.61
     """
     content : ListType[Union[TD, TH]]
-    anchor  : Optional[str] 
+    anchor  : Optional[str]
 
 # =================================================================================================
 # Table elements
@@ -518,7 +518,7 @@ class Section(Elem):
 # =================================================================================================
 # Middle element
 # =================================================================================================
-   
+
 @dataclass
 class Middle(Elem):
     """
@@ -569,7 +569,7 @@ class Code(Elem):
     """
     content : Text
     ascii   : Optional[str]
-    
+
 @dataclass
 class Country(Elem):
     """
@@ -728,7 +728,7 @@ class Note(Elem):
     """
     name        : Optional[Name]
     content     : ListType[Union[DL, OL, T, UL]]
-    removeInRFC : Optional[bool] 
+    removeInRFC : Optional[bool]
     title       : Optional[str]
 
 @dataclass
@@ -789,7 +789,7 @@ class Reference(Elem):
     front      : Front
     content    : ListType[Union[Annotation, Format, RefContent, SeriesInfo]]
     anchor     : str
-    quoteTitle : Optional[bool] 
+    quoteTitle : Optional[bool]
     target     : Optional[str]
 
 @dataclass
@@ -846,7 +846,7 @@ class Link(Elem):
 # =================================================================================================
 # RFC
 # =================================================================================================
-    
+
 @dataclass
 class RFC(Elem):
     """
@@ -859,17 +859,17 @@ class RFC(Elem):
     category       : Optional[str]
     consensus      : Optional[bool]
     docName        : Optional[str]
-    indexInclude   : Optional[bool] 
+    indexInclude   : Optional[bool]
     ipr            : Optional[str]
     iprExtract     : Optional[str]
     number         : Optional[str]
     obsoletes      : Optional[str]
     prepTime       : Optional[str]
     seriesNo       : Optional[str]
-    sortRefs       : Optional[bool] 
+    sortRefs       : Optional[bool]
     submissionType : Optional[str]
-    symRefs        : Optional[bool] 
+    symRefs        : Optional[bool]
     tocDepth       : Optional[str]
-    tocInclude     : Optional[bool] 
+    tocInclude     : Optional[bool]
     updates        : Optional[str]
     version        : Optional[str]

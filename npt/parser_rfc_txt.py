@@ -34,6 +34,8 @@ import string
 
 import npt.rfc as rfc
 
+from typing import Dict, List
+
 def depaginate(lines):
     depaginated_lines = []
     for i in range(len(lines)):
@@ -61,13 +63,15 @@ def trim_blank_lines(lines):
     return trimmed_lines
 
 def structure_subsections(sections):
-    section_depths = {}
+    section_depths : Dict[int, List[rfc.Section]] = {}
     for depth, section in sections:
         if depth not in section_depths:
             section_depths[depth] = []
         section_depths[depth].append(section)
         if depth > 1:
-            section_depths[depth-1][-1].sections.append(section)
+            sections = section_depths[depth-1][-1]
+            if sections.sections is not None:
+                sections.sections.append(section)
     return section_depths[1]
 
 def get_doc_series(text):
