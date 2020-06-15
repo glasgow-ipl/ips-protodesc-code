@@ -1037,7 +1037,7 @@
                         This is a fixed-width field, with a value constraint, as previously described. Note that the constraint language is not limited to equality; it is defined fully in <xref target="ABNF-constraints"/>.
                     </dd>
                     <dt>
-                        Destination Connection ID: DLen bytes.
+                        Destination Connection ID (DCID): DLen bytes.
                     </dt>
                     <dd>
                         This is a variable-width field as previously described.
@@ -1049,7 +1049,7 @@
                         This is a fixed-width field, with a value constraint, as previously described.
                     </dd>
                     <dt>
-                        Source Connection ID: SLen bytes.
+                        Source Connection ID (SCID): SLen bytes.
                     </dt>
                     <dd>
                         This is a variable-width field as previously described.
