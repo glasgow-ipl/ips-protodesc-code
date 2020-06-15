@@ -31,7 +31,7 @@
 from abc         import ABC, abstractmethod
 from dataclasses import dataclass
 from copy        import copy, deepcopy
-from typing      import Dict, List, Any, Optional, cast
+from typing      import Dict, List, Any, Optional, cast, Union
 
 import unittest
 import re
@@ -54,13 +54,13 @@ class ProtocolTypeError(Exception):
 @dataclass(frozen=True)
 class Parameter:
     param_name : str
-    param_type : "ProtocolType"
+    param_type : Optional["ProtocolType"]
 
 
 @dataclass(frozen=True)
 class Argument:
     arg_name  : str
-    arg_type  : "ProtocolType"
+    arg_type  : Optional["ProtocolType"]
     arg_value : Any
 
 
@@ -68,7 +68,7 @@ class Argument:
 class Function:
     name        : str
     parameters  : List[Parameter]
-    return_type : "ProtocolType"
+    return_type : Optional["ProtocolType"]
 
     def is_method(self, self_type: "ProtocolType") -> bool:
         if self.parameters[0].param_name != "self":
@@ -90,7 +90,7 @@ class Function:
             ptype = p.param_type if p.param_type is not None else self_type
             if (pname != a.arg_name):
                 return False
-            if (ptype != a.arg_type) and not a.arg_type.is_a(ptype):
+            if (ptype != a.arg_type) and a.arg_type is not None and not a.arg_type.is_a(ptype):
                 return False
         return True
 
@@ -107,7 +107,7 @@ class Trait:
 
 class Expression(ABC):
     @abstractmethod
-    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
         raise ProtocolTypeError("Expression MUST be subclassed")
 
 
@@ -116,7 +116,7 @@ class ArgumentExpression(Expression):
     arg_name: str
     arg_value: Expression
 
-    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
         return self.arg_value.get_result_type(containing_type)
 
 
@@ -130,9 +130,11 @@ class MethodInvocationExpression(Expression):
         if re.search(FUNC_NAME_REGEX, self.method_name) == None:
             raise ProtocolTypeError("Method {}: invalid name".format(self.method_name))
 
-    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
         args   = [Argument(arg.arg_name, arg.get_result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
         result = self.target.get_result_type(containing_type)
+        if result is None:
+            raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
         method = result.get_method(self.method_name)
         if not method.is_method_accepting(result, args):
             raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
@@ -148,7 +150,7 @@ class FunctionInvocationExpression(Expression):
         if re.search(FUNC_NAME_REGEX, self.func.name) == None:
             raise ProtocolTypeError("Invalid function name {}".format(self.func.name))
 
-    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
         return self.func.return_type
 
 
@@ -184,8 +186,9 @@ class IfElseExpression(Expression):
     if_true   : Expression
     if_false  : Expression
 
-    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
-        if self.condition.get_result_type(containing_type).kind != "Boolean":
+    def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
+        result_type = self.condition.get_result_type(containing_type)
+        if result_type is not None and result_type.kind != "Boolean":
             raise ProtocolTypeError("Cannot create IfElseExpression: condition is not boolean")
         if self.if_true.get_result_type(containing_type) != self.if_false.get_result_type(containing_type):
             raise ProtocolTypeError("Cannot create IfElseExpression: branch types differ")
@@ -194,7 +197,7 @@ class IfElseExpression(Expression):
 
 @dataclass(frozen=True)
 class SelfExpression(Expression):
-    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
         return containing_type
 
 
@@ -203,7 +206,7 @@ class ConstantExpression(Expression):
     constant_type  : "ProtocolType"
     constant_value : Any
 
-    def get_result_type(self, containing_type: "ProtocolType") -> "ProtocolType":
+    def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
         return self.constant_type
 
 
@@ -273,7 +276,7 @@ class ProtocolType(ABC):
 
     def is_a(self, obj):
         parents = []
-        while self.parent != None:
+        while self.parent is not None:
             parents.append(self.parent)
             self = self.parent
         return obj in parents
@@ -470,8 +473,8 @@ class Enum(RepresentableType):
 # =================================================================================================
 
 class Protocol:
-    _name   : str
-    _types  : Dict[str,RepresentableType]
+    _name   : Optional[str]
+    _types  : Dict[str,Union[InternalType, RepresentableType]]
     _traits : Dict[str,Trait]
     _funcs  : Dict[str,Function]
     _context: Context
@@ -693,7 +696,7 @@ class Protocol:
         self._types[name] = newtype
         return newtype
 
-    def derive_type(self, name: str, derived_from: RepresentableType, also_implements: List[Trait]) -> RepresentableType:
+    def derive_type(self, name: str, derived_from: RepresentableType, also_implements: List[Trait]) -> Union[InternalType, RepresentableType]:
         """
         Define a new derived type for this protocol.
         The type constructor is described in Section 3.3.5 of the IR specification.
@@ -750,7 +753,7 @@ class Protocol:
         """
         self._pdus[pdu] = cast(RepresentableType, self.get_type(pdu))
 
-    def get_protocol_name(self) -> str:
+    def get_protocol_name(self) -> Optional[str]:
         return self._name
 
     def has_type(self, type_name: str) -> bool:
