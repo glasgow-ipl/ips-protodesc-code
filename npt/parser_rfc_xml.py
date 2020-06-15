@@ -78,10 +78,9 @@ def parse_relref(xmlElement: ET.Element) -> rfc.RelRef:
 
 def parse_eref(xmlElement: ET.Element) -> rfc.ERef:
     if xmlElement.text is not None:
-        eref = rfc.Text(xmlElement.text)
+        return rfc.ERef(rfc.Text(xmlElement.text), xmlElement.attrib["target"])
     else:
-        eref = None
-    return rfc.ERef(eref, xmlElement.attrib["target"])
+        return rfc.ERef(None, xmlElement.attrib["target"])
 
 
 def parse_iref(xmlElement: ET.Element) -> rfc.IRef:
@@ -91,10 +90,9 @@ def parse_iref(xmlElement: ET.Element) -> rfc.IRef:
                     xmlElement.attrib.get("subitem"))
 
 def parse_xref(xmlElement: ET.Element) -> rfc.XRef:
+    text : Optional[rfc.Text] = None
     if xmlElement.text is not None:
         text = rfc.Text(xmlElement.text)
-    else:
-        text = None
     return rfc.XRef(text,
                     xmlElement.attrib.get("format"),
                     xmlElement.attrib.get("pageno") == "true",
@@ -1119,10 +1117,9 @@ def parse_address(xmlElement: ET.Element) -> rfc.Address:
 
 
 def parse_organization(xmlElement: ET.Element) -> rfc.Organization:
+    organisation : Optional[rfc.Text] = None
     if xmlElement.text is not None:
         organisation = rfc.Text(xmlElement.text)
-    else:
-        organisation = None
     return rfc.Organization(organisation, xmlElement.attrib.get("abbrev", None), xmlElement.attrib.get("ascii", None))
 
 
