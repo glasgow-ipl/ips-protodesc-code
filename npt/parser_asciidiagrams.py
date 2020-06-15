@@ -131,12 +131,12 @@ class AsciiDiagramsParser(Parser):
 
     def process_section(self, section : rfc.Section, parser, structs):
         for i in range(len(section.content)):
-            if type(section.content[i]) is rfc.T:
-                t = cast(rfc.T, section.content[i])
+            t = section.content[i]
+            if isinstance(t, rfc.T):
                 for j in range(len(t.content)):
-                    inner_t = cast(rfc.T, t.content[j])
+                    inner_t = cast(rfc.Text, t.content[j])
                     try:
-                        pdu_name = parser(cast(rfc.Text, inner_t).content.strip()).preamble()
+                        pdu_name = parser(inner_t.content.strip()).preamble()
                         artwork = cast(rfc.Artwork, section.content[i+1]).content
                         artwork_fields = parser(cast(rfc.Text, artwork).content.strip()).diagram()
                         where = section.content[i+2]
@@ -162,32 +162,34 @@ class AsciiDiagramsParser(Parser):
                         pass
 
                     try:
-                        function_name = parser(inner_t).function()
-                        function_def = parser(cast(rfc.Text, section.content[i+1]).content.strip()).function_signature()
+                        function_name = parser(inner_t.content.strip()).function()
+                        function_artwork = cast(rfc.Artwork, section.content[i+1])
+                        function_text = cast(rfc.Text, function_artwork.content)
+                        function_def = parser(function_text.content.strip()).function_signature()
                         self.functions[valid_field_name_convertor(function_name)] = function_def
                     except Exception as e:
                         pass
 
                     try:
-                        enum_name, variants = parser(inner_t).enum()
+                        enum_name, variants = parser(inner_t.content.strip()).enum()
                         self.enums[valid_type_name_convertor(enum_name)] = [valid_type_name_convertor(variant) for variant in variants]
                     except Exception as e:
                         pass
 
                     try:
-                        from_type, to_type, func_name = parser(inner_t).serialised_to_func()
+                        from_type, to_type, func_name = parser(inner_t.content.strip()).serialised_to_func()
                         self.serialise_to[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
                     except Exception as e:
                         pass
 
                     try:
-                        from_type, to_type, func_name = parser(inner_t).parsed_from_func()
+                        from_type, to_type, func_name = parser(inner_t.content.strip()).parsed_from_func()
                         self.parse_from[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
                     except Exception as e:
                         pass
 
                     try:
-                        protocol_name, pdus = parser(cast(rfc.Text, inner_t).content.strip()).protocol_definition()
+                        protocol_name, pdus = parser(inner_t.content.strip()).protocol_definition()
                         self.protocol_name = protocol_name
                         self.pdus = [valid_type_name_convertor(pdu) for pdu in pdus]
                     except Exception as e:
@@ -315,8 +317,7 @@ class AsciiDiagramsParser(Parser):
         # find matching preambles
         structs : List[npt.protocol.Struct]= []
 
-        if type(input) is rfc.RFC:
-            input = cast(rfc.RFC, input)
+        if isinstance(input, rfc.RFC):
             for section in input.middle.content:
                 self.process_section(section, parser, structs)
 
