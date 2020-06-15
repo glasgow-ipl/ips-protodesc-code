@@ -1,0 +1,1880 @@
+<?xml version='1.0' encoding='US-ASCII'?>
+<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-quic-augmented-diagrams-00' category='exp'>
+    <front>
+        <title abbrev='QUIC Augmented Packet Diagrams'>
+            Describing QUIC's Protocol Data Units with Augmented Packet Header Diagrams
+        </title>
+        <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-00' status="experimental" />
+
+        <author fullname='Stephen McQuistin' initials='S.' surname='McQuistin'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>sm@smcquistin.uk</email>
+            </address>
+        </author>
+
+        <author fullname='Vivian Band' initials='V.' surname='Band'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>vivianband0@gmail.com</email>
+            </address>
+        </author>
+
+        <author fullname='Dejice Jacob' initials='D.' surname='Jacob'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>d.jacob.1@research.gla.ac.uk</email>
+            </address>
+        </author>
+
+        <author fullname='Colin Perkins' initials='C. S.' surname='Perkins'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>csp@csperkins.org</email>
+            </address>
+        </author>
+
+        <?date year='2020' month='April' day='24'/?>
+
+        <abstract>
+            <t>
+              This document describes the core transport protocol data units
+              used in the QUIC protocol using a machine-readable augmented
+              packet header diagram format. It is intended as an example of
+              the packet header diagram language, and not as a contribution
+              to the development of the QUIC protocol.
+            </t>
+        </abstract>
+    </front>
+
+    <middle>
+        <section anchor='intro'>
+            <name>Introduction</name>
+            <t>
+              The augmented packet header diagram format
+              <xref target="AUGMENTED-DIAGRAMS" /> enables documents to
+              specify the syntax of protocol data units in a way that
+              enables support for automated parser generation, while
+              maintaining human readability.
+            </t>
+            <t>
+              To demonstrate how this approach can be applied, and the
+              value that it can provide, this document describes QUIC
+              <xref target="QUIC-TRANSPORT" /> using the augment packet
+              header diagram format.
+            </t>
+            <t>
+              This document is not an exhaustive description of the QUIC
+              protocol. It contains only those elements necessary to
+              demonstrate the augmented packet header diagram format, and
+              should be read as an example of the use of that format.
+            </t>
+            <t>
+               This document describes the QUIC protocol. The QUIC protocol uses
+               Stateless Reset Packets, Protected Packets, Retry Packets, and Version Negotiation Packets.
+            </t>
+        </section>
+
+        <section anchor='protection'>
+            <name>Header and Packet Protection</name>
+            <t>A Protected Packet is either a Protected Long Header Packet or a Protected Short Header Packet.</t>
+            <t>
+                The apply_protection function is defined as:
+            </t>
+            <artwork>
+func apply_protection(to: Unprotected Packet)
+                -> Protected Packet:
+   apply packet protection to payload
+   apply header protection to first_byte and packet_number
+   construct appropriate Protected Packet based on first_byte
+   return Protected Packet
+            </artwork>
+            <t>An Unprotected Packet is serialised to a Protected Packet using the apply_protection function.</t>
+            <t>
+                The remove_protection function is defined as:
+            </t>
+            <artwork>
+func remove_protection(from: Protected Packet)
+        -> Unprotected Packet:
+   remove header protection from protected_packet
+   remove packet protection from protected_packet
+   construct appropriate packet type
+   return Unprotected Packet
+            </artwork>
+            <t>An Unprotected Packet is parsed from a Protected Packet using the remove_protection function.</t>
+            <t>An Unprotected Packet is either a Long Header Packet or a Short Header Packet.</t>
+        </section>
+
+        <section anchor='variableint'>
+            <name>Variable Length Integer Encoding</name>
+            <t>A Variable Length Integer Encoding is formatted as follows:</t>
+            <artwork>
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|Len|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                             Value                           ...
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            </artwork>
+            <t>
+               where:
+            </t>
+            <dl>
+               <dt>
+                  Len: 2 bits.
+               </dt>
+               <dd>
+                  The base 2 logarithm of the integer encoding length in bytes.
+               </dd>
+               <dt>
+                  Value: ((2^Len)*8)-2 bits.
+               </dt>
+               <dd>
+                  The integer value encoded in network byte order.
+               </dd>
+            </dl>
+        </section>
+
+        <section anchor='statelessreset'>
+            <name>Stateless Reset</name>
+            <t>A Stateless Reset Packet is formatted as follows:</t>
+            <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |0|1|                    Unpredictable Bits                   ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +                     Stateless Reset Token                     +
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            </artwork>
+            <t>
+                where:
+            </t>
+            <dl>
+                <dt>
+                    Header Form (HF): 1 bit; HF == 0.
+                </dt>
+                <dd>
+                    The most significant bit (0x80) of byte 0 (the first byte) is set to 0 for stateless reset packets.
+                </dd>
+                <dt>
+                    Fixed Bit (FB): 1 bit; FB == 1.
+                </dt>
+                <dd>
+                    The next bit (0x40) of byte 0 is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded.
+                </dd>
+                <dt>
+                    Unpredictable Bits (UB): UB.Size > 38.
+                </dt>
+                <dd>
+                    The remainder of the first byte and an arbitrary number of bytes following it that are set to unpredictable values.
+                </dd>
+                <dt>
+                    Stateless Reset Token: 128 bits.
+                </dt>
+                <dd>
+                    The last 16 bytes of the datagram contain a Stateless Reset Token.
+                </dd>
+            </dl>
+        </section>
+
+        <section anchor='longheader-version_negotiation'>
+           <name>Version Negotiation Packet</name>
+           <t>A Version is formatted as follows:</t>
+           <artwork>
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                     Version identifier                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           </artwork>
+           <t>
+              where:
+           </t>
+           <dl>
+              <dt>
+                 Version identifier (ID): 32 bits.
+              </dt>
+              <dd>
+                 32-bit version identifier.
+              </dd>
+           </dl>
+           <t>A Version Negotiation Packet is formatted as follows:</t>
+           <artwork>
+0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|1|   Unused  |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                             Version                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    DCID Len   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                   Destination Connection ID                 ...
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    SCID Len   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Source Connection ID                   ...
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      [Supported Versions]                     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+           </artwork>
+           <t>
+              where:
+           </t>
+           <dl>
+              <dt>
+                 Header Form (HF): 1 bit; HF == 1.
+              </dt>
+              <dd>
+                 The most significant bit (0x80) of byte 0 (the first byte) is set to 1 for version negotiation packets.
+              </dd>
+              <dt>
+                 Unused (T): 6 bits.
+              </dt>
+              <dd>
+                 The value in the Unused field is selected randomly by the server. Clients MUST ignore the value of this field.  Servers SHOULD set the most significant bit of this field (0x40) to 1 so that Version Negotiation packets appear to have the Fixed Bit field.
+              </dd>
+              <dt>
+                 Version: 1 Version; Version.ID == 0.
+              </dt>
+              <dd>
+                 The Version field of a Version Negotiation packet MUST be set to 0x0000000.
+              </dd>
+              <dt>
+                  DCID Len (DLen): 1 byte.
+              </dt>
+              <dd>
+                 This field is as previously define. However, as future versions of QUIC may support Connection IDs larger than the version 1 limit, Version Negotiation packets could carry Connection IDs that are longer than 20 bytes.
+              </dd>
+              <dt>
+                 Destination Connection ID: DLen bytes.
+              </dt>
+              <dd>
+                 The Destination Connection ID field is between 0 and 2^8-1 bytes in length.
+              </dd>
+              <dt>
+                 SCID Len (SLen): 1 byte.
+              </dt>
+              <dd>
+                 This field is as previously define. However, as future versions of QUIC may support Connection IDs larger than the version 1 limit, Version Negotiation packets could carry Connection IDs that are longer than 20 bytes.
+              </dd>
+              <dt>
+                 Source Connection ID: SLen bytes.
+              </dt>
+              <dd>
+                 The Source Connection ID field is between 0 and 2^8-1 bytes in length.
+              </dd>
+              <dt>
+                 Supported Versions: [Version].
+              </dt>
+              <dd>
+                 The remainder of the Version Negotiation packet is a list of 32-bit versions which the server supports.
+              </dd>
+           </dl>
+        </section>
+
+        <section anchor='longheader'>
+            <name>Long Header Packets</name>
+            <t>A Long Header is formatted as follows:</t>
+            <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+
+ |1|1| T | R | P |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Version                           |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |    DCID Len   |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                 Destination Connection ID (DCID)            ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |    SCID Len   |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                  Source Connection ID (SCID)                ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            </artwork>
+            <t>
+                where:
+            </t>
+            <dl>
+               <dt>
+                  Header Form (HF): 1 bit; HF == 1.
+               </dt>
+               <dd>
+                  The most significant bit (0x80) of byte 0 (the first byte) is set to 1 for long headers.
+               </dd>
+               <dt>
+                  Fixed Bit (FB): 1 bit; FB == 1.
+               </dt>
+               <dd>
+                  The next bit (0x40) of byte 0 is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded.
+               </dd>
+               <dt>
+                  Long Packet Type (T): 2 bits.
+               </dt>
+               <dd>
+                  The next two bits (those with a mask of 0x30) of byte 0 contain a packet type.
+               </dd>
+               <dt>
+                  Reserved Bits (R): 2 bits.
+               </dt>
+               <dd>
+                  Two bits (those with a mask of 0x0c) of byte 0 are reserved across multiple packet types. These bits are protected using header protection.
+               </dd>
+               <dt>
+                  Packet Number Length (P): 2 bits.
+               </dt>
+               <dd>
+                  In packet types which contain a Packet Number field, the least significant two bits (those with a mask of 0x03) of byte 0 contain the length of the packet number, encoded as an unsigned, two-bit integer that is one less than the length of the packet number field in bytes.
+               </dd>
+               <dt>
+                  Version: 1 Version.
+               </dt>
+               <dd>
+                  This field indicates which version of QUIC is in use and determines how the rest of the protocol fields are interpreted.
+               </dd>
+               <dt>
+                  DCID Len (DLen): 1 byte; DLen &lt;= 20.
+               </dt>
+               <dd>
+                  This field contains the length, in bytes, of the Destination Connection ID field that follows it. This length is encoded as an 8-bit unsigned integer. In QUIC version 1, this value MUST NOT exceed 20. Endpoints that receive a version 1 long header with a value larger than 20 MUST drop the packet. Servers SHOULD be able to read longer connection IDs from other QUIC versions in order to properly form a version negotiation packet.
+               </dd>
+               <dt>
+                  Destination Connection ID (DCID): DLen bytes.
+               </dt>
+               <dd>
+                  The Destination Connection ID field is between 0 and 20 bytes in length.
+               </dd>
+               <dt>
+                  SCID Len (SLen): 1 byte; SLen &lt;= 20.
+               </dt>
+               <dd>
+                  This field contains the length, in bytes, of the Source Connection ID field that follows it. This length is encoded as an 8-bit unsigned integer. In QUIC version 1, this value MUST NOT exceed 20 bytes. Endpoints that receive a version 1 long header with a value larger than 20 MUST drop the packet. Servers SHOULD be able to read longer connection IDs from other QUIC versions in order to properly form a version negotiation packet.
+               </dd>
+               <dt>
+                  Source Connection ID (SCID): SLen bytes.
+               </dt>
+               <dd>
+                  The Source Connection ID field is between 0 and 20 bytes in length.
+               </dd>
+            </dl>
+            <t>A Long Header Packet is one of: an Initial Packet, a 0RTT Packet, a Handshake Packet, or a Retry Packet.</t>
+            <t>A Protected Long Header is formatted as follows:</t>
+            <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+
+ |1|1| T | PBits |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Version                           |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |    DCID Len   |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                   Destination Connection ID                 ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |    SCID Len   |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                      Source Connection ID                   ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            </artwork>
+            <t>
+                where:
+            </t>
+            <dl>
+               <dt>
+                  Header Form (HF): 1 bit; HF == 1.
+               </dt>
+               <dd>
+                  The most significant bit (0x80) of byte 0 (the first byte) is set to 1 for long headers.
+               </dd>
+               <dt>
+                  Fixed Bit (FB): 1 bit; FB == 1.
+               </dt>
+               <dd>
+                  The next bit (0x40) of byte 0 is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded.
+               </dd>
+               <dt>
+                  Long Packet Type (T): 2 bits.
+               </dt>
+               <dd>
+                  The next two bits (those with a mask of 0x30) of byte 0 contain a packet type.
+               </dd>
+               <dt>
+                  Protected Bits (PBits): 4 bits.
+               </dt>
+               <dd>
+                  4 bits protected using header protection.
+               </dd>
+               <dt>
+                  Version: 1 Version.
+               </dt>
+               <dd>
+                  This field indicates which version of QUIC is in use and determines how the rest of the protocol fields are interpreted.
+               </dd>
+               <dt>
+                  DCID Len (DLen): 1 byte; DLen &lt;= 20.
+               </dt>
+               <dd>
+                  This field contains the length, in bytes, of the Destination Connection ID field that follows it. This length is encoded as an 8-bit unsigned integer. In QUIC version 1, this value MUST NOT exceed 20. Endpoints that receive a version 1 long header with a value larger than 20 MUST drop the packet. Servers SHOULD be able to read longer connection IDs from other QUIC versions in order to properly form a version negotiation packet.
+               </dd>
+               <dt>
+                  Destination Connection ID: DLen bytes.
+               </dt>
+               <dd>
+                  The Destination Connection ID field is between 0 and 20 bytes in length.
+               </dd>
+               <dt>
+                  SCID Len (SLen): 1 byte; SLen &lt;= 20.
+               </dt>
+               <dd>
+                  This field contains the length, in bytes, of the Source Connection ID field that follows it. This length is encoded as an 8-bit unsigned integer. In QUIC version 1, this value MUST NOT exceed 20 bytes. Endpoints that receive a version 1 long header with a value larger than 20 MUST drop the packet. Servers SHOULD be able to read longer connection IDs from other QUIC versions in order to properly form a version negotiation packet.
+               </dd>
+               <dt>
+                  Source Connection ID: SLen bytes.
+               </dt>
+               <dd>
+                  The Source Connection ID field is between 0 and 20 bytes in length.
+               </dd>
+            </dl>
+            <t>A Protected Long Header Packet is one of: a Protected Initial Packet, a Protected 0RTT Packet, or a Protected Handshake Packet.</t>
+            <section anchor='longheader-initial_packet'>
+               <name>Initial Packet</name>
+               <t>An Initial Packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Token Length                       ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Token                           ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Length                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Packet Number                      ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Payload                         ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Long Header (LH): 1 Long Header; LH.T == 0.
+                  </dt>
+                  <dd>
+                     An Initial packet uses long headers with a type value of 0x0. On receipt, the value of LH.DCID is stored as Initial DCID.
+                  </dd>
+                  <dt>
+                     Token Length (TL): 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the length of the Token field, in bytes.
+                  </dd>
+                  <dt>
+                     Token: TL.Value bytes; present only when TL.Value &gt; 0.
+                  </dt>
+                  <dd>
+                     The value of the token that was previously provided in a Retry packet or NEW_TOKEN frame.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The length of the remainder of the packet (that is, the Packet Number and Payload fields) in bytes, encoded as a variable-length integer.
+                  </dd>
+                  <dt>
+                     Packet Number: LH.P+1 bytes.
+                  </dt>
+                  <dd>
+                     The packet number field.
+                  </dd>
+                  <dt>
+                     Payload: [Frame].
+                  </dt>
+                  <dd>
+                     The payload field, comprised of multiple frames.
+                  </dd>
+               </dl>
+               <t>A Protected Initial packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Token Length                       ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Token                           ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Length                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                    Protected Packet Number                  ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                       Protected Payload                     ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                    Long Header (LH): 1 Long Header; LH.T == 0.
+                  </dt>
+                  <dd>
+                     An Initial packet uses long headers with a type value of 0x0.
+                  </dd>
+                  <dt>
+                     Token Length (TL): 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the length of the Token field, in bytes.
+                  </dd>
+                  <dt>
+                     Token: TL.Value bytes; present only when TL.Value &gt; 0.
+                  </dt>
+                  <dd>
+                     The value of the token that was previously provided in a Retry packet or NEW_TOKEN frame.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The length of the remainder of the packet (that is, the Packet Number and Payload fields) in bytes, encoded as a variable-length integer.
+                  </dd>
+                  <dt>
+                     Protected Packet Number: LH.P+1 bytes.
+                  </dt>
+                  <dd>
+                     The packet number field, with header protection.
+                  </dd>
+                  <dt>
+                     Protected Payload: (Length.Value-(LH.P+1)) bytes.
+                  </dt>
+                  <dd>
+                     The protected payload field.
+                  </dd>
+               </dl>
+            </section>
+            <section anchor='longheader-0tt_packet'>
+               <name>0RTT Packet</name>
+               <t>A 0RTT Packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Length                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Packet Number                      ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Payload                         ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Long Header (LH): 1 Long Header; LH.T == 1.
+                  </dt>
+                  <dd>
+                     A 0-RTT packet uses long headers with a type value of 0x1.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The length of the remainder of the packet (that is, the Packet Number and Payload fields) in bytes, encoded as a variable-length integer.
+                  </dd>
+                  <dt>
+                     Packet Number: LH.P+1 bytes.
+                  </dt>
+                  <dd>
+                     The packet number field.
+                  </dd>
+                  <dt>
+                     Payload: [Frame].
+                  </dt>
+                  <dd>
+                     The payload field, comprised of multiple frames.
+                  </dd>
+               </dl>
+               <t>A Protected 0RTT Packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Length                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                    Protected Packet Number                  ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                       Protected Payload                     ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Long Header (LH): 1 Long Header; LH.T == 1.
+                  </dt>
+                  <dd>
+                     A 0-RTT packet uses long headers with a type value of 0x1.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The length of the remainder of the packet (that is, the Packet Number and Payload fields) in bytes, encoded as a variable-length integer.
+                  </dd>
+                  <dt>
+                     Protected Packet Number: LH.P+1 bytes.
+                  </dt>
+                  <dd>
+                     The packet number field, with header protection.
+                  </dd>
+                  <dt>
+                     Protected Payload: (Length.Value-(LH.P+1)) bytes.
+                  </dt>
+                  <dd>
+                     The protected payload field.
+                  </dd>
+               </dl>
+            </section>
+            <section anchor='longheader-handshake_packet'>
+               <name>Handshake Packet</name>
+               <t>A Handshake Packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Length                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Packet Number                      ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Payload                         ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Long Header (LH): 1 Long Header; LH.T == 2.
+                  </dt>
+                  <dd>
+                     A Handshake packet uses long headers with a type value of 0x2.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The length of the remainder of the packet (that is, the Packet Number and Payload fields) in bytes, encoded as a variable-length integer.
+                  </dd>
+                  <dt>
+                     Packet Number: LH.P+1 bytes.
+                  </dt>
+                  <dd>
+                     The packet number field.
+                  </dd>
+                  <dt>
+                     Payload: [Frame].
+                  </dt>
+                  <dd>
+                     The payload field, comprised of multiple frames.
+                  </dd>
+               </dl>
+               <t>A Protected Handshake packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Length                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                    Protected Packet Number                  ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                       Protected Payload                     ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Long Header (LH): 1 Long Header; LH.T == 2.
+                  </dt>
+                  <dd>
+                     A Handshake packet uses long headers with a type value of 0x2.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The length of the remainder of the packet (that is, the Packet Number and Payload fields) in bytes, encoded as a variable-length integer.
+                  </dd>
+                  <dt>
+                     Protected Packet Number: LH.P+1 bytes.
+                  </dt>
+                  <dd>
+                     The packet number field, with header protection.
+                  </dd>
+                  <dt>
+                     Protected Payload: (Length.Value-(LH.P+1)) bytes.
+                  </dt>
+                  <dd>
+                     The protected payload field.
+                  </dd>
+               </dl>
+            </section>
+            <section anchor='longheader-retry_packet'>
+               <name>Retry Packet</name>
+               <t>A Retry Packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Retry Token                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +                     Retry Integrity Tag                       +
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Long Header (LH): 1 Long Header; LH.T == 3.
+                  </dt>
+                  <dd>
+                     A Retry packet uses long headers with a type value of 0x3.
+                  </dd>
+                  <dt>
+                     Retry Token.
+                  </dt>
+                  <dd>
+                     An opaque token that the server can use to validate the client's address.
+                  </dd>
+                  <dt>
+                     Retry Integrity Tag: 128 bits.
+                  </dt>
+                  <dd>
+                     Retry Integrity Tag field.
+                  </dd>
+               </dl>
+            </section>
+        </section>
+
+        <section anchor='shortheader'>
+            <name>Short Header Packets</name>
+            <t>A Short Header Packet is formatted as follows:</t>
+            <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+
+ |0|1|S| R |K| P |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                   Destination Connection ID                 ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         Packet Number                       ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                            Payload                            :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            </artwork>
+            <t>
+               where:
+            </t>
+            <dl>
+               <dt>
+                  Header Form (HF): 1 bit; HF == 0.
+               </dt>
+               <dd>
+                  The most significant bit (0x80) of byte 0 (the first byte) is set to 0 for short headers.
+               </dd>
+               <dt>
+                  Fixed Bit (FB): 1 bit; FB == 1.
+               </dt>
+               <dd>
+                  The next bit (0x40) of byte 0 is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded.
+               </dd>
+               <dt>
+                  Spin Bit (S): 1 bit.
+               </dt>
+               <dd>
+                  The third most significant bit (0x20) of byte 0 is the latency spin bit.
+               </dd>
+               <dt>
+                  Reserved Bits (R): 2 bits.
+               </dt>
+               <dd>
+                  The next two bits (those with a mask of 0x18) of byte 0 are reserved. These bits are protected using header protection.  The value included prior to protection MUST be set to 0.
+               </dd>
+               <dt>
+                  Key Phase (K): 1 bit.
+               </dt>
+               <dd>
+                  The next bit (0x04) of byte 0 indicates the key phase, which allows a recipient of a packet to identify the packet protection keys that are used to protect the packet. This bit is protected using header protection.
+               </dd>
+               <dt>
+                  Packet Number Length (P): 2 bits.
+               </dt>
+               <dd>
+                  In packet types which contain a Packet Number field, the least significant two bits (those with a mask of 0x03) of byte 0 contain the length of the packet number, encoded as an unsigned, two-bit integer that is one less than the length of the packet number field in bytes. These bits are protected using header protection.
+               </dd>
+               <dt>
+                  Destination Connection ID: 20 bytes.
+               </dt>
+               <dd>
+                  The Destination Connection ID is a connection ID that is chosen by the intended recipient of the packet.
+               </dd>
+               <dt>
+                  Packet Number: P+1 bytes.
+               </dt>
+               <dd>
+                  The packet number field is 1 to 4 bytes long. The packet number has confidentiality protection separate from packet protection.  The length of the packet number field is encoded in Packet Number Length field.
+               </dd>
+               <dt>
+                  Payload: [Frame].
+               </dt>
+               <dd>
+                  The payload field, comprised of multiple frames.
+               </dd>
+            </dl>
+            <t>A Protected Short Header Packet is formatted as follows:</t>
+            <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+
+ |0|1|S| ProcRKP |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                   Destination Connection ID                 ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                    Protected Packet Number                  ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                       Protected Payload                       :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            </artwork>
+            <t>
+               where:
+            </t>
+            <dl>
+               <dt>
+                  Header Form (HF): 1 bit; HF == 0.
+               </dt>
+               <dd>
+                  The most significant bit (0x80) of byte 0 (the first byte) is set to 0 for short headers.
+               </dd>
+               <dt>
+                  Fixed Bit (FB): 1 bit; FB == 1.
+               </dt>
+               <dd>
+                  The next bit (0x40) of byte 0 is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded.
+               </dd>
+               <dt>
+                  Spin Bit (S): 1 bit.
+               </dt>
+               <dd>
+                  The third most significant bit (0x20) of byte 0 is the latency spin bit.
+               </dd>
+               <dt>
+                  Protected Bits (ProcRKP): 5 bits.
+               </dt>
+               <dd>
+                  Five header protected bits.
+               </dd>
+               <dt>
+                  Destination Connection ID: 20 bytes.
+               </dt>
+               <dd>
+                  The Destination Connection ID is a connection ID that is chosen by the intended recipient of the packet.
+               </dd>
+               <dt>
+                  Packet Number.
+               </dt>
+               <dd>
+                  The packet number field is 1 to 4 bytes long. The packet number has confidentiality protection separate from packet protection.  The length of the packet number field is encoded in Packet Number Length field.
+               </dd>
+               <dt>
+                  Protected Payload: [Frame].
+               </dt>
+               <dd>
+                  Packets with a short header always include a 1-RTT protected payload.
+               </dd>
+            </dl>
+        </section>
+
+        <section anchor='frames'>
+            <name>Frames and Frame Formats</name>
+            <t>A Frame is one of: a PADDING frame, a PING frame, an ACK frame, a RESET_STREAM frame, a STOP_SENDING frame, a CRYPTO frame, a NEW_TOKEN frame, a STREAM frame, a MAX_DATA frame, a MAX_STREAM_DATA frame, a MAX_STREAMS frame, a DATA_BLOCKED frame, a STREAM_DATA_BLOCKED frame, a STREAMS_BLOCKED frame, a NEW_CONNECTION_ID frame, a PATH_CHALLENGE frame, a PATH_RESPONSE frame, a CONNECTION_CLOSE frame, or a HANDSHAKE_DONE frame.</t>
+            <section anchor='frames_padding'>
+               <name>PADDING frame</name>
+               <t>A PADDING Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       0       |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 0.
+                  </dt>
+                  <dd>
+                     Frame type, set to 0 for PADDING frames.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_ping'>
+               <name>PING frame</name>
+               <t>A PING Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       1       |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 1.
+                  </dt>
+                  <dd>
+                     Frame type, set to 1 for PING frames.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_ack'>
+               <name>ACK frame</name>
+               <t>An ACK Range is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                             Gap                             ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                      ACK Packet Range                       ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Gap: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the number of contiguous unacknowledged packets preceding the packet number one lower than the smallest in the preceding ACK Range.
+                  </dd>
+                  <dt>
+                     ACK Packet Range: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the number of contiguous acknowledged packets preceding the largest packet number, as determined by the preceding Gap.
+                  </dd>
+               </dl>
+               <t>An ECN Count is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         ECT0 Count                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         ECT1 Count                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         ECNCE Count                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     ECT0 Count: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer representing the total number of packets received with the ECT(0) codepoint in the packet number space of the ACK frame.
+                  </dd>
+                  <dt>
+                     ECT1 Count: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer representing the total number of packets received with the ECT(1) codepoint in the packet number space of the ACK frame.
+                  </dd>
+                  <dt>
+                     ECNCE Count: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer representing the total number of packets received with the CE codepoint in the packet number space of the ACK frame.
+                  </dd>
+               </dl>
+               <t>An ACK Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |   Frame Type  |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                     Largest Acknowledged                    ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          ACK Delay                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                       ACK Range Count                       ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                       First ACK Range                       ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                     [Other ACK Ranges]                      ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         ECN Counts                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; (FT.Value == 3) || (FT.Value == 4).
+                  </dt>
+                  <dd>
+                     Frame type, set to 3 or 4 for ACK frames.
+                  </dd>
+                  <dt>
+                     Largest Acknowledged: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer representing the largest packet number the peer is acknowledging; this is usually the largest packet number that the peer has received prior to generating the ACK frame. Unlike the packet number in the QUIC long or short header, the value in an ACK frame is not truncated.
+                  </dd>
+                  <dt>
+                     ACK Delay: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer representing the time delta in microseconds between when this ACK was sent and when the largest acknowledged packet, as indicated in the Largest Acknowledged field, was received by this peer.
+                  </dd>
+                  <dt>
+                     ACK Range Count: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the number of Gap and ACK Range fields in the frame.
+                  </dd>
+                  <dt>
+                     First ACK Range: 1 ACK Range.
+                  </dt>
+                  <dd>
+                     The First ACK Range is encoded as an ACK Range starting from the Largest Acknowledged.
+                  </dd>
+                  <dt>
+                     Other ACK Ranges: [ACK Range].
+                  </dt>
+                  <dd>
+                     Contains additional ranges of packets which are alternately not acknowledged and acknowledged.
+                  </dd>
+                  <dt>
+                     ECN Counts: 1 ECN Count; present only when FT.Value == 3.
+                  </dt>
+                  <dd>
+                     The three ECN Counts.
+                  </dd>
+               </dl>
+            </section>
+            <section anchor='frames_resetstream'>
+               <name>RESET_STREAM frame</name>
+               <t>A RESET_STREAM Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       4       |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                           Stream ID                         ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                    Application Error Code                   ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Final Size                         ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 4.
+                  </dt>
+                  <dd>
+                     Frame type, set to 4 for RESET_STREAM frames.
+                  </dd>
+                  <dt>
+                     Stream ID: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer encoding of the Stream ID of the stream being terminated.
+                  </dd>
+                  <dt>
+                     Application Error Code: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer containing the application protocol error code which indicates why the stream is being closed.
+                  </dd>
+                  <dt>
+                     Final Size: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the final size of the stream by the RESET_STREAM sender, in unit of bytes.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_stopsending'>
+               <name>STOP_SENDING frame</name>
+               <t>A STOP_SENDING Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       5       |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                           Stream ID                         ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                    Application Error Code                   ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 5.
+                  </dt>
+                  <dd>
+                     Frame type, set to 5 for STOP_SENDING frames.
+                  </dd>
+                  <dt>
+                     Stream ID: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer carrying the Stream ID of the stream being ignored.
+                  </dd>
+                  <dt>
+                     Application Error Code: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer containing the application-specified reason the sender is ignoring the stream.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_crypto'>
+               <name>CRYPTO frame</name>
+               <t>A CRYPTO Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       6       |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                            Offset                           ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                            Length                           ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                         Crypto Data                           :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 6.
+                  </dt>
+                  <dd>
+                     Frame type, set to 6 for CRYPTO frames.
+                  </dd>
+                  <dt>
+                     Offset: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the byte offset in the stream for the data in this CRYPTO frame.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the length of the Crypto Data field in this CRYPTO frame.
+                  </dd>
+                  <dt>
+                     Crypto Data: Length.Value bytes.
+                  </dt>
+                  <dd>
+                     The cryptographic message data.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_newtoken'>
+               <name>NEW_TOKEN frame</name>
+               <t>A NEW_TOKEN Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       7       |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         Token Length                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                            Token                              :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 7.
+                  </dt>
+                  <dd>
+                     Frame type, set to 7 for NEW_TOKEN frames.
+                  </dd>
+                  <dt>
+                     Token Length (TL): 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the length of the token in bytes.
+                  </dd>
+                  <dt>
+                     Token: TL.Value bytes.
+                  </dt>
+                  <dd>
+                     An opaque blob that the client may use with a future Initial packet.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_stream'>
+               <name>STREAM frame</name>
+               <t>A STREAM Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |    1    |O|L|F|
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Stream ID                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                            Offset                           ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                            Length                           ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                         Stream Data                           :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Unused: 5 bits; Unused == 1.
+                  </dt>
+                  <dd>
+                     Five high-order bits in frame type field; set to 1 for STREAM frames.
+                  </dd>
+                  <dt>
+                     OFF bit (O): 1 bit.
+                  </dt>
+                  <dd>
+                     Set to indicate that there is an Offset field present.
+                  </dd>
+                  <dt>
+                     LEN bit (L): 1 bit.
+                  </dt>
+                  <dd>
+                     Set to indicate that there is a Length field present.
+                  </dd>
+                  <dt>
+                     FIN bit (F): 1 bit.
+                  </dt>
+                  <dd>
+                     Set only on frames that contain the final size of the stream.
+                  </dd>
+                  <dt>
+                     Stream ID: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the stream ID of the stream.
+                  </dd>
+                  <dt>
+                     Offset: 1 Variable Length Integer Encoding; present only when O == 1.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the byte offset in the stream for the data in this STREAM frame.
+                  </dd>
+                  <dt>
+                     Length: 1 Variable Length Integer Encoding; present only when L == 1.
+                  </dt>
+                  <dd>
+                     A variable-length integer specifying the length of the Stream Data field in this STREAM frame.  This field is present when the LEN bit is set to 1.  When the LEN bit is set to 0, the Stream Data field consumes all the remaining bytes in the packet.
+                  </dd>
+                  <dt>
+                     Stream Data: Length.Value bytes.
+                  </dt>
+                  <dd>
+                     The bytes from the designated stream to be delivered.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_maxdata'>
+               <name>MAX_DATA frame</name>
+               <t>A MAX_DATA Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       16      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         Maximum Data                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 16.
+                  </dt>
+                  <dd>
+                     Frame type, set to 16 for MAX_DATA frames.
+                  </dd>
+                  <dt>
+                     Maximum Data: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the maximum amount of data that can be sent on the entire connection, in units of bytes.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_maxstreamdata'>
+               <name>MAX_STREAM_DATA frame</name>
+               <t>A MAX_STREAM_DATA Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       17      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Stream ID                          ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                      Maximum Stream Data                    ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 17.
+                  </dt>
+                  <dd>
+                     Frame type, set to 17 for MAX_STREAM_DATA frames.
+                  </dd>
+                  <dt>
+                     Stream ID: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The stream ID of the stream that is affected encoded as a variable-length integer.
+                  </dd>
+                  <dt>
+                     Maximum Stream Data: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the maximum amount of data that can be sent on the identified stream, in units of bytes.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_maxstreams'>
+               <name>MAX_STREAMS frame</name>
+               <t>A MAX_STREAMS Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       FT      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                        Maximum Streams                      ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; (FT.Value == 18) || (FT.Value == 19).
+                  </dt>
+                  <dd>
+                     Frame type, set to 18 or 19 for MAX_STREAMS frames.
+                  </dd>
+                  <dt>
+                     Maximum Streams: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A count of the cumulative number of streams of the corresponding type that can be opened over the lifetime of the connection.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_datablocked'>
+               <name>DATA_BLOCKED frame</name>
+               <t>A DATA_BLOCKED Frame is formatted as follows:</t>
+               <artwork>
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |       20      |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                           Data Limit                        ...
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 20.
+                  </dt>
+                  <dd>
+                     Frame type, set to 20 for DATA_BLOCKED frames.
+                  </dd>
+                  <dt>
+                     Data Limit: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the connection-level limit at which blocking occurred.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_streamdatablocked'>
+               <name>STREAM_DATA_BLOCKED frame</name>
+               <t>A STREAM_DATA_BLOCKED Frame is formatted as follows:</t>
+               <artwork>
+    0                   1                   2                   3
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |       21      |
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                          Stream ID                          ...
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+   |                       Stream Data Limit                     ...
+   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 21.
+                  </dt>
+                  <dd>
+                     Frame type, set to 21 for STREAM_DATA_BLOCKED frames.
+                  </dd>
+                  <dt>
+                     Stream ID: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the stream which is flow control blocked.
+                  </dd>
+                  <dt>
+                     Maximum Stream Data: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the offset of the stream at which the blocking occurred.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_streamsblocked'>
+               <name>STREAMS_BLOCKED frame</name>
+               <t>A STREAMS_BLOCKED Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       FT      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         Stream Limit                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; (FT.Value == 22) || (FT.Value == 23).
+                  </dt>
+                  <dd>
+                     Frame type, set to 22 or 23 for STREAMS_BLOCKED frames.
+                  </dd>
+                  <dt>
+                     Stream Limit: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating the stream limit at the time the frame was sent.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_newconnectionid'>
+               <name>NEW_CONNECTION_ID frame</name>
+               <t>A NEW_CONNECTION_ID Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       24      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         Sequence Number                     ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         Retire Prior To                     ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |     Length    |                                               |
+ +-+-+-+-+-+-+-+-+            Connection ID                      +
+ |                                                             ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +                      Stateless Reset Token                    +
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 24.
+                  </dt>
+                  <dd>
+                     Frame type, set to 24 for NEW_CONNECTION_ID frames.
+                  </dd>
+                  <dt>
+                     Sequence Number: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The sequence number assigned to the connection ID by the sender.
+                  </dd>
+                  <dt>
+                     Retire Prior To: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable-length integer indicating which connection IDs should be retired.
+                  </dd>
+                  <dt>
+                     Length: 1 byte.
+                  </dt>
+                  <dd>
+                     An 8-bit unsigned integer containing the length of the connection ID. Values less than 1 and greater than 20 are invalid and MUST be treated as a connection error of type FRAME_ENCODING_ERROR.
+                  </dd>
+                  <dt>
+                     Connection ID: Length bytes.
+                  </dt>
+                  <dd>
+                     A connection ID of the specified length.
+                  </dd>
+                  <dt>
+                     Stateless Reset Token: 128 bits.
+                  </dt>
+                  <dd>
+                     A 128-bit value that will be used for a stateless reset when the associated connection ID is used.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_retireconnectionid'>
+               <name>RETIRE_CONNECTION_ID frame</name>
+               <t>A RETIRE_CONNECTION_ID Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       25      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                         Sequence Number                     ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 25.
+                  </dt>
+                  <dd>
+                     Frame type, set to 25 for RETIRE_CONNECTION_ID frames.
+                  </dd>
+                  <dt>
+                     Sequence Number: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     The sequence number of the connection ID being retired.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_pathchallenge'>
+               <name>PATH_CHALLENGE frame</name>
+               <t>A PATH_CHALLENGE Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       26      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               |
+ +                              Data                             +
+ |                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 26.
+                  </dt>
+                  <dd>
+                     Frame type, set to 26 for PATH_CHALLENGE frames.
+                  </dd>
+                  <dt>
+                     Data: 64 bits.
+                  </dt>
+                  <dd>
+                     This 8-byte field contains arbitrary data.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_pathresponse'>
+               <name>PATH_RESPONSE frame</name>
+               <t>A PATH_RESPONSE Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       27      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               |
+ +                              Data                             +
+ |                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 27.
+                  </dt>
+                  <dd>
+                     Frame type, set to 27 for PATH_RESPONSE frames.
+                  </dd>
+                  <dt>
+                     Data: 64 bits.
+                  </dt>
+                  <dd>
+                     This 8-byte field contains arbitrary data.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_connectionclose'>
+               <name>CONNECTION_CLOSE frame</name>
+               <t>A CONNECTION_CLOSE Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       FT      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                           Error Code                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                           Frame Type                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Phrase Length                      ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                         Reason Phrase                         :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 28 || FT.Value == 29.
+                  </dt>
+                  <dd>
+                     Frame type, set to 28 or 29 for CONNECTION_CLOSE frames.
+                  </dd>
+                  <dt>
+                     Error Code: 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                     A variable length integer error code which indicates the reason for closing this connection.
+                  </dd>
+                  <dt>
+                     Frame Type: 1 Variable Length Integer Encoding; present only when FT.Value == 28.
+                  </dt>
+                  <dd>
+                     A variable-length integer encoding the type of frame that triggered the error.
+                  </dd>
+                  <dt>
+                    Phrase Length (Length): 1 Variable Length Integer Encoding.
+                  </dt>
+                  <dd>
+                    A variable-length integer specifying the length of the reason phrase in bytes.
+                  </dd>
+                  <dt>
+                     Reason Phrase: Length.Value bytes.
+                  </dt>
+                  <dd>
+                     A human-readable explanation for why the connection was closed.
+                  </dd>
+               </dl>
+           </section>
+            <section anchor='frames_handshakedone'>
+               <name>HANDSHAKE_DONE frame</name>
+               <t>A HANDSHAKE_DONE Frame is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       30      |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.Value == 30.
+                  </dt>
+                  <dd>
+                     Frame type, set to 30 for HANDSHAKE_DONE frames.
+                  </dd>
+               </dl>
+           </section>
+       </section>
+    </middle>
+
+    <back>
+        <references>
+            <name>Informative References</name>
+            <reference anchor="QUIC-TRANSPORT" target="http://www.ietf.org/internet-drafts/draft-ietf-quic-transport-27.txt">
+                <front>
+                    <title>QUIC: A UDP-Based Multiplexed and Secure Transport</title>
+
+                    <author initials='J' surname='Iyengar' fullname='Jana Iyengar'><organization /></author>
+                    <author initials='M' surname='Thomson' fullname='Martin Thomson'><organization /></author>
+
+                    <date month='February' day='21' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-ietf-quic-transport-27' />
+            </reference>
+            <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-04.txt">
+                <front>
+                    <title>Describing Protocol Data Units with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='April' day='24' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-04' />
+            </reference>
+        </references>
+
+        <section anchor='source'>
+            <name>Source code repository</name>
+            <t>
+                The source for this draft is available from
+                <eref target="https://github.com/glasgow-ipl/draft-mcquistin-quic-augmented-diagrams" />.
+            </t>
+            <t>
+                The source code for tooling that can be used to parse this document is available
+                from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />.
+            </t>
+        </section>
+    </back>
+ </rfc>
