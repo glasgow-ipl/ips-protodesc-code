@@ -289,6 +289,8 @@ def parse_t(xmlElement: ET.Element) -> rfc.T:
             content.append(parse_vspace(child))
         elif child.tag == "xref":
             content.append(parse_xref(child))
+        if child.tail is not None:
+            content.append(rfc.Text(child.tail))
     if xmlElement.tail is not None:
         content.append(rfc.Text(xmlElement.tail))
     return rfc.T(content,
@@ -1417,4 +1419,3 @@ if __name__ == "__main__":
     rfcXml = ET.parse(sys.argv[1]).getroot()
     parsed_rfc = parse_rfc(rfcXml)
     print(parsed_rfc)
-
