@@ -29,7 +29,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from typing import Optional, List, Any
+from typing import Optional, List, Any, cast
 
 import xml.etree.ElementTree as ET
 
@@ -48,21 +48,21 @@ from npt.protocol             import *
 # Expression DFS
 
 def dfs_expression(formatter: Formatter, expr: Expression) -> Any:
-    if type(expr) is ArgumentExpression:
+    if isinstance(expr, ArgumentExpression):
         return dfs_argumentexpression(formatter, expr)
-    elif type(expr) is MethodInvocationExpression:
+    elif isinstance(expr, MethodInvocationExpression):
         return dfs_methodinvocationexpr(formatter, expr)
-    elif type(expr) is FunctionInvocationExpression:
+    elif isinstance(expr, FunctionInvocationExpression):
         return dfs_functioninvocationexpr(formatter, expr)
-    elif type(expr) is FieldAccessExpression:
+    elif isinstance(expr, FieldAccessExpression):
         return dfs_fieldaccessexpr(formatter, expr)
-    elif type(expr) is ContextAccessExpression:
+    elif isinstance(expr, ContextAccessExpression):
         return dfs_contextaccessexpr(formatter, expr)
-    elif type(expr) is IfElseExpression:
+    elif isinstance(expr, IfElseExpression):
         return dfs_ifelseexpr(formatter, expr)
-    elif type(expr) is SelfExpression:
+    elif isinstance(expr, SelfExpression):
         return dfs_selfexpr(formatter, expr)
-    elif type(expr) is ConstantExpression:
+    elif isinstance(expr, ConstantExpression):
         return dfs_constantexpr(formatter, expr)
 
 def dfs_argumentexpression(formatter: Formatter, expr: ArgumentExpression) -> Any:
@@ -83,13 +83,13 @@ def dfs_fieldaccessexpr(formatter: Formatter, expr: FieldAccessExpression) -> An
     return formatter.format_fieldaccessexpr(target, expr.field_name)
 
 def dfs_contextaccessexpr(formatter: Formatter, expr: ContextAccessExpression) -> Any:
-    return formatter.format_contextaccessexpr(formatter, expr.field_name)
+    return formatter.format_contextaccessexpr(expr.field_name)
 
 def dfs_ifelseexpr(formatter: Formatter, expr: IfElseExpression) -> Any:
     condition = dfs_expression(formatter, expr.condition)
     if_true = dfs_expression(formatter, expr.if_true)
     if_false = dfs_expression(formatter, expr.if_false)
-    return formatter.format_ifelseexpr(self, condition, if_true, if_false)
+    return formatter.format_ifelseexpr(condition, if_true, if_false)
 
 def dfs_selfexpr(formatter: Formatter, expr: SelfExpression) -> Any:
     return formatter.format_selfexpr()
@@ -115,32 +115,32 @@ def dfs_enum(enum: Enum, type_names:List[str]):
 
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
-        if parameter.param_type.name not in type_names:
+        if parameter.param_type is not None and parameter.param_type.name not in type_names:
             dfs_protocoltype(parameter.param_type, type_names)
-    if function.return_type.name not in type_names:
+    if function.return_type is not None and function.return_type.name not in type_names:
         dfs_protocoltype(function.return_type, type_names)
 
 def dfs_context(context: Context, type_names:List[str]):
     for field in context.fields:
-        dfs_protocoltype(field.field_type)
+        dfs_protocoltype(field.field_type, type_names)
 
-def dfs_protocoltype(pt: ProtocolType, type_names:List[str]):
-    if type(pt) is Struct:
+def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[str]):
+    if isinstance(pt, Struct):
         dfs_struct(pt, type_names)
-    elif type(pt) is Array:
+    elif isinstance(pt, Array):
         dfs_array(pt, type_names)
-    elif type(pt) is Enum:
+    elif isinstance(pt, Enum):
         dfs_enum(pt, type_names)
-    elif type(pt) is Function:
+    elif isinstance(pt, Function):
         dfs_function(pt, type_names)
-    elif type(pt) is Context:
+    elif isinstance(pt, Context):
         dfs_context(pt, type_names)
     elif pt is None:
         return
     type_names.append(pt.name)
 
 def dfs_protocol(protocol: Protocol):
-    type_names = []
+    type_names : List[str] = []
 
     for pdu_name in protocol.get_pdu_names():
         dfs_protocoltype(protocol.get_pdu(pdu_name), type_names)
@@ -157,15 +157,14 @@ def dfs_protocol(protocol: Protocol):
 
 def parse_input_file( doc : npt.util.IETF_URI ) -> Optional[npt.rfc.RFC] :
     content = None
-    if doc.extn == '.xml' :
-        with open( doc.get_filepath_in() , 'r') as infile :
-            raw_content = infile.read()
-            xml_tree = ET.fromstring(raw_content)
+    doc_filepath = doc.get_filepath_in()
+    if doc.extn == '.xml' and doc_filepath is not None:
+        with open(doc_filepath , 'r') as infile :
+            xml_tree = ET.fromstring(infile.read())
             content = npt.parser_rfc_xml.parse_rfc(xml_tree)
-    elif doc.extn == '.txt' :
-        with open( doc.get_filepath_in() , 'r') as infile :
-            raw_content = infile.readlines()
-            content = npt.parser_rfc_txt.parse_rfc(raw_content)
+    elif doc.extn == '.txt' and doc_filepath is not None:
+        with open(doc_filepath, 'r') as infile :
+            content = npt.parser_rfc_txt.parse_rfc(infile.readlines())
     return content
 
 def main():
@@ -183,8 +182,8 @@ def main():
     for idx, doc in enumerate(opt.infiles):
         print(f"document [{idx}] --> {doc} --> {doc.get_filepath_in()}")
         parsed_content = parse_input_file( doc )
-        if parsed_content == None :
-            print(f"Error : Parsing {doc.get_filepath()} -> container = {doc}")
+        if parsed_content is None :
+            print(f"Error : Parsing {doc.get_filepath_in()} -> container = {doc}")
             continue
 
         protocol = dom_parser.build_protocol(  None , parsed_content )
@@ -196,25 +195,24 @@ def main():
                 for type_name in type_names:
                     if protocol.has_type(type_name):
                         pt = protocol.get_type(type_name)
-                        if type(pt) is BitString:
-                            size_expr = dfs_expression(formatter, pt.size)
+                        if isinstance(pt, BitString):
+                            size_expr = dfs_expression(formatter, cast(Expression, pt.size))
                             formatter.format_bitstring(pt, formatter.format_expression(size_expr))
-                        elif type(pt) is Struct:
+                        elif isinstance(pt, Struct):
                             constraints = []
                             for constraint in pt.constraints:
                                 expr = dfs_expression(formatter, constraint)
                                 constraints.append(formatter.format_expression(expr))
                             formatter.format_struct(pt, constraints)
-                        elif type(pt) is Array:
+                        elif isinstance(pt, Array):
                             formatter.format_array(pt)
-                        elif type(pt) is Enum:
+                        elif isinstance(pt, Enum):
                             formatter.format_enum(pt)
-                        elif type(pt) is Context:
+                        elif isinstance(pt, Context):
                             formatter.format_context(pt)
                     elif protocol.has_func(type_name):
                         formatter.format_function(protocol.get_func(type_name))
             except Exception as e:
-                raise e
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt.kind.lower()} failed)")
                 continue
             try:
@@ -224,6 +222,7 @@ def main():
                 continue
 
             output_file = doc.gen_filepath_out( opt.root_dir, out_extn)
+            assert output_file is not None
             output_file.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
             with open(output_file, "w") as out_fp:
                 out_fp.write(formatter.generate_output())
