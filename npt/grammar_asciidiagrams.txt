@@ -75,7 +75,7 @@ field_title = field_title_name_only | field_title_size | field_title_size_constr
 
 # Preamble
 
-preamble = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is formatted as follows:" -> name
+preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name "is" ws "formatted" ws "as" ws "follows:" -> name
 
 # Diagram
 
