@@ -207,6 +207,12 @@ optional arguments:
 
  ```
 
+*Example Usage*
+```
+   python npt examples/draft-mcquistin-quic-augmented-diagrams.xml -of simple
+   python npt examples/draft-mcquistin-augmented-ascii-diagrams.xml -of simple
+```
+
 ## Acknowledgements
 
 This work is funded by the UK Engineering and Physical Sciences Research
