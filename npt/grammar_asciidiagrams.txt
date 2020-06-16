@@ -102,8 +102,8 @@ function_signature = 'func ' short_field_name:name '(' parameter_list:params ')'
 
 # Function use
 pdu_list_comma = pdu_name:name (', ' pdu_name:names)*:names -> [name] + names
-serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:from_type "is serialised to " ("an " | "a ") pdu_name:to_type 'using the ' short_field_name:func_name ' function.' -> (from_type, to_type, func_name)
-parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:to_type "is parsed from " ("an " | "a ") pdu_name:from_type 'using the ' short_field_name:func_name  ' function.' -> (from_type, to_type, func_name)
+serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:from_type "is serialised to " ("an " | "a ") pdu_name:to_type 'using the ' short_field_name:func_name ' function.' anything* -> (from_type, to_type, func_name)
+parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:to_type "is parsed from " ("an " | "a ") pdu_name:from_type 'using the ' short_field_name:func_name  ' function.' anything* -> (from_type, to_type, func_name)
 
 # Protocol Definition
 

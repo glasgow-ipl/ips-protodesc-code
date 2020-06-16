@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='US-ASCII'?>
-<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-quic-augmented-diagrams-00' category='exp'>
+<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-quic-augmented-diagrams-01' category='exp'>
     <front>
         <title abbrev='QUIC Augmented Packet Diagrams'>
             Describing QUIC's Protocol Data Units with Augmented Packet Header Diagrams
         </title>
-        <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-00' status="experimental" />
+        <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-01' status="experimental" />
 
         <author fullname='Stephen McQuistin' initials='S.' surname='McQuistin'>
             <organization>University of Glasgow</organization>
@@ -102,9 +102,16 @@
         <section anchor='protection'>
             <name>Header and Packet Protection</name>
             <t>A Protected Packet is either a Protected Long Header Packet or a Protected Short Header Packet.</t>
-            <t>
-                The apply_protection function is defined as:
-            </t>
+            <t>An Unprotected Packet is either a Long Header Packet or a Short Header Packet.</t>
+            <t>An Unprotected Packet is parsed from a Protected Packet using the remove_protection function. The remove_protection function is defined as: </t>
+            <artwork>
+func remove_protection(from: Protected Packet) -> Unprotected Packet:
+   remove header protection from protected_packet
+   remove packet protection from protected_packet
+   construct appropriate packet type
+   return Unprotected Packet
+            </artwork>
+            <t>An Unprotected Packet is serialised to a Protected Packet using the apply_protection function. The apply_protection function is defined as:</t>
             <artwork>
 func apply_protection(to: Unprotected Packet)
                 -> Protected Packet:
@@ -113,20 +120,6 @@ func apply_protection(to: Unprotected Packet)
    construct appropriate Protected Packet based on first_byte
    return Protected Packet
             </artwork>
-            <t>An Unprotected Packet is serialised to a Protected Packet using the apply_protection function.</t>
-            <t>
-                The remove_protection function is defined as:
-            </t>
-            <artwork>
-func remove_protection(from: Protected Packet)
-        -> Unprotected Packet:
-   remove header protection from protected_packet
-   remove packet protection from protected_packet
-   construct appropriate packet type
-   return Unprotected Packet
-            </artwork>
-            <t>An Unprotected Packet is parsed from a Protected Packet using the remove_protection function.</t>
-            <t>An Unprotected Packet is either a Long Header Packet or a Short Header Packet.</t>
         </section>
 
         <section anchor='variableint'>
@@ -237,7 +230,7 @@ func remove_protection(from: Protected Packet)
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |1|   Unused  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-|                             Version                           |
+|                           Version ID                          |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |    DCID Len   |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -267,7 +260,7 @@ func remove_protection(from: Protected Packet)
                  The value in the Unused field is selected randomly by the server. Clients MUST ignore the value of this field.  Servers SHOULD set the most significant bit of this field (0x40) to 1 so that Version Negotiation packets appear to have the Fixed Bit field.
               </dd>
               <dt>
-                 Version: 1 Version; Version.ID == 0.
+                 Version ID (VID): 1 Version; VID.ID == 0.
               </dt>
               <dd>
                  The Version field of a Version Negotiation packet MUST be set to 0x0000000.
@@ -314,7 +307,7 @@ func remove_protection(from: Protected Packet)
  +-+-+-+-+-+-+-+-+
  |1|1| T | R | P |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- |                             Version                           |
+ |                          Version ID                           |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  |    DCID Len   |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -360,7 +353,7 @@ func remove_protection(from: Protected Packet)
                   In packet types which contain a Packet Number field, the least significant two bits (those with a mask of 0x03) of byte 0 contain the length of the packet number, encoded as an unsigned, two-bit integer that is one less than the length of the packet number field in bytes.
                </dd>
                <dt>
-                  Version: 1 Version.
+                  Version ID (VID): 1 Version.
                </dt>
                <dd>
                   This field indicates which version of QUIC is in use and determines how the rest of the protocol fields are interpreted.
@@ -398,7 +391,7 @@ func remove_protection(from: Protected Packet)
  +-+-+-+-+-+-+-+-+
  |1|1| T | PBits |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- |                             Version                           |
+ |                           Version ID                          |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  |    DCID Len   |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -438,7 +431,7 @@ func remove_protection(from: Protected Packet)
                   4 bits protected using header protection.
                </dd>
                <dt>
-                  Version: 1 Version.
+                  Version ID (VID): 1 Version.
                </dt>
                <dd>
                   This field indicates which version of QUIC is in use and determines how the rest of the protocol fields are interpreted.
