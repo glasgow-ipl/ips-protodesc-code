@@ -9,6 +9,8 @@ lxml = "*"
 pavlova = "*"
 ietfdata = "*"
 requests = "*"
+e1839a8 = {path = "."}
+npt = {path = "."}
 
 [dev-packages]
 mypy = "*"

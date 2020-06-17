@@ -116,7 +116,7 @@ class RootWorkingDir:
         if override:
             return datetime.strptime(override, "%Y-%m-%d %H:%M:%S")
 
-        if self._meta == None:
+        if self._meta is None:
             return datetime(year=1970,
                             month=1,
                             day=1,
@@ -142,7 +142,7 @@ class RootWorkingDir:
 
     def update_sync_time(self, doc_type: str) -> None:
         """Insert / Update current time processing root directory was accessed"""
-        if self._meta == None:
+        if self._meta is None:
             self._meta = self._new_sync()
 
         if doc_type in self._meta or doc_type in self.doctypes:
@@ -168,9 +168,10 @@ class IETF_URI:
     """
     name : str
     extn : str
-    rev  : str = field(default=None)
-    dtype: str = field(default=None)
-    url  : str = field(default=None)
+    rev  : Optional[str] = field(default=None)
+    dtype: Optional[str] = field(default=None)
+    url  : Optional[str] = field(default=None)
+    infile : Optional[pathlib.Path] = None
 
     def _document_name(self):
         return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
@@ -194,10 +195,10 @@ class IETF_URI:
         return filename
 
     def get_filepath_in(self) -> Optional[pathlib.Path]:
-        return getattr(self, "infile", None)
+        return self.infile
 
     def gen_filepath_out(self, root: pathlib.Path,
-                         output_extn: str) -> pathlib.Path:
+                         output_extn: str) -> Optional[pathlib.Path]:
         """Generate the output file path. The extension is passed in
         by the caller"""
 
@@ -207,9 +208,9 @@ class IETF_URI:
         outdir = lambda _root: _root / "output" / self.name / self.rev if self.rev else _root / "output" / self.name
 
         root = root.resolve()
-        if str(root) in [ str(parent) for parent in infile.parents]:
+        if infile is not None and str(root) in [ str(parent) for parent in infile.parents]:
             outfile = outdir(root) / f"{self._document_name()}{output_extn}"
-        else:
+        elif infile is not None:
             outfile = outdir(infile.parent) / f"{self._document_name()}{output_extn}"
         return outfile
 
@@ -218,16 +219,18 @@ class IETF_URI:
 class DownloadClient:
     """Client to download remote URL resources in batch"""
     fs    : RootWorkingDir
-    dlopts: Optional[DownloadOptions] = field(default_factory=DownloadOptions)
+    dlopts:  DownloadOptions = field(default_factory=DownloadOptions)
+    session : Optional[requests.Session] = None
 
-    def __enter__(self) -> None:
+    def __enter__(self) -> "DownloadClient":
         """Context manager constructor"""
         self.session = requests.Session()
         return self
 
     def __exit__(self, ex_type, ex, ex_tb) -> None:
         """Context manager destructor"""
-        self.session.close()
+        if self.session is not None:
+            self.session.close()
         self.session = None
 
     def _write_file(self, file_path: pathlib.Path, data: str) -> bool:
@@ -244,7 +247,9 @@ class DownloadClient:
 
     def download_files(self, urls: List[IETF_URI]) -> List[IETF_URI]:
         """Batch download remote url objects"""
-        doclist = list()
+        doclist : List[IETF_URI] = list()
+        if self.session is None:
+            return doclist
         for doc in urls:
             infile = doc.gen_filepath(self._resolve_file_root(doc))
 
@@ -252,9 +257,12 @@ class DownloadClient:
                 if infile.exists():
                     continue
 
+            if doc.url is None:
+                continue
+
             dl = self.session.get(doc.url, verify=True, stream=False)
             if dl.status_code != 200:
-                print(f"Error : {dl.status_code} while downloading {doc.url(self.base_uri)}")
+                print("Error : {dl.status_code} while downloading {doc.url,self.base_uri)}")
                 continue
 
             if self._write_file(infile, dl.text):
@@ -330,7 +338,7 @@ class PositionalArg:
     def __init__(self, arg):
         self.arg = arg
 
-    def _match_name(self, fname: str) -> Tuple[str, str, str, str]:
+    def _match_name(self, fname: str) -> Optional[Tuple[Optional[str], str, Optional[str], str]]:
         """Resolve whether spefified name is a draft or rfc and whether
         a revision has been specified. Also determine file
         extension if specified
@@ -347,14 +355,14 @@ class PositionalArg:
                                f"(?P<extn>{extn_str})?$")
 
         _match = regex_rev.match(fname)
-        if _match != None:
+        if _match is not None:
             return ("draft",
                     _match.group('dtype') + _match.group("name"),
                     _match.group("rev"),
                     _match.group("extn"))
 
         _match = regex_std.match(fname)
-        if _match != None:
+        if _match is not None:
             dtype = None
             if _match.group('dtype'):
                 if _match.group('dtype').lower() == "draft-":
@@ -389,50 +397,51 @@ class PositionalArg:
             # and fetch all relevant input files
             ret_type = "remote"
             rname = self._match_name(fp.name)
-            assert rname != None, f"remote-uri {self.arg} misformed. Cannot resolve with datatracker"
+            assert rname is not None, f"remote-uri {self.arg} misformed. Cannot resolve with datatracker"
             dtype, name, rev, extn = rname
             urls += self._query_datatracker(dtype, name, rev, extn)
         return (ret_type, urls)
 
     def _query_datatracker(self, doctype, name, rev, extn):
-        assert doctype in ['draft', 'rfc'], f"Could not resolve document type {dtype}.Only draft,rfc supported."
+        assert doctype in ['draft', 'rfc'], f"Could not resolve document type {doctype}.Only draft,rfc supported."
         urls = []
 
         if doctype == 'draft':
-            trk = datatracker.DataTracker()
-            draft = trk.document_from_draft(name)
+            dt = datatracker.DataTracker()
+            draft = dt.document_from_draft(name)
             assert draft != None, f"Could not resolve remote draft -- name = {name} , rev = {rev}, extension = {extn}"
-            for uri in draft.submissions:
-                submission = trk.submission(uri)
-                if not submission:
-                    continue
+            if draft is not None:
+                for uri in draft.submissions:
+                    submission = dt.submission(uri)
+                    if not submission:
+                        continue
 
-                if rev and rev != submission.rev:
-                    continue
+                    if rev and rev != submission.rev:
+                        continue
 
-                if extn == None:
-                    urls += [ IETF_URI(submission.name,
-                                       _ext,
-                                       rev=submission.rev,
-                                       dtype="draft",
-                                       url=_url)
-                              for _ext, _url in submission.urls()
-                                  if _ext in valid_extns
-                            ]
-                elif extn in valid_extns:
-                    for _sub_extn, _sub_url in submission.urls():
-                        if _sub_extn != extn:
-                            continue
-                        urls.append( IETF_URI(submission.name,
-                                              extn,
-                                              rev=submission.rev,
-                                              dtype="draft",
-                                              url=_sub_url))
+                    if extn == None:
+                        urls += [ IETF_URI(submission.name,
+                                           _ext,
+                                           rev=submission.rev,
+                                           dtype="draft",
+                                           url=_url)
+                                  for _ext, _url in submission.urls()
+                                      if _ext in valid_extns
+                                ]
+                    elif extn in valid_extns:
+                        for _sub_extn, _sub_url in submission.urls():
+                            if _sub_extn != extn:
+                                continue
+                            urls.append( IETF_URI(submission.name,
+                                                  extn,
+                                                  rev=submission.rev,
+                                                  dtype="draft",
+                                                  url=_sub_url))
 
         elif doctype == 'rfc':
-            trk = rfcindex.RFCIndex()
-            rfc = trk.rfc(name.upper())
-            assert rfc != None, f"Invalid rfc -- {name}"
+            ri = rfcindex.RFCIndex()
+            rfc = ri.rfc(name.upper())
+            assert rfc is not None, f"Invalid rfc -- {name}"
 
             rfc_txt_label = lambda fmt: ("ASCII" if "ASCII" in fmt else "TEXT")
             extn_rfc_convert = lambda _ext: rfc_txt_label(rfc.formats) if _ext == ".txt" else _ext[1:].upper()

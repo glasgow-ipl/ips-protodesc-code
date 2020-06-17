@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -29,77 +29,80 @@
 # =================================================================================================
 
 import abc
-from formatters.formatter import Formatter
-from protocol import *
 
-class SimpleFormatter(Formatter):
-    output: List[str]
-    parsers: Dict[str, str]
+from typing       import Optional, List, Any
+from npt.protocol import *
 
-    def __init__(self):
-        self.output = []
-        self.parser = {}
+class Formatter(abc.ABC):
+    """
+    Abstract class for output formatters.
+    """
 
+    @abc.abstractmethod
     def generate_output(self):
-        return "\n".join(self.output)
+        pass
 
+    @abc.abstractmethod
+    def format_expression(self, carry: Any) -> str:
+        pass
+
+    @abc.abstractmethod
     def format_argumentexpression(self, arg_name: str, arg_value: Any) -> Any:
-        return "{}={}".format(arg_name, arg_value)
+        pass
 
+    @abc.abstractmethod
     def format_methodinvocationexpr(self, target: Any, method_name: str, arg_exprs: List[Any]) -> Any:
-        if len(arg_exprs) == 0:
-            arg_exprs_str = ""
-        else:
-            arg_exprs_str = ",".join(arg_exprs)
-        return "{}.{}({})".format(target, method_name, arg_exprs_str)
+        pass
 
+    @abc.abstractmethod
     def format_functioninvocationexpr(self, func_name: str, args_exprs: List[Any]) -> Any:
-        return "{}({})".format(func_name, args_exprs)
+        pass
 
+    @abc.abstractmethod
     def format_fieldaccessexpr(self, target: Any, field_name: str) -> Any:
-        return "{}.{}".format(target, field_name)
+        pass
 
+    @abc.abstractmethod
     def format_contextaccessexpr(self, field_name: str) -> Any:
-        return "Context.{}".format(field_name)
+        pass
 
+    @abc.abstractmethod
     def format_ifelseexpr(self, condition: Any, if_true: Any, if_false: Any) -> Any:
-        return "({}) ? {} : {}".format(condition, if_true, if_false)
+        pass
 
+    @abc.abstractmethod
     def format_selfexpr(self) -> Any:
-        return "Self"
+        pass
 
+    @abc.abstractmethod
     def format_constantexpr(self, constant_type: str, constant_value: Any) -> Any:
-        return str(constant_value)
+        pass
 
-    def format_expression(self, expr:Any):
-        return str(expr)
+    @abc.abstractmethod
+    def format_bitstring(self, bitstring: BitString, size: str):
+        pass
 
-    def format_bitstring(self, bitstring:BitString, size: str):
-        self.output.append("BitString ({}) [size: {} bits]".format(bitstring, size))
-
+    @abc.abstractmethod
     def format_struct(self, struct:Struct, constraints: List[str]):
-        self.output.append("Struct ({})".format(struct))
-        for field in struct.fields:
-            self.output.append("\tField ({})".format(field))
-        for constraint in constraints:
-            self.output.append("\tConstraint ({})".format(constraint))
-        for action in struct.actions:
-            self.output.append("\tAction ({})".format(action))
+        pass
 
+    @abc.abstractmethod
     def format_array(self, array:Array):
-        self.output.append("Array ({})".format(array))
+        pass
 
+    @abc.abstractmethod
     def format_enum(self, enum:Enum):
-        self.output.append("Enum ({})".format(enum))
+        pass
 
+    @abc.abstractmethod
     def format_function(self, function:Function):
-        self.output.append("Function ({})".format(function))
+        pass
 
+    @abc.abstractmethod
     def format_context(self, context:Context):
-        self.output.append("Context ({})".format(context))
-        for field in context.fields:
-            self.output.append("\tField ({})".format(field))
+        pass
 
+    @abc.abstractmethod
     def format_protocol(self, protocol:Protocol):
-        self.format_context(protocol.get_context())
-        self.output.append("Protocol ({})\n".format(protocol.get_protocol_name()))
+        pass
+

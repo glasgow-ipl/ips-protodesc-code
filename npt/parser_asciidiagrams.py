@@ -1,8 +1,41 @@
-from ..parser import Parser
-import parsers.rfc.rfc as rfc
-import protocol
-import parsley
+# =================================================================================================
+# Copyright (C) 2018-2020 University of Glasgow
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+#
+# 1. Redistributions of source code must retain the above copyright notice,
+#    this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# SPDX-License-Identifier: BSD-2-Clause
+# =================================================================================================
+
 import string
+import parsley
+
+import npt.rfc as rfc
+import npt.protocol
+
+from npt.parser import Parser
+from typing     import cast, Optional, Union, List
 
 def stem(phrase):
     if phrase[-1] == 's':
@@ -58,8 +91,6 @@ class AsciiDiagramsParser(Parser):
         label = None
         for field in diagram_fields:
             if field == None:
-                if bits != 0 and label is not None:
-                    clean_diagram_fields.append((bits, label))
                 continue
             if ':' in field[1]:
                 field = ("var", field[1].replace(':', '').strip())
@@ -80,7 +111,7 @@ class AsciiDiagramsParser(Parser):
         self.functions = {}
         self.serialise_to = {}
         self.parse_from = {}
-        with open("parsers/asciidiagrams/asciidiagrams-grammar.txt") as grammarFile:
+        with open("npt/grammar_asciidiagrams.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
                                    {
                                      "ascii_uppercase"         : string.ascii_uppercase,
@@ -100,86 +131,95 @@ class AsciiDiagramsParser(Parser):
 
     def process_section(self, section : rfc.Section, parser, structs):
         for i in range(len(section.content)):
-            if type(section.content[i]) is rfc.T:
-                try:
-                    pdu_name = parser(section.content[i].content[-1]).preamble()
-                    artwork = section.content[i+1]
-                    artwork_fields = parser(artwork.content.strip()).diagram()
-                    where = section.content[i+2]
-                    desc_list = section.content[i+3]
-                    fields = {}
-                    name_map = {}
-                    for i in range(len(desc_list.content)):
-                        title, desc = desc_list.content[i]
-                        field = parser(title.content[-1]).field_title()
-                        context_field = parser(desc.content[-1]).context_use()
-                        field["context_field"] = context_field
-                        if field["short_label"] is not None:
-                            name_map[field["short_label"]] = field["full_label"]
-                        fields[field["full_label"]] = field
+            t = section.content[i]
+            if isinstance(t, rfc.T):
+                for j in range(len(t.content)):
+                    inner_t = cast(rfc.Text, t.content[j])
+                    try:
+                        pdu_name = parser(inner_t.content.strip()).preamble()
+                        artwork = cast(rfc.Artwork, section.content[i+1]).content
+                        artwork_fields = parser(cast(rfc.Text, artwork).content.strip()).diagram()
+                        where = section.content[i+2]
+                        desc_list = cast(rfc.DL, section.content[i+3])
+                        fields = {}
+                        name_map = {}
+                        for k in range(len(desc_list.content)):
+                            title, desc = desc_list.content[k]
+                            field = parser(cast(rfc.Text, title.content[0]).content.strip()).field_title()
+                            try:
+                                context_field = parser(cast(rfc.Text, desc.content[-1]).content.strip()).context_use()
+                            except:
+                                context_field = None
+                            field["context_field"] = context_field
+                            if field["short_label"] is not None:
+                                name_map[field["short_label"]] = field["full_label"]
+                            fields[field["full_label"]] = field
 
-                    self.structs[valid_type_name_convertor(pdu_name)] = {}
-                    self.structs[valid_type_name_convertor(pdu_name)]["name_map"] = name_map
-                    self.structs[valid_type_name_convertor(pdu_name)]["fields"] = fields
-                except Exception as e:
-                    pass
+                        self.structs[valid_type_name_convertor(pdu_name)] = {}
+                        self.structs[valid_type_name_convertor(pdu_name)]["name_map"] = name_map
+                        self.structs[valid_type_name_convertor(pdu_name)]["fields"] = fields
+                    except Exception as e:
+                        pass
 
-                try:
-                    function_name = parser(section.content[i].content[-1]).function()
-                    function_def = parser(section.content[i+1].content.strip()).function_signature()
-                    self.functions[valid_field_name_convertor(function_name)] = function_def
-                except Exception as e:
-                    pass
+                    try:
+                        function_name = parser(inner_t.content.strip()).function()
+                        function_artwork = cast(rfc.Artwork, section.content[i+1])
+                        function_text = cast(rfc.Text, function_artwork.content)
+                        function_def = parser(function_text.content.strip()).function_signature()
+                        self.functions[valid_field_name_convertor(function_name)] = function_def
+                    except Exception as e:
+                        pass
 
-                try:
-                    enum_name, variants = parser(section.content[i].content[-1]).enum()
-                    self.enums[valid_type_name_convertor(enum_name)] = [valid_type_name_convertor(variant) for variant in variants]
-                except Exception as e:
-                    pass
+                    try:
+                        enum_name, variants = parser(inner_t.content.strip()).enum()
+                        self.enums[valid_type_name_convertor(enum_name)] = [valid_type_name_convertor(variant) for variant in variants]
+                    except Exception as e:
+                        pass
 
-                try:
-                    from_type, to_type, func_name = parser(section.content[i].content[-1]).serialised_to_func()
-                    self.serialise_to[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
-                except Exception as e:
-                    pass
+                    try:
+                        from_type, to_type, func_name = parser(inner_t.content.strip()).serialised_to_func()
+                        self.serialise_to[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
+                    except Exception as e:
+                        pass
 
-                try:
-                    from_type, to_type, func_name = parser(section.content[i].content[-1]).parsed_from_func()
-                    self.parse_from[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
-                except Exception as e:
-                    pass
+                    try:
+                        from_type, to_type, func_name = parser(inner_t.content.strip()).parsed_from_func()
+                        self.parse_from[valid_type_name_convertor(from_type)] = (valid_type_name_convertor(to_type), valid_field_name_convertor(func_name))
+                    except Exception as e:
+                        pass
 
-                try:
-                    protocol_name, pdus = parser(section.content[i].content[-1]).protocol_definition()
-                    self.protocol_name = protocol_name
-                    self.pdus = [valid_type_name_convertor(pdu) for pdu in pdus]
-                except Exception as e:
-                    continue
-        for subsection in section.sections:
-            self.process_section(subsection, parser, structs)
+                    try:
+                        protocol_name, pdus = parser(inner_t.content.strip()).protocol_definition()
+                        self.protocol_name = protocol_name
+                        self.pdus = [valid_type_name_convertor(pdu) for pdu in pdus]
+                    except Exception as e:
+                        continue
+        if section.sections is not None:
+            for subsection in section.sections:
+                self.process_section(subsection, parser, structs)
 
     def build_expr(self, expr, pdu_name):
         if type(expr) != tuple:
             if expr == "this":
-                return protocol.SelfExpression()
+                return npt.protocol.SelfExpression()
             if type(expr) is not str:
                 return expr
             return self.structs[pdu_name]["name_map"].get(valid_field_name_convertor(expr), valid_field_name_convertor(expr))
         elif expr[0] == "contextaccess":
-            return protocol.ContextAccessExpression(self.proto.get_context(), valid_field_name_convertor(expr[1]))
+            return npt.protocol.ContextAccessExpression(self.proto.get_context(), valid_field_name_convertor(expr[1]))
         elif expr[0] == "setvalue":
-            return protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), "set", [protocol.ArgumentExpression("value", self.build_expr(expr[2], pdu_name))])
+            return npt.protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), "set", [npt.protocol.ArgumentExpression("value", self.build_expr(expr[2], pdu_name))])
         elif expr[0] == "const":
-            return protocol.ConstantExpression(self.build_type(expr[1]), self.build_expr(expr[2], pdu_name))
+            return npt.protocol.ConstantExpression(self.build_type(expr[1]), self.build_expr(expr[2], pdu_name))
         elif expr[0] == "method":
-            return protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), expr[2], [protocol.ArgumentExpression("other", self.build_expr(expr[3], pdu_name))])
+            return npt.protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), expr[2], [npt.protocol.ArgumentExpression("other", self.build_expr(expr[3], pdu_name))])
         elif expr[0] == "methodinvocation":
-            return protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), expr[2], expr[3])
+            return npt.protocol.MethodInvocationExpression(self.build_expr(expr[1], pdu_name), expr[2], expr[3])
         elif expr[0] == "fieldaccess":
             target = self.build_expr(expr[1], pdu_name)
-            if type(target) == protocol.FieldAccessExpression:
+            if type(target) == npt.protocol.FieldAccessExpression:
                 pdu_name = valid_type_name_convertor(self.structs[pdu_name]["fields"][valid_field_name_convertor(target.field_name)]["units"])
-            return protocol.FieldAccessExpression(target, self.build_expr(expr[2], pdu_name))
+            return npt.protocol.FieldAccessExpression(target, self.build_expr(expr[2], pdu_name))
 
     def build_struct(self, struct_name):
         fields = []
@@ -189,6 +229,7 @@ class AsciiDiagramsParser(Parser):
             field = self.structs[struct_name]["fields"][field]
             size_expr = None
             ispresent_expr = None
+            field_type : Optional[npt.protocol.RepresentableType] = None
             if field["units"] not in ["bits", "bit", "bytes", "byte", None]:
                 if field["is_array"]:
                     name = struct_name + "_" + field["full_label"]
@@ -205,9 +246,9 @@ class AsciiDiagramsParser(Parser):
                 constraints.append(value_expr)
             if field["units"] in ["bits", "bit", "bytes", "byte", None]:
                 name = struct_name + "_" + field["full_label"]
-                if type(size_expr) is protocol.ConstantExpression and field["units"] in ["byte", "bytes"]:
+                if size_expr is npt.protocol.ConstantExpression and type(size_expr) is npt.protocol.ConstantExpression and field["units"] in ["byte", "bytes"]:
                     size_expr = self.build_expr(("const", "Number", size_expr.constant_value*8), struct_name)
-                if type(size_expr) is protocol.ConstantExpression:
+                if type(size_expr) is npt.protocol.ConstantExpression:
                     field_type = self.proto.define_bitstring(name, size_expr)
                 else:
                     field_type = self.proto.define_bitstring(name, None)
@@ -221,7 +262,8 @@ class AsciiDiagramsParser(Parser):
                 self.proto.define_context_field(valid_field_name_convertor(field["context_field"][1]), self.build_type("Number"))
                 action = self.build_expr(("setvalue", ("contextaccess", field["context_field"][1]), field["context_field"][0]), struct_name)
                 actions.append(action)
-            struct_field = protocol.StructField(field["full_label"],
+            if field_type is not None:
+                struct_field = npt.protocol.StructField(field["full_label"],
                                                 field_type,
                                                 ispresent_expr)
             fields.append(struct_field)
@@ -246,7 +288,7 @@ class AsciiDiagramsParser(Parser):
         parameters = []
         for param_name, param_type_name in self.functions[type_name][1]:
             param_type = self.build_type(valid_type_name_convertor(param_type_name))
-            parameters.append(protocol.Parameter(param_name, param_type))
+            parameters.append(npt.protocol.Parameter(param_name, param_type))
         function = self.proto.define_function(name, parameters, self.build_type(valid_type_name_convertor(self.functions[type_name][2])))
         return function
 
@@ -262,10 +304,10 @@ class AsciiDiagramsParser(Parser):
         else:
             raise Exception("Unknown type: %s" % (type_name))
 
-    def build_protocol(self, proto: protocol.Protocol, input: rfc.RFC, name: str=None) -> protocol.Protocol:
+    def build_protocol(self, proto: Optional[npt.protocol.Protocol], input: Union[str, rfc.RFC], name: str=None) -> npt.protocol.Protocol:
         # if a Protocol hasn't been passed in, then instantiate one
         if proto is None:
-            self.proto = protocol.Protocol()
+            self.proto = npt.protocol.Protocol()
         else:
             self.proto = proto
 
@@ -273,10 +315,11 @@ class AsciiDiagramsParser(Parser):
         parser = self.build_parser()
 
         # find matching preambles
-        structs = []
+        structs : List[npt.protocol.Struct]= []
 
-        for section in input.middle.content:
-            self.process_section(section, parser, structs)
+        if isinstance(input, rfc.RFC):
+            for section in input.middle.content:
+                self.process_section(section, parser, structs)
 
         for pdu_name in self.pdus:
             self.build_type(pdu_name)

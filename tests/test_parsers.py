@@ -28,30 +28,33 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+import os
 import sys
 import unittest
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 import xml.etree.ElementTree as ET
 
-sys.path.append('.')
-
-from protocol import *
+from npt.protocol import *
 
 # RFC DOM input parsers
-import parsers.parser
-import parsers.rfc.rfc as rfc
-import parsers.rfc.rfc_txt_parser
-import parsers.rfc.rfc_xml_parser
-import parsers.asciidiagrams.asciidiagrams_parser
+import npt.rfc as rfc
+import npt.parser_rfc_txt
+import npt.parser_rfc_xml
+
+from npt.parser               import Parser
+from npt.parser_asciidiagrams import AsciiDiagramsParser
 
 class TestParsers(unittest.TestCase):
     def setUp(self):
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as example_file:
             raw_content = example_file.read()
             xml_tree = ET.fromstring(raw_content)
-            self.content = parsers.rfc.rfc_xml_parser.parse_rfc(xml_tree)
+            self.content = npt.parser_rfc_xml.parse_rfc(xml_tree)
 
     def test_asciidiagram_parser(self):
-        ascii_diagram_parser = parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser()
+        ascii_diagram_parser = AsciiDiagramsParser()
         protocol = ascii_diagram_parser.build_protocol(None, self.content)
         self.assertEqual(protocol.get_protocol_name(),  "Example")
         self.assertEqual(len(protocol.get_pdu_names()), 4)

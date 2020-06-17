@@ -75,7 +75,7 @@ field_title = field_title_name_only | field_title_size | field_title_size_constr
 
 # Preamble
 
-preamble = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is formatted as follows:" -> name
+preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name "is" ws "formatted" ws "as" ws "follows:" -> name
 
 # Diagram
 
@@ -102,10 +102,10 @@ function_signature = 'func ' short_field_name:name '(' parameter_list:params ')'
 
 # Function use
 pdu_list_comma = pdu_name:name (', ' pdu_name:names)*:names -> [name] + names
-serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:from_type "is serialised to " ("an " | "a ") pdu_name:to_type 'using the ' short_field_name:func_name ' function.' -> (from_type, to_type, func_name2)
-parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:to_type "is parsed from " ("an " | "a ") pdu_name:from_type 'using the ' short_field_name:func_name  ' function.' -> (from_type, to_type, func_name)
+serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:from_type "is serialised to " ("an " | "a ") pdu_name:to_type 'using the ' short_field_name:func_name ' function.' anything* -> (from_type, to_type, func_name)
+parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:to_type "is parsed from " ("an " | "a ") pdu_name:from_type 'using the ' short_field_name:func_name  ' function.' anything* -> (from_type, to_type, func_name)
 
 # Protocol Definition
 
 pdu_list = pdu_name:name (', ' ('and ')? pdu_name:names)*:names -> [name] + names
-protocol_definition = <(word:w ?(w != 'The' and w != "This")' '?)+>? 'This document describes the ' pdu_name:p_name 'protocol. The ' pdu_name:name 'protocol uses ' pdu_list:names '.' -> (name, names)
+protocol_definition = <(word:w ?(w != 'The' and w != "This")' '?)+>? 'This' ws 'document' ws 'describes' ws 'the' ws pdu_name:p_name 'protocol.' ws 'The' ws pdu_name:name ws 'protocol' ws 'uses' ws pdu_list:names '.' -> (name, names)
