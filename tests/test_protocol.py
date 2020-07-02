@@ -46,7 +46,6 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
         protocol.define_bitstring("Timestamp", 32)
         res = protocol.get_type("Timestamp")
-        self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "Timestamp")
         self.assertEqual(res.size, 32)
         # Check trait implementations:
@@ -62,7 +61,6 @@ class TestProtocol(unittest.TestCase):
         ssrc = protocol.define_bitstring("SSRC", 32)
         protocol.define_array("CSRCList", ssrc, 4)
         res = protocol.get_type("CSRCList")
-        self.assertEqual(res.kind, "Array")
         self.assertEqual(res.name, "CSRCList")
         self.assertEqual(res.element_type, protocol.get_type("SSRC"))
         self.assertEqual(res.length, 4)
@@ -100,7 +98,6 @@ class TestProtocol(unittest.TestCase):
         teststruct = protocol.define_struct("TestStruct", [seq, ts], [seq_constraint], [])
 
         res = protocol.get_type("TestStruct")
-        self.assertEqual(res.kind, "Struct")
         self.assertEqual(res.name, "TestStruct")
         self.assertEqual(res.fields[0].field_name, "seq")
         self.assertEqual(res.fields[0].field_type, protocol.get_type("SeqNum"))
@@ -138,7 +135,6 @@ class TestProtocol(unittest.TestCase):
         protocol.derive_type("SeqNum", bits16, [protocol.get_trait("Ordinal")])
 
         res = protocol.get_type("SeqNum")
-        self.assertEqual(res.kind, "BitString")
         self.assertEqual(res.name, "SeqNum")
         # Check trait implementations:
         self.assertEqual(len(res.traits), 5)

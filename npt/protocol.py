@@ -188,7 +188,7 @@ class IfElseExpression(Expression):
 
     def get_result_type(self, containing_type: "ProtocolType") -> Optional["ProtocolType"]:
         result_type = self.condition.get_result_type(containing_type)
-        if result_type is not None and result_type.kind != "Boolean":
+        if result_type is not None and not isinstance(result_type, Boolean):
             raise ProtocolTypeError("Cannot create IfElseExpression: condition is not boolean")
         if self.if_true.get_result_type(containing_type) != self.if_false.get_result_type(containing_type):
             raise ProtocolTypeError("Cannot create IfElseExpression: branch types differ")
@@ -242,20 +242,19 @@ class ProtocolType(ABC):
     The get_type() method of the Protocol object can be used to retrieve a reference
     to a pre-existing Type, given the type name.
     """
-    kind:    str
     name:    str
     parent:  Optional["ProtocolType"]
     traits:  Dict[str,Trait]
     methods: Dict[str,Function]
 
     def __init__(self, parent) -> None:
-        # self.kind and self.name are initialised by subtypes
+        # self.name is initialised by subtypes
         self.traits  = {}
         self.methods = {}
         self.parent  = parent
 
     def __str__(self):
-        res = "Type<{}::{}".format(self.kind, self.name)
+        res = "Type<::{}".format(self.name)
         for trait in self.traits:
             res += " " + trait
         res += ">"
@@ -266,12 +265,6 @@ class ProtocolType(ABC):
             return False
         if self.name != obj.name:
             return False
-        if self.kind != obj.kind:
-            return False
-#        if self.traits != obj.traits:
-#            return False
-#        if self.methods != obj.methods:
-#            return False
         return True
 
     def is_a(self, obj):
@@ -333,14 +326,12 @@ class RepresentableType(ProtocolType):
 class Boolean(InternalType):
     def __init__(self) -> None:
         super().__init__(None)
-        self.kind  = "Boolean"
         self.name  = "Boolean"
 
 
 class Number(InternalType):
     def __init__(self) -> None:
         super().__init__(None)
-        self.kind  = "Number"
         self.name  = "Number"
 
 
@@ -350,7 +341,6 @@ class Context(InternalType):
     def __init__(self) -> None:
         super().__init__(None)
         self.name   = "Context"
-        self.kind   = "Context"
         self.fields = []
 
     def add_field(self, field: ContextField) -> None:
@@ -367,7 +357,6 @@ class Context(InternalType):
 class Nothing(RepresentableType):
     def __init__(self) -> None:
         super().__init__(None)
-        self.kind  = "Nothing"
         self.name  = "Nothing"
         self.size = 0
 
@@ -375,7 +364,6 @@ class Nothing(RepresentableType):
 class BitString(RepresentableType):
     def __init__(self, name: str, size: Optional[int]) -> None:
         super().__init__(None)
-        self.kind = "BitString"
         self.name = name
         self.size = size
 
@@ -383,7 +371,6 @@ class BitString(RepresentableType):
 class DataUnit(RepresentableType):
     def __init__(self, name: str, size: Optional[int]) -> None:
         super().__init__(None)
-        self.kind  = "DataUnit"
         self.name  = name
         self.size = size
 
@@ -391,7 +378,6 @@ class DataUnit(RepresentableType):
 class Option(RepresentableType):
     def __init__(self, name: str, reference_type: RepresentableType) -> None:
         super().__init__(None)
-        self.kind = "Option"
         self.name = name
         self.reference_type = RepresentableType
         self.size = reference_type.size
@@ -403,7 +389,6 @@ class Array(RepresentableType):
 
     def __init__(self, name: str, element_type: RepresentableType, length: Optional[int]) -> None:
         super().__init__(None)
-        self.kind         = "Array"
         self.name         = name
         self.element_type = element_type
         self.length       = length
@@ -431,7 +416,6 @@ class Struct(RepresentableType):
 
     def __init__(self, name: str) -> None:
         super().__init__(None)
-        self.kind        = "Struct"
         self.name        = name
         self.fields      = []
         self.constraints = []
@@ -458,7 +442,6 @@ class Enum(RepresentableType):
 
     def __init__(self, name: str, variants: List[RepresentableType]) -> None:
         super().__init__(None)
-        self.kind     = "Enum"
         self.name     = name
         self.variants = variants
 
