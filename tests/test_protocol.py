@@ -44,10 +44,10 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_bitstring(self):
         protocol = Protocol()
-        protocol.define_bitstring("Timestamp", 32)
+        protocol.define_bitstring("Timestamp", ConstantExpression(protocol.get_type("Number"), 32))
         res = protocol.get_type("Timestamp")
         self.assertEqual(res.name, "Timestamp")
-        self.assertEqual(res.size, 32)
+        self.assertEqual(res.size, ConstantExpression(protocol.get_type("Number"), 32))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 4)
         self.assertIn("Equality",             res.traits)
@@ -58,13 +58,13 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_array(self):
         protocol = Protocol()
-        ssrc = protocol.define_bitstring("SSRC", 32)
-        protocol.define_array("CSRCList", ssrc, 4)
+        ssrc = protocol.define_bitstring("SSRC", ConstantExpression(protocol.get_type("Number"), 32))
+        protocol.define_array("CSRCList", ssrc, ConstantExpression(protocol.get_type("Number"), 4))
         res = protocol.get_type("CSRCList")
         self.assertEqual(res.name, "CSRCList")
         self.assertEqual(res.element_type, protocol.get_type("SSRC"))
-        self.assertEqual(res.length, 4)
-        self.assertEqual(res.size, 128)
+        self.assertEqual(res.length, ConstantExpression(protocol.get_type("Number"), 4))
+        self.assertEqual(res.size, MethodInvocationExpression(ConstantExpression(protocol.get_type("Number"), 32), "mul", [ArgumentExpression("other", ConstantExpression(protocol.get_type("Number"), 4))]))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 3)
         self.assertIn("Equality",        res.traits)
@@ -76,9 +76,9 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
 
         # define types
-        seqnum_trans = protocol.define_bitstring("SeqNumTrans", 16)
-        seqnum = protocol.define_bitstring("SeqNum", 16)
-        timestamp = protocol.define_bitstring("Timestamp", 32)
+        seqnum_trans = protocol.define_bitstring("SeqNumTrans", ConstantExpression(protocol.get_type("Number"), 16))
+        seqnum = protocol.define_bitstring("SeqNum", ConstantExpression(protocol.get_type("Number"), 16))
+        timestamp = protocol.define_bitstring("Timestamp", ConstantExpression(protocol.get_type("Number"), 32))
         transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
 
         # define fields
@@ -117,8 +117,8 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_enum(self):
         protocol = Protocol()
-        typea = protocol.define_bitstring("TypeA", 32)
-        typeb = protocol.define_bitstring("TypeB", 32)
+        typea = protocol.define_bitstring("TypeA", ConstantExpression(protocol.get_type("Number"), 32))
+        typeb = protocol.define_bitstring("TypeB", ConstantExpression(protocol.get_type("Number"), 32))
         protocol.define_enum("TestEnum", [typea, typeb])
 
         res = protocol.get_type("TestEnum")
@@ -131,7 +131,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_derive_type(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", 16)
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
         protocol.derive_type("SeqNum", bits16, [protocol.get_trait("Ordinal")])
 
         res = protocol.get_type("SeqNum")
@@ -147,7 +147,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_function(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", 16)
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
         protocol.define_function("testFunction",
                                  [Parameter("foo", bits16), Parameter("bar", protocol.get_type("Boolean"))],
                                  protocol.get_type("Boolean"))
@@ -162,7 +162,7 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_context_field(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", 16)
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
         protocol.define_context_field("foo", bits16)
         protocol.define_context_field("bar", protocol.get_type("Boolean"))
 
@@ -187,14 +187,14 @@ class TestProtocol(unittest.TestCase):
 
     def test_parse_expression_FunctionInvocation(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", 16)
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
         testfunc = protocol.define_function("testFunction",
                                             [Parameter("foo", bits16), Parameter("bar", protocol.get_type("Boolean"))],
                                             protocol.get_type("Boolean"))
 
         # Check we can parse FunctionInvocation expressions:
         funcinv_expr = FunctionInvocationExpression(testfunc,
-                                                    [Argument("foo", bits16, 12),
+                                                    [Argument("foo", bits16, ConstantExpression(protocol.get_type("Number"), 12)),
                                                      Argument("bar", protocol.get_type("Boolean"), "False")])
 
         self.assertTrue(isinstance(funcinv_expr, FunctionInvocationExpression))
@@ -204,7 +204,7 @@ class TestProtocol(unittest.TestCase):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
 
-        testfield = protocol.define_bitstring("TestField", 32)
+        testfield = protocol.define_bitstring("TestField", ConstantExpression(protocol.get_type("Number"), 32))
 
         # define fields
         test = StructField("test",
@@ -224,7 +224,7 @@ class TestProtocol(unittest.TestCase):
     def test_parse_expression_ContextAccess(self):
         protocol = Protocol()
 
-        bits16 = protocol.define_bitstring("Bits16", 16)
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
         protocol.define_context_field("foo", bits16)
         protocol.define_context_field("bar", protocol.get_type("Boolean"))
 

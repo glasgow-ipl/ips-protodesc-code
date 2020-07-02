@@ -310,19 +310,20 @@ class InternalType(ProtocolType):
     pass
 
 class RepresentableType(ProtocolType):
-    size         : Optional[int]
+    size         : Union[Expression, "Nothing"]
     parse_from   : Optional[Function]
     serialise_to : Optional[Function]
 
-    def __init__(self, parent) -> None:
+    def __init__(self, parent, size : Union[Expression, "Nothing"]) -> None:
         super().__init__(parent)
-        self.size = 0
+        self.size = size
+        if not isinstance(self.size, Nothing):
+            assert isinstance(self.size.get_result_type(None), Number)
         self.parse_from = None
         self.serialise_to = None
 
 # Internal types follow:
 
-#FIXME: need to think about the purpose of these types: should they hold values?
 class Boolean(InternalType):
     def __init__(self) -> None:
         super().__init__(None)
@@ -356,31 +357,28 @@ class Context(InternalType):
 
 class Nothing(RepresentableType):
     def __init__(self) -> None:
-        super().__init__(None)
+        super().__init__(None, self)
         self.name  = "Nothing"
         self.size = 0
 
 
 class BitString(RepresentableType):
-    def __init__(self, name: str, size: Optional[int]) -> None:
-        super().__init__(None)
+    def __init__(self, name: str, size: Union[Expression, Nothing]) -> None:
+        super().__init__(None, size)
         self.name = name
-        self.size = size
 
 
 class DataUnit(RepresentableType):
-    def __init__(self, name: str, size: Optional[int]) -> None:
-        super().__init__(None)
+    def __init__(self, name: str, size: Union[Expression, Nothing]) -> None:
+        super().__init__(None, size)
         self.name  = name
-        self.size = size
 
 
 class Option(RepresentableType):
     def __init__(self, name: str, reference_type: RepresentableType) -> None:
-        super().__init__(None)
+        super().__init__(None, reference_type.size)
         self.name = name
         self.reference_type = RepresentableType
-        self.size = reference_type.size
 
 
 class Array(RepresentableType):
@@ -388,25 +386,15 @@ class Array(RepresentableType):
     length       : Optional[int]
 
     def __init__(self, name: str, element_type: RepresentableType, length: Optional[int]) -> None:
-        super().__init__(None)
+        super().__init__(None, Nothing())
         self.name         = name
         self.element_type = element_type
         self.length       = length
 
-        if length == None:
-            self.size = None
-        elif isinstance(self.element_type, BitString):
-            element_bitstring = self.element_type
-            if element_bitstring.size is None or self.length is None:
-                self.size = None
-            else:
-                self.size = self.length * element_bitstring.size
-        elif isinstance(self.element_type, Array):
-            element_array = self.element_type
-            if element_array.size is None or self.length is None:
-                self.size = None
-            else:
-                self.size = self.length * element_array.size
+        if isinstance(self.length, Nothing) and isinstance(element_type.size, Nothing):
+            raise ProtocolTypeError("Cannot construct Array: one of length or element size must be known")
+        elif not isinstance(self.length, Nothing) and not isinstance(element_type.size, Nothing):
+            self.size = MethodInvocationExpression(element_type.size, "mul", [ArgumentExpression("other", self.length)])
 
 
 class Struct(RepresentableType):
@@ -415,7 +403,7 @@ class Struct(RepresentableType):
     actions:     List[Expression]
 
     def __init__(self, name: str) -> None:
-        super().__init__(None)
+        super().__init__(None, Nothing())
         self.name        = name
         self.fields      = []
         self.constraints = []
@@ -441,7 +429,7 @@ class Enum(RepresentableType):
     variants : List[RepresentableType]
 
     def __init__(self, name: str, variants: List[RepresentableType]) -> None:
-        super().__init__(None)
+        super().__init__(None, Nothing())
         self.name     = name
         self.variants = variants
 
