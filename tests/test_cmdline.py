@@ -1,4 +1,3 @@
-#!/bin/sh
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
@@ -28,9 +27,42 @@
 #
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
+import npt.util
+import unittest as ut
+import tempfile, shutil, pathlib
 
-pipenv run pytest --capture=tee-sys  --junitxml=test-results/cmdline-tests.xml tests/test_cmdline.py
-#pipenv run pytest --junitxml=test-results/protocol-tests.xml tests/test_protocol.py
-#pipenv run pytest --junitxml=test-results/parser-tests.xml tests/test_parsers.py
-##pipenv run pytest --junitxml=test-results/code-generator-tests.xml tests/output_formatters/test_code_generator.py
-#mypy npt/*.py --junit-xml test-results/npt-typecheck.xml
+
+class Test_FileSys(ut.TestCase):
+    def setUp(self):
+        # generate a temporary directory name
+        # remove actual directory - tool should a
+        self.rootdir = pathlib.Path(tempfile.mkdtemp())
+
+    def test_use_existing_rootdir(self):
+        self.assertTrue( self.rootdir.exists(),
+            msg=f"Test harness error : Testing pre-existing Root Data Directory")
+
+        ap_ns, opts = npt.util.parse_cmdline( unittests=f"-d {str(self.rootdir)}")
+        self.assertIsInstance( opts.root_dir, pathlib.Path,
+            msg=f"generated dir - {opts.root_dir} is not of type pathlib.Path")
+        self.assertEqual( self.rootdir, opts.root_dir,
+            msg=f"Unexpected rootdir {opts.root_dir}. Expected {self.rootdir}")
+
+    def test_autogen_rootdir(self):
+        current = pathlib.Path.cwd()
+        ap_ns, opts = npt.util.parse_cmdline(unittests="")
+        self.assertIsInstance( opts.root_dir, pathlib.Path,
+            msg=f"generated dir - {opts.root_dir} is not of type pathlib.Path")
+        self.assertEqual( opts.root_dir, current / "ietf_data_cache",
+            msg=f"Unexpected rootdir {opts.root_dir}. Expected {self.rootdir}")
+
+    #def test_default_rootdir(self):
+    #    pass
+
+    def tearDown(self):
+        if self.rootdir.exists():
+            shutil.rmtree(self.rootdir)
+
+
+if __name__ == '__main__':
+    ut.main()

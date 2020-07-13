@@ -45,6 +45,8 @@ from ietfdata import datatracker, rfcindex
 valid_extns = [".xml", ".txt"]
 output_formats = ["simple", "rust"]
 
+# npt epoch definition
+epoch = '1970-01-01 00:00:00'
 
 @dataclass
 class RootWorkingDir:
@@ -484,8 +486,7 @@ class OptionContainer:
             assert ofmt in output_formats, f"output fmt {ofmt} not in {output_formats}"
 
 
-def parse_cmdline() -> OptionContainer:
-    epoch = '1970-01-01 00:00:00'
+def parse_cmdline( unittests : Optional[str] = None ) -> Tuple[argparse.ArgumentParser,OptionContainer]:
     ap = argparse.ArgumentParser(description=f"Parse ietf drafts and rfcs "
                                  f"and autogenerate protocol parsers")
 
@@ -543,16 +544,24 @@ def parse_cmdline() -> OptionContainer:
              f"draft format : draft[-rev][.extn]."
              f"rfc format : rfc[.extn]")
 
-    _obj = ap.parse_args()
+    if unittests == None : 
+        _obj = ap.parse_args()
+    else : 
+        _obj = ap.parse_args(unittests.split())
+
     opt = OptionContainer(pathlib.Path(_obj.dir[0]),
                           DownloadOptions(force=_obj.force),
                           _obj.outformat[0].split(sep=','), [])
+    return (_obj, opt )
 
-    if _obj.newdraft:
-        fromdate = datetime.strptime(_obj.newdraft, "%Y-%m-%d %H:%M:%S")
+
+
+def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionContainer :
+    if cmd_obj.newdraft:
+        fromdate = datetime.strptime(cmd_obj.newdraft, "%Y-%m-%d %H:%M:%S")
         with RootWorkingDir(root=opt.root_dir) as rwd, DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
-            drafts = fetch_new_drafts(rwd.prev_sync_time('draft',None if _obj.newdraft == epoch else _obj.newdraft))
+            drafts = fetch_new_drafts(rwd.prev_sync_time('draft',None if cmd_obj.newdraft == epoch else cmd_obj.newdraft))
             for _idx, u in enumerate(drafts):
                 print(f"Fetch draft [{_idx}] --> {u}")
             dlclient.download_files(drafts)
@@ -562,11 +571,11 @@ def parse_cmdline() -> OptionContainer:
             # post-processing starts here
             # update meta data within cached filesys
             rwd.update_sync_time("draft")
-    elif _obj.newrfc:
-        fromdate = datetime.strptime(_obj.newrfc, "%Y-%m-%d %H:%M:%S")
+    elif cmd_obj.newrfc:
+        fromdate = datetime.strptime(cmd_obj.newrfc, "%Y-%m-%d %H:%M:%S")
         with RootWorkingDir(root=opt.root_dir) as rwd,DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
-            rfcs = fetch_new_rfcs(rwd.prev_sync_time('rfc', None if _obj.newrfc == epoch else _obj.newrfc))
+            rfcs = fetch_new_rfcs(rwd.prev_sync_time('rfc', None if cmd_obj.newrfc == epoch else cmd_obj.newrfc))
             for _idx, u in enumerate(rfcs):
                 print(f"Fetch rfc [{_idx}]  --> {u}")
             dlclient.download_files(rfcs)
@@ -576,9 +585,9 @@ def parse_cmdline() -> OptionContainer:
             # post-processing starts here
             # update meta data within cached filesys
             rwd.update_sync_time("rfc")
-    elif _obj.uri:
+    elif cmd_obj.uri:
         remote, local = [], []
-        for arg in [PositionalArg(uri) for uri in _obj.uri]:
+        for arg in [PositionalArg(uri) for uri in cmd_obj.uri]:
             uri_type, urls = arg.resolve_argtype()
             if uri_type == 'remote':
                 remote += urls
@@ -596,5 +605,10 @@ def parse_cmdline() -> OptionContainer:
     return opt
 
 
+def read_usr_opts() -> OptionContainer :
+    ap_ns, opts = parse_cmdline() 
+    return setup_opts( ap_ns , opts)
+
+
 if __name__ == '__main__':
-    parse_cmdline()
+    read_usr_opts()

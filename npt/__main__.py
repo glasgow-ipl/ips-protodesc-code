@@ -178,7 +178,7 @@ def main():
             #"rust"   : (".rs" , RustFormatter())
             }
 
-    opt = npt.util.parse_cmdline()
+    opt = npt.util.read_usr_opts()
     for idx, doc in enumerate(opt.infiles):
         print(f"document [{idx}] --> {doc} --> {doc.get_filepath_in()}")
         parsed_content = parse_input_file( doc )
