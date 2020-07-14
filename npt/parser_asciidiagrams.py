@@ -233,7 +233,8 @@ class AsciiDiagramsParser(Parser):
             if field["units"] not in ["bits", "bit", "bytes", "byte", None]:
                 if field["is_array"]:
                     name = struct_name + "_" + field["full_label"]
-                    field_type = self.proto.define_array(name, self.build_type(valid_type_name_convertor(field["units"])), None)
+                    field_type = npt.protocol.Array(name, self.build_type(valid_type_name_convertor(field["units"])), None)
+                    self.proto.add_type(field_type)
                 else:
                     field_type = self.build_type(valid_type_name_convertor(field["units"]))
             if field["size"] is not None:
@@ -249,9 +250,11 @@ class AsciiDiagramsParser(Parser):
                 if size_expr is npt.protocol.ConstantExpression and type(size_expr) is npt.protocol.ConstantExpression and field["units"] in ["byte", "bytes"]:
                     size_expr = self.build_expr(("const", "Number", size_expr.constant_value*8), struct_name)
                 if type(size_expr) is npt.protocol.ConstantExpression:
-                    field_type = self.proto.define_bitstring(name, size_expr)
+                    field_type = npt.protocol.BitString(name, size_expr)
+                    self.proto.add_type(field_type)
                 else:
-                    field_type = self.proto.define_bitstring(name, None)
+                    field_type = npt.protocol.BitString(name, None)
+                    self.proto.add_type(field_type)
                     if size_expr is not None:
                         constraints.append(size_expr)
             if field["is_present"] is not None:
@@ -259,7 +262,7 @@ class AsciiDiagramsParser(Parser):
             else:
                 ispresent_expr = self.build_expr(("const", "Boolean", True), struct_name)
             if field["context_field"] is not None:
-                self.proto.define_context_field(valid_field_name_convertor(field["context_field"][1]), self.build_type("Number"))
+                self.proto.get_context().add_field(npt.protocol.ContextField(valid_field_name_convertor(field["context_field"][1]), self.build_type("Number")))
                 action = self.build_expr(("setvalue", ("contextaccess", field["context_field"][1]), field["context_field"][0]), struct_name)
                 actions.append(action)
             if field_type is not None:
@@ -267,20 +270,20 @@ class AsciiDiagramsParser(Parser):
                                                 field_type,
                                                 ispresent_expr)
             fields.append(struct_field)
-        struct = self.proto.define_struct(struct_name, fields, constraints, actions)
+        struct = self.proto.add_type(npt.protocol.Struct(struct_name, fields, constraints, actions))
         return struct
 
     def build_enum(self, type_name):
         variants = []
         for variant in self.enums[type_name]:
             variants.append(self.build_type(variant))
-        enum = self.proto.define_enum(type_name, variants)
+        enum = self.proto.add_type(npt.protocol.Enum(type_name, variants))
         if type_name in self.serialise_to:
             func_type = self.build_type(self.serialise_to[type_name][1])
-            enum.set_serialise_to_func(func_type)
+            #enum.set_serialise_to_func(func_type)
         if type_name in self.parse_from:
             func_type = self.build_type(self.parse_from[type_name][1])
-            enum.set_parse_from_func(func_type)
+            #enum.set_parse_from_func(func_type)
         return enum
 
     def build_function(self, type_name):
@@ -289,7 +292,7 @@ class AsciiDiagramsParser(Parser):
         for param_name, param_type_name in self.functions[type_name][1]:
             param_type = self.build_type(valid_type_name_convertor(param_type_name))
             parameters.append(npt.protocol.Parameter(param_name, param_type))
-        function = self.proto.define_function(name, parameters, self.build_type(valid_type_name_convertor(self.functions[type_name][2])))
+        function = self.proto.add_type(npt.protocol.Function(name, parameters, self.build_type(valid_type_name_convertor(self.functions[type_name][2]))))
         return function
 
     def build_type(self, type_name):
@@ -301,6 +304,12 @@ class AsciiDiagramsParser(Parser):
             return self.build_enum(type_name)
         elif type_name in self.functions:
             return self.build_function(type_name)
+        elif type_name == "Number":
+            return npt.protocol.Number()
+        elif type_name == "Boolean":
+            return npt.protocol.Boolean()
+        elif type_name == "Nothing":
+            return npt.protocol.Nothing()
         else:
             raise Exception("Unknown type: %s" % (type_name))
 

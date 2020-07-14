@@ -299,6 +299,9 @@ class ProtocolType:
             self = self.parent
         return obj in parents
 
+    def __str__(self):
+        return f"{type(self).__name__}<::{' '.join([trait.name for trait in self.traits])}>"
+
 
 # -------------------------------------------------------------------------------------------------
 # ProtocolType mixins:
@@ -330,6 +333,9 @@ class ConstructableType(ProtocolType):
         if re.search(TYPE_NAME_REGEX, self.name) is None:
             raise ProtocolTypeError(f"Cannot create type {self.name}: malformed name")
 
+    def __str__(self):
+        return f"{type(self).__name__}<{self.name}::{' '.join([trait.name for trait in self.traits])}>"
+    
     def derive_from(self, name: str, also_implements: List[Trait]) -> "ConstructableType":
         """
         Derive a new type from this type.
@@ -568,6 +574,9 @@ class Context(InternalType, ConstructableType):
         if field_name not in self.fields:
             raise ProtocolTypeError(f"{self.name} has no field named {field_name}")
         return self.fields[field_name]
+        
+    def get_fields(self) -> List[ContextField]:
+        return list(self.fields.values())
 
 
 class Protocol(InternalType, ConstructableType):
