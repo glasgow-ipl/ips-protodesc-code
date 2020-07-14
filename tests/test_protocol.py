@@ -46,6 +46,7 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
         protocol.define_bitstring("Timestamp", ConstantExpression(Number(), 32))
         res = protocol.get_type("Timestamp")
+        res = cast(BitString, res)
         self.assertEqual(res.name, "Timestamp")
         self.assertEqual(res.size, ConstantExpression(Number(), 32))
         # Check trait implementations:
@@ -61,6 +62,7 @@ class TestProtocol(unittest.TestCase):
         ssrc = protocol.define_bitstring("SSRC", ConstantExpression(Number(), 32))
         protocol.define_array("CSRCList", ssrc, ConstantExpression(Number(), 4))
         res = protocol.get_type("CSRCList")
+        res = cast(Array, res)
         self.assertEqual(res.name, "CSRCList")
         self.assertEqual(res.element_type, protocol.get_type("SSRC"))
         self.assertEqual(res.length, ConstantExpression(Number(), 4))
@@ -98,6 +100,7 @@ class TestProtocol(unittest.TestCase):
         teststruct = protocol.define_struct("TestStruct", [seq, ts], [seq_constraint], [])
 
         res = protocol.get_type("TestStruct")
+        res = cast(Struct, res)
         self.assertEqual(res.name, "TestStruct")
         self.assertEqual(res.get_fields()[0].field_name, "seq")
         self.assertEqual(res.get_fields()[0].field_type, protocol.get_type("SeqNum"))
@@ -122,6 +125,7 @@ class TestProtocol(unittest.TestCase):
         protocol.define_enum("TestEnum", [typea, typeb])
 
         res = protocol.get_type("TestEnum")
+        res = cast(Enum, res)
         self.assertEqual(res.variants[0], protocol.get_type("TypeA"))
         self.assertEqual(res.variants[1], protocol.get_type("TypeB"))
         # Check trait implementations:
@@ -194,8 +198,8 @@ class TestProtocol(unittest.TestCase):
 
         # Check we can parse FunctionInvocation expressions:
         funcinv_expr = FunctionInvocationExpression(testfunc,
-                                                    [Argument("foo", bits16, ConstantExpression(Number(), 12)),
-                                                     Argument("bar", Boolean(), "False")])
+                                                    [ArgumentExpression("foo", ConstantExpression(bits16, 12)),
+                                                     ArgumentExpression("bar", ConstantExpression(Boolean(), "False"))])
 
         self.assertTrue(isinstance(funcinv_expr, FunctionInvocationExpression))
         self.assertTrue(funcinv_expr.result_type(None), Boolean())

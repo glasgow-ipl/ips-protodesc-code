@@ -193,7 +193,7 @@ class StructField():
 @dataclass(frozen=True)
 class ContextField():
     field_name : str
-    field_type : "RepresentableType"
+    field_type : "ProtocolType"
 
 # =================================================================================================
 # Type errors:
@@ -626,7 +626,7 @@ class Protocol(InternalType, ConstructableType):
             self._types[name].implement_trait(trait)
         return self._types[name]
 
-    def define_function(self, name: str, parameters: List[Parameter], return_type: RepresentableType) -> Function:
+    def define_function(self, name: str, parameters: List[Parameter], return_type: ProtocolType) -> Function:
         """
         Define a new function type for this protocol.
 
@@ -641,7 +641,7 @@ class Protocol(InternalType, ConstructableType):
         self._funcs.append(name)
         return newfunc
 
-    def define_context_field(self, name:str, ptype:RepresentableType):
+    def define_context_field(self, name: str, ptype: ProtocolType):
         """
         Define a context field for this protocol.
 
