@@ -387,6 +387,11 @@ class Array(RepresentableType, ConstructableType):
         self.length = length
         self.implement_trait(Equality())
         self.implement_trait(IndexCollection())
+        
+        if self.length is None and element_type.size is None:
+            raise ProtocolTypeError(f"Cannot construct Array: one of length or element size must be specified")
+        if self.length is not None and element_type.size is not None:
+            self.size = MethodInvocationExpression(element_type.size, "mul", [ArgumentExpression("other", self.length)])
 
 
 @dataclass(frozen=True)
