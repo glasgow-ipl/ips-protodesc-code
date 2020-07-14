@@ -406,11 +406,17 @@ class Struct(RepresentableType, ConstructableType):
     constraints : List[Expression]
     actions     : List[Expression]
     
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, fields: List[StructField], constraints: List[Expression], actions: List[Expression]) -> None:
         super().__init__(name=name)
         self.fields = {}
         self.constraints = []
         self.actions = []
+        for field in fields:
+            self.add_field(field)
+        for constraint in constraints:
+            self.add_constraint(constraint)
+        for action in actions:
+            self.add_action(action)
         self.implement_trait(Equality())
     
     def add_field(self, field: StructField) -> None:
@@ -560,7 +566,7 @@ class Protocol(InternalType, ConstructableType):
         self._funcs = []
         self._context = Context("Context")
         self._pdus = []
-        self.define_bitstring("DataUnit", None)
+        self.add_type(BitString("DataUnit", None))
 
     def _check_typename(self, name: str):
         if name in self._types:
@@ -581,85 +587,17 @@ class Protocol(InternalType, ConstructableType):
             raise ProtocolTypeError("Cannot redefine protocol name")
         self.name = name
 
-    def define_bitstring(self, name: str, size: Optional[Expression]) -> BitString:
+    def add_type(self, new_type: ConstructableType) -> ConstructableType:
         """
-        Define a new bit string type for this protocol.
+        Add a new type to this protocol.
         
         Parameters:
-        self  - the protocol in which the new type is defined
-        name  - the name of the new type
-        size  - the size of the new type, in bits. None if variable
+            self  - the protocol to which the type is added
+            new_type - the type to be added to the protocol
         """
-        self._check_typename(name)
-        newtype = BitString(name, size)
-        self._types[name] = newtype
-        return newtype
-
-    def define_option(self, name: str, reference_type: RepresentableType) -> Option:
-        """
-        Define a new option type for this protocol.
-
-        Parameters:
-          self  - the protocol in which the new type is defined
-          name  - the name of the new type
-          reference_type - the type which this instantiation of Option will take (either Nothing or another representable type)
-          size  - the size of reference_type (0 if Nothing, varies for other representable types)
-        """
-        self._check_typename(name)
-        newtype = Option(name, reference_type)
-        self._types[name] = newtype
-        return newtype
-
-    def define_array(self, name: str, element_type: RepresentableType, length: Optional[Expression]) -> Array:
-        """
-        Define a new array type for this protocol.
-
-        Parameters:
-          self  - the protocol in which the new type is defined
-          name  - the name of the new type
-          element_type - a Type object, representing the element type
-          length - the number of elements in the array
-        """
-        self._check_typename(name)
-        newtype = Array(name, element_type, length)
-        self._types[name] = newtype
-        return newtype
-
-    def define_struct(self, name: str, fields: List[StructField], constraints: List[Expression], actions: List[Expression]) -> Struct:
-        """
-        Define a new structure type for this protocol.
-
-        Parameters:
-          self        - the protocol in which the new type is defined
-          name        - the name of the new type
-          fields      - the fields that are in the struct
-          constraints - the constraints to define in the struct
-          actions     - the action to define in the struct
-        """
-        self._check_typename(name)
-        newtype = Struct(name)
-        self._types[name] = newtype
-        for field in fields:
-            newtype.add_field(field)
-        for constraint in constraints:
-            newtype.add_constraint(constraint)
-        for action in actions:
-            newtype.add_action(action)
-        return newtype
-
-    def define_enum(self, name: str, variants: List[RepresentableType]) -> Enum:
-        """
-        Define a new enumerated type for this protocol.
-
-        Parameters:
-          self     - the protocol in which the new type is defined
-          name     - the name of the new type
-          variants - the variant types of the enum
-        """
-        self._check_typename(name)
-        newtype = Enum(name, variants)
-        self._types[name] = newtype
-        return newtype
+        self._check_typename(new_type.name)
+        self._types[new_type.name] = new_type
+        return new_type
 
     def derive_type(self, name: str, derived_from: ConstructableType, also_implements: List[Trait]) -> ProtocolType:
         """
@@ -679,32 +617,6 @@ class Protocol(InternalType, ConstructableType):
         for trait in also_implements:
             self._types[name].implement_trait(trait)
         return self._types[name]
-
-    def define_function(self, name: str, parameters: List[Parameter], return_type: ProtocolType) -> Function:
-        """
-        Define a new function type for this protocol.
-
-        Parameters:
-          self        - the protocol in which the new type is defined
-          name        - the name of the new function
-          return_type - the type that the function returns
-        """
-        self._check_typename(name)
-        newfunc = Function(name, parameters, return_type)
-        self._types[name] = newfunc
-        self._funcs.append(name)
-        return newfunc
-
-    def define_context_field(self, name: str, ptype: ProtocolType):
-        """
-        Define a context field for this protocol.
-
-        Parameters:
-          self   - the protocol whose context is to be added to
-          name   - name of the field to be added
-          ptype  - type of the field to be added
-        """
-        self._context.add_field(ContextField(name, ptype))
 
     def define_pdu(self, pdu: str) -> None:
         """
