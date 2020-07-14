@@ -41,10 +41,17 @@ TYPE_NAME_REGEX = "^[A-Z][A-Za-z0-9$_]+$"
 FUNC_NAME_REGEX = "^[a-z][A-Za-z0-9$_]+$"
 
 # =================================================================================================
+# Type errors:
+
+class ProtocolTypeError(Exception):
+    def __init__(self, reason):
+        self.reason = reason
+
+# =================================================================================================
 # Singleton metaclass:
 
 class Singleton(type):
-    _instances : Dict[Singleton, Singleton] = {}
+    _instances : Dict["Singleton", "Singleton"] = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -56,23 +63,85 @@ class Singleton(type):
         pass
 
 # =================================================================================================
-# Type errors:
-
-class ProtocolTypeError(Exception):
-    def __init__(self, reason):
-        self.reason = reason
+# Traits:
 
 @dataclass(frozen=True)
-class Parameter:
-    param_name : str
-    param_type : Optional["ProtocolType"]
+class Trait(metaclass=Singleton):
+    name    : str
+    methods : List["Function"]
+
+    def __post_init__(self):
+        pass
 
 
-@dataclass(frozen=True)
-class Argument:
-    arg_name  : str
-    arg_type  : Optional["ProtocolType"]
-    arg_value : Any
+class ValueTrait(Trait):
+    def __init__(self):
+        super().__init__("Value", [
+            Function("get", [Parameter("self", None)], None),
+            Function("set", [Parameter("self", None), Parameter("value", None)], Nothing())
+        ])
+
+
+class SizedTrait(Trait):
+    def __init__(self):
+        super().__init__("Sized", [
+            Function("size", [Parameter("self", None)], Number())
+        ])
+
+
+class IndexCollectionTrait(Trait):
+    def __init__(self):
+        super().__init__("IndexCollection", [
+            Function("get",    [Parameter("self", None), Parameter("index", Number())], None),
+            Function("set",    [Parameter("self", None), Parameter("index", Number()), Parameter("value", None)], None),
+            Function("length", [Parameter("self", None)], Number()),
+        ])
+
+
+class EqualityTrait(Trait):
+    def __init__(self):
+        super().__init__("Equality", [
+            Function("eq", [Parameter("self", None), Parameter("other", None)], Boolean()),
+            Function("ne", [Parameter("self", None), Parameter("other", None)], Boolean())
+        ])
+
+
+class OrdinalTrait(Trait):
+    def __init__(self):
+        super().__init__("Ordinal", [
+            Function("lt", [Parameter("self", None), Parameter("other", None)], Boolean()),
+            Function("le", [Parameter("self", None), Parameter("other", None)], Boolean()),
+            Function("gt", [Parameter("self", None), Parameter("other", None)], Boolean()),
+            Function("ge", [Parameter("self", None), Parameter("other", None)], Boolean())
+        ])
+
+
+class BooleanOpsTrait(Trait):
+    def __init__(self):
+        super().__init__("BooleanOps", [
+            Function("and", [Parameter("self", None), Parameter("other", None)], Boolean()),
+            Function("or",  [Parameter("self", None), Parameter("other", None)], Boolean()),
+            Function("not", [Parameter("self", None)], Boolean())
+        ])
+
+
+class ArithmeticOpsTrait(Trait):
+    def __init__(self):
+        super().__init__("ArithmeticOps", [
+            Function("plus",     [Parameter("self", None), Parameter("other", None)], None),
+            Function("minus",    [Parameter("self", None), Parameter("other", None)], None),
+            Function("multiply", [Parameter("self", None), Parameter("other", None)], None),
+            Function("divide",   [Parameter("self", None), Parameter("other", None)], None),
+            Function("modulo",   [Parameter("self", None), Parameter("other", None)], None),
+            Function("pow",      [Parameter("self", None), Parameter("other", None)], None)
+        ])
+
+
+class NumberRepresentableTrait(Trait):
+    def __init__(self):
+        super().__init__("NumberRepresentable", [
+            Function("to_number", [Parameter("self", None)], Number())
+        ])
 
 # =================================================================================================
 # Expressions as defined in Section 3.4 of the IR specification:
@@ -181,92 +250,10 @@ class ConstantExpression(Expression):
 
 
 # =================================================================================================
-# Fields in a structure or the context:
+# Protocol Types:
 
-@dataclass(frozen=True)
-class StructField():
-    field_name: str
-    field_type: "RepresentableType"
-    is_present: Optional[Expression]
-
-
-@dataclass(frozen=True)
-class ContextField():
-    field_name : str
-    field_type : "ProtocolType"
-
-# =================================================================================================
-# Type errors:
-
-@dataclass(frozen=True)
-class Trait(metaclass=Singleton):
-    name    : str
-    methods : List["Function"]
-
-    def __post_init__(self):
-        pass
-
-class ValueTrait(Trait):
-    def __init__(self):
-        super().__init__("Value", [
-            Function("get", [Parameter("self", None)], None),
-            Function("set", [Parameter("self", None), Parameter("value", None)], Nothing())
-        ])
-
-class SizedTrait(Trait):
-    def __init__(self):
-        super().__init__("Sized", [
-            Function("size", [Parameter("self", None)], Number())
-        ])
-
-class IndexCollectionTrait(Trait):
-    def __init__(self):
-        super().__init__("IndexCollection", [
-            Function("get",    [Parameter("self", None), Parameter("index", Number())], None),
-            Function("set",    [Parameter("self", None), Parameter("index", Number()), Parameter("value", None)], None),
-            Function("length", [Parameter("self", None)], Number()),
-        ])
-
-class EqualityTrait(Trait):
-    def __init__(self):
-        super().__init__("Equality", [
-            Function("eq", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("ne", [Parameter("self", None), Parameter("other", None)], Boolean())
-        ])
-
-class OrdinalTrait(Trait):
-    def __init__(self):
-        super().__init__("Ordinal", [
-            Function("lt", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("le", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("gt", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("ge", [Parameter("self", None), Parameter("other", None)], Boolean())
-        ])
-
-class BooleanOpsTrait(Trait):
-    def __init__(self):
-        super().__init__("BooleanOps", [
-            Function("and", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("or",  [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("not", [Parameter("self", None)], Boolean())
-        ])
-
-class ArithmeticOpsTrait(Trait):
-    def __init__(self):
-        super().__init__("ArithmeticOps", [
-            Function("plus",     [Parameter("self", None), Parameter("other", None)], None),
-            Function("minus",    [Parameter("self", None), Parameter("other", None)], None),
-            Function("multiply", [Parameter("self", None), Parameter("other", None)], None),
-            Function("divide",   [Parameter("self", None), Parameter("other", None)], None),
-            Function("modulo",   [Parameter("self", None), Parameter("other", None)], None),
-            Function("pow",      [Parameter("self", None), Parameter("other", None)], None)
-        ])
-
-class NumberRepresentableTrait(Trait):
-    def __init__(self):
-        super().__init__("NumberRepresentable", [
-            Function("to_number", [Parameter("self", None)], Number())
-        ])
+# -------------------------------------------------------------------------------------------------
+# ProtocolType base class:
 
 class ProtocolType:
     traits  : List["Trait"]
@@ -312,14 +299,25 @@ class ProtocolType:
             self = self.parent
         return obj in parents
 
+
+# -------------------------------------------------------------------------------------------------
+# ProtocolType mixins:
+
 class PrimitiveType(ProtocolType, metaclass=Singleton):
+    """
+    PrimitiveTypes are instantiated only once, and cannot be constructed by a Protocol definition.
+    """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     def __post_init__(self):
         pass
 
+
 class ConstructableType(ProtocolType):
+    """
+    ConstructableTypes are classes that are instantiated as constructors for ProtocolTypes.
+    """
     name: str
     
     def __init__(self, name: Optional[str], **kwargs):
@@ -331,11 +329,19 @@ class ConstructableType(ProtocolType):
     def _validate_typename(self):
         if re.search(TYPE_NAME_REGEX, self.name) is None:
             raise ProtocolTypeError(f"Cannot create type {self.name}: malformed name")
-            
-class InternalType(ProtocolType):    
+
+
+class InternalType(ProtocolType):
+    """
+    InternalTypes are types that are needed to define a Protocol, but that do not represent data sent/received by a Protocol.
+    """
     pass
 
+
 class RepresentableType(ProtocolType):
+    """
+    RepresentableTypes are types that model data that can be sent/received by a Protocol.
+    """
     size : Optional[Expression]
     
     def __init__(self, size: Optional[Expression] = None, **kwargs):
@@ -343,87 +349,17 @@ class RepresentableType(ProtocolType):
         self.size = size
         self.implement_trait(SizedTrait())
 
-# Internal, constructable types:
-  
-class Function(InternalType, ConstructableType):
-    parameters: List[Parameter]
-    return_type: Optional[ProtocolType]
-    
-    def __init__(self, name: str, parameters: List[Parameter], return_type : Optional[ProtocolType]):
-        super().__init__(name=name)
-        self.parameters = parameters
-        self.return_type = return_type
-    
-    def _validate_typename(self):
-        if re.search(FUNC_NAME_REGEX, self.name) is None:
-            raise ProtocolTypeError(f"Cannot create type {self.name}: malformed name")
 
-    def is_method(self, self_type: "ProtocolType") -> bool:
-        if self.parameters[0].param_name != "self":
-            return False
-        if self.parameters[0].param_type != self_type:
-            return False
-        return True
-
-    def is_method_accepting(self, self_type: "ProtocolType", arguments:List[Argument]) -> bool:
-        """
-        Check if this function is a method and accepts the specified arguments when invoked on an
-        object of type self_type
-        """
-        if not self.is_method(self_type):
-            return False
-        for (p, a) in zip(self.parameters[1:], arguments):
-            pname = p.param_name
-            ptype = p.param_type if p.param_type is not None else self_type
-            if (pname != a.arg_name):
-                return False
-            if (ptype != a.arg_type) and a.arg_type is not None and not a.arg_type.is_a(ptype):
-                return False
-        return True
-    
-    def get_return_type(self) -> ProtocolType:
-        if self.return_type is None:
-            return Nothing()
-        else:
-            return self.return_type
-
-class Boolean(InternalType, PrimitiveType):
-    def __post_init__(self):
-        self.implement_trait(ValueTrait())
-        self.implement_trait(EqualityTrait())
-        self.implement_trait(BooleanOpsTrait())
-        
-class Number(InternalType, PrimitiveType):
-    def __post_init__(self):
-        self.implement_trait(ValueTrait())
-        self.implement_trait(EqualityTrait())
-        self.implement_trait(OrdinalTrait())
-        self.implement_trait(ArithmeticOpsTrait())
-
-class Context(InternalType, ConstructableType):
-    fields: Dict[str, ContextField]
-
-    def __init__(self, name: str):
-        super().__init__(name=name)
-        self.fields = {}
-
-    def add_field(self, field: ContextField) -> None:
-        if field.field_name in self.fields:
-            raise ProtocolTypeError(f"{self.name} already has a field named {field.field_name}")
-        self.fields[field.field_name] = field
-
-    def field(self, field_name: str) -> ContextField:
-        if field_name not in self.fields:
-            raise ProtocolTypeError(f"{self.name} has no field named {field_name}")
-        return self.fields[field_name]
-
-# Representable, primitive types:
+# -------------------------------------------------------------------------------------------------
+# Representable, primitive types:
 
 class Nothing(RepresentableType, PrimitiveType):
     def __init__(self):
         super().__init__(size=ConstantExpression(Number(), 0))
 
-# Representable, constructable types:
+
+# -------------------------------------------------------------------------------------------------
+# Representable, constructable types:
 
 class BitString(RepresentableType, ConstructableType):
     def __init__(self, name: str, size: Optional[Expression]):
@@ -432,12 +368,14 @@ class BitString(RepresentableType, ConstructableType):
         self.implement_trait(EqualityTrait())
         self.implement_trait(NumberRepresentableTrait())
 
+
 class Option(RepresentableType, ConstructableType):
     reference_type : RepresentableType
 
     def __init__(self, name: str, reference_type: RepresentableType) -> None:
         super().__init__(name=name, size=reference_type.size)
         self.reference_type = reference_type
+
 
 class Array(RepresentableType, ConstructableType):
     element_type : RepresentableType
@@ -449,6 +387,14 @@ class Array(RepresentableType, ConstructableType):
         self.length = length
         self.implement_trait(EqualityTrait())
         self.implement_trait(IndexCollectionTrait())
+
+
+@dataclass(frozen=True)
+class StructField():
+    field_name: str
+    field_type: "RepresentableType"
+    is_present: Optional[Expression]
+
 
 class Struct(RepresentableType, ConstructableType):
     fields      : Dict[str, StructField]
@@ -487,12 +433,115 @@ class Struct(RepresentableType, ConstructableType):
     def get_fields(self) -> List[StructField]:
         return list(self.fields.values())
 
+
 class Enum(RepresentableType, ConstructableType):
     variants : List[RepresentableType]
     
     def __init__(self, name: str, variants: List[RepresentableType]) -> None:
         super().__init__(name=name, size=None)
         self.variants = variants
+
+
+# -------------------------------------------------------------------------------------------------
+# Internal, primitive types:
+
+class Boolean(InternalType, PrimitiveType):
+    def __post_init__(self):
+        self.implement_trait(ValueTrait())
+        self.implement_trait(EqualityTrait())
+        self.implement_trait(BooleanOpsTrait())
+
+
+class Number(InternalType, PrimitiveType):
+    def __post_init__(self):
+        self.implement_trait(ValueTrait())
+        self.implement_trait(EqualityTrait())
+        self.implement_trait(OrdinalTrait())
+        self.implement_trait(ArithmeticOpsTrait())
+
+
+# -------------------------------------------------------------------------------------------------
+# Internal, constructable types:
+
+@dataclass(frozen=True)
+class Parameter:
+    param_name : str
+    param_type : Optional["ProtocolType"]
+
+
+@dataclass(frozen=True)
+class Argument:
+    arg_name  : str
+    arg_type  : Optional["ProtocolType"]
+    arg_value : Any
+
+
+class Function(InternalType, ConstructableType):
+    parameters: List[Parameter]
+    return_type: Optional[ProtocolType]
+    
+    def __init__(self, name: str, parameters: List[Parameter], return_type : Optional[ProtocolType]):
+        super().__init__(name=name)
+        self.parameters = parameters
+        self.return_type = return_type
+    
+    def _validate_typename(self):
+        if re.search(FUNC_NAME_REGEX, self.name) is None:
+            raise ProtocolTypeError(f"Cannot create type {self.name}: malformed name")
+
+    def is_method(self, self_type: "ProtocolType") -> bool:
+        if self.parameters[0].param_name != "self":
+            return False
+        if self.parameters[0].param_type != self_type:
+            return False
+        return True
+
+    def is_method_accepting(self, self_type: "ProtocolType", arguments: List[Argument]) -> bool:
+        """
+        Check if this function is a method and accepts the specified arguments when invoked on an
+        object of type self_type
+        """
+        if not self.is_method(self_type):
+            return False
+        for (p, a) in zip(self.parameters[1:], arguments):
+            pname = p.param_name
+            ptype = p.param_type if p.param_type is not None else self_type
+            if (pname != a.arg_name):
+                return False
+            if (ptype != a.arg_type) and a.arg_type is not None and not a.arg_type.is_a(ptype):
+                return False
+        return True
+    
+    def get_return_type(self) -> ProtocolType:
+        if self.return_type is None:
+            return Nothing()
+        else:
+            return self.return_type
+
+
+@dataclass(frozen=True)
+class ContextField():
+    field_name : str
+    field_type : ProtocolType
+
+
+class Context(InternalType, ConstructableType):
+    fields: Dict[str, ContextField]
+
+    def __init__(self, name: str):
+        super().__init__(name=name)
+        self.fields = {}
+
+    def add_field(self, field: ContextField) -> None:
+        if field.field_name in self.fields:
+            raise ProtocolTypeError(f"{self.name} already has a field named {field.field_name}")
+        self.fields[field.field_name] = field
+
+    def field(self, field_name: str) -> ContextField:
+        if field_name not in self.fields:
+            raise ProtocolTypeError(f"{self.name} has no field named {field_name}")
+        return self.fields[field_name]
+
 
 class Protocol(InternalType, ConstructableType):
     _types   : Dict[str, ConstructableType]
@@ -692,5 +741,6 @@ class Protocol(InternalType, ConstructableType):
 
     def get_type_names(self) -> List[str]:
         return list(self._types.keys())
+
 
 # vim: set tw=0 ai:
