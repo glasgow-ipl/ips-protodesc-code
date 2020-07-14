@@ -51,10 +51,10 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.size, ConstantExpression(Number(), 32))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 4)
-        self.assertIn(EqualityTrait(),             res.traits)
-        self.assertIn(SizedTrait(),                res.traits)
-        self.assertIn(ValueTrait(),                res.traits)
-        self.assertIn(NumberRepresentableTrait(),  res.traits)
+        self.assertIn(Equality(),             res.traits)
+        self.assertIn(Sized(),                res.traits)
+        self.assertIn(Value(),                res.traits)
+        self.assertIn(NumberRepresentable(),  res.traits)
         # FIXME: add test for methods
 
     def test_define_array(self):
@@ -69,9 +69,9 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.size, MethodInvocationExpression(ConstantExpression(Number(), 32), "mul", [ArgumentExpression("other", ConstantExpression(Number(), 4))]))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 3)
-        self.assertIn(EqualityTrait(),        res.traits)
-        self.assertIn(IndexCollectionTrait(), res.traits)
-        self.assertIn(SizedTrait(),           res.traits)
+        self.assertIn(Equality(),        res.traits)
+        self.assertIn(IndexCollection(), res.traits)
+        self.assertIn(Sized(),           res.traits)
         # FIXME: add test for methods
 
     def test_define_struct(self):
@@ -114,8 +114,8 @@ class TestProtocol(unittest.TestCase):
         # FIXME: add test for actions
         # Check trait implementations:
         self.assertEqual(len(res.traits), 2)
-        self.assertIn(EqualityTrait(), res.traits)
-        self.assertIn(SizedTrait(),    res.traits)
+        self.assertIn(Equality(), res.traits)
+        self.assertIn(Sized(),    res.traits)
         # FIXME: add test for methods
 
     def test_define_enum(self):
@@ -130,23 +130,23 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.variants[1], protocol.get_type("TypeB"))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 1)
-        self.assertIn(SizedTrait(), res.traits)
+        self.assertIn(Sized(), res.traits)
         # FIXME: add test for methods
 
     def test_derive_type(self):
         protocol = Protocol()
         bits16 = protocol.define_bitstring("Bits16", ConstantExpression(Number(), 16))
-        protocol.derive_type("SeqNum", bits16, [OrdinalTrait()])
+        protocol.derive_type("SeqNum", bits16, [Ordinal()])
 
         res = protocol.get_type("SeqNum")
         self.assertEqual(res.name, "SeqNum")
         # Check trait implementations:
         self.assertEqual(len(res.traits), 5)
-        self.assertIn(EqualityTrait(),             res.traits)
-        self.assertIn(SizedTrait(),                res.traits)
-        self.assertIn(ValueTrait(),                res.traits)
-        self.assertIn(OrdinalTrait(),              res.traits)
-        self.assertIn(NumberRepresentableTrait(),  res.traits)
+        self.assertIn(Equality(),             res.traits)
+        self.assertIn(Sized(),                res.traits)
+        self.assertIn(Value(),                res.traits)
+        self.assertIn(Ordinal(),              res.traits)
+        self.assertIn(NumberRepresentable(),  res.traits)
         # FIXME: add test for methods
 
     def test_define_function(self):

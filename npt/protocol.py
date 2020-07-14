@@ -74,7 +74,7 @@ class Trait(metaclass=Singleton):
         pass
 
 
-class ValueTrait(Trait):
+class Value(Trait):
     def __init__(self):
         super().__init__("Value", [
             Function("get", [Parameter("self", None)], None),
@@ -82,14 +82,14 @@ class ValueTrait(Trait):
         ])
 
 
-class SizedTrait(Trait):
+class Sized(Trait):
     def __init__(self):
         super().__init__("Sized", [
             Function("size", [Parameter("self", None)], Number())
         ])
 
 
-class IndexCollectionTrait(Trait):
+class IndexCollection(Trait):
     def __init__(self):
         super().__init__("IndexCollection", [
             Function("get",    [Parameter("self", None), Parameter("index", Number())], None),
@@ -98,7 +98,7 @@ class IndexCollectionTrait(Trait):
         ])
 
 
-class EqualityTrait(Trait):
+class Equality(Trait):
     def __init__(self):
         super().__init__("Equality", [
             Function("eq", [Parameter("self", None), Parameter("other", None)], Boolean()),
@@ -106,7 +106,7 @@ class EqualityTrait(Trait):
         ])
 
 
-class OrdinalTrait(Trait):
+class Ordinal(Trait):
     def __init__(self):
         super().__init__("Ordinal", [
             Function("lt", [Parameter("self", None), Parameter("other", None)], Boolean()),
@@ -116,7 +116,7 @@ class OrdinalTrait(Trait):
         ])
 
 
-class BooleanOpsTrait(Trait):
+class BooleanOps(Trait):
     def __init__(self):
         super().__init__("BooleanOps", [
             Function("and", [Parameter("self", None), Parameter("other", None)], Boolean()),
@@ -125,7 +125,7 @@ class BooleanOpsTrait(Trait):
         ])
 
 
-class ArithmeticOpsTrait(Trait):
+class ArithmeticOps(Trait):
     def __init__(self):
         super().__init__("ArithmeticOps", [
             Function("plus",     [Parameter("self", None), Parameter("other", None)], None),
@@ -137,7 +137,7 @@ class ArithmeticOpsTrait(Trait):
         ])
 
 
-class NumberRepresentableTrait(Trait):
+class NumberRepresentable(Trait):
     def __init__(self):
         super().__init__("NumberRepresentable", [
             Function("to_number", [Parameter("self", None)], Number())
@@ -347,7 +347,7 @@ class RepresentableType(ProtocolType):
     def __init__(self, size: Optional[Expression] = None, **kwargs):
         super().__init__(**kwargs)
         self.size = size
-        self.implement_trait(SizedTrait())
+        self.implement_trait(Sized())
 
 
 # -------------------------------------------------------------------------------------------------
@@ -364,9 +364,9 @@ class Nothing(RepresentableType, PrimitiveType):
 class BitString(RepresentableType, ConstructableType):
     def __init__(self, name: str, size: Optional[Expression]):
         super().__init__(name=name, size=size)
-        self.implement_trait(ValueTrait())
-        self.implement_trait(EqualityTrait())
-        self.implement_trait(NumberRepresentableTrait())
+        self.implement_trait(Value())
+        self.implement_trait(Equality())
+        self.implement_trait(NumberRepresentable())
 
 
 class Option(RepresentableType, ConstructableType):
@@ -385,8 +385,8 @@ class Array(RepresentableType, ConstructableType):
         super().__init__(name=name, size=None)
         self.element_type = element_type
         self.length = length
-        self.implement_trait(EqualityTrait())
-        self.implement_trait(IndexCollectionTrait())
+        self.implement_trait(Equality())
+        self.implement_trait(IndexCollection())
 
 
 @dataclass(frozen=True)
@@ -406,7 +406,7 @@ class Struct(RepresentableType, ConstructableType):
         self.fields = {}
         self.constraints = []
         self.actions = []
-        self.implement_trait(EqualityTrait())
+        self.implement_trait(Equality())
     
     def add_field(self, field: StructField) -> None:
         if field.field_name in self.fields:
@@ -447,17 +447,17 @@ class Enum(RepresentableType, ConstructableType):
 
 class Boolean(InternalType, PrimitiveType):
     def __post_init__(self):
-        self.implement_trait(ValueTrait())
-        self.implement_trait(EqualityTrait())
-        self.implement_trait(BooleanOpsTrait())
+        self.implement_trait(Value())
+        self.implement_trait(Equality())
+        self.implement_trait(BooleanOps())
 
 
 class Number(InternalType, PrimitiveType):
     def __post_init__(self):
-        self.implement_trait(ValueTrait())
-        self.implement_trait(EqualityTrait())
-        self.implement_trait(OrdinalTrait())
-        self.implement_trait(ArithmeticOpsTrait())
+        self.implement_trait(Value())
+        self.implement_trait(Equality())
+        self.implement_trait(Ordinal())
+        self.implement_trait(ArithmeticOps())
 
 
 # -------------------------------------------------------------------------------------------------
