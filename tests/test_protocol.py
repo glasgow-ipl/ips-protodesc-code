@@ -44,50 +44,50 @@ class TestProtocol(unittest.TestCase):
 
     def test_define_bitstring(self):
         protocol = Protocol()
-        protocol.define_bitstring("Timestamp", ConstantExpression(protocol.get_type("Number"), 32))
+        protocol.define_bitstring("Timestamp", ConstantExpression(Number(), 32))
         res = protocol.get_type("Timestamp")
         self.assertEqual(res.name, "Timestamp")
-        self.assertEqual(res.size, ConstantExpression(protocol.get_type("Number"), 32))
+        self.assertEqual(res.size, ConstantExpression(Number(), 32))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 4)
-        self.assertIn("Equality",             res.traits)
-        self.assertIn("Sized",                res.traits)
-        self.assertIn("Value",                res.traits)
-        self.assertIn("NumberRepresentable",  res.traits)
+        self.assertIn(EqualityTrait(),             res.traits)
+        self.assertIn(SizedTrait(),                res.traits)
+        self.assertIn(ValueTrait(),                res.traits)
+        self.assertIn(NumberRepresentableTrait(),  res.traits)
         # FIXME: add test for methods
 
     def test_define_array(self):
         protocol = Protocol()
-        ssrc = protocol.define_bitstring("SSRC", ConstantExpression(protocol.get_type("Number"), 32))
-        protocol.define_array("CSRCList", ssrc, ConstantExpression(protocol.get_type("Number"), 4))
+        ssrc = protocol.define_bitstring("SSRC", ConstantExpression(Number(), 32))
+        protocol.define_array("CSRCList", ssrc, ConstantExpression(Number(), 4))
         res = protocol.get_type("CSRCList")
         self.assertEqual(res.name, "CSRCList")
         self.assertEqual(res.element_type, protocol.get_type("SSRC"))
-        self.assertEqual(res.length, ConstantExpression(protocol.get_type("Number"), 4))
-        self.assertEqual(res.size, MethodInvocationExpression(ConstantExpression(protocol.get_type("Number"), 32), "mul", [ArgumentExpression("other", ConstantExpression(protocol.get_type("Number"), 4))]))
+        self.assertEqual(res.length, ConstantExpression(Number(), 4))
+        self.assertEqual(res.size, MethodInvocationExpression(ConstantExpression(Number(), 32), "mul", [ArgumentExpression("other", ConstantExpression(Number(), 4))]))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 3)
-        self.assertIn("Equality",        res.traits)
-        self.assertIn("IndexCollection", res.traits)
-        self.assertIn("Sized",           res.traits)
+        self.assertIn(EqualityTrait(),        res.traits)
+        self.assertIn(IndexCollectionTrait(), res.traits)
+        self.assertIn(SizedTrait(),           res.traits)
         # FIXME: add test for methods
 
     def test_define_struct(self):
         protocol = Protocol()
 
         # define types
-        seqnum_trans = protocol.define_bitstring("SeqNumTrans", ConstantExpression(protocol.get_type("Number"), 16))
-        seqnum = protocol.define_bitstring("SeqNum", ConstantExpression(protocol.get_type("Number"), 16))
-        timestamp = protocol.define_bitstring("Timestamp", ConstantExpression(protocol.get_type("Number"), 32))
+        seqnum_trans = protocol.define_bitstring("SeqNumTrans", ConstantExpression(Number(), 16))
+        seqnum = protocol.define_bitstring("SeqNum", ConstantExpression(Number(), 16))
+        timestamp = protocol.define_bitstring("Timestamp", ConstantExpression(Number(), 32))
         transform_seq = protocol.define_function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
 
         # define fields
         seq = StructField("seq",
                           seqnum,
-                          ConstantExpression(protocol.get_type("Boolean"), "True"))
+                          ConstantExpression(Boolean(), "True"))
         ts  = StructField("ts",
                           timestamp,
-                          ConstantExpression(protocol.get_type("Boolean"), "True"))
+                          ConstantExpression(Boolean(), "True"))
 
         # add constraints
         seq_constraint = MethodInvocationExpression(FieldAccessExpression(SelfExpression(), "seq"),
@@ -99,26 +99,26 @@ class TestProtocol(unittest.TestCase):
 
         res = protocol.get_type("TestStruct")
         self.assertEqual(res.name, "TestStruct")
-        self.assertEqual(res.fields[0].field_name, "seq")
-        self.assertEqual(res.fields[0].field_type, protocol.get_type("SeqNum"))
+        self.assertEqual(res.get_fields()[0].field_name, "seq")
+        self.assertEqual(res.get_fields()[0].field_type, protocol.get_type("SeqNum"))
         # FIXME: add test for fields[0].is_present
         # FIXME: add test for fields[0].transform
-        self.assertEqual(res.fields[1].field_name, "ts")
-        self.assertEqual(res.fields[1].field_type, protocol.get_type("Timestamp"))
+        self.assertEqual(res.get_fields()[1].field_name, "ts")
+        self.assertEqual(res.get_fields()[1].field_type, protocol.get_type("Timestamp"))
         # FIXME: add test for fields[1].is_present
         # FIXME: add test for fields[1].transform
         # FIXME: add test for constraints
         # FIXME: add test for actions
         # Check trait implementations:
         self.assertEqual(len(res.traits), 2)
-        self.assertIn("Equality", res.traits)
-        self.assertIn("Sized",    res.traits)
+        self.assertIn(EqualityTrait(), res.traits)
+        self.assertIn(SizedTrait(),    res.traits)
         # FIXME: add test for methods
 
     def test_define_enum(self):
         protocol = Protocol()
-        typea = protocol.define_bitstring("TypeA", ConstantExpression(protocol.get_type("Number"), 32))
-        typeb = protocol.define_bitstring("TypeB", ConstantExpression(protocol.get_type("Number"), 32))
+        typea = protocol.define_bitstring("TypeA", ConstantExpression(Number(), 32))
+        typeb = protocol.define_bitstring("TypeB", ConstantExpression(Number(), 32))
         protocol.define_enum("TestEnum", [typea, typeb])
 
         res = protocol.get_type("TestEnum")
@@ -126,50 +126,50 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(res.variants[1], protocol.get_type("TypeB"))
         # Check trait implementations:
         self.assertEqual(len(res.traits), 1)
-        self.assertIn("Sized", res.traits)
+        self.assertIn(SizedTrait(), res.traits)
         # FIXME: add test for methods
 
     def test_derive_type(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
-        protocol.derive_type("SeqNum", bits16, [protocol.get_trait("Ordinal")])
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(Number(), 16))
+        protocol.derive_type("SeqNum", bits16, [OrdinalTrait()])
 
         res = protocol.get_type("SeqNum")
         self.assertEqual(res.name, "SeqNum")
         # Check trait implementations:
         self.assertEqual(len(res.traits), 5)
-        self.assertIn("Equality",             res.traits)
-        self.assertIn("Sized",                res.traits)
-        self.assertIn("Value",                res.traits)
-        self.assertIn("Ordinal",              res.traits)
-        self.assertIn("NumberRepresentable",  res.traits)
+        self.assertIn(EqualityTrait(),             res.traits)
+        self.assertIn(SizedTrait(),                res.traits)
+        self.assertIn(ValueTrait(),                res.traits)
+        self.assertIn(OrdinalTrait(),              res.traits)
+        self.assertIn(NumberRepresentableTrait(),  res.traits)
         # FIXME: add test for methods
 
     def test_define_function(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(Number(), 16))
         protocol.define_function("testFunction",
-                                 [Parameter("foo", bits16), Parameter("bar", protocol.get_type("Boolean"))],
-                                 protocol.get_type("Boolean"))
+                                 [Parameter("foo", bits16), Parameter("bar", Boolean())],
+                                 Boolean())
 
         res = protocol.get_func("testFunction")
         self.assertEqual(res.name, "testFunction")
         self.assertEqual(res.parameters[0].param_name, "foo")
         self.assertEqual(res.parameters[0].param_type, protocol.get_type("Bits16"))
         self.assertEqual(res.parameters[1].param_name, "bar")
-        self.assertEqual(res.parameters[1].param_type, protocol.get_type("Boolean"))
-        self.assertEqual(res.return_type, protocol.get_type("Boolean"))
+        self.assertEqual(res.parameters[1].param_type, Boolean())
+        self.assertEqual(res.return_type, Boolean())
 
     def test_define_context_field(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(Number(), 16))
         protocol.define_context_field("foo", bits16)
-        protocol.define_context_field("bar", protocol.get_type("Boolean"))
+        protocol.define_context_field("bar", Boolean())
 
         self.assertEqual(protocol.get_context().field("foo").field_name, "foo")
         self.assertEqual(protocol.get_context().field("foo").field_type, protocol.get_type("Bits16"))
         self.assertEqual(protocol.get_context().field("bar").field_name, "bar")
-        self.assertEqual(protocol.get_context().field("bar").field_type, protocol.get_type("Boolean"))
+        self.assertEqual(protocol.get_context().field("bar").field_type, Boolean())
 
     # =============================================================================================
     # Test cases for expressions:
@@ -178,38 +178,38 @@ class TestProtocol(unittest.TestCase):
         protocol = Protocol()
 
         # Check we can parse MethodInvocation expressions:
-        methodinv_expr = MethodInvocationExpression(ConstantExpression(protocol.get_type("Boolean"), "False"),
+        methodinv_expr = MethodInvocationExpression(ConstantExpression(Boolean(), "False"),
                                                     "eq",
-                                                    [ArgumentExpression("other", ConstantExpression(protocol.get_type("Boolean"), "False"))])
+                                                    [ArgumentExpression("other", ConstantExpression(Boolean(), "False"))])
 
         self.assertTrue(isinstance(methodinv_expr, MethodInvocationExpression))
-        self.assertTrue(methodinv_expr.get_result_type(None), protocol.get_type("Boolean"))
+        self.assertTrue(methodinv_expr.result_type(None), Boolean())
 
     def test_parse_expression_FunctionInvocation(self):
         protocol = Protocol()
-        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(Number(), 16))
         testfunc = protocol.define_function("testFunction",
-                                            [Parameter("foo", bits16), Parameter("bar", protocol.get_type("Boolean"))],
-                                            protocol.get_type("Boolean"))
+                                            [Parameter("foo", bits16), Parameter("bar", Boolean())],
+                                            Boolean())
 
         # Check we can parse FunctionInvocation expressions:
         funcinv_expr = FunctionInvocationExpression(testfunc,
-                                                    [Argument("foo", bits16, ConstantExpression(protocol.get_type("Number"), 12)),
-                                                     Argument("bar", protocol.get_type("Boolean"), "False")])
+                                                    [Argument("foo", bits16, ConstantExpression(Number(), 12)),
+                                                     Argument("bar", Boolean(), "False")])
 
         self.assertTrue(isinstance(funcinv_expr, FunctionInvocationExpression))
-        self.assertTrue(funcinv_expr.get_result_type(None), protocol.get_type("Boolean"))
+        self.assertTrue(funcinv_expr.result_type(None), Boolean())
 
     def test_parse_expression_FieldAccess(self):
         # Expressions must be parsed in the context of a structure type:
         protocol = Protocol()
 
-        testfield = protocol.define_bitstring("TestField", ConstantExpression(protocol.get_type("Number"), 32))
+        testfield = protocol.define_bitstring("TestField", ConstantExpression(Number(), 32))
 
         # define fields
         test = StructField("test",
                            testfield,
-                           ConstantExpression(protocol.get_type("Boolean"), "True"))
+                           ConstantExpression(Boolean(), "True"))
 
         teststruct = protocol.define_struct("TestStruct", [test], [], [])
 
@@ -217,38 +217,38 @@ class TestProtocol(unittest.TestCase):
         fieldaccess_expr = FieldAccessExpression(SelfExpression(), "test")
 
         self.assertTrue(isinstance(fieldaccess_expr, FieldAccessExpression))
-        self.assertEqual(fieldaccess_expr.get_result_type(teststruct), protocol.get_type("TestField"))
-        self.assertEqual(fieldaccess_expr.target.get_result_type(teststruct), protocol.get_type("TestStruct"))
+        self.assertEqual(fieldaccess_expr.result_type(teststruct), protocol.get_type("TestField"))
+        self.assertEqual(fieldaccess_expr.target.result_type(teststruct), protocol.get_type("TestStruct"))
         self.assertEqual(fieldaccess_expr.field_name, "test")
 
     def test_parse_expression_ContextAccess(self):
         protocol = Protocol()
 
-        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(protocol.get_type("Number"), 16))
+        bits16 = protocol.define_bitstring("Bits16", ConstantExpression(Number(), 16))
         protocol.define_context_field("foo", bits16)
-        protocol.define_context_field("bar", protocol.get_type("Boolean"))
+        protocol.define_context_field("bar", Boolean())
 
         # Check that we can parse ContextAccess expressions
         contextaccess_expr = ContextAccessExpression(protocol.get_context(), "foo")
 
         self.assertTrue(isinstance(contextaccess_expr, ContextAccessExpression))
-        self.assertEqual(contextaccess_expr.get_result_type(None), protocol.get_type("Bits16"))
+        self.assertEqual(contextaccess_expr.result_type(None), protocol.get_type("Bits16"))
         self.assertEqual(contextaccess_expr.field_name, "foo")
 
     def test_parse_expression_IfElse(self):
         protocol = Protocol()
 
         # Check we can parse IfElse expressions:
-        condition = ConstantExpression(protocol.get_type("Boolean"), "True")
-        if_true = ConstantExpression(protocol.get_type("Boolean"), "True")
-        if_false = ConstantExpression(protocol.get_type("Boolean"), "False")
+        condition = ConstantExpression(Boolean(), "True")
+        if_true = ConstantExpression(Boolean(), "True")
+        if_false = ConstantExpression(Boolean(), "False")
         ifelse_expr = IfElseExpression(condition, if_true, if_false)
 
         self.assertTrue(isinstance(ifelse_expr, IfElseExpression))
-        self.assertEqual(ifelse_expr.get_result_type(None), protocol.get_type("Boolean"))
-        self.assertEqual(ifelse_expr.condition.get_result_type(None), protocol.get_type("Boolean"))
-        self.assertEqual(ifelse_expr.if_true.get_result_type(None),   protocol.get_type("Boolean"))
-        self.assertEqual(ifelse_expr.if_false.get_result_type(None),  protocol.get_type("Boolean"))
+        self.assertEqual(ifelse_expr.result_type(None), Boolean())
+        self.assertEqual(ifelse_expr.condition.result_type(None), Boolean())
+        self.assertEqual(ifelse_expr.if_true.result_type(None),   Boolean())
+        self.assertEqual(ifelse_expr.if_false.result_type(None),  Boolean())
 
     def test_parse_expression_This(self):
         protocol = Protocol()
@@ -258,16 +258,16 @@ class TestProtocol(unittest.TestCase):
         this_expr = SelfExpression()
 
         self.assertTrue(isinstance(this_expr, SelfExpression))
-        self.assertEqual(this_expr.get_result_type(teststruct), protocol.get_type("TestStruct"))
+        self.assertEqual(this_expr.result_type(teststruct), protocol.get_type("TestStruct"))
 
     def test_parse_expression_Constant(self):
         protocol = Protocol()
 
         # Check we can parse This expressions:
-        const_expr = ConstantExpression(protocol.get_type("Number"), 2)
+        const_expr = ConstantExpression(Number(), 2)
 
         self.assertTrue(isinstance(const_expr, ConstantExpression))
-        self.assertTrue(const_expr.get_result_type(None), protocol.get_type("Number"))
+        self.assertTrue(const_expr.result_type(None), Number())
 
 # =================================================================================================
 if __name__ == "__main__":
