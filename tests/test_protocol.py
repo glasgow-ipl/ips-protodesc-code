@@ -147,8 +147,10 @@ class TestProtocol(unittest.TestCase):
 
     def test_derive_type(self):
         protocol = Protocol()
-        bits16 = protocol.add_type(BitString("Bits16", ConstantExpression(Number(), 16)))
-        protocol.derive_type("SeqNum", bits16, [Ordinal()])
+        bits16 = BitString("Bits16", ConstantExpression(Number(), 16))
+        protocol.add_type(bits16)
+        seqnum = bits16.derive_from("SeqNum", [Ordinal()])
+        protocol.add_type(seqnum)
 
         res = protocol.get_type("SeqNum")
         self.assertEqual(res.name, "SeqNum")

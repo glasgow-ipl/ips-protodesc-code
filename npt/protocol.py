@@ -330,6 +330,22 @@ class ConstructableType(ProtocolType):
         if re.search(TYPE_NAME_REGEX, self.name) is None:
             raise ProtocolTypeError(f"Cannot create type {self.name}: malformed name")
 
+    def derive_from(self, name: str, also_implements: List[Trait]) -> "ConstructableType":
+        """
+        Derive a new type from this type.
+        
+        Parameters:
+            self            - the type that the new type is derived from
+            name            - the name of the new type
+            also_implements - additional traits that the new type implements
+        """
+        new_type = copy(self)
+        new_type.name = name
+        new_type.methods = copy(self.methods)
+        for trait in also_implements:
+            new_type.implement_trait(trait)
+        return new_type
+
 
 class InternalType(ProtocolType):
     """
@@ -598,25 +614,6 @@ class Protocol(InternalType, ConstructableType):
         self._check_typename(new_type.name)
         self._types[new_type.name] = new_type
         return new_type
-
-    def derive_type(self, name: str, derived_from: ConstructableType, also_implements: List[Trait]) -> ProtocolType:
-        """
-        Define a new derived type for this protocol.
-        The type constructor is described in Section 3.3.5 of the IR specification.
-
-        Parameters:
-          self            - the protocol in which the new type is defined
-          name            - the name of the new type
-          derived_from    - the type that the new type is derived from
-          also_implements - additional traits that are implemented
-        """
-        self._check_typename(name)
-        self._types[name]         = copy(derived_from)
-        self._types[name].name    = name
-        self._types[name].methods = copy(derived_from.methods)
-        for trait in also_implements:
-            self._types[name].implement_trait(trait)
-        return self._types[name]
 
     def define_pdu(self, pdu: str) -> None:
         """
