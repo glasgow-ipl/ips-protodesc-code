@@ -591,7 +591,10 @@ class Protocol(InternalType, ConstructableType):
         self._funcs = []
         self._context = Context("Context")
         self._pdus = []
-        self.add_type(BitString("DataUnit", None))
+        # data_size is a field in the context, to be set to the size of incoming PDUs
+        self._context.add_field(ContextField("data_size", Number()))
+        # DataUnit is the type that represents incoming PDUs, and is sized to data_size
+        self.add_type(BitString("DataUnit", ContextAccessExpression(self._context, "data_size")))
 
     def _check_typename(self, name: str):
         if name in self._types:
