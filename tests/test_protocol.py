@@ -291,7 +291,56 @@ class TestProtocol(unittest.TestCase):
 
         self.assertTrue(isinstance(const_expr, ConstantExpression))
         self.assertTrue(const_expr.result_type(None), Number())
-
+    
+    def test_synthesise(self):
+        protocol = Protocol()
+        
+        # define types
+        seqnum_trans = BitString("SeqNumTrans", ConstantExpression(Number(), 16))
+        seqnum = BitString("SeqNum", ConstantExpression(Number(), 16))
+        timestamp = BitString("Timestamp", ConstantExpression(Number(), 32))
+        transform_seq = Function("transform_seq", [Parameter("seq", seqnum)], seqnum_trans)
+        
+        protocol.add_type(seqnum_trans)
+        protocol.add_type(seqnum)
+        protocol.add_type(timestamp)
+        protocol.add_type(transform_seq)
+        
+        # define fields
+        seq = StructField("seq",
+        seqnum,
+        ConstantExpression(Boolean(), "True"))
+        ts  = StructField("ts",
+        timestamp,
+        ConstantExpression(Boolean(), "True"))
+        
+        # add constraints
+        seq_constraint = MethodInvocationExpression(FieldAccessExpression(SelfExpression(), "seq"),
+        "eq",
+        [ArgumentExpression("other", ConstantExpression(seqnum, 47))])
+        
+        # construct TestStruct
+        teststruct = protocol.add_type(Struct("TestStruct", [seq, ts], [seq_constraint], []))
+        
+        protocol.synthesise()
+        
+        res = protocol.get_type("TestStruct")
+        res = cast(Struct, res)
+        # parse_from
+        self.assertTrue(isinstance(res.parse_from, Function))
+        self.assertEqual(len(res.parse_from.parameters), 1)
+        self.assertEqual(res.parse_from.parameters[0].param_name, "from")
+        self.assertEqual(res.parse_from.parameters[0].param_type, protocol.get_type("DataUnit"))
+        self.assertTrue(isinstance(res.parse_from.get_return_type(), Option))
+        self.assertEqual(res.parse_from.get_return_type().reference_type, teststruct)
+        # serialise_to
+        self.assertTrue(isinstance(res.serialise_to, Function))
+        self.assertEqual(len(res.serialise_to.parameters), 1)
+        self.assertEqual(res.serialise_to.parameters[0].param_name, "from")
+        self.assertEqual(res.serialise_to.parameters[0].param_type, teststruct)
+        self.assertTrue(isinstance(res.serialise_to.get_return_type(), Option))
+        self.assertEqual(res.serialise_to.get_return_type().reference_type, protocol.get_type("DataUnit"))
+        
 # =================================================================================================
 if __name__ == "__main__":
     unittest.main()

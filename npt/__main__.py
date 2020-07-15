@@ -215,6 +215,11 @@ def main():
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt} failed)")
                 continue
             try:
+                protocol.synthesise()
+            except Exception as e:
+                print(f"Error: could not synthesise protocol ({e})")
+                continue
+            try:
                 formatter.format_protocol(protocol)
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_protocol failed)")

@@ -371,7 +371,6 @@ class RepresentableType(ProtocolType):
         self.size = size
         self.implement_trait(Sized())
 
-
 # -------------------------------------------------------------------------------------------------
 # Representable, primitive types:
 
@@ -402,11 +401,15 @@ class Option(RepresentableType, ConstructableType):
 class Array(RepresentableType, ConstructableType):
     element_type : RepresentableType
     length       : Optional[Expression]
-    
+    parse_from   : Optional["Function"]
+    serialise_to : Optional["Function"]
+
     def __init__(self, name: str, element_type: RepresentableType, length: Optional[Expression]):
         super().__init__(name=name, size=None)
         self.element_type = element_type
         self.length = length
+        self.parse_from = None
+        self.serialise_to = None
         self.implement_trait(Equality())
         self.implement_trait(IndexCollection())
         
@@ -427,7 +430,9 @@ class Struct(RepresentableType, ConstructableType):
     fields      : Dict[str, StructField]
     constraints : List[Expression]
     actions     : List[Expression]
-    
+    parse_from   : Optional["Function"]
+    serialise_to : Optional["Function"]
+
     def __init__(self, name: str, fields: List[StructField], constraints: List[Expression], actions: List[Expression]) -> None:
         super().__init__(name=name)
         self.fields = {}
@@ -439,6 +444,8 @@ class Struct(RepresentableType, ConstructableType):
             self.add_constraint(constraint)
         for action in actions:
             self.add_action(action)
+        self.parse_from = None
+        self.serialise_to = None
         self.implement_trait(Equality())
     
     def add_field(self, field: StructField) -> None:
@@ -468,11 +475,15 @@ class Struct(RepresentableType, ConstructableType):
 
 
 class Enum(RepresentableType, ConstructableType):
-    variants : List[RepresentableType]
-    
+    variants     : List[RepresentableType]
+    parse_from   : Optional["Function"]
+    serialise_to : Optional["Function"]
+
     def __init__(self, name: str, variants: List[RepresentableType]) -> None:
         super().__init__(name=name, size=None)
         self.variants = variants
+        self.parse_from   = None
+        self.serialise_to = None
 
 
 # -------------------------------------------------------------------------------------------------
@@ -638,6 +649,20 @@ class Protocol(InternalType, ConstructableType):
         assert pdu in self._types
         assert isinstance(self._types[pdu], RepresentableType)
         self._pdus.append(pdu)
+
+    def synthesise(self) -> None:
+        for ptype in self._types.values():
+            if isinstance(ptype, Struct) or isinstance(ptype, Array) or isinstance(ptype, Enum):
+                if ptype.parse_from is None:
+                    pf_func = Function(f"parse_to_{ptype.name.lower()}",
+                                        [Parameter("from", self.get_type("DataUnit"))],
+                                        Option("PTReturn", ptype))
+                    ptype.parse_from = pf_func
+                if ptype.serialise_to is None:
+                    st_func = Function(f"serialise_from_{ptype.name.lower()}",
+                                        [Parameter("from", ptype)],
+                                        Option("STReturn", cast(RepresentableType, self.get_type("DataUnit"))))
+                    ptype.serialise_to = st_func
 
     def get_protocol_name(self) -> Optional[str]:
         return self.name
