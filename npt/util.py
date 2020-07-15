@@ -36,6 +36,7 @@ import json
 import requests
 import re
 import functools
+import sys
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Tuple, Dict, Optional
@@ -486,7 +487,7 @@ class OptionContainer:
             assert ofmt in output_formats, f"output fmt {ofmt} not in {output_formats}"
 
 
-def parse_cmdline( unittests : Optional[str] = None ) -> Tuple[argparse.ArgumentParser,OptionContainer]:
+def parse_cmdline( arglist : List[str] ) -> Tuple[argparse.Namespace,OptionContainer]:
     ap = argparse.ArgumentParser(description=f"Parse ietf drafts and rfcs "
                                  f"and autogenerate protocol parsers")
 
@@ -544,10 +545,7 @@ def parse_cmdline( unittests : Optional[str] = None ) -> Tuple[argparse.Argument
              f"draft format : draft[-rev][.extn]."
              f"rfc format : rfc[.extn]")
 
-    if unittests == None : 
-        _obj = ap.parse_args()
-    else : 
-        _obj = ap.parse_args(unittests.split())
+    _obj = ap.parse_args(arglist)
 
     opt = OptionContainer(pathlib.Path(_obj.dir[0]),
                           DownloadOptions(force=_obj.force),
@@ -606,7 +604,8 @@ def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionCon
 
 
 def read_usr_opts() -> OptionContainer :
-    ap_ns, opts = parse_cmdline() 
+    args = sys.argv.copy() 
+    ap_ns, opts = parse_cmdline(args) 
     return setup_opts( ap_ns , opts)
 
 
