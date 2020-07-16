@@ -102,7 +102,6 @@ def dfs_constantexpr(formatter: Formatter, expr: ConstantExpression) -> Any:
 def dfs_struct(struct: Struct, type_names:List[str]):
     for field in struct.get_fields():
         dfs_protocoltype(field.field_type, type_names)
-        arr
 
 def dfs_array(array: Array, type_names:List[str]):
     dfs_protocoltype(array.element_type, type_names)
