@@ -29,7 +29,18 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-pipenv run pytest --junitxml=test-results/protocol-tests.xml tests/test_protocol.py
-pipenv run pytest --junitxml=test-results/parser-tests.xml tests/test_parsers.py
-#pipenv run pytest --junitxml=test-results/code-generator-tests.xml tests/output_formatters/test_code_generator.py
+echo "*** Running pytest..."
+pytest --junitxml=test-results/protocol-tests.xml tests/test_protocol.py
+pytest --junitxml=test-results/parser-tests.xml tests/test_parsers.py
+echo "^^^ pytest finished"
+
+echo "*** Running coverage..."
+coverage run --source npt tests/test_protocol.py 
+coverage run -a --source npt tests/test_parsers.py
+coverage report
+coverage html
+echo "^^^ coverage finished"
+
+echo "*** Running mypy..."
 mypy npt/*.py --junit-xml test-results/npt-typecheck.xml
+echo "^^^ mypy finished"
