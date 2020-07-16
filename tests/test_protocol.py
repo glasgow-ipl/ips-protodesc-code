@@ -265,6 +265,195 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(numberrepresentable_trait.methods[0].parameters[0].param_type, None)
         self.assertEqual(numberrepresentable_trait.methods[0].return_type, Number())   
 
+    # =============================================================================================
+    # Test cases for expressions:
+    
+    def test_expression(self):
+        with self.assertRaises(TypeError) as expr_abc_exception:
+            expr = Expression()
+        
+        self.assertEqual(str(expr_abc_exception.exception), "Can't instantiate abstract class Expression with abstract methods result_type")
+
+
+    def test_argument_expression(self):
+        argument_expr = ArgumentExpression("Test", ConstantExpression(Nothing(), None))
+        
+        self.assertEqual(argument_expr.arg_name, "Test")
+        self.assertEqual(argument_expr.arg_value, ConstantExpression(Nothing(), None))
+        self.assertEqual(argument_expr.result_type(None), Nothing())
+
+
+    def test_method_invocation_expression(self):
+        methodinvocation_expression = MethodInvocationExpression(ConstantExpression(Number(), 1), "plus", [ArgumentExpression("other", ConstantExpression(Number(), 1))])
+        
+        self.assertEqual(methodinvocation_expression.target, ConstantExpression(Number(), 1))
+        self.assertEqual(methodinvocation_expression.method_name, "plus")
+        self.assertEqual(methodinvocation_expression.arg_exprs, [ArgumentExpression("other", ConstantExpression(Number(), 1))])
+        self.assertEqual(methodinvocation_expression.result_type(None), Number())
+
+    
+    def test_method_invocation_expression_invalidmethodname(self):
+        with self.assertRaises(ProtocolTypeError) as pte:
+            methodinvocation_expression = MethodInvocationExpression(ConstantExpression(Number(), 1), "InvalidName", [ArgumentExpression("other", ConstantExpression(Number(), 1))])
+        
+        self.assertEqual(str(pte.exception), "Method InvalidName: invalid name")
+
+
+    def test_method_invocation_expression_notimplemented(self):
+        methodinvocation_expression = MethodInvocationExpression(ConstantExpression(Number(), 1), "not_implemented", [ArgumentExpression("other", ConstantExpression(Number(), 1))])
+
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = methodinvocation_expression.result_type(None)
+
+        self.assertEqual(str(pte.exception), "Number<::Value Equality Ordinal ArithmeticOps> and its parents do not implement the not_implemented method")
+
+
+    def test_method_invocation_expression_invalidargs_name(self):
+        methodinvocation_expression = MethodInvocationExpression(ConstantExpression(Number(), 1), "plus", [ArgumentExpression("invalid_arg", ConstantExpression(Number(), 1))])
+
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = methodinvocation_expression.result_type(None)
+
+        self.assertEqual(str(pte.exception), "Method plus: invalid arguments")
+
+
+    def test_method_invocation_expression_invalidargs_type(self):
+        methodinvocation_expression = MethodInvocationExpression(ConstantExpression(Number(), 1), "plus", [ArgumentExpression("other", ConstantExpression(Nothing(), None))])
+
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = methodinvocation_expression.result_type(None)
+
+        self.assertEqual(str(pte.exception), "Method plus: invalid arguments")
+
+
+    def test_function_invocation_expression(self):
+        function = Function("test", [Parameter("param", Nothing())], Nothing())
+        functioninvocation_expression = FunctionInvocationExpression(function, [ArgumentExpression("param", ConstantExpression(Nothing(), None))])
+        
+        self.assertEqual(functioninvocation_expression.func, function)
+        self.assertEqual(functioninvocation_expression.arg_exprs, [ArgumentExpression("param", ConstantExpression(Nothing(), None))])
+        self.assertEqual(functioninvocation_expression.result_type(None), Nothing())
+
+
+    def test_function_invocation_expression_invalidargs_name(self):
+        function = Function("test", [Parameter("param", Nothing())], Nothing())
+        functioninvocation_expression = FunctionInvocationExpression(function, [ArgumentExpression("invalid_arg", ConstantExpression(Nothing(), None))])
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = functioninvocation_expression.result_type(None)
+            
+        self.assertEqual(str(pte.exception), "Function test: invalid arguments")
+
+
+    def test_function_invocation_expression_invalidargs_type(self):
+        function = Function("test", [Parameter("param", Nothing())], Nothing())
+        functioninvocation_expression = FunctionInvocationExpression(function, [ArgumentExpression("param", ConstantExpression(Number(), 1))])
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = functioninvocation_expression.result_type(None)
+            
+        self.assertEqual(str(pte.exception), "Function test: invalid arguments")
+
+
+    def test_field_access_expression(self):
+        struct = Struct("Test", [StructField("testfield", Nothing())], [], [])
+        fieldaccess_expression = FieldAccessExpression(ConstantExpression(struct, None), "testfield")
+        
+        self.assertEqual(fieldaccess_expression.target, ConstantExpression(struct, None))
+        self.assertEqual(fieldaccess_expression.field_name, "testfield")
+        self.assertEqual(fieldaccess_expression.result_type(None), Nothing())
+
+
+    def test_field_access_expression_not_a_struct(self):
+        fieldaccess_expression = FieldAccessExpression(ConstantExpression(Nothing(), None), "testfield")
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = fieldaccess_expression.result_type(None)
+        
+        self.assertEqual(str(pte.exception), "Cannot access fields in object of type Nothing<::Sized>")
+
+
+    def test_field_access_expression_not_a_field(self):
+        struct = Struct("Test", [StructField("testfield", Nothing())], [], [])
+        fieldaccess_expression = FieldAccessExpression(ConstantExpression(struct, None), "notafield")
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = fieldaccess_expression.result_type(None)
+        
+        self.assertEqual(str(pte.exception), "Test has no field named notafield")
+
+
+    def test_context_access_expression(self):
+        context = Context("Context")
+        context.add_field(ContextField("testfield", Number()))
+        contextaccess_expression = ContextAccessExpression(context, "testfield")
+        
+        self.assertEqual(contextaccess_expression.context, context)
+        self.assertEqual(contextaccess_expression.field_name, "testfield")
+        self.assertEqual(contextaccess_expression.result_type(None), Number())
+
+
+    def test_context_access_expression_not_a_field(self):
+        context = Context("Context")
+        context.add_field(ContextField("testfield", Number()))
+        contextaccess_expression = ContextAccessExpression(context, "notafield")
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = contextaccess_expression.result_type(None)
+        
+        self.assertEqual(str(pte.exception), "Context has no field named notafield")
+
+
+    def test_if_else_expression(self):
+        ifelse_expression = IfElseExpression(ConstantExpression(Boolean(), True), ConstantExpression(Number(), 1), ConstantExpression(Number(), 2))
+        
+        self.assertEqual(ifelse_expression.condition, ConstantExpression(Boolean(), True))
+        self.assertEqual(ifelse_expression.if_true, ConstantExpression(Number(), 1))
+        self.assertEqual(ifelse_expression.if_false, ConstantExpression(Number(), 2))
+        self.assertEqual(ifelse_expression.result_type(None), Number())
+        
+
+    def test_if_else_expression_not_boolean_cond(self):
+        ifelse_expression = IfElseExpression(ConstantExpression(Number(), 3), ConstantExpression(Number(), 1), ConstantExpression(Number(), 2))
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = ifelse_expression.result_type(None)
+            
+        self.assertEqual(str(pte.exception), "Cannot create IfElseExpression: condition is not boolean")
+
+
+    def test_if_else_expression_branch_mismatch(self):
+        ifelse_expression = IfElseExpression(ConstantExpression(Boolean(), True), ConstantExpression(Number(), 1), ConstantExpression(Nothing(), None))
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = ifelse_expression.result_type(None)
+            
+        self.assertEqual(str(pte.exception), "Cannot create IfElseExpression: branch types differ")
+
+
+    def test_self_expression(self):
+        self_expression = SelfExpression()
+        
+        self.assertEqual(self_expression.result_type(Number()), Number())
+
+        
+    def test_self_expression_no_container(self):
+        self_expression = SelfExpression()
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = self_expression.result_type(None)
+            
+        self.assertEqual(str(pte.exception), "Cannot evaluate Self expression result type without a containing type")
+
+
+    def test_constant_expression(self):
+        constant_expression = ConstantExpression(Number(), 1)
+        
+        self.assertEqual(constant_expression.constant_type, Number())
+        self.assertEqual(constant_expression.constant_value, 1)
+        self.assertEqual(constant_expression.result_type(None), Number())
+
+            
 # =================================================================================================
 if __name__ == "__main__":
     unittest.main()

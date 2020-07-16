@@ -174,20 +174,20 @@ class MethodInvocationExpression(Expression):
     def result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         args   = [Argument(arg.arg_name, arg.result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]
         result = self.target.result_type(containing_type)
-        if result is None:
-            raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
         method = result.get_method(self.method_name)
         if not method.is_method_accepting(result, args):
-            raise ProtocolTypeError("Method {}: invalid arguments".format(self.method_name))
+            raise ProtocolTypeError(f"Method {self.method_name}: invalid arguments")
         return method.get_return_type()
 
 
 @dataclass(frozen=True)
 class FunctionInvocationExpression(Expression):
-    func       : "Function"
-    args_exprs : List[ArgumentExpression]
+    func      : "Function"
+    arg_exprs : List[ArgumentExpression]
 
     def result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
+        if not self.func.accepts_arguments([Argument(arg.arg_name, arg.result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]):
+            raise ProtocolTypeError(f"Function {self.func.name}: invalid arguments")
         return self.func.get_return_type()
 
 
@@ -205,7 +205,7 @@ class FieldAccessExpression(Expression):
             struct = cast(Struct, self.target.result_type(containing_type))
             return struct.field(self.field_name).field_type
         else:
-            raise ProtocolTypeError("Cannot access fields in object of type {}".format(self.target.result_type(containing_type)))
+            raise ProtocolTypeError(f"Cannot access fields in object of type {self.target.result_type(containing_type)}")
 
 
 @dataclass(frozen=True)
@@ -421,11 +421,18 @@ class Array(RepresentableType, ConstructableType):
             self.size = MethodInvocationExpression(element_type.size, "mul", [ArgumentExpression("other", self.length)])
 
 
-@dataclass(frozen=True)
 class StructField():
     field_name: str
     field_type: "RepresentableType"
-    is_present: Optional[Expression]
+    is_present: Expression
+    
+    def __init__(self, field_name: str, field_type: "RepresentableType", is_present: Optional[Expression] = None):
+        self.field_name = field_name
+        self.field_type = field_type
+        if is_present is not None:
+            self.is_present = is_present
+        else:
+            self.is_present = ConstantExpression(Boolean(), True)
 
 
 class Struct(RepresentableType, ConstructableType):
@@ -523,8 +530,8 @@ class Argument:
 
 
 class Function(InternalType, ConstructableType):
-    parameters: List[Parameter]
-    return_type: Optional[ProtocolType]
+    parameters  : List[Parameter]
+    return_type : Optional[ProtocolType]
     
     def __init__(self, name: str, parameters: List[Parameter], return_type : Optional[ProtocolType]):
         super().__init__(name=name)
@@ -535,29 +542,27 @@ class Function(InternalType, ConstructableType):
         if re.search(FUNC_NAME_REGEX, self.name) is None:
             raise ProtocolTypeError(f"Cannot create type {self.name}: malformed name")
 
-    def is_method(self, self_type: "ProtocolType") -> bool:
-        if self.parameters[0].param_name != "self":
-            return False
-        if self.parameters[0].param_type != self_type:
-            return False
-        return True
+    def is_method(self) -> bool:
+        return self.parameters[0].param_name == "self"
 
+    def accepts_arguments(self, arguments: List[Argument]) -> bool:
+        """
+        Check if this function accepts the specified arguments
+        """
+        for (p, a) in zip(self.parameters, arguments):
+            if (p.param_name != a.arg_name):
+                return False
+            if (p.param_type != a.arg_type) and a.arg_type is not None and not a.arg_type.is_a(p.param_type):
+                return False
+        return True
+    
     def is_method_accepting(self, self_type: "ProtocolType", arguments: List[Argument]) -> bool:
         """
         Check if this function is a method and accepts the specified arguments when invoked on an
         object of type self_type
         """
-        if not self.is_method(self_type):
-            return False
-        for (p, a) in zip(self.parameters[1:], arguments):
-            pname = p.param_name
-            ptype = p.param_type if p.param_type is not None else self_type
-            if (pname != a.arg_name):
-                return False
-            if (ptype != a.arg_type) and a.arg_type is not None and not a.arg_type.is_a(ptype):
-                return False
-        return True
-    
+        return self.is_method() and self.accepts_arguments([Argument("self", self_type, None)] + arguments)
+        
     def get_return_type(self) -> ProtocolType:
         if self.return_type is None:
             return Nothing()

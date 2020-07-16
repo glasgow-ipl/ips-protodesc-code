@@ -75,7 +75,7 @@ def dfs_methodinvocationexpr(formatter: Formatter, expr: MethodInvocationExpress
     return formatter.format_methodinvocationexpr(target, expr.method_name, arg_exprs)
 
 def dfs_functioninvocationexpr(formatter: Formatter, expr: FunctionInvocationExpression) -> Any:
-    args_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.args_exprs]
+    args_exprs = [dfs_expression(formatter, arg_expr) for arg_expr in expr.arg_exprs]
     return formatter.format_functioninvocationexpr(expr.func.name, args_exprs)
 
 def dfs_fieldaccessexpr(formatter: Formatter, expr: FieldAccessExpression) -> Any:
