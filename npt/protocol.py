@@ -58,7 +58,7 @@ class Singleton(type):
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
             cls._instances[cls].__post_init__()
         return cls._instances[cls]
-    
+
     def __post_init__(self):
         pass
 
@@ -149,7 +149,7 @@ class NumberRepresentable(Trait):
 class Expression(ABC):
     @abstractmethod
     def result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
-        raise ProtocolTypeError("Expression MUST be subclassed")
+        """ Expression is an abstract class whose sub-classes must implement result_type() """
 
 
 @dataclass(frozen=True)
@@ -316,6 +316,8 @@ class PrimitiveType(ProtocolType, metaclass=Singleton):
     def __post_init__(self):
         pass
 
+    def __eq__(self, obj):
+        return isinstance(obj, type(self))
 
 class ConstructableType(ProtocolType):
     """
