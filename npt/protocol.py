@@ -66,7 +66,7 @@ class Singleton(type):
 # Traits:
 
 @dataclass(frozen=True)
-class Trait(metaclass=Singleton):
+class Trait:
     name    : str
     methods : List["Function"]
 
@@ -74,7 +74,7 @@ class Trait(metaclass=Singleton):
         pass
 
 
-class Value(Trait):
+class Value(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("Value", [
             Function("get", [Parameter("self", None)], None),
@@ -82,14 +82,14 @@ class Value(Trait):
         ])
 
 
-class Sized(Trait):
+class Sized(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("Sized", [
             Function("size", [Parameter("self", None)], Number())
         ])
 
 
-class IndexCollection(Trait):
+class IndexCollection(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("IndexCollection", [
             Function("get",    [Parameter("self", None), Parameter("index", Number())], None),
@@ -98,7 +98,7 @@ class IndexCollection(Trait):
         ])
 
 
-class Equality(Trait):
+class Equality(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("Equality", [
             Function("eq", [Parameter("self", None), Parameter("other", None)], Boolean()),
@@ -106,7 +106,7 @@ class Equality(Trait):
         ])
 
 
-class Ordinal(Trait):
+class Ordinal(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("Ordinal", [
             Function("lt", [Parameter("self", None), Parameter("other", None)], Boolean()),
@@ -116,7 +116,7 @@ class Ordinal(Trait):
         ])
 
 
-class BooleanOps(Trait):
+class BooleanOps(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("BooleanOps", [
             Function("and", [Parameter("self", None), Parameter("other", None)], Boolean()),
@@ -125,7 +125,7 @@ class BooleanOps(Trait):
         ])
 
 
-class ArithmeticOps(Trait):
+class ArithmeticOps(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("ArithmeticOps", [
             Function("plus",     [Parameter("self", None), Parameter("other", None)], None),
@@ -137,7 +137,7 @@ class ArithmeticOps(Trait):
         ])
 
 
-class NumberRepresentable(Trait):
+class NumberRepresentable(Trait, metaclass=Singleton):
     def __init__(self):
         super().__init__("NumberRepresentable", [
             Function("to_number", [Parameter("self", None)], Number())
@@ -325,11 +325,12 @@ class ConstructableType(ProtocolType):
     """
     name: str
     
-    def __init__(self, name: Optional[str], **kwargs):
+    def __init__(self, name: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         if name is None:
             raise ProtocolTypeError(f"Cannot create type: types must be named")
         self.name = name
+        self._validate_typename()
 
     def _validate_typename(self):
         if re.search(TYPE_NAME_REGEX, self.name) is None:

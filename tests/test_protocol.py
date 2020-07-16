@@ -453,7 +453,228 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(constant_expression.constant_value, 1)
         self.assertEqual(constant_expression.result_type(None), Number())
 
+    # =============================================================================================
+    # Test cases for protocol types:
+    
+    def test_protocol_type_implement_duplicate_trait(self):
+        pt = Number()
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = pt.implement_trait(Value())
             
+        self.assertEqual(str(pte.exception), "Type Number<::Value Equality Ordinal ArithmeticOps Test> already implements trait Value")
+
+        
+    def test_protocol_type_implement_duplicate_method(self):
+        test_trait = Trait("Test", [Function("get", [], Nothing())])
+        pt = Number()
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = pt.implement_trait(test_trait)
+        
+        self.assertEqual(str(pte.exception), "Type Number<::Value Equality Ordinal ArithmeticOps Test> already implements a method get")
+
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for BitStrings:
+    
+    def test_bitstring(self):
+        bitstring = BitString("Test", ConstantExpression(Number(), 1))
+        
+        self.assertEqual(bitstring.name, "Test")
+        self.assertEqual(bitstring.size, ConstantExpression(Number(), 1))
+        
+        self.assertEqual(str(bitstring), "BitString<Test::Sized Value Equality NumberRepresentable>")
+        
+        self.assertEqual(len(bitstring.traits), 4)
+        self.assertEqual(bitstring.traits[0], Sized())
+        self.assertEqual(bitstring.traits[1], Value())
+        self.assertEqual(bitstring.traits[2], Equality())
+        self.assertEqual(bitstring.traits[3], NumberRepresentable())
+        
+        self.assertEqual(len(bitstring.methods), 6)
+        
+        self.assertTrue(isinstance(bitstring.methods["get"], Function))
+        self.assertEqual(bitstring.methods["get"].name, "get")
+        self.assertEqual(len(bitstring.methods["get"].parameters), 1)
+        self.assertEqual(bitstring.methods["get"].parameters[0].param_name, "self")
+        self.assertEqual(bitstring.methods["get"].parameters[0].param_type, bitstring)
+        self.assertEqual(bitstring.methods["get"].return_type, bitstring)         
+
+        self.assertTrue(isinstance(bitstring.methods["set"], Function))
+        self.assertEqual(bitstring.methods["set"].name, "set")
+        self.assertEqual(len(bitstring.methods["set"].parameters), 2)
+        self.assertEqual(bitstring.methods["set"].parameters[0].param_name, "self")
+        self.assertEqual(bitstring.methods["set"].parameters[0].param_type, bitstring)
+        self.assertEqual(bitstring.methods["set"].parameters[1].param_name, "value")
+        self.assertEqual(bitstring.methods["set"].parameters[1].param_type, bitstring)
+        self.assertEqual(bitstring.methods["set"].return_type, Nothing())         
+        
+        self.assertTrue(isinstance(bitstring.methods["size"], Function))
+        self.assertEqual(bitstring.methods["size"].name, "size")
+        self.assertEqual(len(bitstring.methods["size"].parameters), 1)
+        self.assertEqual(bitstring.methods["size"].parameters[0].param_name, "self")
+        self.assertEqual(bitstring.methods["size"].parameters[0].param_type, bitstring)
+        self.assertEqual(bitstring.methods["size"].return_type, Number())         
+
+        self.assertTrue(isinstance(bitstring.methods["eq"], Function))
+        self.assertEqual(bitstring.methods["eq"].name, "eq")
+        self.assertEqual(len(bitstring.methods["eq"].parameters), 2)
+        self.assertEqual(bitstring.methods["eq"].parameters[0].param_name, "self")
+        self.assertEqual(bitstring.methods["eq"].parameters[0].param_type, bitstring)
+        self.assertEqual(bitstring.methods["eq"].parameters[1].param_name, "other")
+        self.assertEqual(bitstring.methods["eq"].parameters[1].param_type, bitstring)
+        self.assertEqual(bitstring.methods["eq"].return_type, Boolean())             
+        
+        self.assertTrue(isinstance(bitstring.methods["ne"], Function))
+        self.assertEqual(bitstring.methods["ne"].name, "ne")
+        self.assertEqual(len(bitstring.methods["ne"].parameters), 2)
+        self.assertEqual(bitstring.methods["ne"].parameters[0].param_name, "self")
+        self.assertEqual(bitstring.methods["ne"].parameters[0].param_type, bitstring)
+        self.assertEqual(bitstring.methods["ne"].parameters[1].param_name, "other")
+        self.assertEqual(bitstring.methods["ne"].parameters[1].param_type, bitstring)
+        self.assertEqual(bitstring.methods["ne"].return_type, Boolean())         
+
+        self.assertTrue(isinstance(bitstring.methods["to_number"], Function))
+        self.assertEqual(bitstring.methods["to_number"].name, "to_number")
+        self.assertEqual(len(bitstring.methods["to_number"].parameters), 1)
+        self.assertEqual(bitstring.methods["to_number"].parameters[0].param_name, "self")
+        self.assertEqual(bitstring.methods["to_number"].parameters[0].param_type, bitstring)
+        self.assertEqual(bitstring.methods["to_number"].return_type, Number())
+
+    
+    def test_bitstring_no_name(self):
+        with self.assertRaises(ProtocolTypeError) as pte:
+            bitstring = BitString(None, ConstantExpression(Number(), 1))
+            
+        self.assertEqual(str(pte.exception), "Cannot create type: types must be named")
+
+
+    def test_bitstring_malformed_name(self):
+        with self.assertRaises(ProtocolTypeError) as pte:
+            bitstring = BitString("malformedname", ConstantExpression(Number(), 1))
+            
+        self.assertEqual(str(pte.exception), "Cannot create type malformedname: malformed name")
+
+    def test_bitstring_derive_from(self):
+        test_trait = Trait("TestTrait", [Function("testfunc", [], Nothing())])
+
+        bitstring = BitString("Test", ConstantExpression(Number(), 1))
+        bitstring2 = bitstring.derive_from("Tester", [test_trait])
+
+        self.assertEqual(len(bitstring.traits), 5)
+        self.assertEqual(bitstring.traits[0], Sized())
+        self.assertEqual(bitstring.traits[1], Value())
+        self.assertEqual(bitstring.traits[2], Equality())
+        self.assertEqual(bitstring.traits[3], NumberRepresentable())
+        self.assertEqual(bitstring.traits[4], test_trait)
+
+
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for Option:
+
+    def test_option(self):
+        bitstring = BitString("Test", ConstantExpression(Number(), 1))
+        option = Option("TestOption", bitstring)
+        
+        self.assertEqual(option.name, "TestOption")
+        self.assertEqual(option.size, ConstantExpression(Number(), 1))
+        self.assertEqual(option.reference_type, bitstring)
+
+        self.assertEqual(len(option.traits), 1)
+        self.assertEqual(option.traits[0], Sized())
+
+        self.assertEqual(len(option.methods), 1)
+
+        self.assertTrue(isinstance(option.methods["size"], Function))
+        self.assertEqual(option.methods["size"].name, "size")
+        self.assertEqual(len(option.methods["size"].parameters), 1)
+        self.assertEqual(option.methods["size"].parameters[0].param_name, "self")
+        self.assertEqual(option.methods["size"].parameters[0].param_type, option)
+        self.assertEqual(option.methods["size"].return_type, Number())  
+
+
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for Array:
+    
+    def test_array(self):
+        bitstring = BitString("Test", ConstantExpression(Number(), 1))
+        array = Array("TestArray", bitstring, ConstantExpression(Number(), 12))
+        
+        self.assertEqual(array.name, "TestArray")
+        self.assertEqual(array.element_type, bitstring)
+        self.assertEqual(array.length, ConstantExpression(Number(), 12))
+        self.assertEqual(array.size, MethodInvocationExpression(ConstantExpression(Number(), 1), "mul", [ArgumentExpression("other", ConstantExpression(Number(), 12))]))
+        self.assertIs(array.parse_from, None)
+        self.assertIs(array.serialise_to, None)
+
+        self.assertEqual(len(array.traits), 3)
+        self.assertEqual(array.traits[0], Sized())
+        self.assertEqual(array.traits[1], Equality())
+        self.assertEqual(array.traits[2], IndexCollection())
+
+        self.assertEqual(len(array.methods), 6)
+
+        self.assertTrue(isinstance(array.methods["size"], Function))
+        self.assertEqual(array.methods["size"].name, "size")
+        self.assertEqual(len(array.methods["size"].parameters), 1)
+        self.assertEqual(array.methods["size"].parameters[0].param_name, "self")
+        self.assertEqual(array.methods["size"].parameters[0].param_type, array)
+        self.assertEqual(array.methods["size"].return_type, Number())  
+
+        self.assertTrue(isinstance(array.methods["eq"], Function))
+        self.assertEqual(array.methods["eq"].name, "eq")
+        self.assertEqual(len(array.methods["eq"].parameters), 2)
+        self.assertEqual(array.methods["eq"].parameters[0].param_name, "self")
+        self.assertEqual(array.methods["eq"].parameters[0].param_type, array)
+        self.assertEqual(array.methods["eq"].parameters[1].param_name, "other")
+        self.assertEqual(array.methods["eq"].parameters[1].param_type, array)
+        self.assertEqual(array.methods["eq"].return_type, Boolean())             
+        
+        self.assertTrue(isinstance(array.methods["ne"], Function))
+        self.assertEqual(array.methods["ne"].name, "ne")
+        self.assertEqual(len(array.methods["ne"].parameters), 2)
+        self.assertEqual(array.methods["ne"].parameters[0].param_name, "self")
+        self.assertEqual(array.methods["ne"].parameters[0].param_type, array)
+        self.assertEqual(array.methods["ne"].parameters[1].param_name, "other")
+        self.assertEqual(array.methods["ne"].parameters[1].param_type, array)
+        self.assertEqual(array.methods["ne"].return_type, Boolean()) 
+
+        self.assertTrue(isinstance(array.methods["get"], Function))
+        self.assertEqual(array.methods["get"].name, "get")
+        self.assertEqual(len(array.methods["get"].parameters), 2)
+        self.assertEqual(array.methods["get"].parameters[0].param_name, "self")
+        self.assertEqual(array.methods["get"].parameters[0].param_type, array)
+        self.assertEqual(array.methods["get"].parameters[1].param_name, "index")
+        self.assertEqual(array.methods["get"].parameters[1].param_type, Number())
+        self.assertEqual(array.methods["get"].return_type, array) # FIXME: this should be array.element_type
+
+        self.assertTrue(isinstance(array.methods["set"], Function))
+        self.assertEqual(array.methods["set"].name, "set")
+        self.assertEqual(len(array.methods["set"].parameters), 3)
+        self.assertEqual(array.methods["set"].parameters[0].param_name, "self")
+        self.assertEqual(array.methods["set"].parameters[0].param_type, array)
+        self.assertEqual(array.methods["set"].parameters[1].param_name, "index")
+        self.assertEqual(array.methods["set"].parameters[1].param_type, Number())
+        self.assertEqual(array.methods["set"].parameters[2].param_name, "value")
+        self.assertEqual(array.methods["set"].parameters[2].param_type, array) # FIXME: this should be array.element_type
+        self.assertEqual(array.methods["set"].return_type, array) # FIXME: this should be Nothing()  
+
+        self.assertTrue(isinstance(array.methods["length"], Function))
+        self.assertEqual(array.methods["length"].name, "length")
+        self.assertEqual(len(array.methods["length"].parameters), 1)
+        self.assertEqual(array.methods["length"].parameters[0].param_name, "self")
+        self.assertEqual(array.methods["length"].parameters[0].param_type, array)
+        self.assertEqual(array.methods["length"].return_type, Number())
+
+
+    def test_array_nolen_nosize(self):
+        bitstring = BitString("Test", None)
+        with self.assertRaises(ProtocolTypeError) as pte:
+            array = Array("TestArray", bitstring, None)
+        
+        self.assertEqual(str(pte.exception), "Cannot construct Array: one of length or element size must be specified")
+
+
 # =================================================================================================
 if __name__ == "__main__":
     unittest.main()
