@@ -265,9 +265,6 @@ class ProtocolType:
         self.parent = parent
 
     def implement_trait(self, trait: "Trait", type_variables: Dict[TypeVariable, "ProtocolType"] = {}) -> None:
-        self._implement_trait(trait, type_variables)
-
-    def _implement_trait(self, trait: "Trait", type_variables: Dict[TypeVariable, "ProtocolType"] = {}) -> None:
         type_variables = {TypeVariable("T") : self, **type_variables}
         if trait in self.traits:
             raise ProtocolTypeError(f"Type {self} already implements trait {trait.name}")
@@ -391,7 +388,7 @@ class RepresentableType(ProtocolType):
     def __init__(self, size: Optional[Expression] = None, **kwargs):
         super().__init__(**kwargs)
         self.size = size
-        self._implement_trait(Sized())
+        ProtocolType.implement_trait(self, Sized())
 
 # -------------------------------------------------------------------------------------------------
 # Representable, primitive types:
@@ -409,9 +406,9 @@ class Nothing(RepresentableType, PrimitiveType):
 class BitString(RepresentableType, ConstructableType):
     def __init__(self, name: str, size: Optional[Expression]):
         super().__init__(name=name, size=size)
-        self._implement_trait(Value())
-        self._implement_trait(Equality())
-        self._implement_trait(NumberRepresentable())
+        self.implement_trait(Value())
+        self.implement_trait(Equality())
+        self.implement_trait(NumberRepresentable())
 
 
 class Option(RepresentableType, ConstructableType):
@@ -434,8 +431,8 @@ class Array(RepresentableType, ConstructableType):
         self.length = length
         self.parse_from = None
         self.serialise_to = None
-        self._implement_trait(Equality())
-        self._implement_trait(IndexCollection(), {TypeVariable("ET"): element_type})
+        self.implement_trait(Equality())
+        self.implement_trait(IndexCollection(), {TypeVariable("ET"): element_type})
         
         if self.length is None and element_type.size is None:
             raise ProtocolTypeError(f"Cannot construct Array: one of length or element size must be specified")
@@ -479,7 +476,7 @@ class Struct(RepresentableType, ConstructableType):
             self.add_action(action)
         self.parse_from = None
         self.serialise_to = None
-        self._implement_trait(Equality())
+        self.implement_trait(Equality())
     
     def add_field(self, field: StructField) -> None:
         if field.field_name in self.fields:
@@ -522,17 +519,17 @@ class Enum(RepresentableType, ConstructableType):
 
 class Boolean(PrimitiveType, InternalType):
     def __post_init__(self):
-        self._implement_trait(Value())
-        self._implement_trait(Equality())
-        self._implement_trait(BooleanOps())
+        ProtocolType.implement_trait(self, Value())
+        ProtocolType.implement_trait(self, Equality())
+        ProtocolType.implement_trait(self, BooleanOps())
 
 
 class Number(PrimitiveType, InternalType):
     def __post_init__(self):
-        self._implement_trait(Value())
-        self._implement_trait(Equality())
-        self._implement_trait(Ordinal())
-        self._implement_trait(ArithmeticOps())
+        ProtocolType.implement_trait(self, Value())
+        ProtocolType.implement_trait(self, Equality())
+        ProtocolType.implement_trait(self, Ordinal())
+        ProtocolType.implement_trait(self, ArithmeticOps())
 
 # -------------------------------------------------------------------------------------------------
 # Internal, constructable types:
