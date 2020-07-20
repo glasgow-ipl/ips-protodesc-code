@@ -1054,6 +1054,96 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(number.methods["pow"].parameters[1].param_type, number)
         self.assertEqual(number.methods["pow"].return_type, number)
 
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for Function:
+    
+    def test_parameter(self):
+        param = Parameter("test", Nothing())
+        
+        self.assertEqual(param.param_name, "test")
+        self.assertEqual(param.param_type, Nothing())
+    
+    
+    def test_argument(self):
+        arg = Argument("test", Nothing(), None)
+        
+        self.assertEqual(arg.arg_name, "test")
+        self.assertEqual(arg.arg_type, Nothing())
+        self.assertEqual(arg.arg_value, None)
+
+
+    def test_function(self):
+        param = Parameter("testparam", Nothing())
+        func = Function("test", [param], Boolean())
+        
+        self.assertEqual(func.name, "test")
+        self.assertEqual(func.parameters, [param])
+        self.assertEqual(func.return_type, Boolean())
+        
+    
+    def test_function_badname(self):
+        with self.assertRaises(ProtocolTypeError) as pte:
+            func = Function("Test", [], Boolean())
+        
+        self.assertEqual(str(pte.exception), "Cannot create type Test: malformed name")
+
+
+    def test_function_ismethod(self):
+        param = Parameter("self", Nothing())
+        func = Function("test", [param], Boolean())
+        
+        self.assertTrue(func.is_method())
+
+    
+    def test_function_accepts_args(self):
+        param = Parameter("testparam", Nothing())
+        func = Function("test", [param], Boolean())
+        
+        self.assertTrue(func.accepts_arguments([Argument("testparam", Nothing(), None)]))
+        
+    
+    def test_function_accepts_args_wrongtype(self):
+        param = Parameter("testparam", Nothing())
+        func = Function("test", [param], Boolean())
+        
+        self.assertFalse(func.accepts_arguments([Argument("testparam", Number(), 1)]))
+
+
+    def test_function_accepts_args_wrongname(self):
+        param = Parameter("testparam", Nothing())
+        func = Function("test", [param], Boolean())
+        
+        self.assertFalse(func.accepts_arguments([Argument("testparamwrong", Nothing(), None)]))
+
+
+    def test_function_ismethodaccepting(self):
+        param = Parameter("self", Nothing())
+        param2 = Parameter("other", Number())
+        func = Function("test", [param, param2], Boolean())
+        
+        self.assertTrue(func.is_method_accepting(Nothing(), [Argument("other", Number(), 1)]))
+
+
+    def test_function_ismethodaccepting_wrongselftype(self):
+        param = Parameter("self", Nothing())
+        param2 = Parameter("other", Number())
+        func = Function("test", [param, param2], Boolean())
+        
+        self.assertFalse(func.is_method_accepting(Boolean(), [Argument("other", Number(), 1)]))
+
+
+    def test_function_getreturntype(self):
+        func = Function("test", [], Boolean())
+        
+        self.assertTrue(func.get_return_type(), Boolean())
+
+        
+    def test_function_getreturntype_notspecified(self):
+        func = Function("test", [], None)
+        
+        self.assertTrue(func.get_return_type(), Nothing())
+
+
 # =================================================================================================
 if __name__ == "__main__":
     unittest.main()

@@ -73,7 +73,7 @@ class Trait:
     def __post_init__(self):
         pass
         
-    def __eq__(self, other: "Trait") -> bool:
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self))
 
 
