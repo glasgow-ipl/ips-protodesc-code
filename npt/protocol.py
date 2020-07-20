@@ -48,102 +48,92 @@ class ProtocolTypeError(Exception):
         self.reason = reason
 
 # =================================================================================================
-# Singleton metaclass:
-
-class Singleton(type):
-    _instances : Dict["Singleton", "Singleton"] = {}
-
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-            cls._instances[cls].__post_init__()
-        return cls._instances[cls]
-
-    def __post_init__(self):
-        pass
-
-# =================================================================================================
 # Traits:
+
+@dataclass(frozen=True)
+class TypeVariable:
+    name : str
+    
+    def __eq__(self, other: object) -> bool:
+        return isinstance(other, TypeVariable) and self.name == other.name
+
 
 @dataclass(frozen=True)
 class Trait:
     name    : str
     methods : List["Function"]
-
-    def __post_init__(self):
-        pass
         
     def __eq__(self, other: object) -> bool:
         return isinstance(other, type(self))
 
 
-class Value(Trait, metaclass=Singleton):
+class Value(Trait):
     def __init__(self):
         super().__init__("Value", [
-            Function("get", [Parameter("self", None)], None),
-            Function("set", [Parameter("self", None), Parameter("value", None)], Nothing())
+            Function("get", [Parameter("self", TypeVariable("T"))], TypeVariable("T")),
+            Function("set", [Parameter("self", TypeVariable("T")), Parameter("value", TypeVariable("T"))], Nothing())
         ])
 
 
-class Sized(Trait, metaclass=Singleton):
+class Sized(Trait):
     def __init__(self):
         super().__init__("Sized", [
-            Function("size", [Parameter("self", None)], Number())
+            Function("size", [Parameter("self", TypeVariable("T"))], Number())
         ])
 
 
-class IndexCollection(Trait, metaclass=Singleton):
+class IndexCollection(Trait):
     def __init__(self):
         super().__init__("IndexCollection", [
-            Function("get",    [Parameter("self", None), Parameter("index", Number())], None),
-            Function("set",    [Parameter("self", None), Parameter("index", Number()), Parameter("value", None)], None),
-            Function("length", [Parameter("self", None)], Number()),
+            Function("get",    [Parameter("self", TypeVariable("T")), Parameter("index", Number())], TypeVariable("T")),
+            Function("set",    [Parameter("self", TypeVariable("T")), Parameter("index", Number()), Parameter("value", TypeVariable("T"))], TypeVariable("T")),
+            Function("length", [Parameter("self", TypeVariable("T"))], Number()),
         ])
 
 
-class Equality(Trait, metaclass=Singleton):
+class Equality(Trait):
     def __init__(self):
         super().__init__("Equality", [
-            Function("eq", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("ne", [Parameter("self", None), Parameter("other", None)], Boolean())
+            Function("eq", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean()),
+            Function("ne", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean())
         ])
 
 
-class Ordinal(Trait, metaclass=Singleton):
+class Ordinal(Trait):
     def __init__(self):
         super().__init__("Ordinal", [
-            Function("lt", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("le", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("gt", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("ge", [Parameter("self", None), Parameter("other", None)], Boolean())
+            Function("lt", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean()),
+            Function("le", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean()),
+            Function("gt", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean()),
+            Function("ge", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean())
         ])
 
 
-class BooleanOps(Trait, metaclass=Singleton):
+class BooleanOps(Trait):
     def __init__(self):
         super().__init__("BooleanOps", [
-            Function("and", [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("or",  [Parameter("self", None), Parameter("other", None)], Boolean()),
-            Function("not", [Parameter("self", None)], Boolean())
+            Function("and", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean()),
+            Function("or",  [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], Boolean()),
+            Function("not", [Parameter("self", TypeVariable("T"))], Boolean())
         ])
 
 
-class ArithmeticOps(Trait, metaclass=Singleton):
+class ArithmeticOps(Trait):
     def __init__(self):
         super().__init__("ArithmeticOps", [
-            Function("plus",     [Parameter("self", None), Parameter("other", None)], None),
-            Function("minus",    [Parameter("self", None), Parameter("other", None)], None),
-            Function("multiply", [Parameter("self", None), Parameter("other", None)], None),
-            Function("divide",   [Parameter("self", None), Parameter("other", None)], None),
-            Function("modulo",   [Parameter("self", None), Parameter("other", None)], None),
-            Function("pow",      [Parameter("self", None), Parameter("other", None)], None)
+            Function("plus",     [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], TypeVariable("T")),
+            Function("minus",    [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], TypeVariable("T")),
+            Function("multiply", [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], TypeVariable("T")),
+            Function("divide",   [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], TypeVariable("T")),
+            Function("modulo",   [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], TypeVariable("T")),
+            Function("pow",      [Parameter("self", TypeVariable("T")), Parameter("other", TypeVariable("T"))], TypeVariable("T"))
         ])
 
 
-class NumberRepresentable(Trait, metaclass=Singleton):
+class NumberRepresentable(Trait):
     def __init__(self):
         super().__init__("NumberRepresentable", [
-            Function("to_number", [Parameter("self", None)], Number())
+            Function("to_number", [Parameter("self", TypeVariable("T"))], Number())
         ])
 
 # =================================================================================================
@@ -268,10 +258,11 @@ class ProtocolType:
         self.methods = {}
         self.parent = parent
 
-    def implement_trait(self, trait: "Trait") -> None:
-        self._implement_trait(trait)
+    def implement_trait(self, trait: "Trait", type_variables: Dict[TypeVariable, "ProtocolType"] = {}) -> None:
+        self._implement_trait(trait, type_variables)
 
-    def _implement_trait(self, trait: "Trait") -> None:
+    def _implement_trait(self, trait: "Trait", type_variables: Dict[TypeVariable, "ProtocolType"] = {}) -> None:
+        type_variables = {TypeVariable("T") : self, **type_variables}
         if trait in self.traits:
             raise ProtocolTypeError(f"Type {self} already implements trait {trait.name}")
         else:
@@ -280,8 +271,8 @@ class ProtocolType:
                     raise ProtocolTypeError(f"Type {self} already implements a method {method.name}")
                 else:
                     mimpl_name = method.name
-                    mimpl_rt   = method.return_type if method.return_type is not None else self
-                    mimpl_parameters = [Parameter(p.param_name, p.param_type if p.param_type is not None else self) for p in method.parameters]
+                    mimpl_rt   = method.return_type if not isinstance(method.return_type, TypeVariable) else type_variables[method.return_type]
+                    mimpl_parameters = [Parameter(p.param_name, p.param_type if not isinstance(p.param_type, TypeVariable) else type_variables[p.param_type]) for p in method.parameters]
                     self.methods[method.name] = Function(mimpl_name, mimpl_parameters, mimpl_rt)
             self.traits.append(trait)        
 
@@ -312,6 +303,18 @@ class ProtocolType:
 # -------------------------------------------------------------------------------------------------
 # ProtocolType mixins:
 
+class Singleton(type):
+    _instances : Dict["Singleton", "Singleton"] = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls].__post_init__()
+        return cls._instances[cls]
+
+    def __post_init__(self):
+        pass
+
 class PrimitiveType(ProtocolType, metaclass=Singleton):
     """
     PrimitiveTypes are instantiated only once, and cannot be constructed by a Protocol definition.
@@ -322,10 +325,10 @@ class PrimitiveType(ProtocolType, metaclass=Singleton):
     def __post_init__(self):
         pass
 
-    def __eq__(self, obj):
+    def __eq__(self, obj: object) -> bool:
         return isinstance(obj, type(self))
 
-    def implement_trait(self, trait : Trait):
+    def implement_trait(self, trait: Trait):
         raise ProtocolTypeError(f"Cannot implement trait {trait.name} on a primitive type")
 
 
@@ -390,6 +393,9 @@ class RepresentableType(ProtocolType):
 class Nothing(RepresentableType, PrimitiveType):
     def __init__(self):
         super().__init__(size=ConstantExpression(Number(), 0))
+    
+    def __post_init__(self):
+        pass
 
 # -------------------------------------------------------------------------------------------------
 # Representable, constructable types:
@@ -508,14 +514,14 @@ class Enum(RepresentableType, ConstructableType):
 # -------------------------------------------------------------------------------------------------
 # Internal, primitive types:
 
-class Boolean(InternalType, PrimitiveType):
+class Boolean(PrimitiveType, InternalType):
     def __post_init__(self):
         self._implement_trait(Value())
         self._implement_trait(Equality())
         self._implement_trait(BooleanOps())
 
 
-class Number(InternalType, PrimitiveType):
+class Number(PrimitiveType, InternalType):
     def __post_init__(self):
         self._implement_trait(Value())
         self._implement_trait(Equality())
@@ -709,5 +715,8 @@ class Protocol(InternalType, ConstructableType):
     def get_type_names(self) -> List[str]:
         return list(self._types.keys())
 
+if __name__ == "__main__":
+    num = Number()
+    print(num)
 
 # vim: set tw=0 ai:
