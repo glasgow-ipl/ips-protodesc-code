@@ -266,6 +266,9 @@ class ProtocolType:
         self.parent = parent
 
     def implement_trait(self, trait: "Trait") -> None:
+        self._implement_trait(trait)
+
+    def _implement_trait(self, trait: "Trait") -> None:
         if trait in self.traits:
             raise ProtocolTypeError(f"Type {self} already implements trait {trait.name}")
         else:
@@ -318,6 +321,10 @@ class PrimitiveType(ProtocolType, metaclass=Singleton):
 
     def __eq__(self, obj):
         return isinstance(obj, type(self))
+
+    def implement_trait(self, trait : Trait):
+        raise ProtocolTypeError(f"Cannot implement trait {trait.name} on a primitive type")
+
 
 class ConstructableType(ProtocolType):
     """
@@ -372,7 +379,7 @@ class RepresentableType(ProtocolType):
     def __init__(self, size: Optional[Expression] = None, **kwargs):
         super().__init__(**kwargs)
         self.size = size
-        self.implement_trait(Sized())
+        self._implement_trait(Sized())
 
 # -------------------------------------------------------------------------------------------------
 # Representable, primitive types:
@@ -381,16 +388,15 @@ class Nothing(RepresentableType, PrimitiveType):
     def __init__(self):
         super().__init__(size=ConstantExpression(Number(), 0))
 
-
 # -------------------------------------------------------------------------------------------------
 # Representable, constructable types:
 
 class BitString(RepresentableType, ConstructableType):
     def __init__(self, name: str, size: Optional[Expression]):
         super().__init__(name=name, size=size)
-        self.implement_trait(Value())
-        self.implement_trait(Equality())
-        self.implement_trait(NumberRepresentable())
+        self._implement_trait(Value())
+        self._implement_trait(Equality())
+        self._implement_trait(NumberRepresentable())
 
 
 class Option(RepresentableType, ConstructableType):
@@ -413,8 +419,8 @@ class Array(RepresentableType, ConstructableType):
         self.length = length
         self.parse_from = None
         self.serialise_to = None
-        self.implement_trait(Equality())
-        self.implement_trait(IndexCollection())
+        self._implement_trait(Equality())
+        self._implement_trait(IndexCollection())
         
         if self.length is None and element_type.size is None:
             raise ProtocolTypeError(f"Cannot construct Array: one of length or element size must be specified")
@@ -430,7 +436,7 @@ class StructField():
     def __init__(self, field_name: str, field_type: "RepresentableType", is_present: Optional[Expression] = None):
         self.field_name = field_name
         if re.search(FUNC_NAME_REGEX, field_name) is None:
-            raise ProtocolTypeError(f"Cannot create field {field.field_name}: malformed name")
+            raise ProtocolTypeError(f"Cannot create field {field_name}: malformed name")
         self.field_type = field_type
         if is_present is not None:
             self.is_present = is_present
@@ -458,7 +464,7 @@ class Struct(RepresentableType, ConstructableType):
             self.add_action(action)
         self.parse_from = None
         self.serialise_to = None
-        self.implement_trait(Equality())
+        self._implement_trait(Equality())
     
     def add_field(self, field: StructField) -> None:
         if field.field_name in self.fields:
@@ -501,18 +507,17 @@ class Enum(RepresentableType, ConstructableType):
 
 class Boolean(InternalType, PrimitiveType):
     def __post_init__(self):
-        self.implement_trait(Value())
-        self.implement_trait(Equality())
-        self.implement_trait(BooleanOps())
+        self._implement_trait(Value())
+        self._implement_trait(Equality())
+        self._implement_trait(BooleanOps())
 
 
 class Number(InternalType, PrimitiveType):
     def __post_init__(self):
-        self.implement_trait(Value())
-        self.implement_trait(Equality())
-        self.implement_trait(Ordinal())
-        self.implement_trait(ArithmeticOps())
-
+        self._implement_trait(Value())
+        self._implement_trait(Equality())
+        self._implement_trait(Ordinal())
+        self._implement_trait(ArithmeticOps())
 
 # -------------------------------------------------------------------------------------------------
 # Internal, constructable types:
