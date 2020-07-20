@@ -844,7 +844,78 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(enum.methods["size"].parameters[0].param_type, enum)
         self.assertEqual(enum.methods["size"].return_type, Number())  
 
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for Boolean:
+    
+    def test_boolean(self):
+        boolean = Boolean()
         
+        self.assertEqual(len(boolean.traits), 3)
+        self.assertEqual(boolean.traits[0], Value())
+        self.assertEqual(boolean.traits[1], Equality())
+        self.assertEqual(boolean.traits[2], BooleanOps())
+
+        self.assertEqual(len(boolean.methods), 7)
+
+        self.assertTrue(isinstance(boolean.methods["get"], Function))
+        self.assertEqual(boolean.methods["get"].name, "get")
+        self.assertEqual(len(boolean.methods["get"].parameters), 1)
+        self.assertEqual(boolean.methods["get"].parameters[0].param_name, "self")
+        self.assertEqual(boolean.methods["get"].parameters[0].param_type, boolean)
+        self.assertEqual(boolean.methods["get"].return_type, boolean)         
+
+        self.assertTrue(isinstance(boolean.methods["set"], Function))
+        self.assertEqual(boolean.methods["set"].name, "set")
+        self.assertEqual(len(boolean.methods["set"].parameters), 2)
+        self.assertEqual(boolean.methods["set"].parameters[0].param_name, "self")
+        self.assertEqual(boolean.methods["set"].parameters[0].param_type, boolean)
+        self.assertEqual(boolean.methods["set"].parameters[1].param_name, "value")
+        self.assertEqual(boolean.methods["set"].parameters[1].param_type, boolean)
+        self.assertEqual(boolean.methods["set"].return_type, Nothing())            
+
+        self.assertTrue(isinstance(boolean.methods["eq"], Function))
+        self.assertEqual(boolean.methods["eq"].name, "eq")
+        self.assertEqual(len(boolean.methods["eq"].parameters), 2)
+        self.assertEqual(boolean.methods["eq"].parameters[0].param_name, "self")
+        self.assertEqual(boolean.methods["eq"].parameters[0].param_type, boolean)
+        self.assertEqual(boolean.methods["eq"].parameters[1].param_name, "other")
+        self.assertEqual(boolean.methods["eq"].parameters[1].param_type, boolean)
+        self.assertEqual(boolean.methods["eq"].return_type, Boolean())             
+        
+        self.assertTrue(isinstance(boolean.methods["ne"], Function))
+        self.assertEqual(boolean.methods["ne"].name, "ne")
+        self.assertEqual(len(boolean.methods["ne"].parameters), 2)
+        self.assertEqual(boolean.methods["ne"].parameters[0].param_name, "self")
+        self.assertEqual(boolean.methods["ne"].parameters[0].param_type, boolean)
+        self.assertEqual(boolean.methods["ne"].parameters[1].param_name, "other")
+        self.assertEqual(boolean.methods["ne"].parameters[1].param_type, boolean)
+        self.assertEqual(boolean.methods["ne"].return_type, Boolean())         
+ 
+        self.assertTrue(isinstance(boolean.methods["and"], Function))
+        self.assertEqual(boolean.methods["and"].name, "and")
+        self.assertEqual(len(boolean.methods["and"].parameters), 2)
+        self.assertEqual(boolean.methods["and"].parameters[0].param_name, "self")
+        self.assertEqual(boolean.methods["and"].parameters[0].param_type, boolean)
+        self.assertEqual(boolean.methods["and"].parameters[1].param_name, "other")
+        self.assertEqual(boolean.methods["and"].parameters[1].param_type, boolean)
+        self.assertEqual(boolean.methods["and"].return_type, Boolean())               
+ 
+        self.assertTrue(isinstance(boolean.methods["or"], Function))
+        self.assertEqual(boolean.methods["or"].name, "or")
+        self.assertEqual(len(boolean.methods["or"].parameters), 2)
+        self.assertEqual(boolean.methods["or"].parameters[0].param_name, "self")
+        self.assertEqual(boolean.methods["or"].parameters[0].param_type, boolean)
+        self.assertEqual(boolean.methods["or"].parameters[1].param_name, "other")
+        self.assertEqual(boolean.methods["or"].parameters[1].param_type, boolean)
+        self.assertEqual(boolean.methods["or"].return_type, Boolean())           
+
+        self.assertTrue(isinstance(boolean.methods["not"], Function))
+        self.assertEqual(boolean.methods["not"].name, "not")
+        self.assertEqual(len(boolean.methods["not"].parameters), 1)
+        self.assertEqual(boolean.methods["not"].parameters[0].param_name, "self")
+        self.assertEqual(boolean.methods["not"].parameters[0].param_type, boolean)
+        self.assertEqual(boolean.methods["not"].return_type, Boolean())
+
 # =================================================================================================
 if __name__ == "__main__":
     unittest.main()

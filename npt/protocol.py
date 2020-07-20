@@ -72,6 +72,9 @@ class Trait:
 
     def __post_init__(self):
         pass
+        
+    def __eq__(self, other: "Trait") -> bool:
+        return isinstance(other, type(self))
 
 
 class Value(Trait, metaclass=Singleton):
