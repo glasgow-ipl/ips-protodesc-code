@@ -47,7 +47,7 @@ valid_extns = [".xml", ".txt"]
 output_formats = ["simple", "rust"]
 
 # npt epoch definition
-epoch = '1970-01-01 00:00:00'
+epoch = '1970-01-01T00:00:00'
 
 @dataclass
 class RootWorkingDir:
@@ -117,7 +117,7 @@ class RootWorkingDir:
         return start time as epoch.
         """
         if override:
-            return datetime.strptime(override, "%Y-%m-%d %H:%M:%S")
+            return datetime.fromisoformat(override)
 
         if self._meta is None:
             return datetime(year=1970,
@@ -128,7 +128,7 @@ class RootWorkingDir:
                             second=0)
 
         if doc_type in self._meta:
-            return datetime.strptime(self._meta[doc_type], "%Y-%m-%d %H:%M:%S")
+            return datetime.fromisoformat(self._meta[doc_type])
         else:
             return datetime(year=1970,
                             month=1,
@@ -140,7 +140,7 @@ class RootWorkingDir:
     def _new_sync(self) -> Dict[str, str]:
         """contruct and return a default json format for the .sync file"""
         start = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0)
-        dt = start.strftime("%Y-%m-%d %H:%M:%S")
+        dt = start.strftime("%Y-%m-%dT%H:%M:%S")
         return {"rfc": dt, "draft": dt}
 
     def update_sync_time(self, doc_type: str) -> None:
@@ -149,7 +149,7 @@ class RootWorkingDir:
             self._meta = self._new_sync()
 
         if doc_type in self._meta or doc_type in self.doctypes:
-            self._meta[doc_type] = self.sync_time.strftime("%Y-%m-%d %H:%M:%S")
+            self._meta[doc_type] = self.sync_time.strftime("%Y-%m-%dT%H:%M:%S")
 
         with open(self.sync, 'w') as fp:
             json.dump(self._meta, fp)
@@ -499,7 +499,7 @@ def parse_cmdline( arglist : List[str] ) -> Tuple[argparse.Namespace,OptionConta
         const=epoch,
         help=f"Get all new drafts from ietf data tracker. "
         f"If from date is provided, pick up drafts from given date "
-        f"(fmt 'yyyy-mm-dd hh:mm:ss').")
+        f"(fmt 'yyyy-mm-ddThh:mm:ss').")
     ap.add_argument(
         "-nr",
         "--newrfc",
@@ -508,7 +508,7 @@ def parse_cmdline( arglist : List[str] ) -> Tuple[argparse.Namespace,OptionConta
         const=epoch,
         help=f"Get all new rfcs from ietf data tracker. "
         f"If from date is provided, pick up drafts from given date "
-        f"(fmt 'yyyy-mm-dd hh:mm:ss'). ")
+        f"(fmt 'yyyy-mm-ddThh:mm:ss'). ")
     ap.add_argument("-d",
                     "--dir",
                     metavar="dir",
@@ -556,7 +556,7 @@ def parse_cmdline( arglist : List[str] ) -> Tuple[argparse.Namespace,OptionConta
 
 def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionContainer :
     if cmd_obj.newdraft:
-        fromdate = datetime.strptime(cmd_obj.newdraft, "%Y-%m-%d %H:%M:%S")
+        fromdate = datetime.fromisoformat(cmd_obj.newdraft)
         with RootWorkingDir(root=opt.root_dir) as rwd, DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
             drafts = fetch_new_drafts(rwd.prev_sync_time('draft',None if cmd_obj.newdraft == epoch else cmd_obj.newdraft))
@@ -570,7 +570,7 @@ def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionCon
             # update meta data within cached filesys
             rwd.update_sync_time("draft")
     elif cmd_obj.newrfc:
-        fromdate = datetime.strptime(cmd_obj.newrfc, "%Y-%m-%d %H:%M:%S")
+        fromdate = datetime.fromisoformat(cmd_obj.newrfc)
         with RootWorkingDir(root=opt.root_dir) as rwd,DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
             rfcs = fetch_new_rfcs(rwd.prev_sync_time('rfc', None if cmd_obj.newrfc == epoch else cmd_obj.newrfc))

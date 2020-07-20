@@ -81,8 +81,8 @@ To run the project's test suite, run:
     within the *<root-dir>* and resolves the previous time at which the tool
     downloaded RFCs from the RFC index.
     If `.sync` does not exist in `root-dir`, all RFCs since
-    "1970-01-01 00:00:00" will be downloaded and processed.
-    The date *from*  is specified with format `yyyy-mm-dd HH:MM:SS`.
+    "1970-01-01T00:00:00" will be downloaded and processed.
+    The date *from*  is specified with format `yyyy-mm-ddTHH:MM:SS`.
     All times are in UTC.
 
     After all identified RFCs are downloaded, the `.sync` file
