@@ -12,8 +12,8 @@ jobs:
 
       - run:
           command: |
-            sudo pip install pipenv pytest mypy
-            pipenv install 
+            sudo pip install pipenv
+            pipenv install --dev
       - run:
           name: run tests
           command: |
