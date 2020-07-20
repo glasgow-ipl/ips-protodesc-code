@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -34,18 +34,12 @@ from datetime import datetime, timedelta
 import time
 import sys 
 
-def program_name_idx():
-    for _idx, arg in enumerate(sys.argv):
-        if arg.find(__name__) >= 0 :
-            return _idx 
-    return 0
-
 class Test_Cmdline_Date(ut.TestCase):
     def setUp(self):
         # generate a temporary directory name
         # remove actual directory - tool should a
         self.rootdir = pathlib.Path(tempfile.mkdtemp())
-        self.argv = sys.argv[program_name_idx():]
+        self.argv = ["npt_prog"]
 
     def test_default_start_date(self):
         self.argv += f"-d {self.rootdir}".split()

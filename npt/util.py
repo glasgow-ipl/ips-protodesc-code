@@ -515,7 +515,7 @@ def parse_cmdline( arglist : List[str] ) -> Tuple[argparse.Namespace,OptionConta
                     nargs=1,
                     default=[str(pathlib.Path().cwd() / "ietf_data_cache")],
                     help=f"Root directory for all files. "
-                         f"This has to be a pre-existing directory. "
+                         f"If given directory does not exist, a new one will be created. "
                          f"Defaults to ietf_data_cache within "
                          f"current working directory")
     ap.add_argument("-of",
@@ -604,9 +604,8 @@ def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionCon
 
 
 def read_usr_opts() -> OptionContainer :
-    args = sys.argv.copy() 
-    ap_ns, opts = parse_cmdline(args) 
-    return setup_opts( ap_ns , opts)
+    ap_ns, opts = parse_cmdline(sys.argv[1:])
+    return setup_opts(ap_ns , opts)
 
 
 if __name__ == '__main__':

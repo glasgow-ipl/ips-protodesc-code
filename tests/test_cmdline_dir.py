@@ -1,5 +1,5 @@
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2020 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,19 +33,13 @@ import tempfile, shutil, pathlib
 import time
 import sys 
 
-def program_name_idx():
-    for _idx, arg in enumerate(sys.argv):
-        if arg.find(__name__) >= 0 :
-            return _idx 
-    return 0
-
 
 class Test_Cmdline_Dir(ut.TestCase):
     def setUp(self):
         # generate a temporary directory name
         # remove actual directory - tool should a
         self.rootdir = pathlib.Path(tempfile.mkdtemp())
-        self.argv = sys.argv[program_name_idx():]
+        self.argv = ["npt_prog"]
 
     def test_use_existing_rootdir(self):
         self.assertTrue( self.rootdir.exists(),
