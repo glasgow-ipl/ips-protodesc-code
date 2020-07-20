@@ -1143,6 +1143,59 @@ class TestProtocol(unittest.TestCase):
         
         self.assertTrue(func.get_return_type(), Nothing())
 
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for Context:
+    
+    def test_contextfield(self):
+        cf = ContextField("test", Nothing())
+        
+        self.assertTrue(cf.field_name, "test")
+        self.assertTrue(cf.field_type, Nothing())
+        
+    
+    def test_context(self):
+        cf = ContextField("test", Nothing())
+        context = Context("TestContext")
+        context.add_field(cf)
+        
+        self.assertTrue(context.name, "TestContext")
+        self.assertTrue(context.fields, {"test": cf})
+    
+    
+    def test_context_duplicatefield(self):
+        cf = ContextField("test", Nothing())
+        context = Context("TestContext")
+        context.add_field(cf)
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            context.add_field(cf)
+        
+        self.assertTrue(str(pte.exception), "TestContext already has a field named test")
+    
+    
+    def test_context_field(self):
+        cf = ContextField("test", Nothing())
+        context = Context("TestContext")
+        context.add_field(cf)
+        
+        self.assertTrue(context.field("test"), cf)
+    
+    
+    def test_context_field_notpresent(self):
+        context = Context("TestContext")
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            field = context.field("test")
+        
+        self.assertTrue(str(pte.exception), "TestContext has no field named test")
+    
+    
+    def test_context_getfields(self):
+        cf = ContextField("test", Nothing())
+        context = Context("TestContext")
+        context.add_field(cf)
+        
+        self.assertTrue(context.get_fields(), [cf])
 
 # =================================================================================================
 if __name__ == "__main__":
