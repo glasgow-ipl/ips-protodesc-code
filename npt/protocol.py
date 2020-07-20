@@ -723,8 +723,4 @@ class Protocol(InternalType, ConstructableType):
     def get_type_names(self) -> List[str]:
         return list(self._types.keys())
 
-if __name__ == "__main__":
-    num = Number()
-    print(num)
-
 # vim: set tw=0 ai:
