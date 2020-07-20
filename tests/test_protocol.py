@@ -456,23 +456,33 @@ class TestProtocol(unittest.TestCase):
     # =============================================================================================
     # Test cases for protocol types:
     
-    def test_protocol_type_implement_duplicate_trait(self):
-        pt = Number()
-        
-        with self.assertRaises(ProtocolTypeError) as pte:
-            rt = pt.implement_trait(Value())
-            
-        self.assertEqual(str(pte.exception), "Type Number<::Value Equality Ordinal ArithmeticOps Test> already implements trait Value")
-
-        
-    def test_protocol_type_implement_duplicate_method(self):
+    def test_primitive_type_implement_trait(self):
         test_trait = Trait("Test", [Function("get", [], Nothing())])
         pt = Number()
         
         with self.assertRaises(ProtocolTypeError) as pte:
             rt = pt.implement_trait(test_trait)
+            
+        self.assertEqual(str(pte.exception), "Cannot implement trait Test on a primitive type")
+
+
+    def test_protocol_type_implement_duplicate_trait(self):
+        pt = BitString("Test", ConstantExpression(Number(), 1))
         
-        self.assertEqual(str(pte.exception), "Type Number<::Value Equality Ordinal ArithmeticOps Test> already implements a method get")
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = pt.implement_trait(Value())
+            
+        self.assertEqual(str(pte.exception), "Type BitString<Test::Sized Value Equality NumberRepresentable> already implements trait Value")
+
+        
+    def test_protocol_type_implement_duplicate_method(self):
+        test_trait = Trait("Test", [Function("get", [], Nothing())])
+        pt = BitString("Test", ConstantExpression(Number(), 1))
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            rt = pt.implement_trait(test_trait)
+        
+        self.assertEqual(str(pte.exception), "Type BitString<Test::Sized Value Equality NumberRepresentable> already implements a method get")
 
     # ---------------------------------------------------------------------------------------------
     # Test cases for BitStrings:
@@ -674,6 +684,136 @@ class TestProtocol(unittest.TestCase):
         
         self.assertEqual(str(pte.exception), "Cannot construct Array: one of length or element size must be specified")
 
+
+    def test_structfield(self):
+        sf = StructField("test", Nothing(), ConstantExpression(Boolean(), True))
+        
+        self.assertEqual(sf.field_name, "test")
+        self.assertEqual(sf.field_type, Nothing())
+        self.assertEqual(sf.is_present, ConstantExpression(Boolean(), True))
+
+    
+    def test_structfield_no_is_present(self):
+        sf = StructField("test", Nothing())
+        
+        self.assertEqual(sf.field_name, "test")
+        self.assertEqual(sf.field_type, Nothing())
+        self.assertEqual(sf.is_present, ConstantExpression(Boolean(), True))
+        
+        
+    def test_structfield_badname(self):
+        with self.assertRaises(ProtocolTypeError) as pte:
+            sf = StructField("Test", Nothing())
+        
+        self.assertEqual(str(pte.exception), "Cannot create field Test: malformed name")
+
+
+    def test_struct(self):
+        sf = StructField("test", Nothing())
+        struct = Struct("Test", [sf], [], [])
+        
+        self.assertEqual(struct.name, "Test")
+        self.assertEqual(struct.size, None)
+        self.assertIs(struct.parse_from, None)
+        self.assertIs(struct.serialise_to, None)
+        self.assertEqual(struct.fields, {"test": sf})
+        self.assertEqual(struct.constraints, [])
+        self.assertEqual(struct.actions, [])
+        
+        self.assertEqual(len(struct.traits), 2)
+        self.assertEqual(struct.traits[0], Sized())
+        self.assertEqual(struct.traits[1], Equality())
+
+        self.assertEqual(len(struct.methods), 3)
+
+        self.assertTrue(isinstance(struct.methods["size"], Function))
+        self.assertEqual(struct.methods["size"].name, "size")
+        self.assertEqual(len(struct.methods["size"].parameters), 1)
+        self.assertEqual(struct.methods["size"].parameters[0].param_name, "self")
+        self.assertEqual(struct.methods["size"].parameters[0].param_type, struct)
+        self.assertEqual(struct.methods["size"].return_type, Number())  
+
+        self.assertTrue(isinstance(struct.methods["eq"], Function))
+        self.assertEqual(struct.methods["eq"].name, "eq")
+        self.assertEqual(len(struct.methods["eq"].parameters), 2)
+        self.assertEqual(struct.methods["eq"].parameters[0].param_name, "self")
+        self.assertEqual(struct.methods["eq"].parameters[0].param_type, struct)
+        self.assertEqual(struct.methods["eq"].parameters[1].param_name, "other")
+        self.assertEqual(struct.methods["eq"].parameters[1].param_type, struct)
+        self.assertEqual(struct.methods["eq"].return_type, Boolean())             
+        
+        self.assertTrue(isinstance(struct.methods["ne"], Function))
+        self.assertEqual(struct.methods["ne"].name, "ne")
+        self.assertEqual(len(struct.methods["ne"].parameters), 2)
+        self.assertEqual(struct.methods["ne"].parameters[0].param_name, "self")
+        self.assertEqual(struct.methods["ne"].parameters[0].param_type, struct)
+        self.assertEqual(struct.methods["ne"].parameters[1].param_name, "other")
+        self.assertEqual(struct.methods["ne"].parameters[1].param_type, struct)
+        self.assertEqual(struct.methods["ne"].return_type, Boolean()) 
+
+
+    def test_struct_duplicate_fieldname(self):
+        sf = StructField("test", Nothing())
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            struct = Struct("Test", [sf, sf], [], [])
+        
+        self.assertEqual(str(pte.exception), "Test already contains a field named test")
+
+
+    def test_struct_constraint(self):
+        sf = StructField("test", Nothing())
+        struct = Struct("Test", [sf], [ConstantExpression(Boolean(), True)], [])
+
+        self.assertEqual(struct.constraints, [ConstantExpression(Boolean(), True)])
+        
+        
+    def test_struct_constraint_wrongtype(self):
+        sf = StructField("test", Nothing())
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            struct = Struct("Test", [sf], [ConstantExpression(Number(), 1)], [])
+        
+        self.assertEqual(str(pte.exception), "Invalid constraint: Number<::Value Equality Ordinal ArithmeticOps> != Boolean")
+
+
+    def test_struct_action(self):
+        sf = StructField("test", Nothing())
+        struct = Struct("Test", [sf], [], [ConstantExpression(Nothing(), None)])
+        
+        self.assertEqual(struct.actions, [ConstantExpression(Nothing(), None)])
+        
+    
+    def test_struct_action_wrongtype(self):
+        sf = StructField("test", Nothing())
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            struct = Struct("Test", [sf], [], [ConstantExpression(Number(), 1)])
+            
+        self.assertEqual(str(pte.exception), "Invalid action: Number<::Value Equality Ordinal ArithmeticOps> != Nothing")
+
+    
+    def test_struct_field(self):
+        sf = StructField("test", Nothing())
+        struct = Struct("Test", [sf], [], [])
+        
+        self.assertEqual(struct.field("test"), sf)
+
+
+    def test_struct_field_nofield(self):
+        struct = Struct("Test", [], [], [])
+        
+        with self.assertRaises(ProtocolTypeError) as pte:
+            field = struct.field("test")
+        
+        self.assertEqual(str(pte.exception), "Test has no field named test")
+
+
+    def test_struct_get_fields(self):
+        sf = StructField("test", Nothing())
+        struct = Struct("Test", [sf], [], [])
+        
+        self.assertEqual(struct.get_fields(), [sf])
 
 # =================================================================================================
 if __name__ == "__main__":
