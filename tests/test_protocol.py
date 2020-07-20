@@ -685,6 +685,9 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(str(pte.exception), "Cannot construct Array: one of length or element size must be specified")
 
 
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for StructField and Struct:
+
     def test_structfield(self):
         sf = StructField("test", Nothing(), ConstantExpression(Boolean(), True))
         
@@ -815,6 +818,33 @@ class TestProtocol(unittest.TestCase):
         
         self.assertEqual(struct.get_fields(), [sf])
 
+    # ---------------------------------------------------------------------------------------------
+    # Test cases for Enum:
+
+    def test_enum(self):
+        bitstring = BitString("TestBits", ConstantExpression(Number(), 1))
+        enum = Enum("Test", [Nothing(), bitstring])
+        
+        self.assertEqual(enum.name, "Test")
+        self.assertEqual(enum.size, None)
+        self.assertEqual(enum.parse_from, None)
+        self.assertEqual(enum.serialise_to, None)
+        
+        self.assertEqual(enum.variants, [Nothing(), bitstring])
+
+        self.assertEqual(len(enum.traits), 1)
+        self.assertEqual(enum.traits[0], Sized())
+
+        self.assertEqual(len(enum.methods), 1)
+
+        self.assertTrue(isinstance(enum.methods["size"], Function))
+        self.assertEqual(enum.methods["size"].name, "size")
+        self.assertEqual(len(enum.methods["size"].parameters), 1)
+        self.assertEqual(enum.methods["size"].parameters[0].param_name, "self")
+        self.assertEqual(enum.methods["size"].parameters[0].param_type, enum)
+        self.assertEqual(enum.methods["size"].return_type, Number())  
+
+        
 # =================================================================================================
 if __name__ == "__main__":
     unittest.main()
