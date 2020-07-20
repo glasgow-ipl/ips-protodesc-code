@@ -429,6 +429,8 @@ class StructField():
     
     def __init__(self, field_name: str, field_type: "RepresentableType", is_present: Optional[Expression] = None):
         self.field_name = field_name
+        if re.search(FUNC_NAME_REGEX, field_name) is None:
+            raise ProtocolTypeError(f"Cannot create field {field.field_name}: malformed name")
         self.field_type = field_type
         if is_present is not None:
             self.is_present = is_present
@@ -461,8 +463,6 @@ class Struct(RepresentableType, ConstructableType):
     def add_field(self, field: StructField) -> None:
         if field.field_name in self.fields:
             raise ProtocolTypeError(f"{self.name} already contains a field named {field.field_name}")
-        if re.search(FUNC_NAME_REGEX, field.field_name) is None:
-            raise ProtocolTypeError(f"Cannot parse field {field.field_name}: malformed name")
         self.fields[field.field_name] = field
     
     def add_constraint(self, constraint: Expression) -> None:
