@@ -30,8 +30,6 @@
 import npt.util
 import unittest as ut
 import tempfile, shutil, pathlib
-from datetime import datetime, timedelta
-import json
 import time
 import sys 
 
@@ -42,7 +40,7 @@ def program_name_idx():
     return 0
 
 
-class Test_FileSys(ut.TestCase):
+class Test_Cmdline_Dir(ut.TestCase):
     def setUp(self):
         # generate a temporary directory name
         # remove actual directory - tool should a
@@ -120,67 +118,6 @@ class Test_FileSys(ut.TestCase):
     def tearDown(self):
         if self.rootdir.exists():
             shutil.rmtree(self.rootdir)
-
-class Test_Date(ut.TestCase):
-    def setUp(self):
-        # generate a temporary directory name
-        # remove actual directory - tool should a
-        self.rootdir = pathlib.Path(tempfile.mkdtemp())
-        self.argv = sys.argv[program_name_idx():]
-
-    def test_default_start_date(self):
-        self.argv += f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
-        with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
-            draft_fetch_date = rwd.prev_sync_time('draft', None)
-            self.assertEqual(draft_fetch_date, datetime.strptime(npt.util.epoch, "%Y-%m-%d %H:%M:%S"))
-            rfc_fetch_date = rwd.prev_sync_time('rfc', None)
-            self.assertEqual(rfc_fetch_date, datetime.strptime(npt.util.epoch, "%Y-%m-%d %H:%M:%S"))
-
-    def test_preexisting_start(self):
-        draft_fetch_date = None
-        rfc_fetch_date = None
-        write_time = None 
-
-        self.argv += f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
-        with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
-            rwd.update_sync_time('draft')
-            rwd.update_sync_time('rfc')
-            write_time = rwd.sync_time
-
-        with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
-            draft_fetch_date = rwd.prev_sync_time('draft', None)
-            rfc_fetch_date = rwd.prev_sync_time('rfc', None)
-            self.assertEqual( write_time.strftime("%Y-%m-%d %H:%M:%S"), draft_fetch_date.strftime("%Y-%m-%d %H:%M:%S"))
-            self.assertEqual( write_time.strftime("%Y-%m-%d %H:%M:%S"), rfc_fetch_date.strftime("%Y-%m-%d %H:%M:%S"))
-
-    def test_date_override(self):
-        override = (datetime.utcnow() - timedelta(days=10)).strftime("%Y-%m-%d %H:%M:%S")
-        #override = k.strftime("%Y-%m-%d %H:%M:%S")
-
-        self.argv += f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
-        with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
-            rwd.update_sync_time('draft')
-            rwd.update_sync_time('rfc')
-
-        # Check date provided on command-line for drafts overrides cache-directory date 
-        arguments = self.argv + f"-nd {override}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
-        with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
-            self.assertLess( rwd.prev_sync_time('draft', override), rwd.prev_sync_time('draft', None))
-
-        # Check date provided on command-line for rfc overrides cache-directory date 
-        arguments = self.argv + f"-nr {override}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
-        with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
-            self.assertLess( rwd.prev_sync_time('rfc', override), rwd.prev_sync_time('rfc', None))
-
-    def tearDown(self):
-        if self.rootdir.exists():
-            shutil.rmtree(self.rootdir)
-
 
 if __name__ == '__main__':
     ut.main()
