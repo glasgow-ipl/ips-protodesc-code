@@ -64,7 +64,7 @@ class Trait:
     methods : List["Function"]
         
     def __eq__(self, other: object) -> bool:
-        return isinstance(other, type(self))
+        return isinstance(other, Trait) and self.name == other.name and self.methods == other.methods
 
 
 class Value(Trait):
@@ -85,8 +85,8 @@ class Sized(Trait):
 class IndexCollection(Trait):
     def __init__(self):
         super().__init__("IndexCollection", [
-            Function("get",    [Parameter("self", TypeVariable("T")), Parameter("index", Number())], TypeVariable("T")),
-            Function("set",    [Parameter("self", TypeVariable("T")), Parameter("index", Number()), Parameter("value", TypeVariable("T"))], TypeVariable("T")),
+            Function("get",    [Parameter("self", TypeVariable("T")), Parameter("index", Number())], TypeVariable("ET")),
+            Function("set",    [Parameter("self", TypeVariable("T")), Parameter("index", Number()), Parameter("value", TypeVariable("ET"))], Nothing()),
             Function("length", [Parameter("self", TypeVariable("T"))], Number()),
         ])
 
@@ -170,7 +170,10 @@ class MethodInvocationExpression(Expression):
         method = result.get_method(self.method_name)
         if not method.is_method_accepting(result, args):
             raise ProtocolTypeError(f"Method {self.method_name}: invalid arguments")
-        return method.get_return_type()
+        rt = method.get_return_type()
+        if isinstance(rt, TypeVariable):
+            raise ProtocolTypeError(f"Method {self.method_name}: unresolved type variable as return type")
+        return rt
 
 
 @dataclass(frozen=True)
@@ -181,7 +184,10 @@ class FunctionInvocationExpression(Expression):
     def result_type(self, containing_type: Optional["ProtocolType"]) -> "ProtocolType":
         if not self.func.accepts_arguments([Argument(arg.arg_name, arg.result_type(containing_type), arg.arg_value) for arg in self.arg_exprs]):
             raise ProtocolTypeError(f"Function {self.func.name}: invalid arguments")
-        return self.func.get_return_type()
+        rt = self.func.get_return_type()
+        if isinstance(rt, TypeVariable):
+            raise ProtocolTypeError(f"Function {self.func.name}: unresolved type variable as return type")
+        return rt
 
 
 @dataclass(frozen=True)
@@ -328,7 +334,7 @@ class PrimitiveType(ProtocolType, metaclass=Singleton):
     def __eq__(self, obj: object) -> bool:
         return isinstance(obj, type(self))
 
-    def implement_trait(self, trait: Trait):
+    def implement_trait(self, trait: Trait, type_variables: Dict[TypeVariable, ProtocolType] = {}):
         raise ProtocolTypeError(f"Cannot implement trait {trait.name} on a primitive type")
 
 
@@ -429,7 +435,7 @@ class Array(RepresentableType, ConstructableType):
         self.parse_from = None
         self.serialise_to = None
         self._implement_trait(Equality())
-        self._implement_trait(IndexCollection())
+        self._implement_trait(IndexCollection(), {TypeVariable("ET"): element_type})
         
         if self.length is None and element_type.size is None:
             raise ProtocolTypeError(f"Cannot construct Array: one of length or element size must be specified")
@@ -534,21 +540,21 @@ class Number(PrimitiveType, InternalType):
 @dataclass(frozen=True)
 class Parameter:
     param_name : str
-    param_type : Optional["ProtocolType"]
+    param_type : Union[ProtocolType, TypeVariable]
 
 
 @dataclass(frozen=True)
 class Argument:
     arg_name  : str
-    arg_type  : Optional["ProtocolType"]
+    arg_type  : Union[ProtocolType, TypeVariable]
     arg_value : Any
 
 
 class Function(InternalType, ConstructableType):
     parameters  : List[Parameter]
-    return_type : Optional[ProtocolType]
+    return_type : Union[ProtocolType, TypeVariable]
     
-    def __init__(self, name: str, parameters: List[Parameter], return_type : Optional[ProtocolType]):
+    def __init__(self, name: str, parameters: List[Parameter], return_type : Union[ProtocolType, TypeVariable]):
         super().__init__(name=name)
         self.parameters = parameters
         self.return_type = return_type
@@ -565,9 +571,11 @@ class Function(InternalType, ConstructableType):
         Check if this function accepts the specified arguments
         """
         for (p, a) in zip(self.parameters, arguments):
+            if isinstance(p.param_type, TypeVariable):
+                raise ProtocolTypeError(f"Cannot evaluate signature of Function {self.name}: unresolved type variables")
             if (p.param_name != a.arg_name):
                 return False
-            if (p.param_type != a.arg_type) and a.arg_type is not None and not a.arg_type.is_a(p.param_type):
+            if (p.param_type != a.arg_type) and not isinstance(a.arg_type, TypeVariable) and not a.arg_type.is_a(p.param_type):
                 return False
         return True
     
@@ -576,13 +584,13 @@ class Function(InternalType, ConstructableType):
         Check if this function is a method and accepts the specified arguments when invoked on an
         object of type self_type
         """
-        return self.is_method() and self.accepts_arguments([Argument("self", self_type, None)] + arguments)
+        return self.is_method() and self.accepts_arguments([Argument("self", self_type, TypeVariable("T"))] + arguments)
         
-    def get_return_type(self) -> ProtocolType:
-        if self.return_type is None:
-            return Nothing()
-        else:
-            return self.return_type
+    def get_return_type(self) -> Union[ProtocolType, TypeVariable]:
+        return self.return_type
+            
+    def __eq__(self, obj: object) -> bool:
+        return isinstance(obj, Function) and self.name == obj.name and self.parameters == obj.parameters and self.return_type == obj.return_type
 
 
 @dataclass(frozen=True)

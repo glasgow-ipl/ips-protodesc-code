@@ -88,7 +88,7 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(indexcollection_trait.methods[0].parameters[0].param_type, TypeVariable("T"))
         self.assertEqual(indexcollection_trait.methods[0].parameters[1].param_name, "index")
         self.assertEqual(indexcollection_trait.methods[0].parameters[1].param_type, Number())
-        self.assertEqual(indexcollection_trait.methods[0].return_type, TypeVariable("T"))  
+        self.assertEqual(indexcollection_trait.methods[0].return_type, TypeVariable("ET"))  
 
         self.assertEqual(indexcollection_trait.methods[1].name, "set")
         self.assertEqual(len(indexcollection_trait.methods[1].parameters), 3)
@@ -97,8 +97,8 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(indexcollection_trait.methods[1].parameters[1].param_name, "index")
         self.assertEqual(indexcollection_trait.methods[1].parameters[1].param_type, Number())
         self.assertEqual(indexcollection_trait.methods[1].parameters[2].param_name, "value")
-        self.assertEqual(indexcollection_trait.methods[1].parameters[2].param_type, TypeVariable("T"))
-        self.assertEqual(indexcollection_trait.methods[1].return_type, TypeVariable("T"))
+        self.assertEqual(indexcollection_trait.methods[1].parameters[2].param_type, TypeVariable("ET"))
+        self.assertEqual(indexcollection_trait.methods[1].return_type, Nothing())
 
         self.assertEqual(indexcollection_trait.methods[2].name, "length")
         self.assertEqual(len(indexcollection_trait.methods[2].parameters), 1)
@@ -656,7 +656,7 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(array.methods["get"].parameters[0].param_type, array)
         self.assertEqual(array.methods["get"].parameters[1].param_name, "index")
         self.assertEqual(array.methods["get"].parameters[1].param_type, Number())
-        self.assertEqual(array.methods["get"].return_type, array) # FIXME: this should be array.element_type
+        self.assertEqual(array.methods["get"].return_type, array.element_type)
 
         self.assertTrue(isinstance(array.methods["set"], Function))
         self.assertEqual(array.methods["set"].name, "set")
@@ -666,8 +666,8 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(array.methods["set"].parameters[1].param_name, "index")
         self.assertEqual(array.methods["set"].parameters[1].param_type, Number())
         self.assertEqual(array.methods["set"].parameters[2].param_name, "value")
-        self.assertEqual(array.methods["set"].parameters[2].param_type, array) # FIXME: this should be array.element_type
-        self.assertEqual(array.methods["set"].return_type, array) # FIXME: this should be Nothing()  
+        self.assertEqual(array.methods["set"].parameters[2].param_type, array.element_type)
+        self.assertEqual(array.methods["set"].return_type, Nothing())
 
         self.assertTrue(isinstance(array.methods["length"], Function))
         self.assertEqual(array.methods["length"].name, "length")
@@ -1136,12 +1136,6 @@ class TestProtocol(unittest.TestCase):
         func = Function("test", [], Boolean())
         
         self.assertTrue(func.get_return_type(), Boolean())
-
-        
-    def test_function_getreturntype_notspecified(self):
-        func = Function("test", [], None)
-        
-        self.assertTrue(func.get_return_type(), Nothing())
 
     # ---------------------------------------------------------------------------------------------
     # Test cases for Context:
