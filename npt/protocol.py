@@ -272,7 +272,6 @@ class ProtocolType:
         if trait in self.traits:
             raise ProtocolTypeError(f"Type {self} already implements trait {trait.name}")
         else:
-            self.traits.append(trait)
             for method in trait.methods:
                 if method.name in self.methods:
                     raise ProtocolTypeError(f"Type {self} already implements a method {method.name}")
@@ -281,6 +280,7 @@ class ProtocolType:
                     mimpl_rt   = method.return_type if method.return_type is not None else self
                     mimpl_parameters = [Parameter(p.param_name, p.param_type if p.param_type is not None else self) for p in method.parameters]
                     self.methods[method.name] = Function(mimpl_name, mimpl_parameters, mimpl_rt)
+            self.traits.append(trait)        
 
     def get_method(self, method_name: str) -> "Function":
         method = None
