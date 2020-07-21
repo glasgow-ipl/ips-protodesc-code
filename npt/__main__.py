@@ -117,9 +117,9 @@ def dfs_enum(enum: Enum, type_names:List[str]):
 
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
-        if parameter.param_type is not None and isinstance(parameter.param_type, ConstructableType) and parameter.param_type.name not in type_names:
+        if not isinstance(parameter.param_type, TypeVariable) and isinstance(parameter.param_type, ConstructableType) and parameter.param_type.name not in type_names:
             dfs_protocoltype(parameter.param_type, type_names)
-    if function.return_type is not None and isinstance(function.return_type, ConstructableType) and function.return_type.name not in type_names:
+    if not isinstance(function.return_type, TypeVariable) and isinstance(function.return_type, ConstructableType) and function.return_type.name not in type_names:
         dfs_protocoltype(function.return_type, type_names)
 
 def dfs_context(context: Context, type_names:List[str]):
