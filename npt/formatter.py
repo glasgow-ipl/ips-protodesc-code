@@ -75,7 +75,7 @@ class Formatter(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def format_constantexpr(self, constant_type: str, constant_value: Any) -> Any:
+    def format_constantexpr(self, constant_type: ProtocolType, constant_value: Any) -> Any:
         pass
 
     @abc.abstractmethod

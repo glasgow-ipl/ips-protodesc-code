@@ -15,6 +15,7 @@ npt = {path = "."}
 [dev-packages]
 mypy = "*"
 pytest = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.7"
