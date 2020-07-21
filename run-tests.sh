@@ -29,18 +29,25 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-echo "*** Running pytest..."
-pytest --junitxml=test-results/protocol-tests.xml tests/test_protocol.py
-pytest --junitxml=test-results/parser-tests.xml tests/test_parsers.py
-echo "^^^ pytest finished"
+echo "*** Executing pytest..."
+for py in tests/*.py
+do
+  pytest -v --junitxml=test-results/`basename $py .py`.xml $py
+done
+echo "^^^ Completed pytest"
+echo ""
 
-echo "*** Running coverage..."
-coverage run --source npt tests/test_protocol.py 
-coverage run -a --source npt tests/test_parsers.py
+echo "*** Executing coverage..."
+rm -f .coverage
+for py in tests/*.py
+do
+  coverage run -a --source npt $py
+done
 coverage report
 coverage html
-echo "^^^ coverage finished"
+echo "^^^ Completed coverage"
+echo ""
 
-echo "*** Running mypy..."
-mypy npt/*.py --junit-xml test-results/npt-typecheck.xml
-echo "^^^ mypy finished"
+echo "*** Executing mypy..."
+mypy npt/*.py tests/*.py --junit-xml test-results/npt-typecheck.xml
+echo "^^^ Completed mypy"
