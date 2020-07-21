@@ -35,28 +35,26 @@ import time
 import sys 
 
 class Test_Cmdline_Date(ut.TestCase):
-    def setUp(self):
-        # generate a temporary directory name
-        # remove actual directory - tool should a
-        self.rootdir = pathlib.Path(tempfile.mkdtemp())
-        self.argv = ["npt_prog"]
-
     def test_default_start_date(self):
-        self.argv += f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
+        rootdir = pathlib.Path(tempfile.mkdtemp())
+        argv = f"cmdline -d {str(rootdir)}".split()
+
+        ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
         with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
             draft_fetch_date = rwd.prev_sync_time('draft', None)
             self.assertEqual(draft_fetch_date, datetime.fromisoformat(npt.util.epoch))
             rfc_fetch_date = rwd.prev_sync_time('rfc', None)
             self.assertEqual(rfc_fetch_date, datetime.fromisoformat(npt.util.epoch))
 
-    def test_preexisting_start(self):
-        draft_fetch_date = None
-        rfc_fetch_date = None
-        write_time = None 
+        if rootdir.exists():
+            shutil.rmtree(rootdir)
 
-        self.argv += f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
+
+    def test_preexisting_start(self):
+        rootdir = pathlib.Path(tempfile.mkdtemp())
+        argv = f"cmdline -d {str(rootdir)}".split()
+
+        ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
         with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
             rwd.update_sync_time('draft')
             rwd.update_sync_time('rfc')
@@ -68,30 +66,36 @@ class Test_Cmdline_Date(ut.TestCase):
             self.assertEqual( write_time.isoformat(timespec="seconds"), draft_fetch_date.isoformat(timespec="seconds"))
             self.assertEqual( write_time.isoformat(timespec="seconds"), rfc_fetch_date.isoformat(timespec="seconds"))
 
+        if rootdir.exists():
+            shutil.rmtree(rootdir)
+
+
     def test_date_override(self):
+        rootdir = pathlib.Path(tempfile.mkdtemp())
+        argv = f"cmdline -d {str(rootdir)}".split()
+
         override = (datetime.utcnow() - timedelta(days=10)).isoformat(timespec="seconds")
 
-        self.argv += f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
+        ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
         with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
             rwd.update_sync_time('draft')
             rwd.update_sync_time('rfc')
 
         # Check date provided on command-line for drafts overrides cache-directory date 
-        arguments = self.argv + f"-nd {override}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
+        arguments = argv + f"-nd {override}".split()
+        ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
         with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
             self.assertLess( rwd.prev_sync_time('draft', override), rwd.prev_sync_time('draft', None))
 
         # Check date provided on command-line for rfc overrides cache-directory date 
-        arguments = self.argv + f"-nr {override}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
+        arguments = argv + f"-nr {override}".split()
+        ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
         with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
             self.assertLess( rwd.prev_sync_time('rfc', override), rwd.prev_sync_time('rfc', None))
 
-    def tearDown(self):
-        if self.rootdir.exists():
-            shutil.rmtree(self.rootdir)
+
+        if rootdir.exists():
+            shutil.rmtree(rootdir)
 
 
 if __name__ == '__main__':

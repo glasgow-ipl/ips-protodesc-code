@@ -35,52 +35,54 @@ import sys
 
 
 class Test_Cmdline_Dir(ut.TestCase):
-    def setUp(self):
-        # generate a temporary directory name
-        # remove actual directory - tool should a
-        self.rootdir = pathlib.Path(tempfile.mkdtemp())
-        self.argv = ["npt_prog"]
-
     def test_use_existing_rootdir(self):
-        self.assertTrue( self.rootdir.exists(),
+        rootdir = pathlib.Path(tempfile.mkdtemp())
+
+        self.assertTrue( rootdir.exists(),
             msg=f"Test harness error : Testing pre-existing Root Data Directory")
 
-        self.argv += f"-d {str(self.rootdir)}".split()
-        ap_ns, opts = npt.util.parse_cmdline( arglist=self.argv )
+        argv = f"cmdline -d {str(rootdir)}".split()
+        ap_ns, opts = npt.util.parse_cmdline( arglist=argv )
         self.assertIsInstance( opts.root_dir, pathlib.Path,
             msg=f"generated dir - {opts.root_dir} is not of type pathlib.Path")
-        self.assertEqual( self.rootdir, opts.root_dir,
-            msg=f"Unexpected rootdir {opts.root_dir}. Expected {self.rootdir}")
+        self.assertEqual( rootdir, opts.root_dir,
+            msg=f"Unexpected rootdir {opts.root_dir}. Expected {rootdir}")
+
+        if rootdir.exists():
+            shutil.rmtree(rootdir)
 
     def test_default_rootdir(self):
-        current = pathlib.Path.cwd()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
-        self.assertIsInstance( opts.root_dir, pathlib.Path,
-            msg=f"generated dir - {opts.root_dir} is not of type pathlib.Path")
-        self.assertEqual( opts.root_dir, current / "ietf_data_cache",
-            msg=f"Unexpected rootdir {opts.root_dir}. Expected {self.rootdir}")
+        current = pathlib.Path.cwd() / "ietf_data_cache"
+
+        ap_ns, opts = npt.util.parse_cmdline(arglist= ["cmdline"])
+        self.assertIsInstance( opts.root_dir, pathlib.Path, msg=f"generated dir - {opts.root_dir} is not of type pathlib.Path")
+        self.assertEqual( opts.root_dir, current, msg=f"Unexpected rootdir {opts.root_dir}. Expected {current}")
+
+        if current.exists():
+            shutil.rmtree(current)
 
     def test_autogen_rootdir(self):
-        if self.rootdir.exists():
-            self.rootdir.rmdir()
+        rootdir = pathlib.Path(tempfile.mkdtemp())
+        if rootdir.exists():
+            rootdir.rmdir()
 
-        self.argv +=  f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
-        self.assertIsInstance( opts.root_dir, pathlib.Path,
-            msg=f"generated dir - {opts.root_dir} is not of type pathlib.Path")
-        self.assertEqual( opts.root_dir, self.rootdir,
-            msg=f"Unexpected rootdir {opts.root_dir}. Expected {self.rootdir}")
+        argv = f"cmdline -d {rootdir}".split()
+        ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
+        self.assertIsInstance( opts.root_dir, pathlib.Path, msg=f"generated dir - {opts.root_dir} is not of type pathlib.Path")
+        self.assertEqual( opts.root_dir, rootdir, msg=f"Unexpected rootdir {opts.root_dir}. Expected {rootdir}")
+
+        if rootdir.exists():
+            shutil.rmtree(rootdir)
 
     def test_dir_structure(self):
-        self.argv += f"-d {self.rootdir}".split()
-        ap_ns, opts = npt.util.parse_cmdline(arglist=self.argv)
+        rootdir = pathlib.Path(tempfile.mkdtemp())
+        argv = f"cmdline -d {rootdir}".split()
+        ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
         with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
             self.assertIsInstance( rwd.root, pathlib.Path,
                 msg= f"root cache dir type {type(rwd.root)} is not a pathlib.Path instance")
-            self.assertTrue(rwd.root.exists(),
-                            msg=f"Directory {rwd.root} not created")
-            self.assertTrue(rwd.root.is_dir(),
-                            msg=f"Filesys entry {rwd.root} is not a directory")
+            self.assertTrue(rwd.root.exists(), msg=f"Directory {rwd.root} not created")
+            self.assertTrue(rwd.root.is_dir(), msg=f"Filesys entry {rwd.root} is not a directory")
 
             # check whether .sync file exists
             rwd.update_sync_time("draft")   # force sync-file writing 
@@ -108,10 +110,8 @@ class Test_Cmdline_Dir(ut.TestCase):
             self.assertTrue(rwd.rfc_out.exists(), msg=f"RFC output dir {rwd.rfc_out} missing")
             self.assertTrue(rwd.rfc_out.is_dir(), msg=f"RFC output dir {rwd.rfc_out} is not dir")
 
-
-    def tearDown(self):
-        if self.rootdir.exists():
-            shutil.rmtree(self.rootdir)
+        if rootdir.exists():
+            shutil.rmtree(rootdir)
 
 if __name__ == '__main__':
     ut.main()
