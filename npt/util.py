@@ -603,10 +603,10 @@ def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionCon
     return opt
 
 
-def read_usr_opts() -> OptionContainer :
-    ap_ns, opts = parse_cmdline(sys.argv[1:])
+def read_usr_opts(argv) -> OptionContainer :
+    ap_ns, opts = parse_cmdline(argv)
     return setup_opts(ap_ns , opts)
 
 
 if __name__ == '__main__':
-    read_usr_opts()
+    read_usr_opts(sys.argv[1:])

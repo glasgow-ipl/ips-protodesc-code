@@ -29,6 +29,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+import sys
 from typing import Optional, List, Any, cast
 
 import xml.etree.ElementTree as ET
@@ -180,7 +181,7 @@ def main():
             "rust"   : (".rs" , RustFormatter())
             }
 
-    opt = npt.util.read_usr_opts()
+    opt = npt.util.read_usr_opts(sys.argv[1:])
     for idx, doc in enumerate(opt.infiles):
         print(f"document [{idx}] --> {doc} --> {doc.get_filepath_in()}")
         parsed_content = parse_input_file( doc )
