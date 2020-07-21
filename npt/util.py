@@ -140,7 +140,7 @@ class RootWorkingDir:
     def _new_sync(self) -> Dict[str, str]:
         """contruct and return a default json format for the .sync file"""
         start = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0)
-        dt = start.strftime("%Y-%m-%dT%H:%M:%S")
+        dt = start.isoformat(timespec="seconds")
         return {"rfc": dt, "draft": dt}
 
     def update_sync_time(self, doc_type: str) -> None:
@@ -149,7 +149,7 @@ class RootWorkingDir:
             self._meta = self._new_sync()
 
         if doc_type in self._meta or doc_type in self.doctypes:
-            self._meta[doc_type] = self.sync_time.strftime("%Y-%m-%dT%H:%M:%S")
+            self._meta[doc_type] = self.sync_time.isoformat(timespec="seconds")
 
         with open(self.sync, 'w') as fp:
             json.dump(self._meta, fp)
@@ -280,7 +280,7 @@ def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
     """Fetch all new drafts since time 'since'"""
     trk = datatracker.DataTracker()
     draft_itr = trk.documents(
-        since=since.strftime("%Y-%m-%dT%H:%M:%S"),
+        since=since.isoformat(timespec="seconds"),
         doctype=trk.document_type(
             datatracker.DocumentTypeURI("/api/v1/name/doctypename/draft/")))
 
