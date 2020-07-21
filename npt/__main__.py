@@ -75,7 +75,7 @@ def dfs_methodinvocationexpr(formatter: Formatter, expr: MethodInvocationExpress
     return formatter.format_methodinvocationexpr(target, expr.method_name, arg_exprs)
 
 def dfs_functioninvocationexpr(formatter: Formatter, expr: FunctionInvocationExpression) -> Any:
-    args_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.args_exprs]
+    args_exprs = [dfs_expression(formatter, arg_expr) for arg_expr in expr.arg_exprs]
     return formatter.format_functioninvocationexpr(expr.func.name, args_exprs)
 
 def dfs_fieldaccessexpr(formatter: Formatter, expr: FieldAccessExpression) -> Any:
@@ -95,33 +95,35 @@ def dfs_selfexpr(formatter: Formatter, expr: SelfExpression) -> Any:
     return formatter.format_selfexpr()
 
 def dfs_constantexpr(formatter: Formatter, expr: ConstantExpression) -> Any:
-    return formatter.format_constantexpr(expr.constant_type.name, expr.constant_value)
+    return formatter.format_constantexpr(expr.constant_type, expr.constant_value)
 
 # Protocol DFS
 
 def dfs_struct(struct: Struct, type_names:List[str]):
-    for field in struct.fields:
+    for field in struct.get_fields():
         dfs_protocoltype(field.field_type, type_names)
 
 def dfs_array(array: Array, type_names:List[str]):
     dfs_protocoltype(array.element_type, type_names)
+    dfs_protocoltype(array.parse_from, type_names)
+    dfs_protocoltype(array.serialise_to, type_names)
 
 def dfs_enum(enum: Enum, type_names:List[str]):
     for variant in enum.variants:
         dfs_protocoltype(variant, type_names)
-    type_names.append(enum.name)
     dfs_protocoltype(enum.parse_from, type_names)
     dfs_protocoltype(enum.serialise_to, type_names)
+    type_names.append(enum.name)
 
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
-        if parameter.param_type is not None and parameter.param_type.name not in type_names:
+        if not isinstance(parameter.param_type, TypeVariable) and isinstance(parameter.param_type, ConstructableType) and parameter.param_type.name not in type_names:
             dfs_protocoltype(parameter.param_type, type_names)
-    if function.return_type is not None and function.return_type.name not in type_names:
+    if not isinstance(function.return_type, TypeVariable) and isinstance(function.return_type, ConstructableType) and function.return_type.name not in type_names:
         dfs_protocoltype(function.return_type, type_names)
 
 def dfs_context(context: Context, type_names:List[str]):
-    for field in context.fields:
+    for field in context.get_fields():
         dfs_protocoltype(field.field_type, type_names)
 
 def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[str]):
@@ -137,7 +139,8 @@ def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[st
         dfs_context(pt, type_names)
     elif pt is None:
         return
-    type_names.append(pt.name)
+    if isinstance(pt, ConstructableType):
+        type_names.append(pt.name)
 
 def dfs_protocol(protocol: Protocol):
     type_names : List[str] = []
@@ -213,7 +216,12 @@ def main():
                     elif protocol.has_func(type_name):
                         formatter.format_function(protocol.get_func(type_name))
             except Exception as e:
-                print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt.kind.lower()} failed)")
+                print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt} failed)")
+                continue
+            try:
+                protocol.synthesise()
+            except Exception as e:
+                print(f"Error: could not synthesise protocol ({e})")
                 continue
             try:
                 formatter.format_protocol(protocol)
