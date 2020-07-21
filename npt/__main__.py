@@ -102,7 +102,7 @@ def dfs_constantexpr(formatter: Formatter, expr: ConstantExpression) -> Any:
 def dfs_struct(struct: Struct, type_names:List[str]):
     for field in struct.get_fields():
         dfs_protocoltype(field.field_type, type_names)
-
+        
 def dfs_array(array: Array, type_names:List[str]):
     dfs_protocoltype(array.element_type, type_names)
     dfs_protocoltype(array.parse_from, type_names)
@@ -113,7 +113,6 @@ def dfs_enum(enum: Enum, type_names:List[str]):
         dfs_protocoltype(variant, type_names)
     dfs_protocoltype(enum.parse_from, type_names)
     dfs_protocoltype(enum.serialise_to, type_names)
-    type_names.append(enum.name)
 
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
@@ -121,12 +120,14 @@ def dfs_function(function: Function, type_names:List[str]):
             dfs_protocoltype(parameter.param_type, type_names)
     if not isinstance(function.return_type, TypeVariable) and isinstance(function.return_type, ConstructableType) and function.return_type.name not in type_names:
         dfs_protocoltype(function.return_type, type_names)
-
+        
 def dfs_context(context: Context, type_names:List[str]):
     for field in context.get_fields():
         dfs_protocoltype(field.field_type, type_names)
 
 def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[str]):
+    if isinstance(pt, ConstructableType):
+        type_names.append(pt.name)
     if isinstance(pt, Struct):
         dfs_struct(pt, type_names)
     elif isinstance(pt, Array):
@@ -139,8 +140,6 @@ def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[st
         dfs_context(pt, type_names)
     elif pt is None:
         return
-    if isinstance(pt, ConstructableType):
-        type_names.append(pt.name)
 
 def dfs_protocol(protocol: Protocol):
     type_names : List[str] = []
@@ -178,7 +177,7 @@ def main():
     dom_parser = AsciiDiagramsParser()
     output_formatter = {
             "simple" : (".txt", SimpleFormatter()),
-            #"rust"   : (".rs" , RustFormatter())
+            "rust"   : (".rs" , RustFormatter())
             }
 
     opt = npt.util.parse_cmdline()
@@ -190,6 +189,13 @@ def main():
             continue
 
         protocol = dom_parser.build_protocol(  None , parsed_content )
+
+        try:
+            protocol.synthesise()
+        except Exception as e:
+            print(f"Error: could not synthesise protocol ({e})")
+            continue
+        
         type_names = dfs_protocol(protocol)
 
         for o_fmt in opt.output_fmt :
@@ -200,7 +206,7 @@ def main():
                         pt = protocol.get_type(type_name)
                         if isinstance(pt, BitString):
                             size_expr = dfs_expression(formatter, cast(Expression, pt.size))
-                            formatter.format_bitstring(pt, formatter.format_expression(size_expr))
+                            formatter.format_bitstring(pt, size_expr)
                         elif isinstance(pt, Struct):
                             constraints = []
                             for constraint in pt.constraints:
@@ -217,11 +223,6 @@ def main():
                         formatter.format_function(protocol.get_func(type_name))
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt} failed)")
-                continue
-            try:
-                protocol.synthesise()
-            except Exception as e:
-                print(f"Error: could not synthesise protocol ({e})")
                 continue
             try:
                 formatter.format_protocol(protocol)
