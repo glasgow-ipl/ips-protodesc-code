@@ -36,6 +36,7 @@ import json
 import requests
 import re
 import functools
+import sys
 from datetime import datetime
 from dataclasses import dataclass, field
 from typing import List, Tuple, Dict, Optional
@@ -45,6 +46,8 @@ from ietfdata import datatracker, rfcindex
 valid_extns = [".xml", ".txt"]
 output_formats = ["simple", "rust"]
 
+# npt epoch definition
+epoch = '1970-01-01T00:00:00'
 
 @dataclass
 class RootWorkingDir:
@@ -114,7 +117,7 @@ class RootWorkingDir:
         return start time as epoch.
         """
         if override:
-            return datetime.strptime(override, "%Y-%m-%d %H:%M:%S")
+            return datetime.fromisoformat(override)
 
         if self._meta is None:
             return datetime(year=1970,
@@ -125,7 +128,7 @@ class RootWorkingDir:
                             second=0)
 
         if doc_type in self._meta:
-            return datetime.strptime(self._meta[doc_type], "%Y-%m-%d %H:%M:%S")
+            return datetime.fromisoformat(self._meta[doc_type])
         else:
             return datetime(year=1970,
                             month=1,
@@ -137,7 +140,7 @@ class RootWorkingDir:
     def _new_sync(self) -> Dict[str, str]:
         """contruct and return a default json format for the .sync file"""
         start = datetime(year=1970, month=1, day=1, hour=0, minute=0, second=0)
-        dt = start.strftime("%Y-%m-%d %H:%M:%S")
+        dt = start.isoformat(timespec="seconds")
         return {"rfc": dt, "draft": dt}
 
     def update_sync_time(self, doc_type: str) -> None:
@@ -146,7 +149,7 @@ class RootWorkingDir:
             self._meta = self._new_sync()
 
         if doc_type in self._meta or doc_type in self.doctypes:
-            self._meta[doc_type] = self.sync_time.strftime("%Y-%m-%d %H:%M:%S")
+            self._meta[doc_type] = self.sync_time.isoformat(timespec="seconds")
 
         with open(self.sync, 'w') as fp:
             json.dump(self._meta, fp)
@@ -277,7 +280,7 @@ def fetch_new_drafts(since: datetime) -> List[IETF_URI]:
     """Fetch all new drafts since time 'since'"""
     trk = datatracker.DataTracker()
     draft_itr = trk.documents(
-        since=since.strftime("%Y-%m-%dT%H:%M:%S"),
+        since=since.isoformat(timespec="seconds"),
         doctype=trk.document_type(
             datatracker.DocumentTypeURI("/api/v1/name/doctypename/draft/")))
 
@@ -484,8 +487,7 @@ class OptionContainer:
             assert ofmt in output_formats, f"output fmt {ofmt} not in {output_formats}"
 
 
-def parse_cmdline() -> OptionContainer:
-    epoch = '1970-01-01 00:00:00'
+def parse_cmdline( arglist : List[str] ) -> Tuple[argparse.Namespace,OptionContainer]:
     ap = argparse.ArgumentParser(description=f"Parse ietf drafts and rfcs "
                                  f"and autogenerate protocol parsers")
 
@@ -497,7 +499,7 @@ def parse_cmdline() -> OptionContainer:
         const=epoch,
         help=f"Get all new drafts from ietf data tracker. "
         f"If from date is provided, pick up drafts from given date "
-        f"(fmt 'yyyy-mm-dd hh:mm:ss').")
+        f"(fmt 'yyyy-mm-ddThh:mm:ss').")
     ap.add_argument(
         "-nr",
         "--newrfc",
@@ -506,14 +508,14 @@ def parse_cmdline() -> OptionContainer:
         const=epoch,
         help=f"Get all new rfcs from ietf data tracker. "
         f"If from date is provided, pick up drafts from given date "
-        f"(fmt 'yyyy-mm-dd hh:mm:ss'). ")
+        f"(fmt 'yyyy-mm-ddThh:mm:ss'). ")
     ap.add_argument("-d",
                     "--dir",
                     metavar="dir",
                     nargs=1,
                     default=[str(pathlib.Path().cwd() / "ietf_data_cache")],
                     help=f"Root directory for all files. "
-                         f"This has to be a pre-existing directory. "
+                         f"If given directory does not exist, a new one will be created. "
                          f"Defaults to ietf_data_cache within "
                          f"current working directory")
     ap.add_argument("-of",
@@ -543,16 +545,21 @@ def parse_cmdline() -> OptionContainer:
              f"draft format : draft[-rev][.extn]."
              f"rfc format : rfc[.extn]")
 
-    _obj = ap.parse_args()
+    _obj = ap.parse_args(arglist)
+
     opt = OptionContainer(pathlib.Path(_obj.dir[0]),
                           DownloadOptions(force=_obj.force),
                           _obj.outformat[0].split(sep=','), [])
+    return (_obj, opt )
 
-    if _obj.newdraft:
-        fromdate = datetime.strptime(_obj.newdraft, "%Y-%m-%d %H:%M:%S")
+
+
+def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionContainer :
+    if cmd_obj.newdraft:
+        fromdate = datetime.fromisoformat(cmd_obj.newdraft)
         with RootWorkingDir(root=opt.root_dir) as rwd, DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
-            drafts = fetch_new_drafts(rwd.prev_sync_time('draft',None if _obj.newdraft == epoch else _obj.newdraft))
+            drafts = fetch_new_drafts(rwd.prev_sync_time('draft',None if cmd_obj.newdraft == epoch else cmd_obj.newdraft))
             for _idx, u in enumerate(drafts):
                 print(f"Fetch draft [{_idx}] --> {u}")
             dlclient.download_files(drafts)
@@ -562,11 +569,11 @@ def parse_cmdline() -> OptionContainer:
             # post-processing starts here
             # update meta data within cached filesys
             rwd.update_sync_time("draft")
-    elif _obj.newrfc:
-        fromdate = datetime.strptime(_obj.newrfc, "%Y-%m-%d %H:%M:%S")
+    elif cmd_obj.newrfc:
+        fromdate = datetime.fromisoformat(cmd_obj.newrfc)
         with RootWorkingDir(root=opt.root_dir) as rwd,DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
-            rfcs = fetch_new_rfcs(rwd.prev_sync_time('rfc', None if _obj.newrfc == epoch else _obj.newrfc))
+            rfcs = fetch_new_rfcs(rwd.prev_sync_time('rfc', None if cmd_obj.newrfc == epoch else cmd_obj.newrfc))
             for _idx, u in enumerate(rfcs):
                 print(f"Fetch rfc [{_idx}]  --> {u}")
             dlclient.download_files(rfcs)
@@ -576,9 +583,9 @@ def parse_cmdline() -> OptionContainer:
             # post-processing starts here
             # update meta data within cached filesys
             rwd.update_sync_time("rfc")
-    elif _obj.uri:
+    elif cmd_obj.uri:
         remote, local = [], []
-        for arg in [PositionalArg(uri) for uri in _obj.uri]:
+        for arg in [PositionalArg(uri) for uri in cmd_obj.uri]:
             uri_type, urls = arg.resolve_argtype()
             if uri_type == 'remote':
                 remote += urls
@@ -596,5 +603,10 @@ def parse_cmdline() -> OptionContainer:
     return opt
 
 
+def read_usr_opts(argv) -> OptionContainer :
+    ap_ns, opts = parse_cmdline(argv)
+    return setup_opts(ap_ns , opts)
+
+
 if __name__ == '__main__':
-    parse_cmdline()
+    read_usr_opts(sys.argv[1:])

@@ -81,8 +81,8 @@ To run the project's test suite, run:
     within the *<root-dir>* and resolves the previous time at which the tool
     downloaded RFCs from the RFC index.
     If `.sync` does not exist in `root-dir`, all RFCs since
-    "1970-01-01 00:00:00" will be downloaded and processed.
-    The date *from*  is specified with format `yyyy-mm-dd HH:MM:SS`.
+    "1970-01-01T00:00:00" will be downloaded and processed.
+    The date *from*  is specified with format `yyyy-mm-ddTHH:MM:SS`.
     All times are in UTC.
 
     After all identified RFCs are downloaded, the `.sync` file
@@ -117,7 +117,7 @@ To run the project's test suite, run:
  Each of the tool's three modes can take the following options :
  1. **-d** *rootdir*, **--dir** *rootdir*  :
     All downloaded documents are stored under *rootdir*.
-    This should be an existing writable directory.
+    If *rootdir* is specified and does not exist, a new directory will be created.
     If *rootdir* is not specified, the script will generate
     the default directory *ietf-data-cache* in the current working directory.
     The tool will generate the following file schema within the specified directory.
@@ -196,9 +196,9 @@ optional arguments:
                         Get all new rfcs from ietf data tracker. If from date
                         is provided, pick up drafts from given date (fmt
                         'yyyy-mm-dd hh:mm:ss').
-  -d dir, --dir dir     Root directory for all files. This has to be a pre-
-                        existing directory. Defaults to ietf_data_cache within
-                        current working directory
+  -d dir, --dir dir     Root directory for all files. If given directory does
+                        not exist, a new one will be created. Defaults to
+                        ietf_data_cache within current working directory
   -of format, --outformat format
                         comma delimited list of output formats. Current output
                         formats are simple,rust
