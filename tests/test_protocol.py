@@ -677,12 +677,12 @@ class TestProtocol(unittest.TestCase):
         self.assertEqual(array.methods["length"].return_type, Number())
 
 
-    def test_array_nolen_nosize(self):
-        bitstring = BitString("Test", None)
-        with self.assertRaises(ProtocolTypeError) as pte:
-            array = Array("TestArray", bitstring, None)
-        
-        self.assertEqual(str(pte.exception), "Cannot construct Array: one of length or element size must be specified")
+    # def test_array_nolen_nosize(self):
+    #     bitstring = BitString("Test", None)
+    #     with self.assertRaises(ProtocolTypeError) as pte:
+    #         array = Array("TestArray", bitstring, None)
+    #     
+    #     self.assertEqual(str(pte.exception), "Cannot construct Array: one of length or element size must be specified")
 
 
     # ---------------------------------------------------------------------------------------------
