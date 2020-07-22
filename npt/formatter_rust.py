@@ -33,6 +33,7 @@ import itertools
 
 from npt.protocol  import *
 from npt.formatter import Formatter
+from npt.helpers   import ExpressionTraversal
 
 class RustFormatter(Formatter):
     """
@@ -40,11 +41,13 @@ class RustFormatter(Formatter):
     """
 
     output: List[str]
+    expr_traversal: ExpressionTraversal
 
     #add necessary imports at the start of every generated rust file
     def __init__(self):
         self.output = []
         self.structs = {}
+        self.expr_traversal = ExpressionTraversal(self)
         #add crate/imports
         self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\nuse nom::error::ErrorKind;\nuse nom::Err::Error;\n\n")
 
@@ -123,12 +126,15 @@ class RustFormatter(Formatter):
                 self.output.append(", Ord")
         self.output.append(")]\n")
         self.output.extend(["struct ", struct.name.replace("-", "").replace(" ", ""), " {\n"])
-        for field in struct.get_fields():
-            self.output.append("    %s: %s,\n" % (field.field_name, field.field_type.name))
-        self.output.append("}\n")
+        parser_functions = []
+        closure_terms = []
         generator = self.closure_term_gen()
-        parser_functions = ["parse_{name}".format(name=field.field_type.name.lower()) for field in struct.get_fields()]
-        closure_terms = ["{term}".format(term=next(generator)) for field in struct.get_fields()]
+        for field in struct.get_fields():
+            type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
+            self.output.append("    %s: %s,\n" % (field.field_name, type_name))
+            parser_functions.append("parse_{name}".format(name=type_name.lower()))
+            closure_terms.append("{term}".format(term=next(generator)))
+        self.output.append("}\n")
         self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=struct.name.replace("-", "").replace(" ", "")))
         self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=struct.name.replace("-", "").replace(" ", "")))
         for i in range(len(struct.get_fields())):
@@ -136,25 +142,27 @@ class RustFormatter(Formatter):
         self.output.append("})(input)")
         self.output.append("\n}\n")
 
-    def format_array(self, array:Array):
+    def format_array(self, array: Array):
         assert array.name not in self.output
+        element_type_name = array.element_type.name if isinstance(array.element_type, ConstructableType) else "nothing"
         if array.length is None:
-            self.output.append("\nstruct %s(Vec<%s" % (array.name, array.element_type.name))
+            self.output.append("\nstruct %s(Vec<%s" % (array.name, element_type_name))
             if isinstance(array.element_type, BitString):
-                self.output.append("(u%d)" % self.assign_int_size(array.element_type))
+                self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
             self.output.append(">);")
         else:
-            self.output.append("\nstruct %s([%s" % (array.name, array.element_type.name))
+            self.output.append("\nstruct %s([%s" % (array.name, element_type_name))
             if isinstance(array.element_type, BitString):
-                self.output.append("(u%d)" % self.assign_int_size(array.element_type))
-            self.output.append("; %d]);" % array.length)
+                self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
+            self.output.append("; %s]);" % self.expr_traversal.dfs_expression(array.length))
         self.output.append("\n\n")
 
     def format_enum(self, enum:Enum):
         assert enum.name not in self.output
         self.output.extend(["\nenum ", "%s {\n" % enum.name])
         for variant in enum.variants:
-            self.output.append("    %s,\n" % variant.name)
+            variant_type_name = variant.name if isinstance(variant, ConstructableType) else "nothing"
+            self.output.append("    %s,\n" % variant_type_name)
         self.output.append("}\n\n")
 
     def format_function(self, function:Function):
@@ -162,39 +170,43 @@ class RustFormatter(Formatter):
         self.output.append("\nfn {function_name}(".format(function_name=function.name))
         for param in function.parameters:
             #TODO: handle parameters which aren't just structs
-            assert param.param_type is not None
-            self.output.append("{param_name}: {param_type}".format(param_name=param.param_name, param_type=param.param_type.name))
+            assert not isinstance(param.param_type, TypeVariable)
+            param_type_name = param.param_type.name if isinstance(param.param_type, ConstructableType) else "nothing"
+            self.output.append("{param_name}: {param_type}".format(param_name=param.param_name, param_type=param_type_name))
             if param not in function.parameters[-1:]:
                 self.output.append(", ")
             else:
                 self.output.append(") ")
         if not isinstance(function.return_type, Nothing) and function.return_type is not None:
-            self.output.append("-> {return_type}".format(return_type=function.return_type.name))
+            return_type_name = function.return_type.name if isinstance(function.return_type, ConstructableType) else "nothing"
+            self.output.append("-> {return_type}".format(return_type=return_type_name))
         self.output.append(" {\n    //function body required\n    unimplemented!();\n}\n\n")
 
     def format_context(self, context:Context):
-        for field in context.fields:
+        for field in context.get_fields():
             #TODO: expand this to handle expressions when a numerical size is not present (ie. size was left undefined)
             if isinstance(field.field_type, BitString):
-                var_type = "u%d" % (self.assign_int_size(field.field_type))
+                var_type = "u%d" % (self.assign_int_size(self.expr_traversal.dfs_expression(field.field_type.size)))
             elif isinstance(field.field_type, Option):
-                var_type = "Option<{ref_type}>".format(ref_type=field.field_type.reference_type.name)
+                ref_type_name = field.field_type.reference_type.name if isinstance(field.field_type.reference_type, ConstructableType) else "nothing"
+                var_type = "Option<{ref_type}>".format(ref_type=ref_type_name)
             #Nothing isn't included as a return type here - should be covered by Option
             elif isinstance(field.field_type, Array):
                 if field.field_type.length is None:
-                    var_type = "Vec<{element_type}>".format(element_type=field.field_type.element_type.name)
+                    element_type_name = field.field_type.element_type.name if isinstance(field.field_type.element_type, ConstructableType) else "nothing"
+                    var_type = "Vec<{element_type}>".format(element_type=element_type_name)
                 else:
                     if isinstance(field.field_type.element_type, BitString):
-                        var_type = "[%s(u%d); %d]" % (field.field_type.name, (self.assign_int_size(field.field_type.element_type)), field.field_type.length)
+                        var_type = "[%s(u%d); %d]" % (field.field_type.name, (self.assign_int_size(self.expr_traversal.dfs_expression(field.field_type.element_type.size))), self.expr_traversal.dfs_expression(field.field_type.length))
                     else:
-                        var_type = "[%s; %d]" % (field.field_type.name, field.field_type.length)
+                        var_type = "[%s; %s]" % (field.field_type.name, self.expr_traversal.dfs_expression(field.field_type.length))
             elif isinstance(field.field_type, Struct):
                 var_type = field.field_type.name
             elif isinstance(field.field_type, Enum):
                 var_type = field.field_type.name
             #FIXME: this will likely not work for all cases of derived types
             else:
-                var_type = field.field_type.name
+                var_type = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
 
             #all variables are set to mutable for now
             self.output.append("let mut {var_name}: {var_type};\n".format(var_name=field.field_name, var_type=var_type))
@@ -204,4 +216,4 @@ class RustFormatter(Formatter):
             yield ascii_letters[i]
 
     def format_protocol(self, protocol:Protocol):
-        defined_parsers = []
+        pass

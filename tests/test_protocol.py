@@ -270,7 +270,7 @@ class TestProtocol(unittest.TestCase):
     
     def test_expression(self):
         with self.assertRaises(TypeError) as expr_abc_exception:
-            expr = Expression()
+            expr = Expression() # type: ignore
         
         self.assertEqual(str(expr_abc_exception.exception), "Can't instantiate abstract class Expression with abstract methods result_type")
 
@@ -461,7 +461,7 @@ class TestProtocol(unittest.TestCase):
         pt = Number()
         
         with self.assertRaises(ProtocolTypeError) as pte:
-            rt = pt.implement_trait(test_trait)
+            pt.implement_trait(test_trait)
             
         self.assertEqual(str(pte.exception), "Cannot implement trait Test on a primitive type")
 
@@ -470,7 +470,7 @@ class TestProtocol(unittest.TestCase):
         pt = BitString("Test", ConstantExpression(Number(), 1))
         
         with self.assertRaises(ProtocolTypeError) as pte:
-            rt = pt.implement_trait(Value())
+            pt.implement_trait(Value())
             
         self.assertEqual(str(pte.exception), "Type BitString<Test::Sized Value Equality NumberRepresentable> already implements trait Value")
 
@@ -480,7 +480,7 @@ class TestProtocol(unittest.TestCase):
         pt = BitString("Test", ConstantExpression(Number(), 1))
         
         with self.assertRaises(ProtocolTypeError) as pte:
-            rt = pt.implement_trait(test_trait)
+            pt.implement_trait(test_trait)
         
         self.assertEqual(str(pte.exception), "Type BitString<Test::Sized Value Equality NumberRepresentable> already implements a method get")
 
@@ -554,7 +554,7 @@ class TestProtocol(unittest.TestCase):
     
     def test_bitstring_no_name(self):
         with self.assertRaises(ProtocolTypeError) as pte:
-            bitstring = BitString(None, ConstantExpression(Number(), 1))
+            bitstring = BitString(None, ConstantExpression(Number(), 1)) # type: ignore
             
         self.assertEqual(str(pte.exception), "Cannot create type: types must be named")
 
