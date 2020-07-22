@@ -31,7 +31,9 @@
 
 echo "*** Running pytest..."
 pytest --junitxml=test-results/protocol-tests.xml tests/test_protocol.py
+TESTPROTOCOL_RV=$?
 pytest --junitxml=test-results/parser-tests.xml tests/test_parsers.py
+TESTPARSERS_RV=$?
 echo "^^^ pytest finished"
 
 echo "*** Running coverage..."
@@ -43,4 +45,10 @@ echo "^^^ coverage finished"
 
 echo "*** Running mypy..."
 mypy npt/*.py --junit-xml test-results/npt-typecheck.xml
+TYPECHECKNPT_RV=$?
+echo $typecheck_npt
 echo "^^^ mypy finished"
+
+if [ $TESTPROTOCOL_RV -eq 1 -o $TESTPARSERS_RV -eq 1 -o $TYPECHECKNPT_RV -eq 1 ]; then
+  exit 1
+fi
