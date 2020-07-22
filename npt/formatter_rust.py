@@ -37,6 +37,9 @@ from npt.protocol  import *
 from npt.formatter import Formatter
 from npt.helpers   import ExpressionTraversal
 
+def camelcase(name: str) -> str:
+    return name.replace("-", " ").replace("_", " ").title().replace(" ", "")
+
 class RustFormatter(Formatter):
     """
     Class to generate Rust code from parsed ASCII diagrams
@@ -51,7 +54,7 @@ class RustFormatter(Formatter):
         self.structs = {}
         self.expr_traversal = ExpressionTraversal(self)
         #add crate/imports
-        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\nuse nom::error::ErrorKind;\nuse nom::Err::Error;\n\n")
+        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
         manifest = f"[package]\nname = \"{output_name}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
@@ -96,9 +99,9 @@ class RustFormatter(Formatter):
             size = None
         assert bitstring.name not in self.output
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
-        self.output.extend(["struct ", bitstring.name.replace("-", "").replace(" ", ""), "(u%d);\n" % self.assign_int_size(size)])
-        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=bitstring.name.replace("-", "").replace(" ", "")))
-        self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=self.assign_int_size(size), name=bitstring.name.replace("-", "").replace(" ", "")))
+        self.output.extend(["struct ", camelcase(bitstring.name), "(u%d);\n" % self.assign_int_size(size)])
+        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
+        self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=self.assign_int_size(size), name=camelcase(bitstring.name)))
 
 
     #assign the smallest possible unsigned int which can accommodate the size given
@@ -130,18 +133,21 @@ class RustFormatter(Formatter):
             elif trait == "Ordinal":
                 self.output.append(", Ord")
         self.output.append(")]\n")
-        self.output.extend(["struct ", struct.name.replace("-", "").replace(" ", ""), " {\n"])
+        self.output.extend(["struct ", camelcase(struct.name), " {\n"])
         parser_functions = []
         closure_terms = []
         generator = self.closure_term_gen()
         for field in struct.get_fields():
             type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
-            self.output.append("    %s: %s,\n" % (field.field_name, type_name))
+            self.output.append("    %s: %s,\n" % (field.field_name, camelcase(type_name)))
             parser_functions.append("parse_{name}".format(name=type_name.lower()))
             closure_terms.append("{term}".format(term=next(generator)))
         self.output.append("}\n")
-        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=struct.name.replace("-", "").replace(" ", "")))
-        self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=struct.name.replace("-", "").replace(" ", "")))
+        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
+        if len(parser_functions) > 1:
+            self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
+        else:
+            self.output.append("map(tuple({functions}), |{closure}| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
         for i in range(len(struct.get_fields())):
             self.output.append("{f_name}: {closure_term}, ".format(f_name=struct.get_fields()[i].field_name, closure_term=closure_terms[i]))
         self.output.append("})(input)")
@@ -151,23 +157,29 @@ class RustFormatter(Formatter):
         assert array.name not in self.output
         element_type_name = array.element_type.name if isinstance(array.element_type, ConstructableType) else "nothing"
         if array.length is None:
-            self.output.append("\nstruct %s(Vec<%s" % (array.name, element_type_name))
+            closure_terms = self.closure_term_gen()
+            self.output.append("#[derive(Debug)]")
+            self.output.append("\nstruct %s(Vec<%s" % (camelcase(array.name), camelcase(element_type_name)))
             if isinstance(array.element_type, BitString):
                 self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
             self.output.append(">);")
+            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
         else:
-            self.output.append("\nstruct %s([%s" % (array.name, element_type_name))
+            self.output.append("#[derive(Debug)]")
+            self.output.append("\nstruct %s([%s" % (camelcase(array.name), camelcase(element_type_name)))
             if isinstance(array.element_type, BitString):
                 self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
             self.output.append("; %s]);" % self.expr_traversal.dfs_expression(array.length))
+            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
         self.output.append("\n\n")
 
     def format_enum(self, enum:Enum):
         assert enum.name not in self.output
-        self.output.extend(["\nenum ", "%s {\n" % enum.name])
+        self.output.append("#[derive(Debug)]")
+        self.output.extend(["\nenum ", "%s {\n" % camelcase(enum.name)])
         for variant in enum.variants:
             variant_type_name = variant.name if isinstance(variant, ConstructableType) else "nothing"
-            self.output.append("    %s,\n" % variant_type_name)
+            self.output.append("    %s,\n" % camelcase(variant_type_name))
         self.output.append("}\n\n")
 
     def format_function(self, function:Function):
@@ -184,7 +196,7 @@ class RustFormatter(Formatter):
                 self.output.append(") ")
         if not isinstance(function.return_type, Nothing) and function.return_type is not None:
             return_type_name = function.return_type.name if isinstance(function.return_type, ConstructableType) else "nothing"
-            self.output.append("-> {return_type}".format(return_type=return_type_name))
+            self.output.append("-> {return_type}".format(return_type=camelcase(return_type_name)))
         self.output.append(" {\n    //function body required\n    unimplemented!();\n}\n\n")
 
     def format_context(self, context:Context):
@@ -199,7 +211,7 @@ class RustFormatter(Formatter):
             elif isinstance(field.field_type, Array):
                 if field.field_type.length is None:
                     element_type_name = field.field_type.element_type.name if isinstance(field.field_type.element_type, ConstructableType) else "nothing"
-                    var_type = "Vec<{element_type}>".format(element_type=element_type_name)
+                    var_type = "Vec<{element_type}>".format(element_type=camelcase(element_type_name))
                 else:
                     if isinstance(field.field_type.element_type, BitString):
                         var_type = "[%s(u%d); %d]" % (field.field_type.name, (self.assign_int_size(self.expr_traversal.dfs_expression(field.field_type.element_type.size))), self.expr_traversal.dfs_expression(field.field_type.length))
@@ -221,4 +233,4 @@ class RustFormatter(Formatter):
             yield ascii_letters[i]
 
     def format_protocol(self, protocol:Protocol):
-        pass
+        self.output.append("fn main() {\n    // TODO: implement\n}\n")
