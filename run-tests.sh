@@ -29,26 +29,30 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-echo "*** Running pytest..."
-pytest --junitxml=test-results/protocol-tests.xml tests/test_protocol.py
-TESTPROTOCOL_RV=$?
-pytest --junitxml=test-results/parser-tests.xml tests/test_parsers.py
-TESTPARSERS_RV=$?
-echo "^^^ pytest finished"
+EXIT_CODE=0
+echo "*** Executing pytest..."
+for py in tests/*.py
+do
+  pytest -v --junitxml=test-results/`basename $py .py`.xml $py
+  if [ $? -eq 1 ]; then EXIT_CODE=1; fi
+done
+echo "^^^ Completed pytest"
+echo ""
 
-echo "*** Running coverage..."
-coverage run --source npt tests/test_protocol.py 
-coverage run -a --source npt tests/test_parsers.py
+echo "*** Executing coverage..."
+rm -f .coverage
+for py in tests/*.py
+do
+  coverage run -a --source npt $py
+done
 coverage report
 coverage html
-echo "^^^ coverage finished"
+echo "^^^ Completed coverage"
+echo ""
 
-echo "*** Running mypy..."
-mypy npt/*.py --junit-xml test-results/npt-typecheck.xml
-TYPECHECKNPT_RV=$?
-echo $typecheck_npt
-echo "^^^ mypy finished"
+echo "*** Executing mypy..."
+mypy npt/*.py tests/*.py --junit-xml test-results/npt-typecheck.xml
+if [ $? -eq 1 ]; then EXIT_CODE=1; fi
+echo "^^^ Completed mypy"
 
-if [ $TESTPROTOCOL_RV -eq 1 -o $TESTPARSERS_RV -eq 1 -o $TYPECHECKNPT_RV -eq 1 ]; then
-  exit 1
-fi
+exit $EXIT_CODE
