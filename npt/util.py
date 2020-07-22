@@ -39,8 +39,9 @@ import functools
 import sys
 from datetime import datetime
 from dataclasses import dataclass, field
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Callable
 from ietfdata import datatracker, rfcindex
+from pathlib import Path
 
 # supported document extensions
 valid_extns = [".xml", ".txt"]
@@ -200,21 +201,20 @@ class IETF_URI:
     def get_filepath_in(self) -> Optional[pathlib.Path]:
         return self.infile
 
-    def gen_filepath_out(self, root: pathlib.Path,
-                         output_extn: str) -> Optional[pathlib.Path]:
+    def gen_filepath_out(self, root: pathlib.Path, formatter_name : str) -> Optional[pathlib.Path]:
         """Generate the output file path. The extension is passed in
         by the caller"""
 
         infile = self.get_filepath_in()
         outfile = None
         assert infile != None, f"No input file found for '{str(self)}'"
-        outdir = lambda _root: _root / "output" / self.name / self.rev if self.rev else _root / "output" / self.name
+        outdir : Callable[[Path], Path] = lambda _root: _root / "output" / self.name / self.rev if self.rev else _root / "output"
 
         root = root.resolve()
         if infile is not None and str(root) in [ str(parent) for parent in infile.parents]:
-            outfile = outdir(root) / f"{self._document_name()}{output_extn}"
+            outfile = outdir(root) / self._document_name() / formatter_name
         elif infile is not None:
-            outfile = outdir(infile.parent) / f"{self._document_name()}{output_extn}"
+            outfile = outdir(infile.parent) / self._document_name() / formatter_name
         return outfile
 
 

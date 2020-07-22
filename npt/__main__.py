@@ -30,7 +30,8 @@
 # =================================================================================================
 
 import sys
-from typing import Optional, List, Any, cast
+from typing  import Optional, List, Any, cast
+from pathlib import Path
 
 import xml.etree.ElementTree as ET
 
@@ -126,8 +127,8 @@ def main():
     #dom_parser = { "asciidiagrams" : parsers.asciidiagrams.asciidiagrams_parser.AsciiDiagramsParser() }
     dom_parser = AsciiDiagramsParser()
     output_formatter = {
-            "simple" : (".txt", SimpleFormatter()),
-            "rust"   : (".rs" , RustFormatter())
+            "simple" : SimpleFormatter(),
+            "rust"   : RustFormatter()
             }
 
     opt = npt.util.read_usr_opts(sys.argv[1:])
@@ -149,7 +150,7 @@ def main():
         type_names = dfs_protocol(protocol)
 
         for o_fmt in opt.output_fmt :
-            out_extn, formatter = output_formatter[o_fmt]
+            formatter = output_formatter[o_fmt]
             expr_traversal = ExpressionTraversal(formatter)
             try:
                 for type_name in type_names:
@@ -181,12 +182,16 @@ def main():
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_protocol failed)")
                 continue
 
-            output_file = doc.gen_filepath_out( opt.root_dir, out_extn)
-            assert output_file is not None
-            output_file.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
-            with open(output_file, "w") as out_fp:
-                out_fp.write(formatter.generate_output())
-                print(f"Generated {o_fmt} output :\ninput doc = {doc.get_filepath_in()},\n--- output file = {output_file}")
+            output_dir = doc.gen_filepath_out(opt.root_dir, o_fmt)
+            output = formatter.generate_output(str(output_dir).split('/')[-2])
+            print(f"Generated output for input doc [{doc.get_filepath_in()}]:")
+            for output_filename in output:
+                assert isinstance(output_dir, Path)
+                output_filepath = Path(output_dir, output_filename)
+                output_filepath.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
+                with open(output_filepath, "w") as out_fp:
+                    out_fp.write(output[output_filename])
+                print(f"\t{output_filepath}")
 
 
 if __name__ == "__main__":

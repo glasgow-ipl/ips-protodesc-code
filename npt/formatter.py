@@ -30,6 +30,7 @@
 
 import abc
 
+from pathlib      import Path
 from typing       import Optional, List, Any
 from npt.protocol import *
 
@@ -39,7 +40,7 @@ class Formatter(abc.ABC):
     """
 
     @abc.abstractmethod
-    def generate_output(self):
+    def generate_output(self, output_name: str) -> Dict[Path, str]:
         pass
 
     @abc.abstractmethod

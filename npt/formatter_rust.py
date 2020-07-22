@@ -28,8 +28,10 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from string import ascii_letters
 import itertools
+
+from string  import ascii_letters
+from pathlib import Path
 
 from npt.protocol  import *
 from npt.formatter import Formatter
@@ -51,8 +53,11 @@ class RustFormatter(Formatter):
         #add crate/imports
         self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\nuse nom::error::ErrorKind;\nuse nom::Err::Error;\n\n")
 
-    def generate_output(self):
-        return "".join(self.output)
+    def generate_output(self, output_name: str) -> Dict[Path, str]:
+        manifest = f"[package]\nname = \"{output_name}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
+        output_files = {Path(f"{output_name}/src/main.rs"): "".join(self.output),
+                        Path(f"{output_name}/Cargo.toml"): manifest}   
+        return output_files
 
     def format_argumentexpression(self, arg_name: str, arg_value: Any) -> Any:
         return ""

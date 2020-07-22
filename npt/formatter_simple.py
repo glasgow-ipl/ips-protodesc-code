@@ -29,7 +29,9 @@
 # =================================================================================================
 
 import abc
+
 from typing        import Optional, List, Any
+from pathlib       import Path
 from npt.protocol  import *
 from npt.formatter import Formatter
 
@@ -41,8 +43,8 @@ class SimpleFormatter(Formatter):
         self.output = []
         self.parser = {}
 
-    def generate_output(self):
-        return "\n".join(self.output)
+    def generate_output(self, output_name: str) -> Dict[Path, str]:
+        return {Path("description.txt"): "\n".join(self.output)}
 
     def format_argumentexpression(self, arg_name: str, arg_value: Any) -> Any:
         return "{}={}".format(arg_name, arg_value)
