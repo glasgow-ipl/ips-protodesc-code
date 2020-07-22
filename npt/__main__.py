@@ -223,6 +223,7 @@ def main():
                         formatter.format_function(protocol.get_func(type_name))
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt} failed)")
+                raise e
                 continue
             try:
                 formatter.format_protocol(protocol)

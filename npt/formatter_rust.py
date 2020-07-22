@@ -88,7 +88,10 @@ class RustFormatter(Formatter):
             size = None
         assert bitstring.name not in self.output
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
-        self.output.extend(["struct ", bitstring.name, "(u%d);\n" % self.assign_int_size(size)])
+        self.output.extend(["struct ", bitstring.name.replace("-", "").replace(" ", ""), "(u%d);\n" % self.assign_int_size(size)])
+        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=bitstring.name.replace("-", "").replace(" ", "")))
+        self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=self.assign_int_size(size), name=bitstring.name.replace("-", "").replace(" ", "")))
+
 
     #assign the smallest possible unsigned int which can accommodate the size given
     def assign_int_size(self, bitstring_size: Optional[int]):
@@ -123,16 +126,25 @@ class RustFormatter(Formatter):
         for field in struct.get_fields():
             self.output.append("    %s: %s,\n" % (field.field_name, field.field_type.name))
         self.output.append("}\n")
+        generator = self.closure_term_gen()
+        parser_functions = ["parse_{name}".format(name=field.field_type.name.lower()) for field in struct.get_fields()]
+        closure_terms = ["{term}".format(term=next(generator)) for field in struct.get_fields()]
+        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=struct.name.replace("-", "").replace(" ", "")))
+        self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=struct.name.replace("-", "").replace(" ", "")))
+        for i in range(len(struct.get_fields())):
+            self.output.append("{f_name}: {closure_term}, ".format(f_name=struct.get_fields()[i].field_name, closure_term=closure_terms[i]))
+        self.output.append("})(input)")
+        self.output.append("\n}\n")
 
     def format_array(self, array:Array):
         assert array.name not in self.output
         if array.length is None:
-            self.output.append("struct %s(Vec<%s" % (array.name, array.element_type.name))
+            self.output.append("\nstruct %s(Vec<%s" % (array.name, array.element_type.name))
             if isinstance(array.element_type, BitString):
                 self.output.append("(u%d)" % self.assign_int_size(array.element_type))
             self.output.append(">);")
         else:
-            self.output.append("struct %s([%s" % (array.name, array.element_type.name))
+            self.output.append("\nstruct %s([%s" % (array.name, array.element_type.name))
             if isinstance(array.element_type, BitString):
                 self.output.append("(u%d)" % self.assign_int_size(array.element_type))
             self.output.append("; %d]);" % array.length)
@@ -147,7 +159,7 @@ class RustFormatter(Formatter):
 
     def format_function(self, function:Function):
         assert function.name not in self.output
-        self.output.append("fn {function_name}(".format(function_name=function.name))
+        self.output.append("\nfn {function_name}(".format(function_name=function.name))
         for param in function.parameters:
             #TODO: handle parameters which aren't just structs
             assert param.param_type is not None
@@ -193,76 +205,3 @@ class RustFormatter(Formatter):
 
     def format_protocol(self, protocol:Protocol):
         defined_parsers = []
-        for item in protocol.get_type_names():
-            protocol_type = protocol.get_type(item)
-            if isinstance(protocol_type, Struct):
-                parser_functions = []
-                closure_terms = []
-                generator = self.closure_term_gen()
-                #write parsers for individual fields
-                for field in protocol_type.get_fields():
-                    if field.field_type.name.lower() not in defined_parsers:
-                        if isinstance(field.field_type, BitString):
-                            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=field.field_type.name.lower(), typename=field.field_type.name.replace("-", "").replace(" ", "")))
-                            self.output.append("\n    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=field.field_type.size, name=field.field_type.name))
-                        defined_parsers.append(field.field_type.name.lower())
-                    parser_functions.append("parse_{name}".format(name=field.field_type.name.lower()))
-                    closure_terms.append("{term}".format(term=next(generator)))
-                #write function to combine parsers to parse an entire PDU
-                #TODO: make this use items in PDU field of protocol object, not just list of types (nothing currently in PDUs in test cases)
-                self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=protocol.get_type(item).name.replace(" ", "_").replace("-", "_").lower(),typename=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
-                if protocol_type.constraints:
-                    self.output.append("match ")
-                self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=protocol.get_type(item).name.replace("-", "").replace(" ", "")))
-                #check constraints
-                #self.output.append("{struct}{{{values}}})(input)\n}}\n".format(struct=protocol.get_type(item).name, values=": ".join(map(str, list(itertools.chain(*(zip(iter(protocol.get_type_names()), iter(closure_terms)))))))))
-                for i in range(len(protocol_type.get_fields())):
-                    self.output.append("{f_name}: {closure_term}, ".format(f_name=protocol_type.get_fields()[i].field_name, closure_term=closure_terms[i]))
-                self.output.append("})(input)")
-                #there are far more Expression items in constraints now
-                #the original process of looping over all items no longer works
-                #TODO: find a way of dealing with nested expressions
-                #for constraint in protocol.get_type(item).constraints:
-                # for constraint in protocol_type.constraints:
-                #     #TODO: change from hardcoded '.0' to handle fields with more than one element (ie. arrays or tuples)
-                #     #assert isinstance(constraint, MethodInvocationExpression) # these assertions are true for this code, but *not* true generally
-                #     #assert isinstance(constraint.target, MethodInvocationExpression)  # these assertions are true for this code, but *not* true generally
-                #     #assert isinstance(constraint.target.target, FieldAccessExpression)  # these assertions are true for this code, but *not* true generally
-                #     if protocol_type.constraints.index(constraint) == 0:
-                #         self.output.append(" {{\n        Ok((remain, parsed_value)) => \n        if parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.target.field_name))
-                #     else:
-                #         #TODO: make target.target fix less fragile, only works for QUIC example
-                #         self.output.append(" parsed_value.{fieldname}.0 ".format(fieldname=constraint.target.target.field_name))
-                #     #TODO: refactor this into something less bloated
-                #     if constraint.method_name == "eq":
-                #         self.output.append("== ")
-                #     elif constraint.method_name == "ne":
-                #         self.output.append("!= ")
-                #     elif constraint.method_name == "lt":
-                #         self.output.append("< ")
-                #     elif constraint.method_name == "le":
-                #         self.output.append("<= ")
-                #     elif constraint.method_name == "gt":
-                #         self.output.append("> ")
-                #     elif constraint.method_name == "ge":
-                #         self.output.append(">= ")
-                #     #not proud of what's happened here - band-aid fix for the QUIC example
-                #     #TODO: refactor this into something much less fragile
-                #     try:
-                #         self.output.append("{term} ".format(term=constraint.arg_exprs[0].arg_value.constant_value)) # type: ignore
-                #     except:
-                #         pass
-                #     try:
-                #         self.output.append("{term} ".format(term=constraint.arg_exprs[0].arg_value.target.field_name)) # type: ignore
-                #     except:
-                #         pass
-                #     print("term appended")
-                #     print("item type: %s" % protocol_type)
-                #     print("constraint index: %d" % protocol_type.constraints.index(constraint))
-                #     print("constraints len: %d" % len(protocol_type.constraints))
-                #     if protocol_type.constraints.index(constraint)+1 == len(protocol_type.constraints):
-                #         self.output.append("{{\n            Ok((remain, parsed_value))\n        }} else {{\n            Err(Error((remain, ErrorKind::Verify)))\n        }}\n        Err(e) => {{\n            Err(e)\n        }}\n    }}".format())
-                #     else:
-                #         self.output.append("&&")
-                self.output.append("\n}\n")
-                defined_parsers.append(protocol.get_type(item).name.lower())
