@@ -45,58 +45,7 @@ from npt.formatter_rust       import RustFormatter
 from npt.formatter_simple     import SimpleFormatter
 from npt.parser_asciidiagrams import AsciiDiagramsParser
 from npt.protocol             import *
-
-# Expression DFS
-
-def dfs_expression(formatter: Formatter, expr: Expression) -> Any:
-    if isinstance(expr, ArgumentExpression):
-        return dfs_argumentexpression(formatter, expr)
-    elif isinstance(expr, MethodInvocationExpression):
-        return dfs_methodinvocationexpr(formatter, expr)
-    elif isinstance(expr, FunctionInvocationExpression):
-        return dfs_functioninvocationexpr(formatter, expr)
-    elif isinstance(expr, FieldAccessExpression):
-        return dfs_fieldaccessexpr(formatter, expr)
-    elif isinstance(expr, ContextAccessExpression):
-        return dfs_contextaccessexpr(formatter, expr)
-    elif isinstance(expr, IfElseExpression):
-        return dfs_ifelseexpr(formatter, expr)
-    elif isinstance(expr, SelfExpression):
-        return dfs_selfexpr(formatter, expr)
-    elif isinstance(expr, ConstantExpression):
-        return dfs_constantexpr(formatter, expr)
-
-def dfs_argumentexpression(formatter: Formatter, expr: ArgumentExpression) -> Any:
-    arg_value = dfs_expression(formatter, expr.arg_value)
-    return formatter.format_argumentexpression(expr.arg_name, arg_value)
-
-def dfs_methodinvocationexpr(formatter: Formatter, expr: MethodInvocationExpression) -> Any:
-    target = dfs_expression(formatter, expr.target)
-    arg_exprs = [dfs_expression(formatter, args_expr) for args_expr in expr.arg_exprs]
-    return formatter.format_methodinvocationexpr(target, expr.method_name, arg_exprs)
-
-def dfs_functioninvocationexpr(formatter: Formatter, expr: FunctionInvocationExpression) -> Any:
-    args_exprs = [dfs_expression(formatter, arg_expr) for arg_expr in expr.arg_exprs]
-    return formatter.format_functioninvocationexpr(expr.func.name, args_exprs)
-
-def dfs_fieldaccessexpr(formatter: Formatter, expr: FieldAccessExpression) -> Any:
-    target = dfs_expression(formatter, expr.target)
-    return formatter.format_fieldaccessexpr(target, expr.field_name)
-
-def dfs_contextaccessexpr(formatter: Formatter, expr: ContextAccessExpression) -> Any:
-    return formatter.format_contextaccessexpr(expr.field_name)
-
-def dfs_ifelseexpr(formatter: Formatter, expr: IfElseExpression) -> Any:
-    condition = dfs_expression(formatter, expr.condition)
-    if_true = dfs_expression(formatter, expr.if_true)
-    if_false = dfs_expression(formatter, expr.if_false)
-    return formatter.format_ifelseexpr(condition, if_true, if_false)
-
-def dfs_selfexpr(formatter: Formatter, expr: SelfExpression) -> Any:
-    return formatter.format_selfexpr()
-
-def dfs_constantexpr(formatter: Formatter, expr: ConstantExpression) -> Any:
-    return formatter.format_constantexpr(expr.constant_type, expr.constant_value)
+from npt.helpers              import *
 
 # Protocol DFS
 
@@ -201,17 +150,18 @@ def main():
 
         for o_fmt in opt.output_fmt :
             out_extn, formatter = output_formatter[o_fmt]
+            expr_traversal = ExpressionTraversal(formatter)
             try:
                 for type_name in type_names:
                     if protocol.has_type(type_name):
                         pt = protocol.get_type(type_name)
                         if isinstance(pt, BitString):
-                            size_expr = dfs_expression(formatter, cast(Expression, pt.size))
+                            size_expr = expr_traversal.dfs_expression(cast(Expression, pt.size))
                             formatter.format_bitstring(pt, size_expr)
                         elif isinstance(pt, Struct):
                             constraints = []
                             for constraint in pt.constraints:
-                                expr = dfs_expression(formatter, constraint)
+                                expr = expr_traversal.dfs_expression(constraint)
                                 constraints.append(formatter.format_expression(expr))
                             formatter.format_struct(pt, constraints)
                         elif isinstance(pt, Array):
