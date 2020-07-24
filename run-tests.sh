@@ -34,7 +34,7 @@ echo "*** Executing pytest..."
 for py in tests/*.py
 do
   pytest -v --junitxml=test-results/`basename $py .py`.xml $py
-  if [ $? -eq 1 ]; then EXIT_CODE=1; fi
+  if [ $? -ne 0 ]; then EXIT_CODE=1; fi
 done
 echo "^^^ Completed pytest"
 echo ""
@@ -52,7 +52,22 @@ echo ""
 
 echo "*** Executing mypy..."
 mypy npt/*.py tests/*.py --junit-xml test-results/npt-typecheck.xml
-if [ $? -eq 1 ]; then EXIT_CODE=1; fi
+if [ $? -ne 0 ]; then EXIT_CODE=1; fi
 echo "^^^ Completed mypy"
+
+echo "*** Executing Rust formatter integration tests..."
+XML_EXAMPLES=("draft-mcquistin-augmented-ascii-diagrams" "draft-mcquistin-quic-augmented-diagrams")
+for example in "${XML_EXAMPLES[@]}"
+do
+  echo "... Executing Rust formatter integration test: examples/$example.xml"
+  (npt examples/$example.xml -of rust &&
+   cd examples/output/$example/rust/$example &&
+   cargo build) > /dev/null 2>&1
+  if [ $? -ne 0 ]; then
+    echo "!!! Rust formatter integration test failed: examples/$example.xml"
+    EXIT_CODE=1;
+  fi
+done
+echo "^^^ Completed Rust formatter integration tests..."
 
 exit $EXIT_CODE
