@@ -32,6 +32,8 @@ jobs:
     working_directory: ~/ips-protodesc-code
 
     steps:
+      - checkout
+
       - attach_workspace:
           at: examples
 
