@@ -147,7 +147,7 @@ class RustFormatter(Formatter):
         if len(parser_functions) > 1:
             self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
         else:
-            self.output.append("map(tuple({functions}), |{closure}| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
+            self.output.append("map({functions}, |{closure}| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
         for i in range(len(struct.get_fields())):
             self.output.append("{f_name}: {closure_term}, ".format(f_name=struct.get_fields()[i].field_name, closure_term=closure_terms[i]))
         self.output.append("})(input)")
@@ -163,14 +163,14 @@ class RustFormatter(Formatter):
             if isinstance(array.element_type, BitString):
                 self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
             self.output.append(">);")
-            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
+            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n    unimplemented!()\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
         else:
             self.output.append("#[derive(Debug)]")
             self.output.append("\nstruct %s([%s" % (camelcase(array.name), camelcase(element_type_name)))
             if isinstance(array.element_type, BitString):
                 self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
             self.output.append("; %s]);" % self.expr_traversal.dfs_expression(array.length))
-            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
+            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n    unimplemented!()\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
         self.output.append("\n\n")
 
     def format_enum(self, enum:Enum):
@@ -233,4 +233,4 @@ class RustFormatter(Formatter):
             yield ascii_letters[i]
 
     def format_protocol(self, protocol:Protocol):
-        self.output.append("fn main() {\n    // TODO: implement\n}\n")
+        self.output.append("fn main() {\n    // TODO: implement\n    unimplemented!()\n}\n")
