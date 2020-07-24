@@ -24,6 +24,8 @@ jobs:
 
       - persist_to_workspace:
           root: examples
+          paths:
+            - output
 
   rust-testing:
     docker:
