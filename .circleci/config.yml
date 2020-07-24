@@ -1,7 +1,7 @@
 
 version: 2
 jobs:
-  build:
+  python-testing:
     docker:
       - image: circleci/python:3.7.2
 
@@ -17,7 +17,19 @@ jobs:
       - run:
           name: run tests
           command: |
-            pipenv run tests
+            pipenv run make typecheck unittests examples/output/draft-mcquistin-augmented-ascii-diagrams/rust examples/output/draft-mcquistin-quic-augmented-diagrams/rust
       - store_artifacts:
           path: test-results
           destination: test-results
+
+  rust-testing:
+    docker:
+      - image: circleci/rust:1.45-buster
+
+    working_directory: ~/ips-protodesc-code
+
+    steps:
+      - run:
+          name: run tests
+          command: |
+            make integrationtests
