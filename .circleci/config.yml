@@ -23,9 +23,9 @@ jobs:
           destination: test-results
 
       - persist_to_workspace:
-          root: examples
+          root: .
           paths:
-            - output
+            - .
 
   rust-testing:
     docker:
@@ -37,7 +37,7 @@ jobs:
       - checkout
 
       - attach_workspace:
-          at: examples
+          at: .
 
       - run:
           name: run tests
