@@ -62,7 +62,7 @@ do
   echo "... Executing Rust formatter integration test: examples/$example.xml"
   (npt examples/$example.xml -of rust &&
    cd examples/output/$example/rust/$example &&
-   cargo build) > /dev/null 2>&1
+   cargo build)
   if [ $? -ne 0 ]; then
     echo "!!! Rust formatter integration test failed: examples/$example.xml"
     EXIT_CODE=1;
