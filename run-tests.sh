@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # =================================================================================================
 # Copyright (C) 2018-2019 University of Glasgow
 # All rights reserved.
