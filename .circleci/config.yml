@@ -40,4 +40,5 @@ workflows:
     jobs:
       - python-testing
       - rust-testing
-
+          requires:
+            - python-testing
