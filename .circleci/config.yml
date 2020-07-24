@@ -33,3 +33,11 @@ jobs:
           name: run tests
           command: |
             make integrationtests
+
+workflows:
+  version: 2
+  testing:
+    jobs:
+      - python-testing
+      - rust-testing
+
