@@ -10,7 +10,7 @@ Overview
   - input parsers (`parser_*.py`), that take a protocol described in a
     given format, and generate the intermediate representation;
 
-  - helper classes (`rfc.py`, `protocol.py`, and `util.py`), that are used to
+  - helper classes (`rfc.py`, `protocol.py`, `util.py`, and `helpers.py`), that are used to
     construct and inspect the intermediate representation; and
 
   - output formatters (`formatter_*.py`), that take the intermediate
