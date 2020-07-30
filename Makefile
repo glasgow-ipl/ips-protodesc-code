@@ -33,12 +33,12 @@ typecheck:
 unittests:
 	@python3 -m unittest discover -s tests/ -v
 
-examples/output/%/rust: examples/%.xml
+examples/output/draft/%/rust: examples/%.xml
 	npt $< -of rust
 
-integrationtests: examples/output/draft-mcquistin-augmented-ascii-diagrams/rust examples/output/draft-mcquistin-quic-augmented-diagrams/rust
-	cd examples/output/draft-mcquistin-augmented-ascii-diagrams/rust/draft-mcquistin-augmented-ascii-diagrams && cargo build
-	cd examples/output/draft-mcquistin-quic-augmented-diagrams/rust/draft-mcquistin-quic-augmented-diagrams   && cargo build
+integrationtests: examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust examples/output/draft/draft-mcquistin-quic-augmented-diagrams/rust/
+	cd examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust && cargo build
+	cd examples/output/draft/draft-mcquistin-quic-augmented-diagrams/rust  && cargo build
 
 clean:
 	rm -rf examples/output
