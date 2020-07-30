@@ -208,7 +208,8 @@ class IETF_URI:
         infile = self.get_filepath_in()
         outfile = None
         assert infile != None, f"No input file found for '{str(self)}'"
-        outdir : Callable[[Path], Path] = lambda _root: _root / "output" / self.dtype / self.name / self.rev if self.rev else _root / "output"
+        outdir : Callable[[Path], Path] = lambda _root: _root / "output" / self.dtype / self.name / self.rev if self.rev \
+                                                   else _root / "output" / self.dtype / self.name
 
         root = root.resolve()
         if infile is not None :
