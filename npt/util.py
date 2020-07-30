@@ -172,12 +172,12 @@ class IETF_URI:
     """
     name : str
     extn : str
-    dtype: str
     rev  : Optional[str] = field(default=None)
+    dtype: Optional[str] = field(default=None)
     url  : Optional[str] = field(default=None)
     infile : Optional[pathlib.Path] = None
 
-    def document_name(self):
+    def _document_name(self):
         return f"{self.name}-{self.rev}" if self.rev else f"{self.name}"
 
     def gen_filepath(self, root: pathlib.Path) -> pathlib.Path:
@@ -185,9 +185,9 @@ class IETF_URI:
         based on whether document type has a revision or not
         """
         if self.rev:
-            self.infile = root / self.name / self.rev / f"{self.document_name()}{self.extn}"
+            self.infile = root / self.name / self.rev / f"{self._document_name()}{self.extn}"
         else:
-            self.infile = root / self.name / f"{self.document_name()}{self.extn}"
+            self.infile = root / self.name / f"{self._document_name()}{self.extn}"
         return self.infile
 
     def set_filepath(self, filename: pathlib.Path) -> pathlib.Path:
@@ -208,15 +208,13 @@ class IETF_URI:
         infile = self.get_filepath_in()
         outfile = None
         assert infile != None, f"No input file found for '{str(self)}'"
-        outdir : Callable[[Path], Path] = lambda _root: _root / "output" / self.dtype / self.name / self.rev if self.rev else _root / "output"
+        outdir : Callable[[Path], Path] = lambda _root: _root / "output" / self.name / self.rev if self.rev else _root / "output"
 
         root = root.resolve()
-        if infile is not None :
-            if str(root) in [ str(parent) for parent in infile.parents]:
-                outfile = outdir(root) / formatter_name
-            else :
-                outfile = outdir(infile.parent) / formatter_name
-
+        if infile is not None and str(root) in [ str(parent) for parent in infile.parents]:
+            outfile = outdir(root) / self._document_name() / formatter_name
+        elif infile is not None:
+            outfile = outdir(infile.parent) / self._document_name() / formatter_name
         return outfile
 
 
@@ -343,7 +341,7 @@ class PositionalArg:
     def __init__(self, arg):
         self.arg = arg
 
-    def _match_name(self, fname: str) -> Optional[Tuple[str, str, Optional[str], str]]:
+    def _match_name(self, fname: str) -> Optional[Tuple[Optional[str], str, Optional[str], str]]:
         """Resolve whether spefified name is a draft or rfc and whether
         a revision has been specified. Also determine file
         extension if specified
@@ -368,7 +366,7 @@ class PositionalArg:
 
         _match = regex_std.match(fname)
         if _match is not None:
-            dtype = ""
+            dtype = None
             if _match.group('dtype'):
                 if _match.group('dtype').lower() == "draft-":
                     dtype = "draft"
@@ -391,10 +389,11 @@ class PositionalArg:
             rname = self._match_name(fp.name)
             if rname:
                 dtype, name, rev, extn = rname
-                ietf_uri = IETF_URI(name, extn, dtype, rev=rev)
+                ietf_uri = IETF_URI(name, extn, rev=rev, dtype=dtype)
             else:
-                ietf_uri = IETF_URI(fp.stem, fp.suffix, "",  rev=None)
-            ietf_uri.set_filepath(fp)  # override standard file-system structure
+                ietf_uri = IETF_URI(fp.stem, fp.suffix, rev=None, dtype=None)
+            ietf_uri.set_filepath(
+                fp)  # override standard file-system structure
             urls.append(ietf_uri)
         else:
             # Remote file - resolve all details from draft/rfc name

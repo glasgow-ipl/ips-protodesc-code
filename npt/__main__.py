@@ -133,6 +133,7 @@ def main():
 
     opt = npt.util.read_usr_opts(sys.argv[1:])
     for idx, doc in enumerate(opt.infiles):
+        print(f"document [{idx}] --> {doc} --> {doc.get_filepath_in()}")
         parsed_content = parse_input_file( doc )
         if parsed_content is None :
             print(f"Error : Parsing {doc.get_filepath_in()} -> container = {doc}")
@@ -182,9 +183,10 @@ def main():
                 continue
 
             output_dir = doc.gen_filepath_out(opt.root_dir, o_fmt)
-            assert isinstance(output_dir, Path)
-            output = formatter.generate_output(doc.document_name())
+            output = formatter.generate_output(str(output_dir).split('/')[-2])
+            print(f"Generated output for input doc [{doc.get_filepath_in()}]:")
             for output_filename in output:
+                assert isinstance(output_dir, Path)
                 output_filepath = Path(output_dir, output_filename)
                 output_filepath.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
                 with open(output_filepath, "w") as out_fp:

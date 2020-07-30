@@ -58,8 +58,8 @@ class RustFormatter(Formatter):
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
         manifest = f"[package]\nname = \"{output_name}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
-        output_files = {Path(f"src/main.rs"): "".join(self.output),
-                        Path(f"Cargo.toml"): manifest}
+        output_files = {Path(f"{output_name}/src/main.rs"): "".join(self.output),
+                        Path(f"{output_name}/Cargo.toml"): manifest}   
         return output_files
 
     def format_argumentexpression(self, arg_name: str, arg_value: Any) -> Any:
