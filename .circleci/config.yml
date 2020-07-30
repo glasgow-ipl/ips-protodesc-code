@@ -17,7 +17,7 @@ jobs:
       - run:
           name: run tests
           command: |
-            pipenv run make typecheck unittests examples/output/draft-mcquistin-augmented-ascii-diagrams/rust examples/output/draft-mcquistin-quic-augmented-diagrams/rust
+            pipenv run make typecheck unittests examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust examples/output/draft/draft-mcquistin-quic-augmented-diagrams/rust
       - store_artifacts:
           path: test-results
           destination: test-results
