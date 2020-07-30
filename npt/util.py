@@ -217,7 +217,6 @@ class IETF_URI:
                 outfile = outdir(root) / formatter_name
             else :
                 outfile = outdir(infile.parent) / formatter_name
-
         return outfile
 
 
@@ -394,7 +393,7 @@ class PositionalArg:
                 dtype, name, rev, extn = rname
                 ietf_uri = IETF_URI(name, extn, dtype, rev=rev)
             else:
-                ietf_uri = IETF_URI(fp.stem, fp.suffix, "",  rev=None)
+                ietf_uri = IETF_URI(fp.stem, fp.suffix, "", rev=None)
             ietf_uri.set_filepath(fp)  # override standard file-system structure
             urls.append(ietf_uri)
         else:

@@ -21,4 +21,4 @@ coverage = "*"
 python_version = "3.7"
 
 [scripts]
-tests = "./run-tests.sh"
+tests = "make clean test"

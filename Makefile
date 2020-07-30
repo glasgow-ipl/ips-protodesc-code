@@ -39,3 +39,6 @@ examples/output/%/rust: examples/%.xml
 integrationtests: examples/output/draft-mcquistin-augmented-ascii-diagrams/rust examples/output/draft-mcquistin-quic-augmented-diagrams/rust
 	cd examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust && cargo build
 	cd examples/output/draft/draft-mcquistin-quic-augmented-diagrams/rust   && cargo build
+
+clean:
+	rm -rf examples/output

@@ -22,6 +22,11 @@ jobs:
           path: test-results
           destination: test-results
 
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+
   rust-testing:
     docker:
       - image: circleci/rust:1.45-buster
@@ -29,6 +34,11 @@ jobs:
     working_directory: ~/ips-protodesc-code
 
     steps:
+      - checkout
+
+      - attach_workspace:
+          at: .
+
       - run:
           name: run tests
           command: |
