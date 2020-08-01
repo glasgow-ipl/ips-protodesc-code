@@ -208,7 +208,8 @@ class IETF_URI:
         infile = self.get_filepath_in()
         outfile = None
         assert infile != None, f"No input file found for '{str(self)}'"
-        outdir : Callable[[Path], Path] = lambda _root: _root / "output" / self.dtype / self.name / self.rev if self.rev else _root / "output"
+        outdir : Callable[[Path], Path] = lambda _root: _root / "output" / self.dtype / self.name / self.rev if self.rev \
+                                                   else _root / "output" / self.dtype / self.name
 
         root = root.resolve()
         if infile is not None :
@@ -216,7 +217,6 @@ class IETF_URI:
                 outfile = outdir(root) / formatter_name
             else :
                 outfile = outdir(infile.parent) / formatter_name
-
         return outfile
 
 
@@ -393,7 +393,7 @@ class PositionalArg:
                 dtype, name, rev, extn = rname
                 ietf_uri = IETF_URI(name, extn, dtype, rev=rev)
             else:
-                ietf_uri = IETF_URI(fp.stem, fp.suffix, "",  rev=None)
+                ietf_uri = IETF_URI(fp.stem, fp.suffix, "", rev=None)
             ietf_uri.set_filepath(fp)  # override standard file-system structure
             urls.append(ietf_uri)
         else:
