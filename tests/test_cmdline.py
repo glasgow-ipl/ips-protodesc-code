@@ -275,9 +275,6 @@ class Test_Cmdline(ut.TestCase):
         if rootdir.exists():
             shutil.rmtree(rootdir)
 
-    #draft-mcquistin-augmented-ascii-diagrams.xml   0-6  00 - txt , 1-6 - xml
-    #draft-mcquistin-quic-augmented-diagrams.xml  0-2  only xml
-
     def test_dload_single_draft_allversions(self):
         rootdir = pathlib.Path(tempfile.mkdtemp())
         draft_name = 'draft-mcquistin-augmented-ascii-diagrams'
@@ -308,6 +305,22 @@ class Test_Cmdline(ut.TestCase):
         if rootdir.exists():
             shutil.rmtree(rootdir)
 
+    def test_mutliple_local_files( self ):
+        rootdir = pathlib.Path(tempfile.mkdtemp())
+        draft_orig = [ 'draft-mcquistin-augmented-ascii-diagrams.xml', 'draft-mcquistin-quic-augmented-diagrams.xml' ]
+        drafts = [ shutil.copy( pathlib.Path.cwd()/ "examples"/ in_file , rootdir ) for in_file in draft_orig ]
+        argv = " ".join( drafts ).split()
+
+        formats = ["simple", "rust"] 
+        opts = npt.util.read_usr_opts(argv)
+
+        for _file in opts.infiles : 
+            for _fmt in formats : 
+                outdir = rootdir / "output" / "draft" / _file.name / _fmt 
+                self.assertEqual( outdir , _file.gen_filepath_out(opts.root_dir, _fmt ))
+
+        if rootdir.exists():
+            shutil.rmtree(rootdir)
 
 if __name__ == '__main__':
     ut.main()
