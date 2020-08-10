@@ -359,11 +359,15 @@ class Test_Parse_XML_Aug_Ascii(unittest.TestCase):
                        initials      = "C. S.",
                        role          = None,
                        surname       = "Perkins" ) ]
+
         self.assertEqual( authors, node.authors )
 
         # Check each author individually against xml document 
         for author, xml_node in  zip(node.authors, xml_author_list ): 
             self._check_author( author, xml_node )
+
+
+        # abstract 
 
     def _check_seriesInfo(self, node , xml_node ):
         self.assertIsNone(xml_node.text)
@@ -410,7 +414,42 @@ class Test_Parse_XML_Aug_Ascii(unittest.TestCase):
             self.assertIsNone( node.stream )
 
 
+    def _check_organization(self, node, xml_node):
+        # abbrev
+        abbrev = xml_node.attrib.get("abbrev",None)
+        if abbrev == None :
+            self.assertIsNone(node.abbrev)
+        else :
+            self.assertIsInstance(node.abbrev,str)
+            self.assertEqual(node.abbrev, abbrev)
+        
+        # ascii
+        ascii = xml_node.attrib.get("ascii",None)
+        if ascii == None :
+            self.assertIsNone(node.ascii)
+        else :
+            self.assertIsInstance(node.ascii,str)
+            self.assertEqual(node.ascii, ascii)
+
+        # check text
+        self.assertEqual( xml_node.text, node.content.content )
+
+
+
     def _check_author(self, node, xml_node):
+        # organization 
+        organizations = xml_node.findall("organization") 
+        self.assertLessEqual(len(organizations), 1) 
+        if len(organizations) > 0 : 
+            self._check_organization(node.org , organizations[0])
+
+
+        # address
+        addr = xml_node.findall("address") 
+        self.assertLessEqual(len(addr), 1) 
+        if len(addr) > 0 : 
+            self._check_address(node.address , addr[0])
+
         # asciiFullname
         asciiFullname = xml_node.attrib.get("asciiFullname", None)
         if asciiFullname is None :
@@ -465,3 +504,52 @@ class Test_Parse_XML_Aug_Ascii(unittest.TestCase):
             self.assertEqual(node.surname, surname)
         else : 
             self.assertIsNone(node.surname)
+
+
+
+    def _check_address(self, node, xml_node):
+        #postal 
+
+        #phone 
+        phones = xml_node.findall("phone")
+        self.assertLessEqual(len(phones), 1) 
+        if len(phones) > 0 :
+            self.assertIsInstance(node.phone, rfc.Phone)
+            self.assertEqual(node.phone.content.content, phones[0].text)
+        else :
+            self.assertIsNone(node.phone)
+
+        #facsimile
+        fax = xml_node.findall("facsimile")
+        self.assertLessEqual(len(fax), 1) 
+        if len(fax) > 0 :
+            self.assertIsInstance(node.facsimile, rfc.Facsimile)
+            self.assertEqual(node.facsimile.content.content, fax[0].text)
+        else :
+            self.assertIsNone(node.facsimile)
+
+        #email
+        emails = xml_node.findall("email")
+        self.assertLessEqual(len(emails), 1) 
+        if len(emails) > 0 :
+            self.assertIsInstance(node.email, rfc.Email)
+            self.assertEqual(node.email.content.content, emails[0].text)
+
+            ascii = emails[0].attrib.get("ascii",None)
+            if ascii == None :
+                self.assertIsNone(node.email.ascii)
+            else:
+                self.assertIsInstance(node.email.ascii, str)
+                self.assertEqual(node.email.ascii, ascii)
+        else :
+            self.assertIsNone(node.email)
+
+
+        #uri
+        uris = xml_node.findall("uri")
+        self.assertLessEqual(len(uris), 1) 
+        if len(uris) > 0 :
+            self.assertIsInstance(node.uri, rfc.Email)
+            self.assertEqual(node.uri.content.content, uris[0].text)
+        else :
+            self.assertIsNone(node.uri)
