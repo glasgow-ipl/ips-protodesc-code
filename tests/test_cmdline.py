@@ -246,11 +246,10 @@ class Test_Cmdline(ut.TestCase):
 
         opts = npt.util.read_usr_opts(argv)
         self.assertIsInstance(opts.infiles[0].infile, pathlib.Path)
-        self.assertTrue(opts.infiles[0].infile.exists())
-        self.assertEqual(
-            opts.infiles[0].infile.parent, rootdir / "draft" /
-            "draft-mcquistin-augmented-ascii-diagrams" / "06")
-        self.assertEqual(opts.infiles[0].infile.suffix, '.xml')
+        if opts.infiles[0].infile is not None :
+            self.assertTrue(opts.infiles[0].infile.exists()) 
+            self.assertEqual( opts.infiles[0].infile.parent, rootdir / "draft" / "draft-mcquistin-augmented-ascii-diagrams" / "06") 
+            self.assertEqual(opts.infiles[0].infile.suffix, '.xml')
 
         if rootdir.exists():
             shutil.rmtree(rootdir)
@@ -263,14 +262,11 @@ class Test_Cmdline(ut.TestCase):
         opts = npt.util.read_usr_opts(argv)
         for f in opts.infiles:
             self.assertIsInstance(f.infile, pathlib.Path)
-            self.assertTrue(f.infile.exists())
-            self.assertIn(f.name, draft_name)
-
-            self.assertEqual(
-                f.infile.parent, rootdir / "draft" / '-'.join(
-                    (f.infile.stem.split(sep='-')[:-1])) /
-                f.infile.stem.split(sep='-')[-1])
-            self.assertEqual(f.infile.suffix, '.xml')
+            if f.infile is not None : 
+                self.assertTrue(f.infile.exists()) 
+                self.assertIn(f.name, draft_name) 
+                self.assertEqual( f.infile.parent, rootdir / "draft" / '-'.join( (f.infile.stem.split(sep='-')[:-1])) / f.infile.stem.split(sep='-')[-1]) 
+                self.assertEqual(f.infile.suffix, '.xml')
 
         if rootdir.exists():
             shutil.rmtree(rootdir)
@@ -284,13 +280,16 @@ class Test_Cmdline(ut.TestCase):
         draft = dt.document_from_draft(draft_name)
         self.assertIsNotNone(draft)
         files = []
+
+        if draft is None :
+            return
+
         for uri in draft.submissions:
             submission = dt.submission(uri)
             self.assertIsNotNone(submission)
-            files += [
-                pathlib.Path(_url).name for _ext, _url in submission.urls()
-                if _ext in ['.xml', '.txt']
-            ]
+            if submission is None :
+                continue
+            files += [ pathlib.Path(_url).name for _ext, _url in submission.urls() if _ext in ['.xml', '.txt'] ]
 
         opts = npt.util.read_usr_opts(argv)
         for d in [pathlib.Path(_f) for _f in files]:
