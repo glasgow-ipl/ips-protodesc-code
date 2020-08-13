@@ -1002,6 +1002,8 @@ def parse_section(xmlElement: ET.Element) -> rfc.Section:
             content.append(parse_ul(sectionChild))
         elif sectionChild.tag == "section":
             sections.append(parse_section(sectionChild))
+        elif sectionChild.tag == "name":
+            name = parse_name(sectionChild)
     return rfc.Section(name,
                        content,
                        sections,
@@ -1321,7 +1323,7 @@ def parse_reference(xmlElement: ET.Element) -> rfc.Reference:
             content.append(parse_format(referenceChild))
         elif referenceChild.tag == "refcontent":
             content.append(parse_refcontent(referenceChild))
-        elif referenceChild.tag == "seriesinfo":
+        elif referenceChild.tag == "seriesInfo":
             content.append(parse_seriesinfo(referenceChild))
     return rfc.Reference(front,
                          content,
