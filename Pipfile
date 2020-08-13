@@ -10,7 +10,7 @@ pavlova = "*"
 ietfdata = "*"
 requests = "*"
 e1839a8 = {path = "."}
-npt = {path = "."}
+npt = {editable = true, path = "."}
 
 [dev-packages]
 mypy = "*"
