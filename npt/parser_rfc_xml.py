@@ -521,6 +521,10 @@ def parse_ol(xmlElement: ET.Element) -> rfc.OL:
 def parse_dd(xmlElement: ET.Element) -> rfc.DD:
     contentA : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]] = []
     contentB : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
+
+    if xmlElement.text is not None and len(xmlElement.text.strip()) != 0:
+        contentB.append(rfc.Text(xmlElement.text))
+
     for ddChild in xmlElement:
         # Variant one in RFC 7991 section 2.18:
         if ddChild.tag == "artwork":
@@ -560,13 +564,14 @@ def parse_dd(xmlElement: ET.Element) -> rfc.DD:
             contentB.append(parse_tt(ddChild))
         elif ddChild.tag == "xref":
             contentB.append(parse_xref(ddChild))
-    if xmlElement.text is not None:
-        contentB.append(rfc.Text(xmlElement.text))
+        if ddChild.tail is not None and len(ddChild.tail.strip()) != 0:
+            contentB.append(rfc.Text(ddChild.tail))
+
     if len(contentB) == 0:
         assert len(contentA) > 0
         return rfc.DD(contentA, xmlElement.attrib.get("anchor"))
     else:
-        assert len(contentB) > 0
+        assert len(contentA) == 0
         return rfc.DD(contentB, xmlElement.attrib.get("anchor"))
 
 
