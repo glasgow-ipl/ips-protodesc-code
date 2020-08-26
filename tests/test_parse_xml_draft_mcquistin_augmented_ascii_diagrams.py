@@ -2322,7 +2322,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[0].content[6].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[0].content[6].content[1].content)
-        #FIXME :  format defaults to "default" RFC 7991 sec 2.66.1
         self.assertEqual( middle.content[0].content[6].content[1].format, "default")
         self.assertFalse( middle.content[0].content[6].content[1].pageno)
         self.assertEqual( middle.content[0].content[6].content[1].target, "ABNF")
@@ -2609,7 +2608,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> 
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1], rfc.DD)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content, list)
-        # FIXME !!! <Tuple<DT,DD>>  not being parsed for <T> 
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[0][1].content), 3)
         # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[0] <T> 
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[0], rfc.T)
@@ -2632,7 +2630,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[0].keepWithPrevious)
 
         # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[1] <T> 
-        # FIXME !!! <Tuple<DT,DD>>  not being parsed for <T> 
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1], rfc.T)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1], rfc.T): # type-check
             return
@@ -2702,12 +2699,10 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[1].keepWithPrevious)
 
         # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[2] <T> 
-        # FIXME !!! <Tuple<DT,DD>>  not being parsed for <T> 
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[2], rfc.T)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[2], rfc.T): # type-check
             return
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[2].content, list)
-        #FIXME :  class <T> additional line due to newline
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[0][1].content[2].content), 5)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[2].content[0], rfc.Text)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[2].content[0], rfc.Text): # type-check
@@ -2768,7 +2763,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [1] <DD> 
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][1], rfc.DD)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][1].content, list)
-        # FIXME !!! <Tuple<DT,DD>>  not being parsed for <T> 
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[1][1].content), 3)
         # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [1] <DD> content[0] <Text> 
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][1].content[0], rfc.Text)
@@ -3053,11 +3047,9 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         # sec-01  sub-sec[1] content 
         self.assertIsInstance( middle.content[1].sections[1].content, list)
         self.assertEqual( len(middle.content[1].sections[1].content), 1)
-        # FIXME : Additional element from <T> tail
         self.assertIsInstance( middle.content[1].sections[1].content[0], rfc.T)
         if not isinstance( middle.content[1].sections[1].content[0], rfc.T): # type-check
             return
-        # FIXME : Additional element from <T> tail content
         self.assertIsInstance( middle.content[1].sections[1].content[0].content, list)
         self.assertEqual( len(middle.content[1].sections[1].content[0].content), 11)
         self.assertIsInstance( middle.content[1].sections[1].content[0].content[0], rfc.Text)
@@ -3176,7 +3168,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[2].content[0], rfc.T): # type-check
             return
         self.assertIsInstance( middle.content[2].content[0].content, list)
-        # FIXME : <T> element tail has extra space
         self.assertEqual( len(middle.content[2].content[0].content), 1)
         self.assertIsInstance( middle.content[2].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[2].content[0].content[0], rfc.Text): # type-check
@@ -3806,7 +3797,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
             return
         # sec-03 sub-sec[0] content [1] <T> content
         self.assertIsInstance( middle.content[3].sections[0].content[1].content, list)
-        # FIXME : <T> extra line in tail
         self.assertEqual( len(middle.content[3].sections[0].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[1].content[0], rfc.Text): #type-check
@@ -3886,7 +3876,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
                   PDU names must be unique, both within a document, and across
                   all documents that are linked together (i.e., using the
                   structured language defined in """)
-        # FIXME : <T> extra line in tail
         self.assertIsInstance( middle.content[3].sections[0].content[4].content[1], rfc.XRef)
         if not isinstance( middle.content[3].sections[0].content[4].content[1], rfc.XRef): # type-check
             return
