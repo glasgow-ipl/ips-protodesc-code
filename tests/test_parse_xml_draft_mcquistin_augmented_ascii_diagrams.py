@@ -80,8 +80,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertFalse(node.sortRefs)
         self.assertEqual(node.submissionType, "IETF")
         self.assertTrue(node.symRefs)
-        # FIXME - RFC7991 2.45.14  - default should be "3"
-        self.assertEqual(node.tocDepth, None)   # FixMe - RFC7991 2.45.14
+        self.assertEqual(node.tocDepth,"3")
         self.assertTrue(node.tocInclude)
         self.assertIsNone(node.updates)
         self.assertEqual(node.version, "3")
@@ -1893,7 +1892,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         # section-00 -- (sub) section 01
         self.assertIsInstance(back.sections[0].sections[1], rfc.Section)
         # section-00 -- (sub) section 01 name
-        # FIXME : parse_section line 975 : name is not parsed
         self.assertIsInstance(back.sections[0].sections[1].name, rfc.Name)
         if not isinstance(back.sections[0].sections[1].name, rfc.Name): # type-check
             return
