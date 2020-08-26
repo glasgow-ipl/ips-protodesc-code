@@ -1915,8 +1915,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance(back.sections[0].sections[1].content[0].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone(back.sections[0].sections[1].content[0].content[1].content)
-        # FIXME : should default to "default" RFC7991 2.66.1
-        self.assertIsNone(back.sections[0].sections[1].content[0].content[1].format)
+        self.assertEqual(back.sections[0].sections[1].content[0].content[1].format, "default")
         self.assertFalse(back.sections[0].sections[1].content[0].content[1].pageno)
         self.assertEqual(back.sections[0].sections[1].content[0].content[1].target, "augmentedascii")
         self.assertIsInstance(back.sections[0].sections[1].content[0].content[2], rfc.Text)
@@ -1931,8 +1930,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance(back.sections[0].sections[1].content[0].content[3], rfc.XRef): # type-check
             return
         self.assertIsNone(back.sections[0].sections[1].content[0].content[3].content)
-        # FIXME : should default to "default" RFC7991 2.66.1
-        self.assertIsNone(back.sections[0].sections[1].content[0].content[3].format)
+        self.assertEqual(back.sections[0].sections[1].content[0].content[3].format, "default")
         self.assertFalse(back.sections[0].sections[1].content[0].content[3].pageno)
         self.assertEqual(back.sections[0].sections[1].content[0].content[3].target, "augmentedascii")
         self.assertIsInstance(back.sections[0].sections[1].content[0].content[4], rfc.Text)
@@ -2125,8 +2123,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[0].content[1].content[1], rfc.XRef):  #type-check
             return
         self.assertIsNone( middle.content[0].content[1].content[1].content)
-        #FIXME :  format defaults to "default" RFC 7991 sec 2.66.1
-        self.assertIsNone( middle.content[0].content[1].content[1].format)
+        self.assertEqual( middle.content[0].content[1].content[1].format, "default")
         self.assertFalse( middle.content[0].content[1].content[1].pageno)
         self.assertEqual( middle.content[0].content[1].content[1].target, "tcp-header-format")
         self.assertIsInstance( middle.content[0].content[1].content[2], rfc.Text) 
@@ -2166,8 +2163,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[0].content[2].name.content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[0].content[2].name.content[1].content)
-        #FIXME :  format defaults to "default" RFC 7991 sec 2.66.1
-        self.assertIsNone( middle.content[0].content[2].name.content[1].format)
+        self.assertEqual( middle.content[0].content[2].name.content[1].format, "default")
         self.assertFalse( middle.content[0].content[2].name.content[1].pageno)
         self.assertEqual( middle.content[0].content[2].name.content[1].target, "RFC793")
         # sec-00  content[2] <Figure>  irefs
@@ -2327,7 +2323,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
             return
         self.assertIsNone( middle.content[0].content[6].content[1].content)
         #FIXME :  format defaults to "default" RFC 7991 sec 2.66.1
-        self.assertIsNone( middle.content[0].content[6].content[1].format)
+        self.assertEqual( middle.content[0].content[6].content[1].format, "default")
         self.assertFalse( middle.content[0].content[6].content[1].pageno)
         self.assertEqual( middle.content[0].content[6].content[1].target, "ABNF")
         self.assertIsInstance( middle.content[0].content[6].content[2], rfc.Text)
@@ -2338,8 +2334,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[0].content[6].content[3], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[0].content[6].content[3].content)
-        #FIXME :  format defaults to "default" RFC 7991 sec 2.66.1
-        self.assertIsNone( middle.content[0].content[6].content[3].format)
+        self.assertEqual( middle.content[0].content[6].content[3].format, "default")
         self.assertFalse( middle.content[0].content[6].content[3].pageno)
         self.assertEqual( middle.content[0].content[6].content[3].target, "source")
         self.assertIsInstance( middle.content[0].content[6].content[4], rfc.Text)
@@ -2463,7 +2458,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[0].name.content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[0].name.content[1].content)
-        self.assertIsNone( middle.content[1].sections[0].content[0].name.content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[0].name.content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[0].name.content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[0].name.content[1].target, "QUIC-TRANSPORT")
         # sec-01  sub-sec[0] content[0] <Figure> irefs
@@ -2553,7 +2548,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertIsInstance( middle.content[1].sections[0].content[1].content[1], rfc.XRef)
         if not isinstance( middle.content[1].sections[0].content[1].content[1], rfc.XRef): # type-check
             return
-        self.assertIsNone( middle.content[1].sections[0].content[1].content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[1].content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[1].content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[1].content[1].target, "quic-reset-stream")
         self.assertIsInstance( middle.content[1].sections[0].content[1].content[2], rfc.Text)
@@ -2652,7 +2647,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[1].content[1].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[1].content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[1].content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[1].target, "quic-reset-stream")
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[2], rfc.Text)
@@ -2671,7 +2666,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[3], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[1].content[3].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[1].content[3].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[3].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[1].content[3].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[3].target, "dhcpv6-relaysrcopt")
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[4], rfc.Text)
@@ -2689,7 +2684,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[5], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[1].content[5].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[1].content[5].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[5].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[1].content[5].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[5].target, "RFC6958")
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[6], rfc.Text)
@@ -2723,7 +2718,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[2].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[2].content[1].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[2].content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[2].content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[2].content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[2].content[1].target, "quic-reset-stream")
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[2].content[2], rfc.Text)
@@ -2735,7 +2730,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[2].content[3], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[2].content[3].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[0][1].content[2].content[3].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[2].content[3].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[2].content[3].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[2].content[3].target, "dhcpv6-relaysrcopt")
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[2].content[4], rfc.Text)
@@ -2787,7 +2782,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[1][1].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[1][1].content[1].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[1][1].content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[1][1].content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[1][1].content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[1][1].content[1].target, "dhcpv6-relaysrcopt")
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][1].content[2], rfc.Text)
@@ -2859,7 +2854,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[2][1].content[1].content[1].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[2][1].content[1].content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[2][1].content[1].content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[2][1].content[1].content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[2][1].content[1].content[1].target, "quic-reset-stream")
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content[2], rfc.Text)
@@ -2920,7 +2915,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[3].content[3][1].content[0].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[3].content[3][1].content[0].content[1].content)
-        self.assertIsNone( middle.content[1].sections[0].content[3].content[3][1].content[0].content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[3].content[3][1].content[0].content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[3].content[3][1].content[0].content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[3].content[3][1].content[0].content[1].target, "RFC3550")
         # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DD> content[0] <T> content[2] <Text>
@@ -2967,7 +2962,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[0].content[4].name.content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[0].content[4].name.content[1].content)
-        self.assertIsNone( middle.content[1].sections[0].content[4].name.content[1].format)
+        self.assertEqual( middle.content[1].sections[0].content[4].name.content[1].format, "default")
         self.assertFalse( middle.content[1].sections[0].content[4].name.content[1].pageno)
         self.assertEqual( middle.content[1].sections[0].content[4].name.content[1].target, "RFC8357")
         # sec-01  sub-sec[0] content[4] <Figure> irefs
@@ -3075,7 +3070,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[1].content[0].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[1].content[0].content[1].content)
-        self.assertIsNone( middle.content[1].sections[1].content[0].content[1].format)
+        self.assertEqual( middle.content[1].sections[1].content[0].content[1].format, "default")
         self.assertFalse( middle.content[1].sections[1].content[0].content[1].pageno)
         self.assertEqual( middle.content[1].sections[1].content[0].content[1].target, "RFC5234")
         self.assertIsInstance( middle.content[1].sections[1].content[0].content[2], rfc.Text)
@@ -3087,7 +3082,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[1].content[0].content[3], rfc.XRef):  # type-check
              return
         self.assertIsNone( middle.content[1].sections[1].content[0].content[3].content)
-        self.assertIsNone( middle.content[1].sections[1].content[0].content[3].format)
+        self.assertEqual( middle.content[1].sections[1].content[0].content[3].format, "default")
         self.assertFalse( middle.content[1].sections[1].content[0].content[3].pageno)
         self.assertEqual( middle.content[1].sections[1].content[0].content[3].target, "ASN1")
         self.assertIsInstance( middle.content[1].sections[1].content[0].content[4], rfc.Text)
@@ -3098,7 +3093,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[1].content[0].content[5], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[1].content[0].content[5].content)
-        self.assertIsNone( middle.content[1].sections[1].content[0].content[5].format)
+        self.assertEqual( middle.content[1].sections[1].content[0].content[5].format, "default")
         self.assertFalse( middle.content[1].sections[1].content[0].content[5].pageno)
         self.assertEqual( middle.content[1].sections[1].content[0].content[5].target, "RFC7049")
         self.assertIsInstance( middle.content[1].sections[1].content[0].content[6], rfc.Text)
@@ -3110,7 +3105,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[1].content[0].content[7], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[1].content[0].content[7].content)
-        self.assertIsNone( middle.content[1].sections[1].content[0].content[7].format)
+        self.assertEqual( middle.content[1].sections[1].content[0].content[7].format, "default")
         self.assertFalse( middle.content[1].sections[1].content[0].content[7].pageno)
         self.assertEqual( middle.content[1].sections[1].content[0].content[7].target, "RFC8446")
         self.assertIsInstance( middle.content[1].sections[1].content[0].content[8], rfc.Text)
@@ -3122,7 +3117,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[1].sections[1].content[0].content[9], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[1].sections[1].content[0].content[9].content)
-        self.assertIsNone( middle.content[1].sections[1].content[0].content[9].format)
+        self.assertEqual( middle.content[1].sections[1].content[0].content[9].format, "default")
         self.assertFalse( middle.content[1].sections[1].content[0].content[9].pageno)
         self.assertEqual( middle.content[1].sections[1].content[0].content[9].target, "RFC7950")
         self.assertIsInstance( middle.content[1].sections[1].content[0].content[10], rfc.Text)
@@ -3533,7 +3528,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[2].content[4].content[3][1].content[1].content[1], rfc.XRef): #type -check
             return
         self.assertIsNone( middle.content[2].content[4].content[3][1].content[1].content[1].content)
-        self.assertIsNone( middle.content[2].content[4].content[3][1].content[1].content[1].format)
+        self.assertEqual( middle.content[2].content[4].content[3][1].content[1].content[1].format, "default")
         self.assertFalse( middle.content[2].content[4].content[3][1].content[1].content[1].pageno)
         self.assertEqual( middle.content[2].content[4].content[3][1].content[1].content[1].target, "LANGSEC")
         self.assertIsInstance( middle.content[2].content[4].content[3][1].content[1].content[2], rfc.Text)
@@ -3573,7 +3568,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[2].content[4].content[3][1].content[2].content[1], rfc.XRef): # type-check
              return
         self.assertIsNone( middle.content[2].content[4].content[3][1].content[2].content[1].content)
-        self.assertIsNone( middle.content[2].content[4].content[3][1].content[2].content[1].format)
+        self.assertEqual( middle.content[2].content[4].content[3][1].content[2].content[1].format, "default")
         self.assertFalse( middle.content[2].content[4].content[3][1].content[2].content[1].pageno)
         self.assertEqual( middle.content[2].content[4].content[3][1].content[2].content[1].target, """SASSAMAN""")
         self.assertIsInstance( middle.content[2].content[4].content[3][1].content[2].content[2], rfc.Text)
@@ -3678,7 +3673,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[3].content[0].content[1], rfc.XRef ): # type-check
             return
         self.assertIsNone( middle.content[3].content[0].content[1].content)
-        self.assertIsNone( middle.content[3].content[0].content[1].format)
+        self.assertEqual( middle.content[3].content[0].content[1].format, "default")
         self.assertFalse( middle.content[3].content[0].content[1].pageno)
         self.assertEqual( middle.content[3].content[0].content[1].target, """designprinciples""")
         self.assertIsInstance( middle.content[3].content[0].content[2], rfc.Text )
@@ -3714,7 +3709,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[3].content[1].content[1], rfc.XRef ): # type-check
             return
         self.assertIsNone( middle.content[3].content[1].content[1].content)
-        self.assertIsNone( middle.content[3].content[1].content[1].format)
+        self.assertEqual( middle.content[3].content[1].content[1].format, "default")
         self.assertFalse( middle.content[3].content[1].content[1].pageno)
         self.assertEqual( middle.content[3].content[1].content[1].target, """background-ascii""")
         self.assertIsInstance( middle.content[3].content[1].content[2], rfc.Text )
@@ -3751,7 +3746,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[3].content[2].content[1], rfc.XRef ): 
             return
         self.assertIsNone( middle.content[3].content[2].content[1].content)
-        self.assertIsNone( middle.content[3].content[2].content[1].format)
+        self.assertEqual( middle.content[3].content[2].content[1].format, "default")
         self.assertFalse( middle.content[3].content[2].content[1].pageno)
         self.assertEqual( middle.content[3].content[2].content[1].target, """ABNF""")
         self.assertIsInstance( middle.content[3].content[2].content[2], rfc.Text )
@@ -3896,7 +3891,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[3].sections[0].content[4].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[3].sections[0].content[4].content[1].content)
-        self.assertIsNone( middle.content[3].sections[0].content[4].content[1].format)
+        self.assertEqual( middle.content[3].sections[0].content[4].content[1].format, "default")
         self.assertFalse( middle.content[3].sections[0].content[4].content[1].pageno)
         self.assertEqual( middle.content[3].sections[0].content[4].content[1].target, """ascii-import""")
         self.assertIsInstance( middle.content[3].sections[0].content[4].content[2], rfc.Text)
@@ -3932,7 +3927,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[3].sections[0].content[5].content[1], rfc.XRef): # type-check
              return
         self.assertIsNone( middle.content[3].sections[0].content[5].content[1].content)
-        self.assertIsNone( middle.content[3].sections[0].content[5].content[1].format)
+        self.assertEqual( middle.content[3].sections[0].content[5].content[1].format, "default")
         self.assertFalse( middle.content[3].sections[0].content[5].content[1].pageno)
         self.assertEqual( middle.content[3].sections[0].content[5].content[1].target, """ascii-xref""")
         self.assertIsInstance( middle.content[3].sections[0].content[5].content[2], rfc.Text)
@@ -3967,7 +3962,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[3].sections[0].content[6].content[1], rfc.XRef): # type-check
             return
         self.assertIsNone( middle.content[3].sections[0].content[6].content[1].content)
-        self.assertIsNone( middle.content[3].sections[0].content[6].content[1].format)
+        self.assertEqual( middle.content[3].sections[0].content[6].content[1].format, "default")
         self.assertFalse( middle.content[3].sections[0].content[6].content[1].pageno)
         self.assertEqual( middle.content[3].sections[0].content[6].content[1].target, """RFC791""")
         self.assertIsInstance( middle.content[3].sections[0].content[6].content[2], rfc.Text)
@@ -4449,7 +4444,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[1], rfc.XRef):# type-check
             return
         self.assertIsNone( middle.content[3].sections[0].content[9].content[13][1].content[1].content)
-        self.assertIsNone( middle.content[3].sections[0].content[9].content[13][1].content[1].format)
+        self.assertEqual( middle.content[3].sections[0].content[9].content[13][1].content[1].format, "default")
         self.assertFalse( middle.content[3].sections[0].content[9].content[13][1].content[1].pageno)
         self.assertEqual( middle.content[3].sections[0].content[9].content[13][1].content[1].target, """ABNF-constraints""")
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[2], rfc.Text)
