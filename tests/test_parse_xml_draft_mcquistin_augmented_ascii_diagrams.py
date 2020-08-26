@@ -413,7 +413,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[0].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[0].content[0].status)
         self.assertEqual      ( back.refs[0].content[0].content[0].value,      "8357")
-        self.assertIsNone     ( back.refs[0].content[0].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[0].content[0].stream,     "IETF")
 
         # reference -- 00 - anchor
         self.assertEqual(back.refs[0].content[0].anchor, "RFC8357")
@@ -518,7 +518,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[1].content[0].name,       "Internet-Draft")
         self.assertIsNone     ( back.refs[0].content[1].content[0].status)
         self.assertEqual      ( back.refs[0].content[1].content[0].value,      "draft-ietf-quic-transport-27")
-        self.assertIsNone     ( back.refs[0].content[1].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[1].content[0].stream,     "IETF")
 
         # reference -- 01 - anchor
         self.assertEqual(back.refs[0].content[1].anchor, "QUIC-TRANSPORT")
@@ -652,7 +652,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[2].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[2].content[0].status)
         self.assertEqual      ( back.refs[0].content[2].content[0].value,      "6958")
-        self.assertIsNone     ( back.refs[0].content[2].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[2].content[0].stream,     "IETF")
 
         # reference -- 02 - anchor
         self.assertEqual(back.refs[0].content[2].anchor, "RFC6958")
@@ -742,7 +742,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[3].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[3].content[0].status)
         self.assertEqual      ( back.refs[0].content[3].content[0].value,      "7950")
-        self.assertIsNone     ( back.refs[0].content[3].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[3].content[0].stream,     "IETF")
 
         # reference -- 03 - anchor
         self.assertEqual(back.refs[0].content[3].anchor, "RFC7950")
@@ -831,7 +831,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[4].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[4].content[0].status)
         self.assertEqual      ( back.refs[0].content[4].content[0].value,      "8446")
-        self.assertIsNone     ( back.refs[0].content[4].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[4].content[0].stream,     "IETF")
 
         # reference -- 04 - anchor
         self.assertEqual(back.refs[0].content[4].anchor, "RFC8446")
@@ -925,7 +925,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
 
         # reference -- 05 - seriesInfo
         self.assertIsInstance( back.refs[0].content[5].content,list)
-        # FIXME : parser_rfc_xml.py line 1324 seriesinfo -> seriesInfo
         self.assertEqual(len(back.refs[0].content[5].content), 1)
 
         self.assertIsInstance ( back.refs[0].content[5].content[0],            rfc.SeriesInfo)
@@ -936,7 +935,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[5].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[5].content[0].status)
         self.assertEqual      ( back.refs[0].content[5].content[0].value,      "5234")
-        self.assertIsNone     ( back.refs[0].content[5].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[5].content[0].stream,     "IETF")
 
         # reference -- 05 - anchor
         self.assertEqual(back.refs[0].content[5].anchor, "RFC5234")
@@ -1009,7 +1008,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
 
         # reference -- 06 - seriesInfo
         self.assertIsInstance( back.refs[0].content[6].content,list)
-        # FIXME : parser_rfc_xml.py line 1324 seriesinfo -> seriesInfo
         self.assertEqual(len(back.refs[0].content[6].content), 1)
 
         self.assertIsInstance ( back.refs[0].content[6].content[0],            rfc.SeriesInfo)
@@ -1020,7 +1018,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[6].content[0].name,       "ITU-T Recommendation")
         self.assertIsNone     ( back.refs[0].content[6].content[0].status)
         self.assertEqual      ( back.refs[0].content[6].content[0].value,      "X.680, X.681, X.682, and X.683")
-        self.assertIsNone     ( back.refs[0].content[6].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[6].content[0].stream,     "IETF")
 
         # reference -- 06 - anchor
         self.assertEqual(back.refs[0].content[6].anchor, "ASN1")
@@ -1123,7 +1121,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[7].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[7].content[0].status)
         self.assertEqual      ( back.refs[0].content[7].content[0].value,      "7049")
-        self.assertIsNone     ( back.refs[0].content[7].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[7].content[0].stream,     "IETF")
 
         # reference -- 07 - anchor
         self.assertEqual(back.refs[0].content[7].anchor, "RFC7049")
@@ -1248,7 +1246,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
 
         # reference -- 08 - seriesInfo
         self.assertIsInstance( back.refs[0].content[8].content,list)
-        # FIXME : parser_rfc_xml.py line 1324 seriesinfo -> seriesInfo
         self.assertEqual(len(back.refs[0].content[8].content), 1)
 
         self.assertIsInstance ( back.refs[0].content[8].content[0],            rfc.SeriesInfo)
@@ -1259,7 +1256,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[8].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[8].content[0].status)
         self.assertEqual      ( back.refs[0].content[8].content[0].value,      "3550")
-        self.assertIsNone     ( back.refs[0].content[8].content[0].stream)
+        self.assertEqual       ( back.refs[0].content[8].content[0].stream,     "IETF")
 
         # reference -- 08 - anchor
         self.assertEqual(back.refs[0].content[8].anchor, "RFC3550")
@@ -1422,7 +1419,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[9].content[0].name,       "Internet-Draft")
         self.assertIsNone     ( back.refs[0].content[9].content[0].status)
         self.assertEqual      ( back.refs[0].content[9].content[0].value,      "draft-ietf-tram-stunbis-21")
-        self.assertIsNone     ( back.refs[0].content[9].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[9].content[0].stream,     "IETF")
 
         # reference -- 09 - anchor
         self.assertEqual(back.refs[0].content[9].anchor, "draft-ietf-tram-stunbis-21")
@@ -1511,7 +1508,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[10].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[10].content[0].status)
         self.assertEqual      ( back.refs[0].content[10].content[0].value,      "791")
-        self.assertIsNone     ( back.refs[0].content[10].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[10].content[0].stream,     "IETF")
 
         # reference -- 10 - anchor
         self.assertEqual(back.refs[0].content[10].anchor, "RFC791")
@@ -1591,7 +1588,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
 
         # reference -- 11 - seriesInfo
         self.assertIsInstance( back.refs[0].content[11].content,list)
-        # FIXME : parser_rfc_xml.py line 1324 seriesinfo -> seriesInfo
         self.assertEqual(len(back.refs[0].content[11].content), 1)
 
         self.assertIsInstance ( back.refs[0].content[11].content[0],            rfc.SeriesInfo)
@@ -1602,7 +1598,7 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual      ( back.refs[0].content[11].content[0].name,       "RFC")
         self.assertIsNone     ( back.refs[0].content[11].content[0].status)
         self.assertEqual      ( back.refs[0].content[11].content[0].value,      "793")
-        self.assertIsNone     ( back.refs[0].content[11].content[0].stream)
+        self.assertEqual      ( back.refs[0].content[11].content[0].stream,     "IETF")
 
         # reference -- 11 - anchor
         self.assertEqual(back.refs[0].content[11].anchor, "RFC793")
