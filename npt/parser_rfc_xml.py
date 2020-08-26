@@ -94,7 +94,7 @@ def parse_xref(xmlElement: ET.Element) -> rfc.XRef:
     if xmlElement.text is not None:
         text = rfc.Text(xmlElement.text)
     return rfc.XRef(text,
-                    xmlElement.attrib.get("format"),
+                    xmlElement.attrib.get("format", "default"),
                     xmlElement.attrib.get("pageno") == "true",
                     xmlElement.attrib["target"])
 
@@ -289,7 +289,7 @@ def parse_t(xmlElement: ET.Element) -> rfc.T:
             content.append(parse_xref(child))
         if child.tail is not None:
             content.append(rfc.Text(child.tail))
-    if xmlElement.tail is not None:
+    if xmlElement.tail is not None and len(xmlElement.tail.strip()) != 0:
         content.append(rfc.Text(xmlElement.tail))
     return rfc.T(content,
                  xmlElement.attrib.get("anchor"),
@@ -1154,7 +1154,7 @@ def parse_seriesinfo(xmlElement: ET.Element) -> rfc.SeriesInfo:
                           xmlElement.attrib["value"],
                           xmlElement.attrib["name"],
                           xmlElement.attrib.get("status", None),
-                          xmlElement.attrib.get("stream", None),
+                          xmlElement.attrib.get("stream", "IETF"),
                           xmlElement.attrib["value"])
 
 
@@ -1414,7 +1414,7 @@ def parse_rfc(xmlElement: ET.Element) -> rfc.RFC:
                    xmlElement.attrib.get("sortRefs") == "true",
                    xmlElement.attrib.get("submissionType", "IETF"),
                    not xmlElement.attrib.get("symRefs") == "false",
-                   xmlElement.attrib.get("tocDepth"),
+                   xmlElement.attrib.get("tocDepth", "3"),
                    not xmlElement.attrib.get("tocInclude") == "false",
                    xmlElement.attrib.get("updates"),
                    xmlElement.attrib.get("version"))
