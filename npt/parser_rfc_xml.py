@@ -1154,7 +1154,7 @@ def parse_seriesinfo(xmlElement: ET.Element) -> rfc.SeriesInfo:
                           xmlElement.attrib["value"],
                           xmlElement.attrib["name"],
                           xmlElement.attrib.get("status", None),
-                          xmlElement.attrib.get("stream", None),
+                          xmlElement.attrib.get("stream", "IETF"),
                           xmlElement.attrib["value"])
 
 
