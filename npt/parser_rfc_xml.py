@@ -289,7 +289,7 @@ def parse_t(xmlElement: ET.Element) -> rfc.T:
             content.append(parse_xref(child))
         if child.tail is not None:
             content.append(rfc.Text(child.tail))
-    if xmlElement.tail is not None:
+    if xmlElement.tail is not None and len(xmlElement.tail.strip()) != 0:
         content.append(rfc.Text(xmlElement.tail))
     return rfc.T(content,
                  xmlElement.attrib.get("anchor"),
