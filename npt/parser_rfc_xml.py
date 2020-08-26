@@ -94,7 +94,7 @@ def parse_xref(xmlElement: ET.Element) -> rfc.XRef:
     if xmlElement.text is not None:
         text = rfc.Text(xmlElement.text)
     return rfc.XRef(text,
-                    xmlElement.attrib.get("format"),
+                    xmlElement.attrib.get("format", "default"),
                     xmlElement.attrib.get("pageno") == "true",
                     xmlElement.attrib["target"])
 
