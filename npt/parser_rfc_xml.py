@@ -1414,7 +1414,7 @@ def parse_rfc(xmlElement: ET.Element) -> rfc.RFC:
                    xmlElement.attrib.get("sortRefs") == "true",
                    xmlElement.attrib.get("submissionType", "IETF"),
                    not xmlElement.attrib.get("symRefs") == "false",
-                   xmlElement.attrib.get("tocDepth"),
+                   xmlElement.attrib.get("tocDepth", "3"),
                    not xmlElement.attrib.get("tocInclude") == "false",
                    xmlElement.attrib.get("updates"),
                    xmlElement.attrib.get("version"))
