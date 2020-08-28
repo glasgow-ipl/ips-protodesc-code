@@ -4498,9 +4498,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertIsNone(middle.content[3].sections[0].title)
         self.assertEqual(middle.content[3].sections[0].toc, "default")
 
-#.......................................
-#....... TO BE CONTINUED................
-#.......................................
 
         # sec-03 sub-sec[1] 
         self.assertIsInstance( middle.content[3].sections[1], rfc.Section)
@@ -4514,25 +4511,28 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
 
         # sec-03 sub-sec[2] 
         self.assertIsInstance( middle.content[3].sections[2], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[3] 
         self.assertIsInstance( middle.content[3].sections[3], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[4] 
         self.assertIsInstance( middle.content[3].sections[4], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[5] 
         self.assertIsInstance( middle.content[3].sections[5], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[6] 
         self.assertIsInstance( middle.content[3].sections[6], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[7] 
         self.assertIsInstance( middle.content[3].sections[7], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[8] 
         self.assertIsInstance( middle.content[3].sections[8], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[9] 
         self.assertIsInstance( middle.content[3].sections[9], rfc.Section)
-
-#----------
-        # DJ section-03 
-#----------
-
+        # ...... 
 
 
         # sec-03  anchor, numbered removeInRFC, title,  toc
@@ -4542,12 +4542,85 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertIsNone(middle.content[3].title)
         self.assertEqual(middle.content[3].toc, "default" )
         # ...
+
+
+
+        # sec-04
         self.assertIsInstance(middle.content[4], rfc.Section)
-        # ...
+        # sec-04  name 
+        self.assertIsInstance(middle.content[4].name, rfc.Name)
+        self.assertIsInstance(middle.content[4].name.content, list)
+        self.assertEqual(len(middle.content[4].name.content), 1)
+        self.assertIsInstance(middle.content[4].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[4].name.content[0].content, "Open Issues")
+        # sec-04  content 
+        self.assertIsInstance(middle.content[4].content, list)
+        self.assertEqual(len(middle.content[4].content), 1)
+        # sec-04  content [0] <UL> 
+        self.assertIsInstance(middle.content[4].content[0], rfc.UL)
+        # sec-04  content [0] <UL> content 
+        self.assertIsInstance(middle.content[4].content[0].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content), 3)
+        # sec-04  content [0] <UL> content [0] <LI>
+        self.assertIsInstance(middle.content[4].content[0].content[0], rfc.LI)
+        self.assertIsInstance(middle.content[4].content[0].content[0].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content[0].content), 1)
+        self.assertIsInstance(middle.content[4].content[0].content[0].content[0], rfc.Text)
+        self.assertEqual(middle.content[4].content[0].content[0].content[0].content, """
+              Need a simple syntax for defining a list of identical objects,
+              and a way of referring to the size of the enclosing packet.
+              The format cannot currently represent RFC 6716 section 3.2.3,
+              and should be able to (the underlying type system can do so).
+            """)
+        self.assertIsNone(middle.content[4].content[0].content[0].anchor)
+        # sec-04  content [0] <UL> content [1] <LI>
+        self.assertIsInstance(middle.content[4].content[0].content[1], rfc.LI)
+        self.assertIsInstance(middle.content[4].content[0].content[1].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content[1].content), 1)
+        self.assertIsInstance(middle.content[4].content[0].content[1].content[0], rfc.Text)
+        self.assertEqual(middle.content[4].content[0].content[1].content[0].content, """
+              Need some discussion about the checks that the tooling might
+              perform, and the implications of those checks. For example,
+              the tooling checks for consistency between the diagram and
+              the description list of fields, ensuring that fields match
+              by name and width. -01 of this draft had a field that
+              mismatched because of case: is this something that the
+              tooling should identify? More broadly, what is the trade-off
+              between the rigour that the tooling can enforce, and the
+              flexibility desired/needed by authors?
+            """)
+        self.assertIsNone(middle.content[4].content[0].content[1].anchor)
+        # sec-04  content [0] <UL> content [2] <LI>
+        self.assertIsInstance(middle.content[4].content[0].content[2], rfc.LI)
+        self.assertIsInstance(middle.content[4].content[0].content[2].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content[2].content), 1)
+        self.assertIsInstance(middle.content[4].content[0].content[2].content[0], rfc.Text)
+        self.assertEqual(middle.content[4].content[0].content[2].content[0].content, """
+              Need to describe the rules governing the import of PDU definitions
+              from other documents.
+            """)
+        self.assertIsNone(middle.content[4].content[0].content[2].anchor)
+        # sec-04  content [0] <UL> anchor, empty, spacing
+        self.assertIsInstance(middle.content[4].content[0], rfc.UL)
+        self.assertIsNone(middle.content[4].content[0].anchor) 
+        self.assertFalse(middle.content[4].content[0].empty) 
+        self.assertEqual(middle.content[4].content[0].spacing, "normal") 
+
+        # sec-04  sections 
+        self.assertIsInstance(middle.content[4].sections, list)
+        self.assertEqual(len(middle.content[4].sections), 0)
+
+        # sec-04  anchor, numbered removeInRFC, title,  toc
+        self.assertEqual(middle.content[4].anchor, "issues")
+        self.assertTrue(middle.content[4].numbered)
+        self.assertFalse(middle.content[4].removeInRFC)
+        self.assertIsNone(middle.content[4].title)
+        self.assertEqual(middle.content[4].toc, "default" )
+
         self.assertIsInstance(middle.content[5], rfc.Section)
         # ...
         self.assertIsInstance(middle.content[6], rfc.Section)
-        # ...
+
         self.assertIsInstance(middle.content[7], rfc.Section)
         # ...
 
