@@ -14,7 +14,7 @@ setup(
     url="https://github.com/glasgow-ipl/ips-protodesc-code",
     packages = ['npt'],
     package_data = {
-        'npt': ['py.typed'],
+        'npt': ['py.typed', 'grammar_rfc.txt' ],
     },
     entry_points = {
         'console_scripts': [
