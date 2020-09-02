@@ -48,7 +48,7 @@ from typing import Union, Optional, List, Tuple
 
 
 class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
-    def test_xml_rfc_head(self) :
+    def test_xml_rfc_root(self) :
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
@@ -70,7 +70,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             self._verify_rfc_middle(middle)
 
 
-    def test_rfc_back(self):
+    def test_xml_rfc_back(self):
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
