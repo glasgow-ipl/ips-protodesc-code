@@ -47,80 +47,99 @@ import npt.parser_rfc_xml
 from typing import Union, Optional, List, Tuple
 
 
-class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
-    def test_rfc_head(self) :
+class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
+    def test_xml_rfc_head(self) :
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
             node = npt.parser_rfc_xml.parse_rfc(xml_tree)
+            self._verify_rfc_dom_root(node)
 
-        self.assertIsInstance( node.links, list)
-        if isinstance( node.links, list) :  # type-check
-            self.assertEqual( len(node.links), 0 )
-
-
-        self.assertIsInstance(node.front,  rfc.Front )
-        self.assertIsInstance(node.middle, rfc.Middle )
-        self.assertIsInstance(node.back,   rfc.Back )
-
-        self.assertIsNotNone(node.front)
-        self.assertIsNotNone(node.middle)
-        self.assertIsNotNone(node.back)
-
-        self.assertEqual(node.category, "exp")
-        self.assertFalse(node.consensus)
-        self.assertEqual(node.docName, "draft-mcquistin-augmented-ascii-diagrams-05")
-        self.assertTrue(node.indexInclude)
-        self.assertEqual(node.ipr, 'trust200902')
-        self.assertIsNone(node.iprExtract)
-        self.assertIsNone(node.number)
-        self.assertIsNone(node.obsoletes)
-        self.assertIsNone(node.prepTime)
-        self.assertIsNone(node.seriesNo)
-        self.assertFalse(node.sortRefs)
-        self.assertEqual(node.submissionType, "IETF")
-        self.assertTrue(node.symRefs)
-        self.assertEqual(node.tocDepth,"3")
-        self.assertTrue(node.tocInclude)
-        self.assertIsNone(node.updates)
-        self.assertEqual(node.version, "3")
-
-
-    def test_rfc_front(self):
+    def test_xml_rfc_front(self):
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
             node = npt.parser_rfc_xml.parse_rfc(xml_tree).front
+            self._verify_rfc_dom_front(node)
 
+    def test_xml_rfc_middle(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+            raw_content = fd.read()
+            xml_tree = ET.fromstring(raw_content)
+            middle = npt.parser_rfc_xml.parse_rfc(xml_tree).middle
+            self._verify_rfc_middle(middle)
+
+
+    def test_rfc_back(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+            raw_content = fd.read()
+            xml_tree = ET.fromstring(raw_content)
+            back = npt.parser_rfc_xml.parse_rfc(xml_tree).back 
+            if back is not None : 
+                self._verify_rfc_dom_back(back)
+
+
+    def _verify_rfc_dom_root(self, root: rfc.RFC) :
+        self.assertIsInstance( root.links, list)
+        if isinstance( root.links, list) :  # type-check
+            self.assertEqual( len(root.links), 0 )
+
+        self.assertIsInstance( root.front,  rfc.Front )
+        self.assertIsNotNone ( root.front)
+        self.assertIsInstance( root.middle, rfc.Middle )
+        self.assertIsNotNone ( root.middle)
+        self.assertIsInstance( root.back,   rfc.Back )
+        self.assertIsNotNone ( root.back)
+
+        self.assertEqual     ( root.category, "exp")
+        self.assertFalse     ( root.consensus)
+        self.assertEqual     ( root.docName, "draft-mcquistin-augmented-ascii-diagrams-05")
+        self.assertTrue      ( root.indexInclude)
+        self.assertEqual     ( root.ipr, 'trust200902')
+        self.assertIsNone    ( root.iprExtract)
+        self.assertIsNone    ( root.number)
+        self.assertIsNone    ( root.obsoletes)
+        self.assertIsNone    ( root.prepTime)
+        self.assertIsNone    ( root.seriesNo)
+        self.assertFalse     ( root.sortRefs)
+        self.assertEqual     ( root.submissionType, "IETF")
+        self.assertTrue      ( root.symRefs)
+        self.assertEqual     ( root.tocDepth,"3")
+        self.assertTrue      ( root.tocInclude)
+        self.assertIsNone    ( root.updates)
+        self.assertEqual     ( root.version, "3")
+
+
+    def _verify_rfc_dom_front(self, front: rfc.Front) :
         # Test whether the title has been parsed correctly
-        self.assertIsInstance(node.title, rfc.Title )
-        self.assertIsInstance(node.title.content, rfc.Text )
-        self.assertIsInstance(node.title.content.content, str )
-        self.assertEqual(node.title.content.content,"""
+        self.assertIsInstance(front.title, rfc.Title )
+        self.assertIsInstance(front.title.content, rfc.Text )
+        self.assertIsInstance(front.title.content.content, str )
+        self.assertEqual(front.title.content.content,"""
             Describing Protocol Data Units with Augmented Packet Header Diagrams
         """)
 
-        self.assertEqual(node.title.abbrev, "Augmented Packet Diagrams")
+        self.assertEqual(front.title.abbrev, "Augmented Packet Diagrams")
 
         # seriesInfo elements
-        self.assertIsInstance( node.seriesInfo, list)
-        if not isinstance( node.seriesInfo, list) :  #type-check
+        self.assertIsInstance( front.seriesInfo, list)
+        if not isinstance( front.seriesInfo, list) :  #type-check
             return
 
-        self.assertEqual(len(node.seriesInfo), 1)
-        self.assertEqual(node.seriesInfo[0].name,   "Internet-Draft")
-        self.assertEqual(node.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-05")
-        self.assertEqual(node.seriesInfo[0].status, "experimental")
+        self.assertEqual(len(front.seriesInfo), 1)
+        self.assertEqual(front.seriesInfo[0].name,   "Internet-Draft")
+        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-05")
+        self.assertEqual(front.seriesInfo[0].status, "experimental")
 
         # authors
-        self.assertEqual(len(node.authors), 4)
+        self.assertEqual(len(front.authors), 4)
         #author-0
-        self.assertIsNotNone(node.authors[0].org)
-        if node.authors[0].org is None : # type-check
+        self.assertIsNotNone(front.authors[0].org)
+        if front.authors[0].org is None : # type-check
             return
-        self.assertEqual    ( node.authors[0].org.content, rfc.Text(content="University of Glasgow"))
-        self.assertIsNotNone( node.authors[0].address)
-        if node.authors[0].address is None : # type-check
+        self.assertEqual    ( front.authors[0].org.content, rfc.Text(content="University of Glasgow"))
+        self.assertIsNotNone( front.authors[0].address)
+        if front.authors[0].address is None : # type-check
             return
 
         street: rfc.Street   = rfc.Street(content=rfc.Text("School of Computing Science"), ascii=None)
@@ -129,127 +148,127 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         country: rfc.Country = rfc.Country(content=rfc.Text("UK"), ascii=None)
         postal_address : List[Union[rfc.City, rfc.Code, rfc.Country, rfc.Region, rfc.Street]] = [ street, city, code, country ]
 
-        self.assertIsInstance( node.authors[0].address.postal, rfc.Postal)
-        self.assertEqual     ( node.authors[0].address.postal, rfc.Postal(postal_address))
-        self.assertIsNone    ( node.authors[0].address.phone)
-        self.assertIsNone    ( node.authors[0].address.facsimile)
-        self.assertEqual     ( node.authors[0].address.email, rfc.Email(content=rfc.Text("sm@smcquistin.uk"), ascii=None))
-        self.assertIsNone    ( node.authors[0].address.uri)
-        self.assertIsNone    ( node.authors[0].asciiFullname)
-        self.assertIsNone    ( node.authors[0].asciiInitials)
-        self.assertIsNone    ( node.authors[0].asciiSurname)
-        self.assertEqual     ( node.authors[0].fullname, "Stephen McQuistin")
-        self.assertEqual     ( node.authors[0].initials, "S.")
-        self.assertEqual     ( node.authors[0].surname,  "McQuistin")
-        self.assertIsNone    ( node.authors[0].role)
+        self.assertIsInstance( front.authors[0].address.postal, rfc.Postal)
+        self.assertEqual     ( front.authors[0].address.postal, rfc.Postal(postal_address))
+        self.assertIsNone    ( front.authors[0].address.phone)
+        self.assertIsNone    ( front.authors[0].address.facsimile)
+        self.assertEqual     ( front.authors[0].address.email, rfc.Email(content=rfc.Text("sm@smcquistin.uk"), ascii=None))
+        self.assertIsNone    ( front.authors[0].address.uri)
+        self.assertIsNone    ( front.authors[0].asciiFullname)
+        self.assertIsNone    ( front.authors[0].asciiInitials)
+        self.assertIsNone    ( front.authors[0].asciiSurname)
+        self.assertEqual     ( front.authors[0].fullname, "Stephen McQuistin")
+        self.assertEqual     ( front.authors[0].initials, "S.")
+        self.assertEqual     ( front.authors[0].surname,  "McQuistin")
+        self.assertIsNone    ( front.authors[0].role)
 
         #author-1
-        self.assertIsNotNone(node.authors[1].org)
-        if node.authors[1].org is None : # type-check
+        self.assertIsNotNone(front.authors[1].org)
+        if front.authors[1].org is None : # type-check
             return
-        self.assertEqual     ( node.authors[1].org.content, rfc.Text(content="University of Glasgow"))
-        self.assertIsNotNone ( node.authors[1].address)
-        if node.authors[1].address is None : # type-check
+        self.assertEqual     ( front.authors[1].org.content, rfc.Text(content="University of Glasgow"))
+        self.assertIsNotNone ( front.authors[1].address)
+        if front.authors[1].address is None : # type-check
             return
-        self.assertIsInstance( node.authors[1].address.postal, rfc.Postal)
-        self.assertEqual     ( node.authors[1].address.postal, rfc.Postal(postal_address))
-        self.assertIsNone    ( node.authors[1].address.phone)
-        self.assertIsNone    ( node.authors[1].address.facsimile)
-        self.assertEqual     ( node.authors[1].address.email,rfc.Email(content=rfc.Text("vivianband0@gmail.com"), ascii=None))
-        self.assertIsNone    ( node.authors[1].address.uri)
-        self.assertIsNone    ( node.authors[1].asciiFullname)
-        self.assertIsNone    ( node.authors[1].asciiInitials)
-        self.assertIsNone    ( node.authors[1].asciiSurname)
-        self.assertEqual     ( node.authors[1].fullname, "Vivian Band")
-        self.assertEqual     ( node.authors[1].initials, "V.")
-        self.assertEqual     ( node.authors[1].surname,  "Band")
-        self.assertIsNone    ( node.authors[1].role)
+        self.assertIsInstance( front.authors[1].address.postal, rfc.Postal)
+        self.assertEqual     ( front.authors[1].address.postal, rfc.Postal(postal_address))
+        self.assertIsNone    ( front.authors[1].address.phone)
+        self.assertIsNone    ( front.authors[1].address.facsimile)
+        self.assertEqual     ( front.authors[1].address.email,rfc.Email(content=rfc.Text("vivianband0@gmail.com"), ascii=None))
+        self.assertIsNone    ( front.authors[1].address.uri)
+        self.assertIsNone    ( front.authors[1].asciiFullname)
+        self.assertIsNone    ( front.authors[1].asciiInitials)
+        self.assertIsNone    ( front.authors[1].asciiSurname)
+        self.assertEqual     ( front.authors[1].fullname, "Vivian Band")
+        self.assertEqual     ( front.authors[1].initials, "V.")
+        self.assertEqual     ( front.authors[1].surname,  "Band")
+        self.assertIsNone    ( front.authors[1].role)
 
         #author-2
-        self.assertIsNotNone(node.authors[2].org)
-        if node.authors[2].org is None : # type-check
+        self.assertIsNotNone(front.authors[2].org)
+        if front.authors[2].org is None : # type-check
             return
-        self.assertEqual     ( node.authors[2].org.content, rfc.Text(content="University of Glasgow"))
-        self.assertIsNotNone ( node.authors[2].address)
-        if node.authors[2].address is None : # type-check
+        self.assertEqual     ( front.authors[2].org.content, rfc.Text(content="University of Glasgow"))
+        self.assertIsNotNone ( front.authors[2].address)
+        if front.authors[2].address is None : # type-check
             return
-        self.assertIsInstance( node.authors[2].address.postal, rfc.Postal)
-        self.assertEqual     ( node.authors[2].address.postal, rfc.Postal(postal_address))
-        self.assertIsNone    ( node.authors[2].address.phone)
-        self.assertIsNone    ( node.authors[2].address.facsimile)
-        self.assertEqual     ( node.authors[2].address.email,rfc.Email(content=rfc.Text("d.jacob.1@research.gla.ac.uk"), ascii=None))
-        self.assertIsNone    ( node.authors[2].address.uri)
-        self.assertIsNone    ( node.authors[2].asciiFullname)
-        self.assertIsNone    ( node.authors[2].asciiInitials)
-        self.assertIsNone    ( node.authors[2].asciiSurname)
-        self.assertEqual     ( node.authors[2].fullname, "Dejice Jacob")
-        self.assertEqual     ( node.authors[2].initials, "D.")
-        self.assertEqual     ( node.authors[2].surname,  "Jacob")
-        self.assertIsNone    ( node.authors[2].role)
+        self.assertIsInstance( front.authors[2].address.postal, rfc.Postal)
+        self.assertEqual     ( front.authors[2].address.postal, rfc.Postal(postal_address))
+        self.assertIsNone    ( front.authors[2].address.phone)
+        self.assertIsNone    ( front.authors[2].address.facsimile)
+        self.assertEqual     ( front.authors[2].address.email,rfc.Email(content=rfc.Text("d.jacob.1@research.gla.ac.uk"), ascii=None))
+        self.assertIsNone    ( front.authors[2].address.uri)
+        self.assertIsNone    ( front.authors[2].asciiFullname)
+        self.assertIsNone    ( front.authors[2].asciiInitials)
+        self.assertIsNone    ( front.authors[2].asciiSurname)
+        self.assertEqual     ( front.authors[2].fullname, "Dejice Jacob")
+        self.assertEqual     ( front.authors[2].initials, "D.")
+        self.assertEqual     ( front.authors[2].surname,  "Jacob")
+        self.assertIsNone    ( front.authors[2].role)
 
         #author-3
-        self.assertIsNotNone(node.authors[3].org)
-        if node.authors[3].org is None : # type-check
+        self.assertIsNotNone(front.authors[3].org)
+        if front.authors[3].org is None : # type-check
             return
-        self.assertEqual     ( node.authors[3].org.content, rfc.Text(content="University of Glasgow"))
-        self.assertIsNotNone ( node.authors[3].address)
-        if node.authors[3].address is None : # type-check
+        self.assertEqual     ( front.authors[3].org.content, rfc.Text(content="University of Glasgow"))
+        self.assertIsNotNone ( front.authors[3].address)
+        if front.authors[3].address is None : # type-check
             return
-        self.assertIsInstance( node.authors[3].address.postal, rfc.Postal)
-        self.assertEqual     ( node.authors[3].address.postal, rfc.Postal(postal_address))
-        self.assertIsNone    ( node.authors[3].address.phone)
-        self.assertIsNone    ( node.authors[3].address.facsimile)
-        self.assertEqual     ( node.authors[3].address.email,rfc.Email(content=rfc.Text("csp@csperkins.org"), ascii=None))
-        self.assertIsNone    ( node.authors[3].address.uri)
-        self.assertIsNone    ( node.authors[3].asciiFullname)
-        self.assertIsNone    ( node.authors[3].asciiInitials)
-        self.assertIsNone    ( node.authors[3].asciiSurname)
-        self.assertEqual     ( node.authors[3].fullname, "Colin Perkins")
-        self.assertEqual     ( node.authors[3].initials, "C. S.")
-        self.assertEqual     ( node.authors[3].surname,  "Perkins")
-        self.assertIsNone    ( node.authors[3].role)
+        self.assertIsInstance( front.authors[3].address.postal, rfc.Postal)
+        self.assertEqual     ( front.authors[3].address.postal, rfc.Postal(postal_address))
+        self.assertIsNone    ( front.authors[3].address.phone)
+        self.assertIsNone    ( front.authors[3].address.facsimile)
+        self.assertEqual     ( front.authors[3].address.email,rfc.Email(content=rfc.Text("csp@csperkins.org"), ascii=None))
+        self.assertIsNone    ( front.authors[3].address.uri)
+        self.assertIsNone    ( front.authors[3].asciiFullname)
+        self.assertIsNone    ( front.authors[3].asciiInitials)
+        self.assertIsNone    ( front.authors[3].asciiSurname)
+        self.assertEqual     ( front.authors[3].fullname, "Colin Perkins")
+        self.assertEqual     ( front.authors[3].initials, "C. S.")
+        self.assertEqual     ( front.authors[3].surname,  "Perkins")
+        self.assertIsNone    ( front.authors[3].role)
 
         # date
-        self.assertIsNone( node.date, rfc.Date)
+        self.assertIsNone( front.date, rfc.Date)
 
         # areas
-        self.assertIsInstance( node.areas, list)
-        if not isinstance( node.areas, list) :  #type-check
+        self.assertIsInstance( front.areas, list)
+        if not isinstance( front.areas, list) :  #type-check
             return
-        self.assertEqual( len(node.areas), 0)
+        self.assertEqual( len(front.areas), 0)
 
         # workgroups
-        self.assertIsInstance( node.workgroups, list)
-        if not isinstance( node.workgroups, list) :  #type-check
+        self.assertIsInstance( front.workgroups, list)
+        if not isinstance( front.workgroups, list) :  #type-check
             return
-        self.assertEqual( len(node.workgroups), 0)
+        self.assertEqual( len(front.workgroups), 0)
 
         # keywords
-        self.assertIsInstance( node.keywords, list)
-        if not isinstance( node.keywords, list) :  #type-check
+        self.assertIsInstance( front.keywords, list)
+        if not isinstance( front.keywords, list) :  #type-check
             return
-        self.assertEqual( len(node.keywords), 0)
+        self.assertEqual( len(front.keywords), 0)
 
         # abstract
-        self.assertIsNotNone( node.abstract)
-        if node.abstract is None : #type-check
+        self.assertIsNotNone( front.abstract)
+        if front.abstract is None : #type-check
             return
-        self.assertIsInstance( node.abstract, rfc.Abstract)
-        self.assertIsNone( node.abstract.anchor)
-        self.assertIsInstance( node.abstract.content, list)
-        self.assertEqual( len(node.abstract.content), 1)
-        self.assertIsInstance( node.abstract.content[0] , rfc.T)
+        self.assertIsInstance( front.abstract, rfc.Abstract)
+        self.assertIsNone( front.abstract.anchor)
+        self.assertIsInstance( front.abstract.content, list)
+        self.assertEqual( len(front.abstract.content), 1)
+        self.assertIsInstance( front.abstract.content[0] , rfc.T)
 
         # abstract-t element
-        self.assertIsInstance( node.abstract.content[0] , rfc.T)
-        self.assertIsInstance( node.abstract.content[0].content , list)
+        self.assertIsInstance( front.abstract.content[0] , rfc.T)
+        self.assertIsInstance( front.abstract.content[0].content , list)
 
-        self.assertEqual     ( len(node.abstract.content[0].content) , 1)
-        self.assertIsInstance( node.abstract.content[0].content[0] , rfc.Text)
-        if not isinstance( node.abstract.content[0].content[0], rfc.Text) :
+        self.assertEqual     ( len(front.abstract.content[0].content) , 1)
+        self.assertIsInstance( front.abstract.content[0].content[0] , rfc.Text)
+        if not isinstance( front.abstract.content[0].content[0], rfc.Text) :
             return
-        self.assertIsInstance( node.abstract.content[0].content[0].content , str)
-        self.assertEqual     ( node.abstract.content[0].content[0].content, """
+        self.assertIsInstance( front.abstract.content[0].content[0].content , str)
+        self.assertEqual     ( front.abstract.content[0].content[0].content, """
               This document describes a machine-readable format for specifying
               the syntax of protocol data units within a protocol specification.
               This format is comprised of a consistently formatted packet header
@@ -259,35 +278,28 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
               document is itself an example of how the format can be used.
             """)
 
-        self.assertIsInstance( node.abstract.content[0], rfc.T)
-        if not isinstance( node.abstract.content[0], rfc.T): # type-check
+        self.assertIsInstance( front.abstract.content[0], rfc.T)
+        if not isinstance( front.abstract.content[0], rfc.T): # type-check
             return
-        self.assertIsNone( node.abstract.content[0].anchor)
-        self.assertIsNone( node.abstract.content[0].hangText)
-        self.assertFalse ( node.abstract.content[0].keepWithNext)
-        self.assertFalse ( node.abstract.content[0].keepWithPrevious)
+        self.assertIsNone( front.abstract.content[0].anchor)
+        self.assertIsNone( front.abstract.content[0].hangText)
+        self.assertFalse ( front.abstract.content[0].keepWithNext)
+        self.assertFalse ( front.abstract.content[0].keepWithPrevious)
 
 
         # notes
-        self.assertIsInstance( node.notes, list)
-        if not isinstance( node.notes, list) : # type-check
+        self.assertIsInstance( front.notes, list)
+        if not isinstance( front.notes, list) : # type-check
             return
-        self.assertEqual( len(node.notes), 0)
+        self.assertEqual( len(front.notes), 0)
 
         # boilerplate
-        self.assertIsNone( node.boilerplate)
+        self.assertIsNone( front.boilerplate)
 
 
-    def test_rfc_back(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
-            raw_content = fd.read()
-            xml_tree = ET.fromstring(raw_content)
-            back = npt.parser_rfc_xml.parse_rfc(xml_tree).back
 
+    def _verify_rfc_dom_back(self, back: rfc.Back):
         self.assertIsInstance(back, rfc.Back)
-        self.assertIsNotNone(back)
-        if back is None :  # type-check
-            return
 
         # displayrefs
         self.assertIsInstance(back.displayrefs, list)
@@ -2059,14 +2071,9 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertEqual(back.sections[1].toc, "default" )
 
 
-    def test_rfc_middle(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
-            raw_content = fd.read()
-            xml_tree = ET.fromstring(raw_content)
-            middle = npt.parser_rfc_xml.parse_rfc(xml_tree).middle
 
-        # Test whether the title has been parsed correctly
-        # For now, this just checks that the correct nodes are parsed
+    def _verify_rfc_middle(self, middle: rfc.Middle):
+        self.assertIsNotNone(middle.content)
         self.assertEqual(len(middle.content), 8)
         # sec-00
         self.assertIsInstance(middle.content[0], rfc.Section)
@@ -4498,9 +4505,6 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertIsNone(middle.content[3].sections[0].title)
         self.assertEqual(middle.content[3].sections[0].toc, "default")
 
-#.......................................
-#....... TO BE CONTINUED................
-#.......................................
 
         # sec-03 sub-sec[1] 
         self.assertIsInstance( middle.content[3].sections[1], rfc.Section)
@@ -4514,25 +4518,28 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
 
         # sec-03 sub-sec[2] 
         self.assertIsInstance( middle.content[3].sections[2], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[3] 
         self.assertIsInstance( middle.content[3].sections[3], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[4] 
         self.assertIsInstance( middle.content[3].sections[4], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[5] 
         self.assertIsInstance( middle.content[3].sections[5], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[6] 
         self.assertIsInstance( middle.content[3].sections[6], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[7] 
         self.assertIsInstance( middle.content[3].sections[7], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[8] 
         self.assertIsInstance( middle.content[3].sections[8], rfc.Section)
+        # ...... 
         # sec-03 sub-sec[9] 
         self.assertIsInstance( middle.content[3].sections[9], rfc.Section)
-
-#----------
-        # DJ section-03 
-#----------
-
+        # ...... 
 
 
         # sec-03  anchor, numbered removeInRFC, title,  toc
@@ -4542,12 +4549,97 @@ class Test_Parse_XML_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase)
         self.assertIsNone(middle.content[3].title)
         self.assertEqual(middle.content[3].toc, "default" )
         # ...
+
+
+
+        # sec-04
         self.assertIsInstance(middle.content[4], rfc.Section)
-        # ...
+        # sec-04  name 
+        self.assertIsInstance(middle.content[4].name, rfc.Name)
+        if not isinstance(middle.content[4].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[4].name.content, list)
+        self.assertEqual(len(middle.content[4].name.content), 1)
+        self.assertIsInstance(middle.content[4].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[4].name.content[0].content, "Open Issues")
+        # sec-04  content 
+        self.assertIsInstance(middle.content[4].content, list)
+        self.assertEqual(len(middle.content[4].content), 1)
+        # sec-04  content [0] <UL> 
+        self.assertIsInstance(middle.content[4].content[0], rfc.UL)
+        if not isinstance(middle.content[4].content[0], rfc.UL): # type-check
+            return
+        # sec-04  content [0] <UL> content 
+        self.assertIsInstance(middle.content[4].content[0].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content), 3)
+        # sec-04  content [0] <UL> content [0] <LI>
+        self.assertIsInstance(middle.content[4].content[0].content[0], rfc.LI)
+        self.assertIsInstance(middle.content[4].content[0].content[0].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content[0].content), 1)
+        self.assertIsInstance(middle.content[4].content[0].content[0].content[0], rfc.Text)
+        if not isinstance(middle.content[4].content[0].content[0].content[0], rfc.Text): # type-check
+            return
+        self.assertEqual(middle.content[4].content[0].content[0].content[0].content, """
+              Need a simple syntax for defining a list of identical objects,
+              and a way of referring to the size of the enclosing packet.
+              The format cannot currently represent RFC 6716 section 3.2.3,
+              and should be able to (the underlying type system can do so).
+            """)
+        self.assertIsNone(middle.content[4].content[0].content[0].anchor)
+        # sec-04  content [0] <UL> content [1] <LI>
+        self.assertIsInstance(middle.content[4].content[0].content[1], rfc.LI)
+        self.assertIsInstance(middle.content[4].content[0].content[1].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content[1].content), 1)
+        self.assertIsInstance(middle.content[4].content[0].content[1].content[0], rfc.Text)
+        if not isinstance(middle.content[4].content[0].content[1].content[0], rfc.Text): # type-check
+            return
+        self.assertEqual(middle.content[4].content[0].content[1].content[0].content, """
+              Need some discussion about the checks that the tooling might
+              perform, and the implications of those checks. For example,
+              the tooling checks for consistency between the diagram and
+              the description list of fields, ensuring that fields match
+              by name and width. -01 of this draft had a field that
+              mismatched because of case: is this something that the
+              tooling should identify? More broadly, what is the trade-off
+              between the rigour that the tooling can enforce, and the
+              flexibility desired/needed by authors?
+            """)
+        self.assertIsNone(middle.content[4].content[0].content[1].anchor)
+        # sec-04  content [0] <UL> content [2] <LI>
+        self.assertIsInstance(middle.content[4].content[0].content[2], rfc.LI)
+        self.assertIsInstance(middle.content[4].content[0].content[2].content, list)
+        self.assertEqual(len(middle.content[4].content[0].content[2].content), 1)
+        self.assertIsInstance(middle.content[4].content[0].content[2].content[0], rfc.Text)
+        if not isinstance(middle.content[4].content[0].content[2].content[0], rfc.Text): # type-check
+            return
+        self.assertEqual(middle.content[4].content[0].content[2].content[0].content, """
+              Need to describe the rules governing the import of PDU definitions
+              from other documents.
+            """)
+        self.assertIsNone(middle.content[4].content[0].content[2].anchor)
+        # sec-04  content [0] <UL> anchor, empty, spacing
+        self.assertIsInstance(middle.content[4].content[0], rfc.UL)
+        self.assertIsNone(middle.content[4].content[0].anchor) 
+        self.assertFalse(middle.content[4].content[0].empty) 
+        self.assertEqual(middle.content[4].content[0].spacing, "normal") 
+
+        # sec-04  sections 
+        self.assertIsInstance(middle.content[4].sections, list)
+        if not isinstance(middle.content[4].sections, list): # type-check
+            return
+        self.assertEqual(len(middle.content[4].sections), 0)
+
+        # sec-04  anchor, numbered removeInRFC, title,  toc
+        self.assertEqual(middle.content[4].anchor, "issues")
+        self.assertTrue(middle.content[4].numbered)
+        self.assertFalse(middle.content[4].removeInRFC)
+        self.assertIsNone(middle.content[4].title)
+        self.assertEqual(middle.content[4].toc, "default" )
+
         self.assertIsInstance(middle.content[5], rfc.Section)
         # ...
         self.assertIsInstance(middle.content[6], rfc.Section)
-        # ...
+
         self.assertIsInstance(middle.content[7], rfc.Section)
         # ...
 
