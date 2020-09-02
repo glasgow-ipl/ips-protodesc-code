@@ -97,7 +97,7 @@ def generate_parser(grammarFilename):
 def parse_rfc(rfcTxt):
     rfcTxt = depaginate(rfcTxt)
     rfcTxt = trim_blank_lines(rfcTxt)
-    parser = generate_parser("rfc-grammar.txt")
+    parser = generate_parser("npt/grammar_rfc.txt")
     rfc = parser("".join(rfcTxt)).rfc()
     return rfc
 
