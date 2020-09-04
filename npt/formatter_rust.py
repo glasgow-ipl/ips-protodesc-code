@@ -100,8 +100,8 @@ class RustFormatter(Formatter):
         assert bitstring.name not in self.output
         self.output.append(f"\n// Structure and parser for {bitstring.name} (bitstring type)\n")
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
-        self.output.extend(["struct ", camelcase(bitstring.name), "(u%d);\n" % self.assign_int_size(size)])
-        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
+        self.output.extend(["pub struct ", camelcase(bitstring.name), "(pub u%d);\n" % self.assign_int_size(size)])
+        self.output.append("\npub fn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
         self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=self.assign_int_size(size), name=camelcase(bitstring.name)))
 
 
@@ -135,17 +135,17 @@ class RustFormatter(Formatter):
             elif trait == "Ordinal":
                 self.output.append(", Ord")
         self.output.append(")]\n")
-        self.output.extend(["struct ", camelcase(struct.name), " {\n"])
+        self.output.extend(["pub struct ", camelcase(struct.name), " {\n"])
         parser_functions = []
         closure_terms = []
         generator = self.closure_term_gen()
         for field in struct.get_fields():
             type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
-            self.output.append("    %s: %s,\n" % (field.field_name, camelcase(type_name)))
+            self.output.append("    pub %s: %s,\n" % (field.field_name, camelcase(type_name)))
             parser_functions.append("parse_{name}".format(name=type_name.lower()))
             closure_terms.append("{term}".format(term=next(generator)))
         self.output.append("}\n")
-        self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
+        self.output.append("\npub fn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
         if len(parser_functions) > 1:
             self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
         else:
