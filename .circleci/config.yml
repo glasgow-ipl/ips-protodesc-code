@@ -39,6 +39,9 @@ jobs:
       - attach_workspace:
           at: .
 
+      - run: sudo apt-get update
+      - run: sudo apt-get install libpcap-dev
+
       - run:
           name: run tests
           command: |
