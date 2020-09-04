@@ -233,4 +233,4 @@ class RustFormatter(Formatter):
             yield ascii_letters[i]
 
     def format_protocol(self, protocol:Protocol):
-        self.output.append("")
+        self.output.append("") # TODO: generate a parse_pdu() function
