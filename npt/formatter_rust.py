@@ -57,7 +57,7 @@ class RustFormatter(Formatter):
         self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n")
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
-        manifest = f"[package]\nname = \"{output_name}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
+        manifest = f"[package]\nname = \"{output_name.replace('-', '_')}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
         output_files = {Path(f"src/lib.rs"): "".join(self.output),
                         Path(f"Cargo.toml"): manifest}
         return output_files
