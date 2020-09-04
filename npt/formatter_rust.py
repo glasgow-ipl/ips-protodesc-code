@@ -233,4 +233,4 @@ class RustFormatter(Formatter):
             yield ascii_letters[i]
 
     def format_protocol(self, protocol:Protocol):
-        self.output.append("\nfn main() {\n    // TODO: implement\n    unimplemented!()\n}\n")
+        self.output.append("")
