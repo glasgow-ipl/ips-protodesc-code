@@ -94,7 +94,7 @@ def parse_xref(xmlElement: ET.Element) -> rfc.XRef:
     if xmlElement.text is not None:
         text = rfc.Text(xmlElement.text)
     return rfc.XRef(text,
-                    xmlElement.attrib.get("format"),
+                    xmlElement.attrib.get("format", "default"),
                     xmlElement.attrib.get("pageno") == "true",
                     xmlElement.attrib["target"])
 
@@ -289,7 +289,7 @@ def parse_t(xmlElement: ET.Element) -> rfc.T:
             content.append(parse_xref(child))
         if child.tail is not None:
             content.append(rfc.Text(child.tail))
-    if xmlElement.tail is not None:
+    if xmlElement.tail is not None and len(xmlElement.tail.strip()) != 0:
         content.append(rfc.Text(xmlElement.tail))
     return rfc.T(content,
                  xmlElement.attrib.get("anchor"),
@@ -521,6 +521,10 @@ def parse_ol(xmlElement: ET.Element) -> rfc.OL:
 def parse_dd(xmlElement: ET.Element) -> rfc.DD:
     contentA : ListType[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]] = []
     contentB : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]] = []
+
+    if xmlElement.text is not None and len(xmlElement.text.strip()) != 0:
+        contentB.append(rfc.Text(xmlElement.text))
+
     for ddChild in xmlElement:
         # Variant one in RFC 7991 section 2.18:
         if ddChild.tag == "artwork":
@@ -560,13 +564,14 @@ def parse_dd(xmlElement: ET.Element) -> rfc.DD:
             contentB.append(parse_tt(ddChild))
         elif ddChild.tag == "xref":
             contentB.append(parse_xref(ddChild))
-    if xmlElement.text is not None:
-        contentB.append(rfc.Text(xmlElement.text))
+        if ddChild.tail is not None and len(ddChild.tail.strip()) != 0:
+            contentB.append(rfc.Text(ddChild.tail))
+
     if len(contentB) == 0:
         assert len(contentA) > 0
         return rfc.DD(contentA, xmlElement.attrib.get("anchor"))
     else:
-        assert len(contentB) > 0
+        assert len(contentA) == 0
         return rfc.DD(contentB, xmlElement.attrib.get("anchor"))
 
 
@@ -1149,7 +1154,7 @@ def parse_seriesinfo(xmlElement: ET.Element) -> rfc.SeriesInfo:
                           xmlElement.attrib["value"],
                           xmlElement.attrib["name"],
                           xmlElement.attrib.get("status", None),
-                          xmlElement.attrib.get("stream", None),
+                          xmlElement.attrib.get("stream", "IETF"),
                           xmlElement.attrib["value"])
 
 
@@ -1409,7 +1414,7 @@ def parse_rfc(xmlElement: ET.Element) -> rfc.RFC:
                    xmlElement.attrib.get("sortRefs") == "true",
                    xmlElement.attrib.get("submissionType", "IETF"),
                    not xmlElement.attrib.get("symRefs") == "false",
-                   xmlElement.attrib.get("tocDepth"),
+                   xmlElement.attrib.get("tocDepth", "3"),
                    not xmlElement.attrib.get("tocInclude") == "false",
                    xmlElement.attrib.get("updates"),
                    xmlElement.attrib.get("version"))
