@@ -1,0 +1,7 @@
+.mypy_cache/
+htmlcov/
+test-results/
+.DS_Store
+*.pyc
+examples/simple-protocol-testing/pcaps
+examples/simple-protocol-testing/testharness/target
