@@ -37,7 +37,7 @@ import sys
 
 class Test_Cmdline(ut.TestCase):
     def test_use_existing_rootdir(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
 
         self.assertTrue(
             rootdir.exists(),
@@ -75,7 +75,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(current)
 
     def test_autogen_rootdir(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         if rootdir.exists():
             rootdir.rmdir()
 
@@ -94,7 +94,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_dir_structure(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         argv = f"-d {rootdir}".split()
         ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
         with npt.util.RootWorkingDir(root=opts.root_dir) as rwd:
@@ -174,7 +174,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_default_start_date(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         argv = f"-d {str(rootdir)}".split()
 
         ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
@@ -190,7 +190,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_preexisting_start(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         argv = f"-d {str(rootdir)}".split()
 
         ap_ns, opts = npt.util.parse_cmdline(arglist=argv)
@@ -211,7 +211,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_date_override(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         argv = f"-d {str(rootdir)}".split()
 
         override = (datetime.utcnow() -
@@ -240,7 +240,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_dload_specific_draft(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         draft_name = 'draft-mcquistin-augmented-ascii-diagrams-06.xml'
         argv = f"-d {str(rootdir)} {draft_name}".split()
 
@@ -255,7 +255,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_dload_multiple_drafts(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         draft_name = "draft-mcquistin-augmented-ascii-diagrams-06.xml draft-mcquistin-quic-augmented-diagrams-02.xml"
         argv = f"-d {str(rootdir)} {draft_name}".split()
 
@@ -272,7 +272,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_dload_single_draft_allversions(self):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         draft_name = 'draft-mcquistin-augmented-ascii-diagrams'
         argv = f"-d {str(rootdir)} {draft_name}".split()
 
@@ -305,7 +305,7 @@ class Test_Cmdline(ut.TestCase):
             shutil.rmtree(rootdir)
 
     def test_mutliple_local_files( self ):
-        rootdir = pathlib.Path(tempfile.mkdtemp())
+        rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
         draft_orig = [ 'draft-mcquistin-augmented-ascii-diagrams.xml', 'draft-mcquistin-quic-augmented-diagrams.xml' ]
         drafts = [ shutil.copy( pathlib.Path.cwd()/ "examples"/ in_file , rootdir ) for in_file in draft_orig ]
         argv = " ".join( drafts ).split()
@@ -320,6 +320,7 @@ class Test_Cmdline(ut.TestCase):
 
         if rootdir.exists():
             shutil.rmtree(rootdir)
+
 
 if __name__ == '__main__':
     ut.main()
