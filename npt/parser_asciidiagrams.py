@@ -247,7 +247,7 @@ class AsciiDiagramsParser(Parser):
                 constraints.append(value_expr)
             if field["units"] in ["bits", "bit", "bytes", "byte", None]:
                 name = struct_name + "_" + field["full_label"]
-                if size_expr is npt.protocol.ConstantExpression and type(size_expr) is npt.protocol.ConstantExpression and field["units"] in ["byte", "bytes"]:
+                if type(size_expr) is npt.protocol.ConstantExpression and field["units"] in ["byte", "bytes"]:
                     size_expr = self.build_expr(("const", "Number", size_expr.constant_value*8), struct_name)
                 if type(size_expr) is npt.protocol.ConstantExpression:
                     field_type = npt.protocol.BitString(name, size_expr)
