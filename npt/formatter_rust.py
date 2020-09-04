@@ -54,7 +54,7 @@ class RustFormatter(Formatter):
         self.structs = {}
         self.expr_traversal = ExpressionTraversal(self)
         #add crate/imports
-        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n\n")
+        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\n")
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
         manifest = f"[package]\nname = \"{output_name}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
@@ -98,6 +98,7 @@ class RustFormatter(Formatter):
         if type(size) is str:
             size = None
         assert bitstring.name not in self.output
+        self.output.append(f"\n// Structure and parser for {bitstring.name} (bitstring type)\n")
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
         self.output.extend(["struct ", camelcase(bitstring.name), "(u%d);\n" % self.assign_int_size(size)])
         self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
@@ -126,6 +127,7 @@ class RustFormatter(Formatter):
         # FIXME: need to handle constraints
         assert struct.name not in self.output
         #traits need to be added up here when using !derive (eg. Eq, Ord)
+        self.output.append(f"\n// Structure and parser for {struct.name}\n")
         self.output.append("\n#[derive(Debug")
         for trait in struct.traits:
             if trait == "Equality":
