@@ -30,15 +30,18 @@ test: typecheck unittests integrationtests
 typecheck:
 	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
+examples/simple-protocol-testing/pcaps: examples/simple-protocol-testing/generate-pcaps.py
+	mkdir -p examples/simple-protocol-testing/pcaps
+	cd examples/simple-protocol-testing && python generate-pcaps.py
+
 unittests:
 	@python3 -m unittest discover -s tests/ -v
 
 examples/output/draft/%/rust: examples/%.xml
 	npt $< -of rust
 
-integrationtests: examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust examples/output/draft/draft-mcquistin-quic-augmented-diagrams/rust/
-	cd examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust && cargo build
-	cd examples/output/draft/draft-mcquistin-quic-augmented-diagrams/rust  && cargo build
+integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust examples/simple-protocol-testing/pcaps
+	cd examples/simple-protocol-testing/testharness && cargo test
 
 clean:
 	rm -rf examples/output
