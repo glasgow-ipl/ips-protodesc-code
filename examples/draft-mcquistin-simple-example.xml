@@ -608,6 +608,49 @@
                         </t>
                     </dd>
                 </dl>
+
+                <t>
+                 A Multiple Field Header is formatted as follows:
+                </t>
+                <artwork>
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version        | Field2| Field3|
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                </artwork>
+                <t>
+                    where:
+                </t>
+                <dl>
+                    <dt>
+                        Version (V): 1 byte.
+                    </dt>
+                    <dd>
+                        <t>
+                            This is a fixed-width field, whose full label is shown
+                            in the diagram. The field's width -- 1 byte -- is given
+                            in the label of the description list, separated from the
+                            field's label by a colon.
+                        </t>
+                    </dd>
+                    <dt>
+                        Field2: 4 bits.
+                    </dt>
+                    <dd>
+                        <t>
+                            Fixed-width field.
+                        </t>
+                    </dd>
+                    <dt>
+                        Field3: 4 bits.
+                    </dt>
+                    <dd>
+                        <t>
+                            Fixed-width field.
+                        </t>
+                    </dd>
+                </dl>
             </section>
 
             <section anchor='ascii-pdus'>
@@ -631,7 +674,7 @@
                   phrase.
                 </t>
                 <t>
-                  This document describes the Example protocol. The Example protocol uses Single Field Header.
+                  This document describes the Example protocol. The Example protocol uses Single Field Headers, and Multiple Field Headers.
                 </t>
             </section>
 
