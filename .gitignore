@@ -3,5 +3,5 @@ htmlcov/
 test-results/
 .DS_Store
 *.pyc
-examples/simple-protocol-testing/pcaps
-examples/simple-protocol-testing/testharness/target
+tests/simple-protocol-testing/pcaps
+tests/simple-protocol-testing/testharness/target
