@@ -23,25 +23,38 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-.PHONY: test typecheck unittests integrationtests
+PYTHON_SRC   = $(wildcard npt/*.py)
+PYTHON_TESTS = $(wildcard tests/*.py)
 
-test: typecheck unittests integrationtests 
+.PHONY: test unittests integrationtests
 
-typecheck:
+test: unittests integrationtests
+
+# =================================================================================================
+# The CI build runs the following in the python-testing environment:
+
+test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
+
+unittests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
+	@python3 -m unittest discover -s tests/ -v
 
 examples/simple-protocol-testing/pcaps: examples/simple-protocol-testing/generate-pcaps.py
 	mkdir -p examples/simple-protocol-testing/pcaps
 	cd examples/simple-protocol-testing && python generate-pcaps.py
 
-unittests:
-	@python3 -m unittest discover -s tests/ -v
-
 examples/output/draft/%/rust: examples/%.xml
 	npt $< -of rust
+
+# =================================================================================================
+# The CI build runs the following in the rust-testing environment:
 
 integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust examples/simple-protocol-testing/pcaps
 	cd examples/simple-protocol-testing/testharness && cargo test
 
+# =================================================================================================
+
 clean:
-	rm -rf examples/output
+	rm -f  test-results/typecheck.xml
+	rm -fr examples/output
+
