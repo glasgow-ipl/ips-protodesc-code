@@ -39,9 +39,9 @@ test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 unittests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
 	@python3 -m unittest discover -s tests/ -v
 
-examples/simple-protocol-testing/pcaps: examples/simple-protocol-testing/generate-pcaps.py
-	mkdir -p examples/simple-protocol-testing/pcaps
-	cd examples/simple-protocol-testing && python generate-pcaps.py
+tests/simple-protocol-testing/pcaps: tests/simple-protocol-testing/generate-pcaps.py
+	mkdir -p tests/simple-protocol-testing/pcaps
+	cd tests/simple-protocol-testing && python generate-pcaps.py
 
 examples/output/draft/%/rust: examples/%.xml
 	npt $< -of rust
@@ -49,8 +49,8 @@ examples/output/draft/%/rust: examples/%.xml
 # =================================================================================================
 # The CI build runs the following in the rust-testing environment:
 
-integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust examples/simple-protocol-testing/pcaps
-	cd examples/simple-protocol-testing/testharness && cargo test
+integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust tests/simple-protocol-testing/pcaps
+	cd tests/simple-protocol-testing/testharness && cargo test
 
 # =================================================================================================
 
