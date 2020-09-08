@@ -26,9 +26,12 @@
 PYTHON_SRC   = $(wildcard npt/*.py)
 PYTHON_TESTS = $(wildcard tests/*.py)
 
-.PHONY: test typecheck unittests integrationtests
+.PHONY: test unittests integrationtests
 
-test: integrationtests
+test: unittests integrationtests
+
+# =================================================================================================
+# The CI build runs the following in the python-testing environment:
 
 test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
@@ -43,8 +46,13 @@ examples/simple-protocol-testing/pcaps: examples/simple-protocol-testing/generat
 examples/output/draft/%/rust: examples/%.xml
 	npt $< -of rust
 
-integrationtests: unittests examples/output/draft/draft-mcquistin-simple-example/rust examples/simple-protocol-testing/pcaps
+# =================================================================================================
+# The CI build runs the following in the rust-testing environment:
+
+integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust examples/simple-protocol-testing/pcaps
 	cd examples/simple-protocol-testing/testharness && cargo test
+
+# =================================================================================================
 
 clean:
 	rm -f  test-results/typecheck.xml
