@@ -80,6 +80,9 @@ def get_doc_series(text):
 def get_ipr_code(text):
     return "trust200902"
 
+def infer_toc(alpha:str, num:str):
+    return 3
+
 def generate_parser(grammarFilename):
     with open(grammarFilename) as grammarFile:
         return parsley.makeGrammar(grammarFile.read(),
@@ -92,6 +95,7 @@ def generate_parser(grammarFilename):
                                      "get_doc_series"        : get_doc_series,
                                      "get_ipr_code"          : get_ipr_code,
                                      "structure_subsections" : structure_subsections,
+                                     "infer_toc"             : infer_toc,
                                    })
 
 def parse_rfc(rfcTxt):

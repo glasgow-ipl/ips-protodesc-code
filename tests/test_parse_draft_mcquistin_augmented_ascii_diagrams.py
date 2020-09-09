@@ -39,7 +39,7 @@ from npt.protocol import *
 # RFC DOM input parsers
 import npt.rfc as rfc
 import npt.parser_rfc_xml
-#import npt.parser_rfc_txt
+import npt.parser_rfc_txt
 
 #from npt.parser               import Parser
 #from npt.parser_asciidiagrams import AsciiDiagramsParser
@@ -53,7 +53,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
             node = npt.parser_rfc_xml.parse_rfc(xml_tree)
-            self._verify_rfc_dom_root(node)
+            self._verify_rfc_dom_root(node, True)
 
     def test_xml_rfc_front(self):
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
@@ -78,8 +78,14 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             if back is not None : 
                 self._verify_rfc_dom_back(back)
 
+    def test_txt_rfc_root(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+            content = fd.readlines()
+            root = npt.parser_rfc_txt.parse_rfc(content)
+            self.assertIsInstance(root, rfc.RFC)
+            self._verify_rfc_dom_root(root, False)
 
-    def _verify_rfc_dom_root(self, root: rfc.RFC) :
+    def _verify_rfc_dom_root(self, root: rfc.RFC, xml_doc: bool) :
         self.assertIsInstance( root.links, list)
         if isinstance( root.links, list) :  # type-check
             self.assertEqual( len(root.links), 0 )
@@ -91,7 +97,10 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( root.back,   rfc.Back )
         self.assertIsNotNone ( root.back)
 
-        self.assertEqual     ( root.category, "exp")
+        if xml_doc :
+            self.assertEqual ( root.category, "exp")
+        else : 
+            self.assertIsNone ( root.category)
         self.assertFalse     ( root.consensus)
         self.assertEqual     ( root.docName, "draft-mcquistin-augmented-ascii-diagrams-05")
         self.assertTrue      ( root.indexInclude)

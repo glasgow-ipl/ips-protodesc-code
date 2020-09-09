@@ -16,7 +16,7 @@ nl = '\n'
 
 line = tab ws <((word|number) ws)+>:text nl -> text
 t = line+:lines -> rfc.T(" ".join(lines), None, None, None, None)
-tocline = tab ws (letter '.')? (number '.')* ws (word ws)+ number? nl
+tocline = tab ws <(letter '.')?>:alpha <(number '.')*>:num ws (word ws)+ number? nl -> infer_toc(alpha, num)
 section_name = <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('.'), name)
 appendix_name = "Appendix " (letter '.') ws <(word ws)+>:name nl -> (1, name)
 appendix_sub_name = (letter '.') <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('.')+1, name)
@@ -26,30 +26,30 @@ ascii_packet_diagram = ascii_packet_header:header line+:lines -> rfc.Artwork("\n
 
 # RFC
 
-rfc = front:(front_obj, doc_name_str)
+rfc = front:(front_obj, doc_name_str, ipr_code, toc_depth)
       middle:middle_obj
       back:back_obj
-                -> rfc.RFC(None, 
+                -> rfc.RFC([], 
                                  front_obj,
                                  middle_obj,
                                  back_obj,
                                  None,
                                  None,
                                  doc_name_str,
+                                 True,
+                                 ipr_code,
                                  None,
                                  None,
                                  None,
                                  None,
                                  None,
                                  None,
+                                 "IETF",
+                                 True,
+                                 toc_depth,
+                                 True,
                                  None,
-                                 None,
-                                 None,
-                                 None,
-                                 None,
-                                 None,
-                                 None,
-                                 None)
+                                 "3")
 
 # Middle
 
@@ -92,7 +92,7 @@ abstract = "Abstract" nl nl t+:ts -> rfc.Abstract(ts, None)
 
 status = "Status of This Memo" nl nl (line+ nl)+:text -> get_doc_series(text)
 ipr = "Copyright Notice" nl nl (line+ nl)+:text -> get_ipr_code(text)
-toc = "Table of Contents" nl nl tocline+ nl
+toc = "Table of Contents" nl nl tocline+:toc_depth nl -> str(max(toc_depth))
 
 front = header_line+ nl
         title:title_obj nl
@@ -100,5 +100,5 @@ front = header_line+ nl
         abstract:abstract_obj nl
         status:status_name
         ipr:ipr_code
-        toc
-                -> (rfc.Front(title_obj, [rfc.SeriesInfo(status_name, doc_name_str, status_name, None, None, doc_name_str)], [], None, None, None, None, abstract_obj, None, None), doc_name_str)
+        toc:toc_depth
+                -> (rfc.Front(title_obj, [rfc.SeriesInfo(status_name, doc_name_str, status_name, None, None, doc_name_str)], [], None, None, None, None, abstract_obj, None, None), doc_name_str, ipr_code, toc_depth)
