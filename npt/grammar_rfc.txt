@@ -21,8 +21,25 @@ section_name = <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('
 appendix_name = "Appendix " (letter '.') ws <(word ws)+>:name nl -> (1, name)
 appendix_sub_name = (letter '.') <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('.')+1, name)
 
-ascii_packet_header  = ws "0                   1                   2                   3":hl nl -> hl
-ascii_packet_diagram = ascii_packet_header:header line+:lines -> rfc.Artwork("\n".join([header] + lines), None, None, None, None, None, None, None, None, None)
+ascii_packet_header  = ws <':'* ws "0                   1                   2                   3">:hl nl:newline -> hl+newline
+ascii_packet_diag_ref = nl
+                        tab ws <'Figure' ws number ('.' (letter+|number))*>:fig  ':' 
+                        ws <((word|number|punc) ws)*>:title nl -> (fig, title)
+ascii_packet_diagram = ascii_packet_header:header 
+                       line+:lines 
+                       ascii_packet_diag_ref?:fig_ref
+                        -> rfc.Artwork( [rfc.Text("".join([header] + lines))], 
+                                        "left",
+                                        None,
+                                        fig_ref[0] if fig_ref else None,
+                                        None, 
+                                        fig_ref[1] if fig_ref else None,
+                                        None, 
+                                        None, 
+                                        None, 
+                                        None)
+                                        
+
 
 # RFC
 
@@ -54,14 +71,14 @@ rfc = front:(front_obj, doc_name_str, ipr_code, toc_depth)
 # Middle
 
 section = section_name:(depth, name) nl ((ascii_packet_diagram|t):text nl -> text)*:ts
-                         -> (depth, rfc.Section(name,
+                         -> (depth, rfc.Section(rfc.Name([rfc.Text(name)]),
                                         ts,
                                         [],
                                         None,
+                                        True,
+                                        False,
                                         None,
-                                        None,
-                                        None,
-                                        None))
+                                        "default"))
 
 middle = section+:sections -> rfc.Middle(structure_subsections(sections))
 
