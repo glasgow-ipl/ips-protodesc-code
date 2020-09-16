@@ -21,7 +21,16 @@ section_name = <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('
 appendix_name = "Appendix " (letter '.') ws <(word ws)+>:name nl -> (1, name)
 appendix_sub_name = (letter '.') <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('.')+1, name)
 
-ascii_packet_header  = ws <':'* ws "0                   1                   2                   3">:hl nl:newline -> hl+newline
+#ascii_packet_header  = ws <':'* ws "0                   1                   2                   3">:hl nl:newline -> hl+newline
+packet_header_id = "0                   1                   2                   3"
+packet_header_type1 = <':'* ws packet_header_id>:hl -> hl 
+packet_header_type2 = <':' ws ((word|number) ws)+ nl>:preamble 
+                      ws <':' nl>:sep 
+                      ws <':' ws packet_header_id>:header_fmt -> preamble+sep+header_fmt
+
+ascii_packet_header  = ws 
+                       ( packet_header_type1 | packet_header_type2 ):hl nl:newline 
+                       -> hl+newline
 ascii_packet_diag_ref = nl
                         tab ws <'Figure' ws number ('.' (letter+|number))*>:fig  ':' 
                         ws <((word|number|punc) ws)*>:title nl -> (fig, title)
