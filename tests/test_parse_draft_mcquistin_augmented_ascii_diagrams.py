@@ -4589,8 +4589,39 @@ protocol data units.
         # section-03 -- sub-section[2] content[0--1] <T> 
         self.assertIsInstance(middle.content[3].sections[2].content[0], rfc.T)
         self.assertIsInstance(middle.content[3].sections[2].content[1], rfc.T)
-        # section-03 -- sub-section[1] content[2] <T>  -- FIXME : This should be artwork 
-        self.assertIsInstance(middle.content[3].sections[2].content[2], rfc.T)
+
+        # section-03 -- sub-section[1] content[2] <Artwork>
+        self.assertIsInstance(middle.content[3].sections[2].content[2], rfc.Artwork)
+        if not isinstance(middle.content[3].sections[2].content[2], rfc.Artwork):
+            return
+        self.assertIsInstance(middle.content[3].sections[2].content[2].content, list)
+        if not isinstance(middle.content[3].sections[2].content[2].content, list):
+            return
+        self.assertEqual( len(middle.content[3].sections[2].content[2].content), 1)
+        self.assertIsInstance( middle.content[3].sections[2].content[2].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[2].content[2].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[3].sections[2].content[2].content[0].content, 
+"""0                   1
+0 1 2 3 4 5 6 7 8 9 0 1 2 3
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|M|M|M|M|M|C|M|M|M|C|M|M|M|M|
+|B|A|9|8|7|1|6|5|4|0|3|2|1|0|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+""")
+        # section-03 -- sub-section[2] content[2] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[3].sections[2].content[2].align, "left")
+        self.assertIsNone( middle.content[3].sections[2].content[2].alt)
+        self.assertIsNone( middle.content[3].sections[2].content[2].anchor)
+        self.assertIsNone( middle.content[3].sections[2].content[2].height) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].name)
+        self.assertIsNone( middle.content[3].sections[2].content[2].src)
+        self.assertIsNone( middle.content[3].sections[2].content[2].type) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].width) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].xmlSpace) 
+
+
+
         # section-03 -- sub-section[2] content[3--5] <T> 
         self.assertIsInstance(middle.content[3].sections[2].content[3], rfc.T)
         self.assertIsInstance(middle.content[3].sections[2].content[4], rfc.T)
