@@ -56,7 +56,7 @@ class RustFormatter(Formatter):
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
         manifest = f"[package]\nname = \"{output_name.replace('-', '_')}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
-        self.output = ["extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\nuse nom::branch::alt;\n"] + self.output
+        self.output = ["extern crate nom;\n\nuse nom::bits::complete::take;\nuse nom::branch::alt;\n"] + self.output
         output_files = {Path(f"src/lib.rs"): "".join(self.output),
                         Path(f"Cargo.toml"): manifest}
         return output_files
@@ -127,6 +127,27 @@ class RustFormatter(Formatter):
         else:
             return 128
 
+    def format_struct_field(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str]):
+        indentation = "    "*(index+1) + "    "*(index)
+        generated_code = []
+        input_str = "input"
+        if index > 0:
+            input_str = f"i{index-1}"
+        generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str});\n")
+        generated_code.append(f"{indentation}match {field_names[index]} {{\n")
+        if index+1 == len(field_names):
+            struct_instantiation_fields = ", ".join([f"{field_names[i]}: o{i}" for i in range(len(field_names))])
+            generated_code.append(f"{indentation}    nom::IResult::Ok((i{index}, o{index})) => nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})),\n")
+            generated_code.append(f"{indentation}    nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+            generated_code.append(f"{indentation}}}\n")
+        else:
+            generated_code.append(f"{indentation}    nom::IResult::Ok((i{index}, o{index})) => {{\n")
+            generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names)
+            generated_code.append(f"{indentation}    }}\n")
+            generated_code.append(f"{indentation}    nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+            generated_code.append(f"{indentation}}}\n")
+        return generated_code
+
     def format_struct(self, struct: Struct, constraints: List[str]):
         # FIXME: need to handle constraints
         assert struct.name not in self.output
@@ -141,23 +162,17 @@ class RustFormatter(Formatter):
         self.output.append(")]\n")
         self.output.extend(["pub struct ", camelcase(struct.name), " {\n"])
         parser_functions = []
-        closure_terms = []
+        field_names = []
         generator = self.closure_term_gen()
         for field in struct.get_fields():
             type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
             self.output.append("    pub %s: %s,\n" % (field.field_name, camelcase(type_name)))
             parser_functions.append("parse_{name}".format(name=type_name.lower()))
-            closure_terms.append("{term}".format(term=next(generator)))
+            field_names.append(f"{field.field_name}")
         self.output.append("}\n")
-        self.output.append("\npub fn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    ".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
-        if len(parser_functions) > 1:
-            self.output.append("map(tuple(({functions})), |({closure})| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
-        else:
-            self.output.append("map({functions}, |{closure}| {name}{{".format(functions=", ".join(parser_functions), closure=", ".join(closure_terms), name=camelcase(struct.name)))
-        for i in range(len(struct.get_fields())):
-            self.output.append("{f_name}: {closure_term}, ".format(f_name=struct.get_fields()[i].field_name, closure_term=closure_terms[i]))
-        self.output.append("})(input)")
-        self.output.append("\n}\n")
+        self.output.append("\npub fn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
+        self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions)
+        self.output.append("}\n")
 
     def format_array(self, array: Array):
         assert array.name not in self.output
