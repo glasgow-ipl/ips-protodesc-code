@@ -53,11 +53,10 @@ class RustFormatter(Formatter):
         self.output = []
         self.structs = {}
         self.expr_traversal = ExpressionTraversal(self)
-        #add crate/imports
-        self.output.append("extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\nuse nom::branch::alt;\n")
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
         manifest = f"[package]\nname = \"{output_name.replace('-', '_')}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
+        self.output = ["extern crate nom;\n\nuse nom::{bits::complete::take, combinator::map};\nuse nom::sequence::tuple;\nuse nom::branch::alt;\n"] + self.output
         output_files = {Path(f"src/lib.rs"): "".join(self.output),
                         Path(f"Cargo.toml"): manifest}
         return output_files
@@ -201,34 +200,17 @@ class RustFormatter(Formatter):
             self.output.append("-> {return_type}".format(return_type=camelcase(return_type_name)))
         self.output.append(" {\n    //function body required\n    unimplemented!();\n}\n\n")
 
-    def format_context(self, context:Context):
+    def format_context(self, context: Context):
+        context_output = "\n// Context\n\npub struct Context {\n"
+        fields_output = []
         for field in context.get_fields():
-            #TODO: expand this to handle expressions when a numerical size is not present (ie. size was left undefined)
             if isinstance(field.field_type, BitString):
-                var_type = "u%d" % (self.assign_int_size(self.expr_traversal.dfs_expression(field.field_type.size)))
-            elif isinstance(field.field_type, Option):
-                ref_type_name = field.field_type.reference_type.name if isinstance(field.field_type.reference_type, ConstructableType) else "nothing"
-                var_type = "Option<{ref_type}>".format(ref_type=ref_type_name)
-            #Nothing isn't included as a return type here - should be covered by Option
-            elif isinstance(field.field_type, Array):
-                if field.field_type.length is None:
-                    element_type_name = field.field_type.element_type.name if isinstance(field.field_type.element_type, ConstructableType) else "nothing"
-                    var_type = "Vec<{element_type}>".format(element_type=camelcase(element_type_name))
-                else:
-                    if isinstance(field.field_type.element_type, BitString):
-                        var_type = "[%s(u%d); %d]" % (field.field_type.name, (self.assign_int_size(self.expr_traversal.dfs_expression(field.field_type.element_type.size))), self.expr_traversal.dfs_expression(field.field_type.length))
-                    else:
-                        var_type = "[%s; %s]" % (field.field_type.name, self.expr_traversal.dfs_expression(field.field_type.length))
-            elif isinstance(field.field_type, Struct):
-                var_type = field.field_type.name
-            elif isinstance(field.field_type, Enum):
-                var_type = field.field_type.name
-            #FIXME: this will likely not work for all cases of derived types
-            else:
-                var_type = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
-
-            #all variables are set to mutable for now
-            self.output.append("let mut {var_name}: {var_type};\n".format(var_name=field.field_name, var_type=var_type))
+                size = self.assign_int_size(field.field_type.size)
+                fields_output.append(f"    pub {field.field_name} : {size}")
+            if isinstance(field.field_type, Number):
+                fields_output.append(f"    pub {field.field_name} : u32")
+        context_output += ",\n".join(fields_output) + "\n}\n"
+        self.output = [context_output] + self.output
 
     def closure_term_gen(self):
         for i in range(len(ascii_letters)):

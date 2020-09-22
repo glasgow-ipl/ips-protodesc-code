@@ -53,7 +53,7 @@ from npt.helpers              import *
 def dfs_struct(struct: Struct, type_names:List[str]):
     for field in struct.get_fields():
         dfs_protocoltype(field.field_type, type_names)
-        
+
 def dfs_array(array: Array, type_names:List[str]):
     dfs_protocoltype(array.element_type, type_names)
     dfs_protocoltype(array.parse_from, type_names)
@@ -71,7 +71,7 @@ def dfs_function(function: Function, type_names:List[str]):
             dfs_protocoltype(parameter.param_type, type_names)
     if not isinstance(function.return_type, TypeVariable) and isinstance(function.return_type, ConstructableType) and function.return_type.name not in type_names:
         dfs_protocoltype(function.return_type, type_names)
-        
+
 def dfs_context(context: Context, type_names:List[str]):
     for field in context.get_fields():
         dfs_protocoltype(field.field_type, type_names)
@@ -97,6 +97,8 @@ def dfs_protocol(protocol: Protocol):
 
     for pdu_name in protocol.get_pdu_names():
         dfs_protocoltype(protocol.get_pdu(pdu_name), type_names)
+
+    dfs_protocoltype(protocol.get_context(), type_names)
 
     type_names_dedupe = []
 
@@ -145,7 +147,7 @@ def main():
         except Exception as e:
             print(f"Error: could not synthesise protocol ({e})")
             continue
-        
+
         type_names = dfs_protocol(protocol)
 
         for o_fmt in opt.output_fmt :

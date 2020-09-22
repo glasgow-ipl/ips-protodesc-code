@@ -53,7 +53,7 @@ class ProtocolTypeError(Exception):
 @dataclass(frozen=True)
 class TypeVariable:
     name : str
-    
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, TypeVariable) and self.name == other.name
 
@@ -62,7 +62,7 @@ class TypeVariable:
 class Trait:
     name    : str
     methods : List["Function"]
-        
+
     def __eq__(self, other: object) -> bool:
         return isinstance(other, Trait) and self.name == other.name and self.methods == other.methods
 
@@ -277,7 +277,7 @@ class ProtocolType:
                     mimpl_rt   = method.return_type if not isinstance(method.return_type, TypeVariable) else type_variables[method.return_type]
                     mimpl_parameters = [Parameter(p.param_name, p.param_type if not isinstance(p.param_type, TypeVariable) else type_variables[p.param_type]) for p in method.parameters]
                     self.methods[method.name] = Function(mimpl_name, mimpl_parameters, mimpl_rt)
-            self.traits.append(trait)        
+            self.traits.append(trait)
 
     def get_method(self, method_name: str) -> "Function":
         method = None
@@ -340,7 +340,7 @@ class ConstructableType(ProtocolType):
     ConstructableTypes are classes that are instantiated as constructors for ProtocolTypes.
     """
     name: str
-    
+
     def __init__(self, name: Optional[str] = None, **kwargs):
         super().__init__(**kwargs)
         if name is None:
@@ -354,11 +354,11 @@ class ConstructableType(ProtocolType):
 
     def __str__(self):
         return f"{type(self).__name__}<{self.name}::{' '.join([trait.name for trait in self.traits])}>"
-    
+
     def derive_from(self, name: str, also_implements: List[Trait]) -> "ConstructableType":
         """
         Derive a new type from this type.
-        
+
         Parameters:
             self            - the type that the new type is derived from
             name            - the name of the new type
@@ -384,7 +384,7 @@ class RepresentableType(ProtocolType):
     RepresentableTypes are types that model data that can be sent/received by a Protocol.
     """
     size : Optional[Expression]
-    
+
     def __init__(self, size: Optional[Expression] = None, **kwargs):
         super().__init__(**kwargs)
         self.size = size
@@ -396,7 +396,7 @@ class RepresentableType(ProtocolType):
 class Nothing(RepresentableType, PrimitiveType):
     def __init__(self):
         super().__init__(size=ConstantExpression(Number(), 0))
-    
+
     def __post_init__(self):
         pass
 
@@ -433,7 +433,7 @@ class Array(RepresentableType, ConstructableType):
         self.serialise_to = None
         self.implement_trait(Equality())
         self.implement_trait(IndexCollection(), {TypeVariable("ET"): element_type})
-        
+
         #if self.length is None and element_type.size is None:
         #    raise ProtocolTypeError(f"Cannot construct Array: one of length or element size must be specified")
         # FIXME: ^ need to ensure that other ProtocolType sizes are resolved before checking this
@@ -445,7 +445,7 @@ class StructField():
     field_name: str
     field_type: "RepresentableType"
     is_present: Expression
-    
+
     def __init__(self, field_name: str, field_type: "RepresentableType", is_present: Optional[Expression] = None):
         self.field_name = field_name
         if re.search(FUNC_NAME_REGEX, field_name) is None:
@@ -478,22 +478,22 @@ class Struct(RepresentableType, ConstructableType):
         self.parse_from = None
         self.serialise_to = None
         self.implement_trait(Equality())
-    
+
     def add_field(self, field: StructField) -> None:
         if field.field_name in self.fields:
             raise ProtocolTypeError(f"{self.name} already contains a field named {field.field_name}")
         self.fields[field.field_name] = field
-    
+
     def add_constraint(self, constraint: Expression) -> None:
         if constraint.result_type(self) != Boolean():
             raise ProtocolTypeError(f"Invalid constraint: {constraint.result_type(self)} != Boolean")
         self.constraints.append(constraint)
-    
+
     def add_action(self, action: Expression) -> None:
         if action.result_type(self) != Nothing():
             raise ProtocolTypeError(f"Invalid action: {action.result_type(self)} != Nothing")
         self.actions.append(action)
-        
+
     def field(self, field_name: str) -> StructField:
         if field_name not in self.fields:
             raise ProtocolTypeError(f"{self.name} has no field named {field_name}")
@@ -551,12 +551,12 @@ class Argument:
 class Function(InternalType, ConstructableType):
     parameters  : List[Parameter]
     return_type : Union[ProtocolType, TypeVariable]
-    
+
     def __init__(self, name: str, parameters: List[Parameter], return_type : Union[ProtocolType, TypeVariable]):
         super().__init__(name=name)
         self.parameters = parameters
         self.return_type = return_type
-    
+
     def _validate_typename(self):
         if re.search(FUNC_NAME_REGEX, self.name) is None:
             raise ProtocolTypeError(f"Cannot create type {self.name}: malformed name")
@@ -576,17 +576,17 @@ class Function(InternalType, ConstructableType):
             if (p.param_type != a.arg_type) and not isinstance(a.arg_type, TypeVariable) and not a.arg_type.is_a(p.param_type):
                 return False
         return True
-    
+
     def is_method_accepting(self, self_type: "ProtocolType", arguments: List[Argument]) -> bool:
         """
         Check if this function is a method and accepts the specified arguments when invoked on an
         object of type self_type
         """
         return self.is_method() and self.accepts_arguments([Argument("self", self_type, TypeVariable("T"))] + arguments)
-        
+
     def get_return_type(self) -> Union[ProtocolType, TypeVariable]:
         return self.return_type
-            
+
     def __eq__(self, obj: object) -> bool:
         return isinstance(obj, Function) and self.name == obj.name and self.parameters == obj.parameters and self.return_type == obj.return_type
 
@@ -613,7 +613,7 @@ class Context(InternalType, ConstructableType):
         if field_name not in self.fields:
             raise ProtocolTypeError(f"{self.name} has no field named {field_name}")
         return self.fields[field_name]
-        
+
     def get_fields(self) -> List[ContextField]:
         return list(self.fields.values())
 
@@ -623,12 +623,13 @@ class Protocol(InternalType, ConstructableType):
     _funcs   : List[str]
     _context : Context
     _pdus    : List[str]
-    
+
     def __init__(self):
         super().__init__(name="Protocol")
         self._types = {}
         self._funcs = []
         self._context = Context("Context")
+        self.add_type(self._context)
         self._pdus = []
         # data_size is a field in the context, to be set to the size of incoming PDUs
         self._context.add_field(ContextField("data_size", Number()))
@@ -638,14 +639,14 @@ class Protocol(InternalType, ConstructableType):
     def _check_typename(self, name: str):
         if name in self._types:
             raise ProtocolTypeError(f"Cannot create type {self.name}: already exists")
-        
+
     # =============================================================================================
     # Public API:
-    
+
     def set_protocol_name(self, name: str) -> None:
         """
         Define the name of the protocol.
-        
+
         Parameters:
         self - the protocol in which the new type is defined
         name - the name of the protocol
@@ -657,7 +658,7 @@ class Protocol(InternalType, ConstructableType):
     def add_type(self, new_type: ConstructableType) -> ConstructableType:
         """
         Add a new type to this protocol.
-        
+
         Parameters:
             self  - the protocol to which the type is added
             new_type - the type to be added to the protocol
