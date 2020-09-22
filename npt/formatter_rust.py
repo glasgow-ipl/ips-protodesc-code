@@ -101,7 +101,12 @@ class RustFormatter(Formatter):
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
         self.output.extend(["pub struct ", camelcase(bitstring.name), "(pub u%d);\n" % self.assign_int_size(size)])
         self.output.append("\npub fn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
-        self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=size, name=camelcase(bitstring.name)))
+        self.output.append("    let {fname} = take({size}_usize)(input);\n".format(fname=bitstring.name.lower(), size=size))
+        self.output.append("    match {fname} {{\n".format(fname=bitstring.name.lower()))
+        self.output.append("        nom::IResult::Ok((i, o)) => nom::IResult::Ok((i, {name}(o))),\n".format(name=camelcase(bitstring.name)))
+        self.output.append("        nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+        self.output.append("    }\n}\n")
+        #self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=size, name=camelcase(bitstring.name)))
 
 
     #assign the smallest possible unsigned int which can accommodate the size given
