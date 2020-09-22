@@ -205,7 +205,7 @@ class RustFormatter(Formatter):
         fields_output = []
         for field in context.get_fields():
             if isinstance(field.field_type, BitString):
-                size = self.assign_int_size(field.field_type.size)
+                size = self.assign_int_size(self.expr_traversal.dfs_expression(field.field_type.size))
                 fields_output.append(f"    pub {field.field_name} : {size}")
             if isinstance(field.field_type, Number):
                 fields_output.append(f"    pub {field.field_name} : u32")
