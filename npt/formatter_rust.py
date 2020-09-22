@@ -56,7 +56,7 @@ class RustFormatter(Formatter):
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
         manifest = f"[package]\nname = \"{output_name.replace('-', '_')}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
-        self.output = ["extern crate nom;\n\nuse nom::bits::complete::take;\nuse nom::branch::alt;\n"] + self.output
+        self.output = ["extern crate nom;\n\nuse nom::bits::complete::take;\n"] + self.output
         output_files = {Path(f"src/lib.rs"): "".join(self.output),
                         Path(f"Cargo.toml"): manifest}
         return output_files
@@ -236,6 +236,23 @@ class RustFormatter(Formatter):
         for i in range(len(ascii_letters)):
             yield ascii_letters[i]
 
+    def format_pdu_variants(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str]):
+        indentation = "    "*(index+1) + "    "*(index)
+        generated_code = []
+        generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}(input);\n")
+        generated_code.append(f"{indentation}match {field_names[index]} {{\n")
+        if index+1 == len(field_names):
+            generated_code.append(f"{indentation}    nom::IResult::Ok((i, o)) => nom::IResult::Ok((i, o)),\n")
+            generated_code.append(f"{indentation}    nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+            generated_code.append(f"{indentation}}}\n")
+        else:
+            generated_code.append(f"{indentation}    nom::IResult::Ok((i, o)) => nom::IResult::Ok((i, o)),\n")
+            generated_code.append(f"{indentation}    nom::IResult::Err(_e) => {{\n")
+            generated_code = generated_code + self.format_pdu_variants(index+1, struct_name, field_names, parser_func_names)
+            generated_code.append(f"{indentation}    }}\n")
+            generated_code.append(f"{indentation}}}\n")
+        return generated_code
+
     def format_protocol(self, protocol: Protocol):
         self.output.append("\n// Parse incoming PDUs\n")
         self.output.append("\n#[derive(Debug)]")
@@ -243,17 +260,18 @@ class RustFormatter(Formatter):
         self.output.append(",\n".join([f"\t{camelcase(pdu_name)}({camelcase(pdu_name)})" for pdu_name in protocol.get_pdu_names()]))
         self.output.append("\n}\n\n")
         parse_funcs = []
+        variant_names = []
         for pdu_name in protocol.get_pdu_names():
             type_name = camelcase(pdu_name)
             parse_func_name = pdu_name.replace(" ", "_").replace("-", "_").lower()
-            parse_funcs.append(parse_func_name)
+            parse_funcs.append(f"parse_pdu_{parse_func_name}")
+            variant_names.append(f"pdu_{parse_func_name}")
             self.output.append(f"pub fn parse_pdu_{parse_func_name}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), PDU> {{\n")
             self.output.append(f"\tmatch parse_{parse_func_name}(input) {{\n")
             self.output.append(f"\t\tnom::IResult::Ok((([], 0), o)) => nom::IResult::Ok(((&[], 0), PDU::{type_name}(o))),\n")
             self.output.append(f"\t\tnom::IResult::Ok(((i, c), _o)) => nom::IResult::Err(nom::Err::Error(((i, c), nom::error::ErrorKind::NonEmpty))),\n")
             self.output.append(f"\t\tnom::IResult::Err(e) => nom::IResult::Err(e)\n")
             self.output.append("\t}\n}\n\n")
-        self.output.append("pub fn parse_pdu(input: &[u8]) -> nom::IResult<(&[u8], usize), PDU> {\n")
-        parse_func_names = ", ".join([f"parse_pdu_{parse_func_name}" for parse_func_name in parse_funcs])
-        self.output.append(f"\talt(({parse_func_names}))((input, 0))\n")
+        self.output.append("pub fn parse_pdu(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), PDU> {\n")
+        self.output += self.format_pdu_variants(0, "bleh", variant_names, parse_funcs)
         self.output.append("}")

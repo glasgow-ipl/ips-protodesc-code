@@ -72,7 +72,7 @@ fn test_multiplefieldheader_not_enough_data() {
 fn test_parse_pdu_singlefieldheader() {
     let mut cap = Capture::from_file("../pcaps/sfh-2-valid.pcap").unwrap();
     while let Ok(packet) = cap.next() {
-        let parsed_pkt = parse_pdu(packet.data);
+        let parsed_pkt = parse_pdu((packet.data, 0));
         match parsed_pkt {
             Result::Ok((_, PDU::SingleFieldHeader(_))) => (),
             _ => panic!("Invalid packet")
@@ -84,7 +84,7 @@ fn test_parse_pdu_singlefieldheader() {
 fn test_parse_pdu_multiplefieldheader() {
     let mut cap = Capture::from_file("../pcaps/mfh-valid.pcap").unwrap();
     while let Ok(packet) = cap.next() {
-        let parsed_pkt = parse_pdu(packet.data);
+        let parsed_pkt = parse_pdu((packet.data, 0));
         match parsed_pkt {
             Result::Ok((_, PDU::MultipleFieldHeader(_))) => (),
             _ => panic!("Invalid packet")
