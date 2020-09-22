@@ -100,11 +100,11 @@ class RustFormatter(Formatter):
         self.output.append(f"\n// Structure and parser for {bitstring.name} (bitstring type)\n")
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
         self.output.extend(["pub struct ", camelcase(bitstring.name), "(pub u%d);\n" % self.assign_int_size(size)])
-        self.output.append("\npub fn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
+        self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context){{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
         self.output.append("    let {fname} = take({size}_usize)(input);\n".format(fname=bitstring.name.lower(), size=size))
         self.output.append("    match {fname} {{\n".format(fname=bitstring.name.lower()))
-        self.output.append("        nom::IResult::Ok((i, o)) => nom::IResult::Ok((i, {name}(o))),\n".format(name=camelcase(bitstring.name)))
-        self.output.append("        nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+        self.output.append("        nom::IResult::Ok((i, o)) => (nom::IResult::Ok((i, {name}(o))), context),\n".format(name=camelcase(bitstring.name)))
+        self.output.append("        nom::IResult::Err(e) => (nom::IResult::Err(e), context)\n")
         self.output.append("    }\n}\n")
         #self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=size, name=camelcase(bitstring.name)))
 
@@ -130,21 +130,23 @@ class RustFormatter(Formatter):
     def format_struct_field(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str]):
         indentation = "    "*(index+1) + "    "*(index)
         generated_code = []
+        context_str = "context"
         input_str = "input"
         if index > 0:
             input_str = f"i{index-1}"
-        generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str});\n")
+            context_str = f"con{index-1}"
+        generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str}, {context_str});\n")
         generated_code.append(f"{indentation}match {field_names[index]} {{\n")
         if index+1 == len(field_names):
             struct_instantiation_fields = ", ".join([f"{field_names[i]}: o{i}" for i in range(len(field_names))])
-            generated_code.append(f"{indentation}    nom::IResult::Ok((i{index}, o{index})) => nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})),\n")
-            generated_code.append(f"{indentation}    nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index}),\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
             generated_code.append(f"{indentation}}}\n")
         else:
-            generated_code.append(f"{indentation}    nom::IResult::Ok((i{index}, o{index})) => {{\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
             generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names)
             generated_code.append(f"{indentation}    }}\n")
-            generated_code.append(f"{indentation}    nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
             generated_code.append(f"{indentation}}}\n")
         return generated_code
 
@@ -170,7 +172,7 @@ class RustFormatter(Formatter):
             parser_functions.append("parse_{name}".format(name=type_name.lower()))
             field_names.append(f"{field.field_name}")
         self.output.append("}\n")
-        self.output.append("\npub fn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
+        self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
         self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions)
         self.output.append("}\n")
 
@@ -239,15 +241,18 @@ class RustFormatter(Formatter):
     def format_pdu_variants(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str]):
         indentation = "    "*(index+1) + "    "*(index)
         generated_code = []
-        generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}(input);\n")
+        con_str = "context"
+        if index > 0:
+            con_str = f"con{index-1}"
+        generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}(input, {con_str});\n")
         generated_code.append(f"{indentation}match {field_names[index]} {{\n")
         if index+1 == len(field_names):
-            generated_code.append(f"{indentation}    nom::IResult::Ok((i, o)) => nom::IResult::Ok((i, o)),\n")
-            generated_code.append(f"{indentation}    nom::IResult::Err(e) => nom::IResult::Err(e)\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Ok((i, o)), con{index}) => (nom::IResult::Ok((i, o)), con{index}),\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
             generated_code.append(f"{indentation}}}\n")
         else:
-            generated_code.append(f"{indentation}    nom::IResult::Ok((i, o)) => nom::IResult::Ok((i, o)),\n")
-            generated_code.append(f"{indentation}    nom::IResult::Err(_e) => {{\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Ok((i, o)), con{index}) => (nom::IResult::Ok((i, o)), con{index}),\n")
+            generated_code.append(f"{indentation}    (nom::IResult::Err(_e), con{index}) => {{\n")
             generated_code = generated_code + self.format_pdu_variants(index+1, struct_name, field_names, parser_func_names)
             generated_code.append(f"{indentation}    }}\n")
             generated_code.append(f"{indentation}}}\n")
@@ -266,12 +271,12 @@ class RustFormatter(Formatter):
             parse_func_name = pdu_name.replace(" ", "_").replace("-", "_").lower()
             parse_funcs.append(f"parse_pdu_{parse_func_name}")
             variant_names.append(f"pdu_{parse_func_name}")
-            self.output.append(f"pub fn parse_pdu_{parse_func_name}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), PDU> {{\n")
-            self.output.append(f"\tmatch parse_{parse_func_name}(input) {{\n")
-            self.output.append(f"\t\tnom::IResult::Ok((([], 0), o)) => nom::IResult::Ok(((&[], 0), PDU::{type_name}(o))),\n")
-            self.output.append(f"\t\tnom::IResult::Ok(((i, c), _o)) => nom::IResult::Err(nom::Err::Error(((i, c), nom::error::ErrorKind::NonEmpty))),\n")
-            self.output.append(f"\t\tnom::IResult::Err(e) => nom::IResult::Err(e)\n")
+            self.output.append(f"pub fn parse_pdu_{parse_func_name}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), PDU>, &'a mut Context) {{\n")
+            self.output.append(f"\tmatch parse_{parse_func_name}(input, context) {{\n")
+            self.output.append(f"\t\t(nom::IResult::Ok((([], 0), o)), con) => (nom::IResult::Ok(((&[], 0), PDU::{type_name}(o))), con),\n")
+            self.output.append(f"\t\t(nom::IResult::Ok(((i, c), _o)), con) => (nom::IResult::Err(nom::Err::Error(((i, c), nom::error::ErrorKind::NonEmpty))), con),\n")
+            self.output.append(f"\t\t(nom::IResult::Err(e), con) => (nom::IResult::Err(e), con)\n")
             self.output.append("\t}\n}\n\n")
-        self.output.append("pub fn parse_pdu(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), PDU> {\n")
+        self.output.append("pub fn parse_pdu<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), PDU>, &'a mut Context) {\n")
         self.output += self.format_pdu_variants(0, "bleh", variant_names, parse_funcs)
         self.output.append("}")
