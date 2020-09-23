@@ -40,7 +40,7 @@ ascii_packet_diag_ref = nl
 ascii_packet_diagram = ascii_packet_header:header 
                        line+:lines 
                        ascii_packet_diag_ref?:fig_ref
-                        -> rfc.Artwork( [rfc.Text("".join([header] + lines))], 
+                        -> rfc.Artwork( rfc.Text("".join([header] + lines)), 
                                         "left",
                                         None,
                                         fig_ref[0] if fig_ref else None,
