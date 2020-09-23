@@ -3609,14 +3609,10 @@ diagram.
         self.assertIsInstance( middle.content[0].content[2], rfc.Artwork)
         if not isinstance( middle.content[0].content[2], rfc.Artwork):
             return
-        self.assertIsInstance( middle.content[0].content[2].content, list)
-        if not isinstance( middle.content[0].content[2].content, list):
+        self.assertIsInstance( middle.content[0].content[2].content, rfc.Text)
+        if not isinstance( middle.content[0].content[2].content, rfc.Text):
             return
-        self.assertEqual( len(middle.content[0].content[2].content), 1)
-        self.assertIsInstance( middle.content[0].content[2].content[0], rfc.Text)
-        if not isinstance( middle.content[0].content[2].content[0], rfc.Text):
-            return
-        self.assertEqual( middle.content[0].content[2].content[0].content,
+        self.assertEqual( middle.content[0].content[2].content.content,
 """:    0                   1                   2                   3
 :    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 :   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -3863,14 +3859,10 @@ to the relatively incremental approach proposed here.
         self.assertIsInstance( middle.content[1].sections[0].content[0], rfc.Artwork)
         if not isinstance( middle.content[1].sections[0].content[0], rfc.Artwork):
             return
-        self.assertIsInstance( middle.content[1].sections[0].content[0].content, list)
-        if not isinstance( middle.content[1].sections[0].content[0].content, list):
+        self.assertIsInstance( middle.content[1].sections[0].content[0].content, rfc.Text)
+        if not isinstance( middle.content[1].sections[0].content[0].content, rfc.Text):
             return
-        self.assertEqual( len(middle.content[1].sections[0].content[0].content), 1)
-        self.assertIsInstance( middle.content[1].sections[0].content[0].content[0], rfc.Text)
-        if not isinstance( middle.content[1].sections[0].content[0].content[0], rfc.Text):
-            return
-        self.assertEqual( middle.content[1].sections[0].content[0].content[0].content,
+        self.assertEqual( middle.content[1].sections[0].content[0].content.content,
 """:   The RESET_STREAM frame is as follows:
 :
 :    0                   1                   2                   3
@@ -4167,14 +4159,10 @@ constructed across multiple documents.
         self.assertIsInstance(middle.content[1].sections[0].content[12], rfc.Artwork)
         if not isinstance(middle.content[1].sections[0].content[12], rfc.Artwork):
             return
-        self.assertIsInstance( middle.content[1].sections[0].content[12].content, list)
-        if not isinstance( middle.content[1].sections[0].content[12].content, list):
+        self.assertIsInstance( middle.content[1].sections[0].content[12].content, rfc.Text)
+        if not isinstance( middle.content[1].sections[0].content[12].content, rfc.Text):
             return
-        self.assertEqual( len(middle.content[1].sections[0].content[12].content), 1)
-        self.assertIsInstance( middle.content[1].sections[0].content[12].content[0], rfc.Text)
-        if not isinstance( middle.content[1].sections[0].content[12].content[0], rfc.Text):
-            return
-        self.assertEqual( middle.content[1].sections[0].content[12].content[0].content,
+        self.assertEqual( middle.content[1].sections[0].content[12].content.content,
 """:   The format of the "Relay Source Port Option" is shown below:
 :
 :    0                   1                   2                   3
@@ -4366,14 +4354,10 @@ protocol data units.
         self.assertIsInstance(middle.content[3].sections[0].content[7], rfc.Artwork)
         if not isinstance(middle.content[3].sections[0].content[7], rfc.Artwork):
             return
-        self.assertIsInstance(middle.content[3].sections[0].content[7].content, list)
-        if not isinstance(middle.content[3].sections[0].content[7].content, list):
+        self.assertIsInstance( middle.content[3].sections[0].content[7].content, rfc.Text)
+        if not isinstance( middle.content[3].sections[0].content[7].content, rfc.Text):
             return
-        self.assertEqual( len(middle.content[3].sections[0].content[7].content), 1)
-        self.assertIsInstance( middle.content[3].sections[0].content[7].content[0], rfc.Text)
-        if not isinstance( middle.content[3].sections[0].content[7].content[0], rfc.Text):
-            return
-        self.assertEqual( middle.content[3].sections[0].content[7].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[7].content.content, 
 """0                   1                   2                   3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4463,14 +4447,10 @@ protocol data units.
         self.assertIsInstance(middle.content[3].sections[1].content[1], rfc.Artwork)
         if not isinstance(middle.content[3].sections[1].content[1], rfc.Artwork):
             return
-        self.assertIsInstance(middle.content[3].sections[1].content[1].content, list)
-        if not isinstance(middle.content[3].sections[1].content[1].content, list):
+        self.assertIsInstance( middle.content[3].sections[1].content[1].content, rfc.Text)
+        if not isinstance( middle.content[3].sections[1].content[1].content, rfc.Text):
             return
-        self.assertEqual( len(middle.content[3].sections[1].content[1].content), 1)
-        self.assertIsInstance( middle.content[3].sections[1].content[1].content[0], rfc.Text)
-        if not isinstance( middle.content[3].sections[1].content[1].content[0], rfc.Text):
-            return
-        self.assertEqual( middle.content[3].sections[1].content[1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[1].content.content, 
 """0                   1                   2                   3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4505,14 +4485,10 @@ protocol data units.
         self.assertIsInstance(middle.content[3].sections[1].content[6], rfc.Artwork)
         if not isinstance(middle.content[3].sections[1].content[6], rfc.Artwork):
             return
-        self.assertIsInstance(middle.content[3].sections[1].content[6].content, list)
-        if not isinstance(middle.content[3].sections[1].content[6].content, list):
+        self.assertIsInstance( middle.content[3].sections[1].content[6].content, rfc.Text)
+        if not isinstance( middle.content[3].sections[1].content[6].content, rfc.Text):
             return
-        self.assertEqual( len(middle.content[3].sections[1].content[6].content), 1)
-        self.assertIsInstance( middle.content[3].sections[1].content[6].content[0], rfc.Text)
-        if not isinstance( middle.content[3].sections[1].content[6].content[0], rfc.Text):
-            return
-        self.assertEqual( middle.content[3].sections[1].content[6].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[6].content.content, 
 """0                   1                   2                   3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4594,14 +4570,10 @@ protocol data units.
         self.assertIsInstance(middle.content[3].sections[2].content[2], rfc.Artwork)
         if not isinstance(middle.content[3].sections[2].content[2], rfc.Artwork):
             return
-        self.assertIsInstance(middle.content[3].sections[2].content[2].content, list)
-        if not isinstance(middle.content[3].sections[2].content[2].content, list):
+        self.assertIsInstance( middle.content[3].sections[2].content[2].content, rfc.Text)
+        if not isinstance( middle.content[3].sections[2].content[2].content, rfc.Text):
             return
-        self.assertEqual( len(middle.content[3].sections[2].content[2].content), 1)
-        self.assertIsInstance( middle.content[3].sections[2].content[2].content[0], rfc.Text)
-        if not isinstance( middle.content[3].sections[2].content[2].content[0], rfc.Text):
-            return
-        self.assertEqual( middle.content[3].sections[2].content[2].content[0].content, 
+        self.assertEqual( middle.content[3].sections[2].content[2].content.content, 
 """0                   1
 0 1 2 3 4 5 6 7 8 9 0 1 2 3
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+
