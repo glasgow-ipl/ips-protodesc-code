@@ -238,10 +238,10 @@ class AsciiDiagramsParser(Parser):
                 else:
                     field_type = self.build_type(valid_type_name_convertor(field["units"]))
             if field["size"] is not None:
-                if field["size"][0] == "methodinvocation" or field["size"][0] == "method":
-                    size_expr = self.build_expr(("method", field["size"], "eq", ("methodinvocation", ("fieldaccess", "this", field["full_label"]), "size", [])), struct_name)
-                else:
-                    size_expr = self.build_expr(field["size"], struct_name)
+                #if field["size"][0] == "methodinvocation" or field["size"][0] == "method":
+                #    size_expr = self.build_expr(("method", field["size"], "eq", ("methodinvocation", ("fieldaccess", "this", field["full_label"]), "size", [])), struct_name)
+                #else:
+                size_expr = self.build_expr(field["size"], struct_name)
             if field["value_constraint"] is not None:
                 value_expr = self.build_expr(field["value_constraint"], struct_name)
                 constraints.append(value_expr)
@@ -253,10 +253,10 @@ class AsciiDiagramsParser(Parser):
                     field_type = npt.protocol.BitString(name, size_expr)
                     self.proto.add_type(field_type)
                 else:
-                    field_type = npt.protocol.BitString(name, None)
+                    field_type = npt.protocol.BitString(name, size_expr)
                     self.proto.add_type(field_type)
-                    if size_expr is not None:
-                        constraints.append(size_expr)
+                    #if size_expr is not None:
+                    #    constraints.append(size_expr)
             if field["is_present"] is not None:
                 ispresent_expr = self.build_expr(field["is_present"], struct_name)
             else:
