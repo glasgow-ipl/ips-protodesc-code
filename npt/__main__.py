@@ -77,18 +77,23 @@ def dfs_context(context: Context, type_names:List[str]):
         dfs_protocoltype(field.field_type, type_names)
 
 def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[str]):
-    if isinstance(pt, ConstructableType):
+    if isinstance(pt, BitString):
         type_names.append(pt.name)
-    if isinstance(pt, Struct):
+    elif isinstance(pt, Struct):
         dfs_struct(pt, type_names)
+        type_names.append(pt.name)
     elif isinstance(pt, Array):
         dfs_array(pt, type_names)
+        type_names.append(pt.name)
     elif isinstance(pt, Enum):
         dfs_enum(pt, type_names)
+        type_names.append(pt.name)
     elif isinstance(pt, Function):
         dfs_function(pt, type_names)
+        type_names.append(pt.name)
     elif isinstance(pt, Context):
         dfs_context(pt, type_names)
+        type_names.append(pt.name)
     elif pt is None:
         return
 
@@ -176,11 +181,13 @@ def main():
                         formatter.format_function(protocol.get_func(type_name))
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt} failed)")
+                raise e
                 continue
             try:
                 formatter.format_protocol(protocol)
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_protocol failed)")
+                raise e
                 continue
 
             output_dir = doc.gen_filepath_out(opt.root_dir, o_fmt)
