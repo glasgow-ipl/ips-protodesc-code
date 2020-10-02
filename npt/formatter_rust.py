@@ -37,6 +37,8 @@ from npt.protocol  import *
 from npt.formatter import Formatter
 from npt.helpers   import ExpressionTraversal
 
+import re
+
 def camelcase(name: str) -> str:
     return name.replace("-", " ").replace("_", " ").title().replace(" ", "")
 
@@ -52,6 +54,7 @@ class RustFormatter(Formatter):
     def __init__(self):
         self.output = []
         self.structs = {}
+        self.struct_field_signatures = {}
         self.expr_traversal = ExpressionTraversal(self)
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
@@ -62,25 +65,34 @@ class RustFormatter(Formatter):
         return output_files
 
     def format_argumentexpression(self, arg_name: str, arg_value: Any) -> Any:
-        return ""
+        return arg_value
 
     def format_methodinvocationexpr(self, target: Any, method_name: str, arg_exprs: List[Any]) -> Any:
+        if method_name == "pow":
+            return f"{target}.pow({arg_exprs[0]})"
+        elif method_name == "multiply":
+            return f"{target}*{arg_exprs[0]}"
+        if method_name == "to_number":
+            return f"{target}"
         return ""
 
     def format_functioninvocationexpr(self, func_name: str, args_exprs: List[Any]) -> Any:
         return ""
 
     def format_fieldaccessexpr(self, target: Any, field_name: str) -> Any:
-        return ""
+        if target == "self":
+            return f"self({field_name})"
+        else:
+            return None
 
     def format_contextaccessexpr(self, field_name: str) -> Any:
-        return ""
+        return f"context.{field_name}"
 
     def format_ifelseexpr(self, condition: Any, if_true: Any, if_false: Any) -> Any:
         return ""
 
     def format_selfexpr(self) -> Any:
-        return ""
+        return "self"
 
     def format_constantexpr(self, constant_type: ProtocolType, constant_value: Any) -> Any:
         if constant_type == Number():
@@ -92,21 +104,46 @@ class RustFormatter(Formatter):
         #TODO
         return ""
 
+
     #bitstrings are formatted as structs containing a single int to differentiate between bitstrings which serve different purposes (eg. Timestamp, SeqNum, PortNum)
     def format_bitstring(self, bitstring:BitString, size: Any):
-        if type(size) is str:
-            size = None
+        required_vars = []
+        if type(size) is not str:
+            data_type = f"u{self.assign_int_size(size)}"
+        else:
+            data_type = "Vec<u8>"
+            self_vars = re.findall(r"self\(([\w]*)\)", size)
+            size = re.sub(r"self\(([\w]*)\)", r"\1", size)
+            self.struct_field_signatures[f"parse_{bitstring.name.lower()}"] = self_vars
+            required_vars = [f"{var_name}: usize" for var_name in self_vars]
         assert bitstring.name not in self.output
         self.output.append(f"\n// Structure and parser for {bitstring.name} (bitstring type)\n")
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
-        self.output.extend(["pub struct ", camelcase(bitstring.name), "(pub u%d);\n" % self.assign_int_size(size)])
-        self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context){{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
-        self.output.append("    let {fname} = take({size}_usize)(input);\n".format(fname=bitstring.name.lower(), size=size))
-        self.output.append("    match {fname} {{\n".format(fname=bitstring.name.lower()))
-        self.output.append("        nom::IResult::Ok((i, o)) => (nom::IResult::Ok((i, {name}(o))), context),\n".format(name=camelcase(bitstring.name)))
-        self.output.append("        nom::IResult::Err(e) => (nom::IResult::Err(e), context)\n")
-        self.output.append("    }\n}\n")
-        #self.output.append("    map(take({size}_usize), |x| {name}(x))(input)\n}}\n".format(size=size, name=camelcase(bitstring.name)))
+        self.output.extend(["pub struct ", camelcase(bitstring.name), "(pub %s);\n" % (data_type)])
+        if len(required_vars) > 0:
+            self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context, {required_vars_signatures}) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context){{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name), required_vars_signatures=", ".join(required_vars)))
+        else:
+            self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context){{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
+        if data_type == "Vec<u8>":
+            self.output.append(f"    let mut {bitstring.name.lower()}_size = {size};\n")
+            self.output.append(f"    let mut {bitstring.name.lower()} = {camelcase(bitstring.name)}(Vec::new());\n")
+            self.output.append(f"    let mut input = input;\n")
+            self.output.append(f"    while {bitstring.name.lower()}_size > 0 {{\n")
+            self.output.append(f"        let bits_consumed = if {bitstring.name.lower()}_size > 8 {{ 8 }} else {{ {bitstring.name.lower()}_size }};\n")
+            self.output.append(f"        match take(bits_consumed as usize)(input) {{\n")
+            self.output.append(f"            nom::IResult::Ok((i, o)) => {{ input = i; {bitstring.name.lower()}.0.push(o); }},\n")
+            self.output.append(f"            nom::IResult::Err(e) => return (nom::IResult::Err(e), context)\n")
+            self.output.append(f"        }}\n")
+            self.output.append(f"        {bitstring.name.lower()}_size -= bits_consumed;\n")
+            self.output.append(f"    }}\n")
+            self.output.append(f"    (nom::IResult::Ok((input, {bitstring.name.lower()})), context)\n")
+        else:
+            self.output.append("    let {fname} = take({size}_usize)(input);\n".format(fname=bitstring.name.lower(), size=size))
+            self.output.append("    match {fname} {{\n".format(fname=bitstring.name.lower()))
+            self.output.append("        nom::IResult::Ok((i, o)) => (nom::IResult::Ok((i, {name}(o))), context),\n".format(name=camelcase(bitstring.name)))
+            self.output.append("        nom::IResult::Err(e) => (nom::IResult::Err(e), context)\n")
+            self.output.append("    }\n")
+        self.output.append("}\n")
 
 
     #assign the smallest possible unsigned int which can accommodate the size given
@@ -128,6 +165,9 @@ class RustFormatter(Formatter):
             return 128
 
     def format_struct_field(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str]):
+        args = []
+        if parser_func_names[index] in self.struct_field_signatures:
+            args = [f"o{field_names.index(arg)}.0 as usize" for arg in self.struct_field_signatures[parser_func_names[index]]]
         indentation = "    "*(index+1) + "    "*(index)
         generated_code = []
         context_str = "context"
@@ -135,7 +175,10 @@ class RustFormatter(Formatter):
         if index > 0:
             input_str = f"i{index-1}"
             context_str = f"con{index-1}"
-        generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str}, {context_str});\n")
+        if len(args) > 0:
+            generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str}, {context_str}, {', '.join(args)});\n")
+        else:
+            generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str}, {context_str});\n")
         generated_code.append(f"{indentation}match {field_names[index]} {{\n")
         if index+1 == len(field_names):
             struct_instantiation_fields = ", ".join([f"{field_names[i]}: o{i}" for i in range(len(field_names))])
@@ -175,6 +218,7 @@ class RustFormatter(Formatter):
         self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
         self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions)
         self.output.append("}\n")
+        self.struct_field_signatures = {}
 
     def format_array(self, array: Array):
         assert array.name not in self.output
