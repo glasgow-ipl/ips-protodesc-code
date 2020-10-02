@@ -93,6 +93,12 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             self.assertIsInstance(root, rfc.RFC)
             self._verify_rfc_txt_dom_front(root.front)
 
+    def test_txt_rfc_middle(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+            content = fd.readlines()
+            root = npt.parser_rfc_txt.parse_rfc(content)
+            self.assertIsInstance(root, rfc.RFC)
+            self._verify_rfc_txt_dom_middle(root.middle)
 
     def test_txt_rfc_back(self):
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
@@ -956,6 +962,7 @@ is available from https://github.com/glasgow-ipl/ips-protodesc-code.
         self.assertFalse(back.sections[1].removeInRFC)
         self.assertIsNone(back.sections[1].title)
         self.assertEqual(back.sections[1].toc, "default" )
+
 
 
     def _verify_rfc_middle(self, middle: rfc.Middle):
@@ -3529,3 +3536,1158 @@ is available from https://github.com/glasgow-ipl/ips-protodesc-code.
         self.assertIsInstance(middle.content[7], rfc.Section)
         # ...
 
+
+
+    def _verify_rfc_txt_dom_middle(self, middle: rfc.Middle):
+        self.assertIsNotNone(middle.content)
+        self.assertIsInstance(middle.content, list)
+        self.assertEqual(len(middle.content), 9)
+
+        # sec-00
+        self.assertIsInstance(middle.content[0], rfc.Section)
+        # section-00 name
+        self.assertIsInstance(middle.content[0].name, rfc.Name)
+        if not isinstance(middle.content[0].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[0].name.content, list)
+        self.assertEqual(len(middle.content[0].name.content), 1)
+        self.assertIsInstance(middle.content[0].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[0].name.content[0].content, "Introduction")
+        # section-00 -- content
+        self.assertIsInstance(middle.content[0].content, list)
+        self.assertEqual( len(middle.content[0].content), 8)
+
+        # section-00 -- content[0] <T> 
+        self.assertIsInstance(middle.content[0].content[0], rfc.T)
+        if not isinstance(middle.content[0].content[0], rfc.T):
+            return
+        # section-00 -- content[0] <T> content <Text>
+        self.assertIsInstance(middle.content[0].content[0].content, list)
+        self.assertEqual(len(middle.content[0].content[0].content), 1)
+        self.assertIsInstance(middle.content[0].content[0].content[0], rfc.Text)
+        if not isinstance(middle.content[0].content[0].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[0].content[0].content[0].content,
+"""Packet header diagrams have become a widely used format for
+describing the syntax of binary protocols.  In otherwise largely
+textual documents, they allow for the visualisation of packet
+formats, reducing human error, and aiding in the implementation of
+parsers for the protocols that they specify.
+""")
+        # section-00 -- content[0] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[0].content[0].anchor)
+        self.assertIsNone( middle.content[0].content[0].hangText)
+        self.assertFalse ( middle.content[0].content[0].keepWithNext)
+        self.assertFalse ( middle.content[0].content[0].keepWithPrevious)
+
+        # section-00 -- content[1] <T> 
+        self.assertIsInstance(middle.content[0].content[1], rfc.T)
+        if not isinstance(middle.content[0].content[1], rfc.T):
+            return
+        # section-00 -- content[1] <T> content <Text>
+        self.assertIsInstance(middle.content[0].content[1].content, list)
+        self.assertEqual(len(middle.content[0].content[1].content), 1)
+        self.assertIsInstance(middle.content[0].content[1].content[0], rfc.Text)
+        if not isinstance(middle.content[0].content[1].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[0].content[1].content[0].content,
+"""Figure 1 gives an example of how packet header diagrams are used to
+define binary protocol formats.  The format has an obvious structure:
+the diagram clearly delineates each field, showing its width and its
+position within the header.  This type of diagram is designed for
+human readers, but is consistent enough that it should be possible to
+develop a tool that generates a parser for the packet format from the
+diagram.
+""")
+        # section-00 -- content[1] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[0].content[1].anchor)
+        self.assertIsNone( middle.content[0].content[1].hangText)
+        self.assertFalse ( middle.content[0].content[1].keepWithNext)
+        self.assertFalse ( middle.content[0].content[1].keepWithPrevious)
+
+        # section-00 -- content[2] <T> content <Artwork>
+        self.assertIsInstance( middle.content[0].content[2], rfc.Artwork)
+        if not isinstance( middle.content[0].content[2], rfc.Artwork):
+            return
+        self.assertIsInstance( middle.content[0].content[2].content, list)
+        if not isinstance( middle.content[0].content[2].content, list):
+            return
+        self.assertEqual( len(middle.content[0].content[2].content), 1)
+        self.assertIsInstance( middle.content[0].content[2].content[0], rfc.Text)
+        if not isinstance( middle.content[0].content[2].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[0].content[2].content[0].content,
+""":    0                   1                   2                   3
+:    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |          Source Port          |       Destination Port        |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                        Sequence Number                        |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                    Acknowledgment Number                      |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |  Data |           |U|A|P|R|S|F|                               |
+:   | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
+:   |       |           |G|K|H|T|N|N|                               |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |           Checksum            |         Urgent Pointer        |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                    Options                    |    Padding    |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                             data                              |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+""")
+
+        # section-00 -- content[2] <T> content <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[0].content[2].align, "left")
+        self.assertIsNone( middle.content[0].content[2].alt)
+        self.assertEqual ( middle.content[0].content[2].anchor, "Figure 1")
+        self.assertIsNone( middle.content[0].content[2].height)
+        self.assertEqual ( middle.content[0].content[2].name, "TCP's header format (from [RFC793])")
+        self.assertIsNone( middle.content[0].content[2].src)
+        self.assertIsNone( middle.content[0].content[2].type)
+        self.assertIsNone( middle.content[0].content[2].width)
+        self.assertIsNone( middle.content[0].content[2].xmlSpace)
+
+        # section-00 -- content[3] <T> 
+        self.assertIsInstance(middle.content[0].content[3], rfc.T)
+        if not isinstance(middle.content[0].content[3], rfc.T):
+            return
+        # section-00 -- content[3] <T> content <Text>
+        self.assertIsInstance(middle.content[0].content[3].content, list)
+        self.assertEqual(len(middle.content[0].content[3].content), 1)
+        self.assertIsInstance(middle.content[0].content[3].content[0], rfc.Text)
+        if not isinstance(middle.content[0].content[3].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[0].content[3].content[0].content,
+"""Unfortunately, the format of such packet diagrams varies both within
+and between documents.  This variation makes it difficult to build
+tools to generate parsers from the specifications.  Better tooling
+could be developed if protocol specifications adopted a consistent
+format for their packet descriptions.  Indeed, this underpins the
+format described by this draft: we want to retain the benefits that
+packet header diagrams provide, while identifying the benefits of
+adopting a consistent format.
+""")
+        # section-00 -- content[3] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[0].content[3].anchor)
+        self.assertIsNone( middle.content[0].content[3].hangText)
+        self.assertFalse ( middle.content[0].content[3].keepWithNext)
+        self.assertFalse ( middle.content[0].content[3].keepWithPrevious)
+
+        # section-00 -- content[4] <T> 
+        self.assertIsInstance(middle.content[0].content[4], rfc.T)
+        if not isinstance(middle.content[0].content[4], rfc.T):
+            return
+        # section-00 -- content[4] <T> content <Text>
+        self.assertIsInstance(middle.content[0].content[4].content, list)
+        self.assertEqual(len(middle.content[0].content[4].content), 1)
+        self.assertIsInstance(middle.content[0].content[4].content[0], rfc.Text)
+        if not isinstance(middle.content[0].content[4].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[0].content[4].content[0].content,
+"""This document describes a consistent packet header diagram format and
+accompanying structured text constructs that allow for the parsing
+process of protocol headers to be fully specified.  This provides
+support for the automatic generation of parser code.  Broad design
+principles, that seek to maintain the primacy of human readability
+and flexibility in writing, are described, before the format itself
+is given.
+""")
+        # section-00 -- content[4] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[0].content[4].anchor)
+        self.assertIsNone( middle.content[0].content[4].hangText)
+        self.assertFalse ( middle.content[0].content[4].keepWithNext)
+        self.assertFalse ( middle.content[0].content[4].keepWithPrevious)
+
+        # section-00 -- content[5] <T> 
+        self.assertIsInstance(middle.content[0].content[5], rfc.T)
+        if not isinstance(middle.content[0].content[5], rfc.T):
+            return
+        # section-00 -- content[5] <T> content <Text>
+        self.assertIsInstance(middle.content[0].content[5].content, list)
+        self.assertEqual(len(middle.content[0].content[5].content), 1)
+        self.assertIsInstance(middle.content[0].content[5].content[0], rfc.Text)
+        if not isinstance(middle.content[0].content[5].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[0].content[5].content[0].content,
+"""This document is itself an example of the approach that it describes,
+with the packet header diagrams and structured text format described
+by example.  Examples that do not form part of the protocol
+description language are marked by a colon at the beginning of each
+line; this prevents them from being parsed by the accompanying
+tooling.
+""")
+        # section-00 -- content[5] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[0].content[5].anchor)
+        self.assertIsNone( middle.content[0].content[5].hangText)
+        self.assertFalse ( middle.content[0].content[5].keepWithNext)
+        self.assertFalse ( middle.content[0].content[5].keepWithPrevious)
+
+        # section-00 -- content[6] <T> 
+        self.assertIsInstance(middle.content[0].content[6], rfc.T)
+        if not isinstance(middle.content[0].content[6], rfc.T):
+            return
+        # section-00 -- content[6] <T> content <Text>
+        self.assertIsInstance(middle.content[0].content[6].content, list)
+        self.assertEqual(len(middle.content[0].content[6].content), 1)
+        self.assertIsInstance(middle.content[0].content[6].content[0], rfc.Text)
+        if not isinstance(middle.content[0].content[6].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[0].content[6].content[0].content,
+"""This draft describes early work.  As consensus builds around the
+particular syntax of the format described, both a formal ABNF
+""")
+        # section-00 -- content[6] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[0].content[6].anchor)
+        self.assertIsNone( middle.content[0].content[6].hangText)
+        self.assertFalse ( middle.content[0].content[6].keepWithNext)
+        self.assertFalse ( middle.content[0].content[6].keepWithPrevious)
+
+        # section-00 -- content[7] <T> 
+        self.assertIsInstance(middle.content[0].content[7], rfc.T)
+        if not isinstance(middle.content[0].content[7], rfc.T):
+            return
+        # section-00 -- content[7] <T> content <Text>
+        self.assertIsInstance(middle.content[0].content[7].content, list)
+        self.assertEqual(len(middle.content[0].content[7].content), 1)
+        self.assertIsInstance(middle.content[0].content[7].content[0], rfc.Text)
+        if not isinstance(middle.content[0].content[7].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[0].content[7].content[0].content,
+"""specification (Appendix A) and code (Appendix B) that parses it (and,
+as described above, this document) will be provided.
+""")
+        # section-00 -- content[7] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[0].content[7].anchor)
+        self.assertIsNone( middle.content[0].content[7].hangText)
+        self.assertFalse ( middle.content[0].content[7].keepWithNext)
+        self.assertFalse ( middle.content[0].content[7].keepWithPrevious)
+
+        # section-00 -- sections
+        self.assertIsInstance(middle.content[0].sections, list)
+        if not isinstance(middle.content[0].sections, list):
+            return
+        self.assertEqual( len(middle.content[0].sections), 0)
+        # section-00 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[0].anchor)
+        self.assertTrue(middle.content[0].numbered)
+        self.assertFalse(middle.content[0].removeInRFC)
+        self.assertIsNone(middle.content[0].title)
+        self.assertEqual(middle.content[0].toc, "default" )
+
+        # sec-01
+        self.assertIsInstance(middle.content[1], rfc.Section)
+        # section-01 name
+        self.assertIsInstance(middle.content[1].name, rfc.Name)
+        if not isinstance(middle.content[1].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[1].name.content, list)
+        self.assertEqual(len(middle.content[1].name.content), 1)
+        self.assertIsInstance(middle.content[1].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[1].name.content[0].content, "Background")
+
+        # section-01 -- content
+        self.assertIsInstance(middle.content[1].content, list)
+        self.assertEqual( len(middle.content[1].content), 2)
+
+        # section-01 -- content[0] <T> 
+        self.assertIsInstance(middle.content[1].content[0], rfc.T)
+        if not isinstance(middle.content[1].content[0], rfc.T):
+            return
+        # section-01 -- content[0] <T> content <Text>
+        self.assertIsInstance(middle.content[1].content[0].content, list)
+        self.assertEqual(len(middle.content[1].content[0].content), 1)
+        self.assertIsInstance(middle.content[1].content[0].content[0], rfc.Text)
+        if not isinstance(middle.content[1].content[0].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].content[0].content[0].content,
+"""This section begins by considering how packet header diagrams are
+used in existing documents.  This exposes the limitations that the
+current usage has in terms of machine-readability, guiding the design
+of the format that this document proposes.
+""")
+        # section-01 -- content[0] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].content[0].anchor)
+        self.assertIsNone( middle.content[1].content[0].hangText)
+        self.assertFalse ( middle.content[1].content[0].keepWithNext)
+        self.assertFalse ( middle.content[1].content[0].keepWithPrevious)
+
+
+        # section-01 -- content[1] <T> 
+        self.assertIsInstance(middle.content[1].content[1], rfc.T)
+        if not isinstance(middle.content[1].content[1], rfc.T):
+            return
+        # section-01 -- content[1] <T> content <Text>
+        self.assertIsInstance(middle.content[1].content[1].content, list)
+        self.assertEqual(len(middle.content[1].content[1].content), 1)
+        self.assertIsInstance(middle.content[1].content[1].content[0], rfc.Text)
+        if not isinstance(middle.content[1].content[1].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].content[1].content[0].content,
+"""While this document focuses on the machine-readability of packet
+format diagrams, this section also discusses the use of other
+structured or formal languages within IETF documents.  Considering
+how and why these languages are used provides an instructive contrast
+to the relatively incremental approach proposed here.
+""")
+        # section-01 -- content[1] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].content[1].anchor)
+        self.assertIsNone( middle.content[1].content[1].hangText)
+        self.assertFalse ( middle.content[1].content[1].keepWithNext)
+        self.assertFalse ( middle.content[1].content[1].keepWithPrevious)
+
+
+        # section-01 -- sections 
+        self.assertIsInstance(middle.content[1].sections, list)
+        if not isinstance(middle.content[1].sections, list):
+            return
+        self.assertEqual( len(middle.content[1].sections), 2)
+        # section-01 -- section [0] 
+        self.assertIsInstance(middle.content[1].sections[0], rfc.Section)
+        # section-01 -- section [0] name 
+        self.assertIsInstance(middle.content[1].sections[0].name, rfc.Name)
+        if not isinstance(middle.content[1].sections[0].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[1].sections[0].name.content, list)
+        self.assertEqual(len(middle.content[1].sections[0].name.content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[1].sections[0].name.content[0].content, "Limitations of Current Packet Format Diagrams")
+
+        # section-01 -- subsection [0] content 
+        self.assertIsInstance(middle.content[1].sections[0].content, list)
+        self.assertEqual( len(middle.content[1].sections[0].content), 13)
+
+
+        # section-01 -- subsection [0] content [0] <Artwork> content
+        self.assertIsInstance( middle.content[1].sections[0].content[0], rfc.Artwork)
+        if not isinstance( middle.content[1].sections[0].content[0], rfc.Artwork):
+            return
+        self.assertIsInstance( middle.content[1].sections[0].content[0].content, list)
+        if not isinstance( middle.content[1].sections[0].content[0].content, list):
+            return
+        self.assertEqual( len(middle.content[1].sections[0].content[0].content), 1)
+        self.assertIsInstance( middle.content[1].sections[0].content[0].content[0], rfc.Text)
+        if not isinstance( middle.content[1].sections[0].content[0].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[1].sections[0].content[0].content[0].content,
+""":   The RESET_STREAM frame is as follows:
+:
+:    0                   1                   2                   3
+:    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                        Stream ID (i)                        ...
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |  Application Error Code (16)  |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                        Final Size (i)                       ...
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:
+:   RESET_STREAM frames contain the following fields:
+:
+:   Stream ID:  A variable-length integer encoding of the Stream ID
+:      of the stream being terminated.
+:
+:   Application Protocol Error Code:  A 16-bit application protocol
+:      error code (see Section 20.1) which indicates why the stream
+:      is being closed.
+:
+:   Final Size: A variable-length integer indicating the final size
+:      of the stream by the RESET_STREAM sender, in unit of bytes.
+""") 
+
+        # section-01 -- subsection [0] content [0] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[1].sections[0].content[0].align, "left")
+        self.assertIsNone( middle.content[1].sections[0].content[0].alt)
+        self.assertEqual ( middle.content[1].sections[0].content[0].anchor, "Figure 2")
+        self.assertIsNone( middle.content[1].sections[0].content[0].height)
+        self.assertEqual ( middle.content[1].sections[0].content[0].name, "QUIC's RESET_STREAM frame format (from [QUIC-TRANSPORT])")
+        self.assertIsNone( middle.content[1].sections[0].content[0].src)
+        self.assertIsNone( middle.content[1].sections[0].content[0].type)
+        self.assertIsNone( middle.content[1].sections[0].content[0].width)
+        self.assertIsNone( middle.content[1].sections[0].content[0].xmlSpace)
+
+
+        # section-01 -- subsection[0] content [1] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[1], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[1], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[1].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[1].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[1].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[1].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[1].content[0].content,
+"""Packet header diagrams are frequently used in IETF standards to
+describe the format of binary protocols.  While there is no standard
+for how these diagrams should be formatted, they have a broadly
+similar structure, where the layout of a protocol data unit (PDU) or
+""")
+        # section-01 -- subsection[0] content[1] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[1].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[1].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[1].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[1].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [2] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[2], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[2], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[2].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[2].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[2].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[2].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[2].content[0].content,
+"""structure is shown in diagrammatic form, followed by a description
+list of the fields that it contains.  An example of this format,
+taken from the QUIC specification, is given in Figure 2.
+""")
+        # section-01 -- subsection[0] content[2] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[2].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[2].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[2].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[2].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [3] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[3], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[3], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[3].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[3].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[3].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[3].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[3].content[0].content,
+"""These packet header diagrams, and the accompanying descriptions, are
+formatted for human readers rather than for automated processing.  As
+a result, while there is rough consistency in how packet header
+diagrams are formatted, there are a number of limitations that make
+them difficult to work with programmatically:
+""")
+        # section-01 -- subsection[0] content[3] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[3].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[3].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[3].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[3].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [4] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[4], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[4], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[4].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[4].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[4].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[4].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[4].content[0].content,
+"""Inconsistent syntax:  There are two classes of consistency that are
+needed to support automated processing of specifications: internal
+consistency within a diagram or document, and external consistency
+across all documents.
+""")
+        # section-01 -- subsection[0] content[3] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[4].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[4].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[4].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[4].keepWithPrevious)
+
+
+        # section-01 -- subsection[0] content [5] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[5], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[5], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[5].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[5].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[5].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[5].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[5].content[0].content,
+"""Figure 2 gives an example of internal inconsistency.  Here, the
+packet diagram shows a field labelled "Application Error Code",
+while the accompanying description lists the field as "Application
+Protocol Error Code".  The use of an abbreviated name is suitable
+for human readers, but makes parsing the structure difficult for
+machines.  Figure 3 gives a further example, where the description
+includes an "Option-Code" field that does not appear in the packet
+diagram; and where the description states that each field is 16
+bits in length, but the diagram shows the OPTION_RELAY_PORT as 13
+bits, and Option-Len as 19 bits.  Another example is [RFC6958],
+where the packet format diagram showing the structure of the
+Burst/Gap Loss Metrics Report Block shows the Number of Bursts
+field as being 12 bits wide but the corresponding text describes
+it as 16 bits.
+""")
+        # section-01 -- subsection[0] content[5] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[5].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[5].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[5].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[5].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [6] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[6], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[6], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[6].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[6].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[6].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[6].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[6].content[0].content,
+"""Comparing Figure 2 with Figure 3 exposes external inconsistency
+across documents.  While the packet format diagrams are broadly
+similar, the surrounding text is formatted differently.  If
+machine parsing is to be made possible, then this text must be
+structured consistently.
+""")
+        # section-01 -- subsection[0] content[6] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[6].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[6].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[6].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[6].keepWithPrevious)
+
+
+        # section-01 -- subsection[0] content [7] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[7], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[7], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[7].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[7].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[7].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[7].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[7].content[0].content,
+"""Ambiguous constraints:  The constraints that are enforced on a
+particular field are often described ambiguously, or in a way that
+cannot be parsed easily.  In Figure 3, each of the three fields in
+the structure is constrained.  The first two fields ("Option-Code"
+and "Option-Len") are to be set to constant values (note the
+inconsistency in how these constraints are expressed in the
+description).  However, the third field ("Downstream Source Port")
+can take a value from a constrained set.  This constraint is
+expressed in prose that cannot readily by understood by machine.
+""")
+        # section-01 -- subsection[0] content[7] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[7].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[7].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[7].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[7].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [8] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[8], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[8], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[8].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[8].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[8].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[8].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[8].content[0].content,
+"""Poor linking between sub-structures:  Protocol data units and other
+structures are often comprised of sub-structures that are defined
+""")
+        # section-01 -- subsection[0] content[8] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[8].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[8].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[8].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[8].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [9] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[9], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[9], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[9].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[9].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[9].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[9].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[9].content[0].content,
+"""elsewhere, either in the same document, or within another
+document.  Chaining these structures together is essential for
+machine parsing: the parsing process for a protocol data unit is
+only fully expressed if all elements can be parsed.
+""")
+        # section-01 -- subsection[0] content[9] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[9].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[9].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[9].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[9].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [10] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[10], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[10], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[10].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[10].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[10].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[10].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[10].content[0].content,
+"""Figure 2 highlights the difficulty that machine parsers have in
+chaining structures together.  Two fields ("Stream ID" and "Final
+Size") are described as being encoded as variable-length integers;
+this is a structure described elsewhere in the same document.
+Structured text is required both alongside the definition of the
+containing structure and with the definition of the sub-structure,
+to allow a parser to link the two together.
+""")
+        # section-01 -- subsection[0] content[10] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[10].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[10].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[10].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[10].keepWithPrevious)
+
+
+        # section-01 -- subsection[0] content [11] <T> 
+        self.assertIsInstance(middle.content[1].sections[0].content[11], rfc.T)
+        if not isinstance(middle.content[1].sections[0].content[11], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[0].content[11].content, list)
+        self.assertEqual(len(middle.content[1].sections[0].content[11].content), 1)
+        self.assertIsInstance(middle.content[1].sections[0].content[11].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[0].content[11].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[0].content[11].content[0].content,
+"""Lack of extension and evolution syntax:  Protocols are often
+specified across multiple documents, either because the protocol
+explicitly includes extension points (e.g., profiles and payload
+format specifications in RTP [RFC3550]) or because definition of a
+protocol data unit has changed and evolved over time.  As a
+result, it is essential that syntax be provided to allow for a
+complete definition of a protocol's parsing process to be
+constructed across multiple documents.
+""")
+        # section-01 -- subsection[0] content[11] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[0].content[11].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[11].hangText)
+        self.assertFalse ( middle.content[1].sections[0].content[11].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[0].content[11].keepWithPrevious)
+
+        # section-01 -- subsection[0] content [12] <Artwork> 
+        self.assertIsInstance(middle.content[1].sections[0].content[12], rfc.Artwork)
+        if not isinstance(middle.content[1].sections[0].content[12], rfc.Artwork):
+            return
+        self.assertIsInstance( middle.content[1].sections[0].content[12].content, list)
+        if not isinstance( middle.content[1].sections[0].content[12].content, list):
+            return
+        self.assertEqual( len(middle.content[1].sections[0].content[12].content), 1)
+        self.assertIsInstance( middle.content[1].sections[0].content[12].content[0], rfc.Text)
+        if not isinstance( middle.content[1].sections[0].content[12].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[1].sections[0].content[12].content[0].content,
+""":   The format of the "Relay Source Port Option" is shown below:
+:
+:    0                   1                   2                   3
+:    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |    OPTION_RELAY_PORT    |         Option-Len                  |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |    Downstream Source Port     |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:
+:   Where:
+:
+:   Option-Code:  OPTION_RELAY_PORT. 16-bit value, 135.
+:
+:   Option-Len:  16-bit value to be set to 2.
+:
+:   Downstream Source Port:  16-bit value.  To be set by the IPv6
+:      relay either to the downstream relay agent's UDP source port
+:      used for the UDP packet, or to zero if only the local relay
+:      agent uses the non-DHCP UDP port (not 547).
+""")
+
+        # section-01 -- subsection [0] content [12] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[1].sections[0].content[12].align, "left")
+        self.assertIsNone( middle.content[1].sections[0].content[12].alt)
+        self.assertEqual ( middle.content[1].sections[0].content[12].anchor, "Figure 3")
+        self.assertIsNone( middle.content[1].sections[0].content[12].height)
+        self.assertEqual ( middle.content[1].sections[0].content[12].name, "DHCPv6's Relay Source Port Option (from [RFC8357])")
+        self.assertIsNone( middle.content[1].sections[0].content[12].src)
+        self.assertIsNone( middle.content[1].sections[0].content[12].type)
+        self.assertIsNone( middle.content[1].sections[0].content[12].width)
+        self.assertIsNone( middle.content[1].sections[0].content[12].xmlSpace)
+
+
+        # section-01 -- section [0] sections 
+        self.assertIsInstance(middle.content[1].sections[0].sections, list)
+        if not isinstance(middle.content[1].sections[0].sections, list):
+            return
+        self.assertEqual( len(middle.content[1].sections[0].sections), 0)
+        # section-01 -- section [0] anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[1].sections[0].anchor)
+        self.assertTrue(middle.content[1].sections[0].numbered)
+        self.assertFalse(middle.content[1].sections[0].removeInRFC)
+        self.assertIsNone(middle.content[1].sections[0].title)
+        self.assertEqual(middle.content[1].sections[0].toc, "default" )
+
+
+        # section-01 -- subsection [1] 
+        self.assertIsInstance(middle.content[1].sections[1], rfc.Section)
+        # section-01 -- subsection [1] content 
+        self.assertIsInstance(middle.content[1].sections[1].content, list)
+        self.assertEqual( len(middle.content[1].sections[1].content), 1)
+        # section-01 -- subsection [1] content [0] <T>
+        self.assertIsInstance(middle.content[1].sections[1].content[0], rfc.T)
+        if not isinstance(middle.content[1].sections[1].content[0], rfc.T):
+            return
+        self.assertIsInstance(middle.content[1].sections[1].content[0].content, list)
+        self.assertEqual(len(middle.content[1].sections[1].content[0].content), 1)
+        self.assertIsInstance(middle.content[1].sections[1].content[0].content[0], rfc.Text)
+        if not isinstance(middle.content[1].sections[1].content[0].content[0], rfc.Text):
+            return
+        self.assertEqual(middle.content[1].sections[1].content[0].content[0].content,
+"""A small proportion of IETF standards documents contain structured and
+formal languages, including ABNF [RFC5234], ASN.1 [ASN1], C, CBOR
+[RFC7049], JSON, the TLS presentation language [RFC8446], YANG models
+[RFC7950], and XML.  While this broad range of languages may be
+problematic for the development of tooling to parse specifications,
+these, and other, languages serve a range of different use cases.
+ABNF, for example, is typically used to specify text protocols, while
+ASN.1 is used to specify data structure serialisation.  This document
+specifies a structured language for specifying the parsing of binary
+protocol data units.
+""")
+        # section-01 -- subsection[1] content[0] <T> anchor, hangText, keepWithNext, keepWithPrevious
+        self.assertIsNone( middle.content[1].sections[1].content[0].anchor)
+        self.assertIsNone( middle.content[1].sections[1].content[0].hangText)
+        self.assertFalse ( middle.content[1].sections[1].content[0].keepWithNext)
+        self.assertFalse ( middle.content[1].sections[1].content[0].keepWithPrevious)
+
+
+        # section-01 -- subsection [1] sections 
+        self.assertIsInstance(middle.content[1].sections[1].sections, list)
+        if not isinstance(middle.content[1].sections[1].sections, list):
+            return
+        self.assertEqual( len(middle.content[1].sections[1].sections), 0)
+        # section-01 -- subsection [1] anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[1].sections[1].anchor)
+        self.assertTrue(middle.content[1].sections[1].numbered)
+        self.assertFalse(middle.content[1].sections[1].removeInRFC)
+        self.assertIsNone(middle.content[1].sections[1].title)
+        self.assertEqual(middle.content[1].sections[1].toc, "default" )
+
+
+        # section-01 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[1].anchor)
+        self.assertTrue(middle.content[1].numbered)
+        self.assertFalse(middle.content[1].removeInRFC)
+        self.assertIsNone(middle.content[1].title)
+        self.assertEqual(middle.content[1].toc, "default" )
+
+
+
+
+
+        # sec-02
+        self.assertIsInstance(middle.content[2], rfc.Section)
+        # section-02 name
+        self.assertIsInstance(middle.content[2].name, rfc.Name)
+        if not isinstance(middle.content[2].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[2].name.content, list)
+        self.assertEqual(len(middle.content[2].name.content), 1)
+        self.assertIsInstance(middle.content[2].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[2].name.content[0].content, "Design Principles")
+
+        # section-02 -- content
+        self.assertIsInstance(middle.content[2].content, list)
+        self.assertEqual( len(middle.content[2].content), 16)
+        self.assertIsInstance(middle.content[2].content[0], rfc.T)
+        self.assertIsInstance(middle.content[2].content[1], rfc.T)
+        self.assertIsInstance(middle.content[2].content[2], rfc.T)
+        self.assertIsInstance(middle.content[2].content[3], rfc.T)
+        self.assertIsInstance(middle.content[2].content[4], rfc.T)
+        self.assertIsInstance(middle.content[2].content[5], rfc.T)
+        self.assertIsInstance(middle.content[2].content[6], rfc.T)
+        self.assertIsInstance(middle.content[2].content[7], rfc.T)
+        self.assertIsInstance(middle.content[2].content[8], rfc.T)
+        self.assertIsInstance(middle.content[2].content[9], rfc.T)
+        self.assertIsInstance(middle.content[2].content[10], rfc.T)
+        self.assertIsInstance(middle.content[2].content[11], rfc.T)
+        self.assertIsInstance(middle.content[2].content[12], rfc.T)
+        self.assertIsInstance(middle.content[2].content[13], rfc.T)
+        self.assertIsInstance(middle.content[2].content[14], rfc.T)
+        self.assertIsInstance(middle.content[2].content[15], rfc.T)
+        # section-02 -- sections
+        self.assertIsInstance(middle.content[2].sections, list)
+        if not isinstance(middle.content[2].sections, list):
+            return
+        self.assertEqual( len(middle.content[2].sections), 0)
+        # section-02 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[2].anchor)
+        self.assertTrue(middle.content[2].numbered)
+        self.assertFalse(middle.content[2].removeInRFC)
+        self.assertIsNone(middle.content[2].title)
+        self.assertEqual(middle.content[2].toc, "default" )
+
+        # sec-03
+        self.assertIsInstance(middle.content[3], rfc.Section)
+        # section-03 name
+        self.assertIsInstance(middle.content[3].name, rfc.Name)
+        if not isinstance(middle.content[3].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[3].name.content, list)
+        self.assertEqual(len(middle.content[3].name.content), 1)
+        self.assertIsInstance(middle.content[3].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[3].name.content[0].content, "Augmented Packet Header Diagrams")
+        # section-03 -- content
+        self.assertIsInstance(middle.content[3].content, list)
+        self.assertEqual( len(middle.content[3].content), 3)
+        self.assertIsInstance(middle.content[3].content[0], rfc.T)
+        self.assertIsInstance(middle.content[3].content[1], rfc.T)
+        self.assertIsInstance(middle.content[3].content[2], rfc.T)
+        # section-03 -- sections
+        self.assertIsInstance(middle.content[3].sections, list)
+        if not isinstance(middle.content[3].sections, list):
+            return
+        self.assertEqual( len(middle.content[3].sections), 10)
+        # section-03 -- sub-section[0]
+        self.assertIsInstance(middle.content[3].sections[0], rfc.Section)
+        self.assertIsInstance(middle.content[3].sections[0].name, rfc.Name)
+        if not isinstance(middle.content[3].sections[0].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[3].sections[0].name.content, list)
+        self.assertEqual(len(middle.content[3].sections[0].name.content), 1)
+        self.assertIsInstance(middle.content[3].sections[0].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[3].sections[0].name.content[0].content, "PDUs with Fixed and Variable-Width Fields")
+        # section-03 -- sub-section[0] content 
+        self.assertIsInstance(middle.content[3].sections[0].content, list)
+        self.assertEqual(len(middle.content[3].sections[0].content), 24)
+        # section-03 -- sub-section[0] content[0--6] <T> 
+        self.assertIsInstance(middle.content[3].sections[0].content[0], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[1], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[2], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[3], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[4], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[5], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[6], rfc.T)
+        # section-03 -- sub-section[0] content[7] <Artwork> 
+        self.assertIsInstance(middle.content[3].sections[0].content[7], rfc.Artwork)
+        if not isinstance(middle.content[3].sections[0].content[7], rfc.Artwork):
+            return
+        self.assertIsInstance(middle.content[3].sections[0].content[7].content, list)
+        if not isinstance(middle.content[3].sections[0].content[7].content, list):
+            return
+        self.assertEqual( len(middle.content[3].sections[0].content[7].content), 1)
+        self.assertIsInstance( middle.content[3].sections[0].content[7].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[0].content[7].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[3].sections[0].content[7].content[0].content, 
+"""0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|Version|   IHL |    DSCP   |ECN|         Total Length          |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|         Identification        |Flags|     Fragment Offset     |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| Time to Live  |    Protocol   |        Header Checksum        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                         Source Address                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                      Destination Address                      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            Options                          ...
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               :
+:                            Payload                            :
+:                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+""")
+        # section-03 -- sub-section[0] content[7] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[3].sections[0].content[7].align, "left")
+        self.assertIsNone( middle.content[3].sections[0].content[7].alt)
+        self.assertIsNone( middle.content[3].sections[0].content[7].anchor)
+        self.assertIsNone( middle.content[3].sections[0].content[7].height) 
+        self.assertIsNone( middle.content[3].sections[0].content[7].name)
+        self.assertIsNone( middle.content[3].sections[0].content[7].src)
+        self.assertIsNone( middle.content[3].sections[0].content[7].type) 
+        self.assertIsNone( middle.content[3].sections[0].content[7].width) 
+        self.assertIsNone( middle.content[3].sections[0].content[7].xmlSpace) 
+
+
+        # section-03 -- sub-section[0] content[8--23] <T> 
+        self.assertIsInstance(middle.content[3].sections[0].content[8], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[9], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[10], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[11], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[12], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[13], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[14], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[15], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[16], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[18], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[19], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[20], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[21], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[22], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[0].content[23], rfc.T)
+
+
+
+        # section-03 -- sub-section[0] sections 
+        self.assertIsInstance(middle.content[3].sections[0].sections, list)
+        if not isinstance(middle.content[3].sections[0].sections, list):
+            return
+        self.assertEqual(len(middle.content[3].sections[0].sections), 0)
+        # section-03 -- sub-section[0] anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[3].sections[0].anchor)
+        self.assertTrue(middle.content[3].sections[0].numbered)
+        self.assertFalse(middle.content[3].sections[0].removeInRFC)
+        self.assertIsNone(middle.content[3].sections[0].title)
+        self.assertEqual(middle.content[3].sections[0].toc, "default" )
+
+        # section-03 -- sub-section[1]
+        self.assertIsInstance(middle.content[3].sections[1], rfc.Section)
+        self.assertIsInstance(middle.content[3].sections[1].name, rfc.Name)
+        if not isinstance(middle.content[3].sections[1].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[3].sections[1].name.content, list)
+        self.assertEqual(len(middle.content[3].sections[1].name.content), 1)
+        self.assertIsInstance(middle.content[3].sections[1].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[3].sections[1].name.content[0].content, "PDUs That Cross-Reference Previously Defined Fields")
+
+        # section-03 -- sub-section[1] content 
+        self.assertIsInstance(middle.content[3].sections[1].content, list)
+        self.assertEqual(len(middle.content[3].sections[1].content), 24)
+
+        # section-03 -- sub-section[1] sections 
+        self.assertIsInstance(middle.content[3].sections[1].sections, list)
+        if not isinstance(middle.content[3].sections[1].sections, list):
+            return
+        self.assertEqual(len(middle.content[3].sections[1].sections), 0)
+        # section-03 -- sub-section[0] content[0] <T> 
+        self.assertIsInstance(middle.content[3].sections[1].content[0], rfc.T)
+
+        # section-03 -- sub-section[1] content[1] <Artwork> 
+        self.assertIsInstance(middle.content[3].sections[1].content[1], rfc.Artwork)
+        if not isinstance(middle.content[3].sections[1].content[1], rfc.Artwork):
+            return
+        self.assertIsInstance(middle.content[3].sections[1].content[1].content, list)
+        if not isinstance(middle.content[3].sections[1].content[1].content, list):
+            return
+        self.assertEqual( len(middle.content[3].sections[1].content[1].content), 1)
+        self.assertIsInstance( middle.content[3].sections[1].content[1].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[1].content[1].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[3].sections[1].content[1].content[0].content, 
+"""0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                               SSRC                            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+""")
+        # section-03 -- sub-section[1] content[1] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[3].sections[1].content[1].align, "left")
+        self.assertIsNone( middle.content[3].sections[1].content[1].alt)
+        self.assertIsNone( middle.content[3].sections[1].content[1].anchor)
+        self.assertIsNone( middle.content[3].sections[1].content[1].height) 
+        self.assertIsNone( middle.content[3].sections[1].content[1].name)
+        self.assertIsNone( middle.content[3].sections[1].content[1].src)
+        self.assertIsNone( middle.content[3].sections[1].content[1].type) 
+        self.assertIsNone( middle.content[3].sections[1].content[1].width) 
+        self.assertIsNone( middle.content[3].sections[1].content[1].xmlSpace) 
+
+        # section-03 -- sub-section[1] anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[3].sections[1].anchor)
+        self.assertTrue(middle.content[3].sections[1].numbered)
+        self.assertFalse(middle.content[3].sections[1].removeInRFC)
+        self.assertIsNone(middle.content[3].sections[1].title)
+        self.assertEqual(middle.content[3].sections[1].toc, "default" )
+
+        # section-03 -- sub-section[0] content[2--5] <T> 
+        self.assertIsInstance(middle.content[3].sections[1].content[2], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[3], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[4], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[5], rfc.T)
+
+        # section-03 -- sub-section[1] content[6] <Artwork> 
+        self.assertIsInstance(middle.content[3].sections[1].content[6], rfc.Artwork)
+        if not isinstance(middle.content[3].sections[1].content[6], rfc.Artwork):
+            return
+        self.assertIsInstance(middle.content[3].sections[1].content[6].content, list)
+        if not isinstance(middle.content[3].sections[1].content[6].content, list):
+            return
+        self.assertEqual( len(middle.content[3].sections[1].content[6].content), 1)
+        self.assertIsInstance( middle.content[3].sections[1].content[6].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[1].content[6].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[3].sections[1].content[6].content[0].content, 
+"""0                   1                   2                   3
+0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+| V |P|X|  CC   |M|     PT      |       Sequence Number         |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           Timestamp                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                Synchronization Source identifier              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                [Contributing Source identifiers]              |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                       Header Extension                        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                             Payload                           :
+:                                                               :
+:                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           Padding             | Padding Count |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+""")
+        # section-03 -- sub-section[1] content[6] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[3].sections[1].content[6].align, "left")
+        self.assertIsNone( middle.content[3].sections[1].content[6].alt)
+        self.assertIsNone( middle.content[3].sections[1].content[6].anchor)
+        self.assertIsNone( middle.content[3].sections[1].content[6].height) 
+        self.assertIsNone( middle.content[3].sections[1].content[6].name)
+        self.assertIsNone( middle.content[3].sections[1].content[6].src)
+        self.assertIsNone( middle.content[3].sections[1].content[6].type) 
+        self.assertIsNone( middle.content[3].sections[1].content[6].width) 
+        self.assertIsNone( middle.content[3].sections[1].content[6].xmlSpace) 
+
+
+        # section-03 -- sub-section[0] content[7--23] <T> 
+        self.assertIsInstance(middle.content[3].sections[1].content[7], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[8], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[9], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[10], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[11], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[12], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[13], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[14], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[15], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[16], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[17], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[18], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[19], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[20], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[21], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[22], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[1].content[23], rfc.T)
+
+        # section-03 -- sub-section[1] anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[3].sections[1].anchor)
+        self.assertTrue(middle.content[3].sections[1].numbered)
+        self.assertFalse(middle.content[3].sections[1].removeInRFC)
+        self.assertIsNone(middle.content[3].sections[1].title)
+        self.assertEqual(middle.content[3].sections[1].toc, "default" )
+
+
+        # section-03 -- sub-section[2]
+        self.assertIsInstance(middle.content[3].sections[2], rfc.Section)
+        self.assertIsInstance(middle.content[3].sections[2].name, rfc.Name)
+        if not isinstance(middle.content[3].sections[2].name, rfc.Name): # type-check
+            return
+        self.assertIsInstance(middle.content[3].sections[2].name.content, list)
+        self.assertEqual(len(middle.content[3].sections[2].name.content), 1)
+        self.assertIsInstance(middle.content[3].sections[2].name.content[0], rfc.Text)
+        self.assertEqual(middle.content[3].sections[2].name.content[0].content, "PDUs with Non-Contiguous Fields")
+
+        # section-03 -- sub-section[2] content 
+        self.assertIsInstance(middle.content[3].sections[2].content, list)
+        self.assertEqual(len(middle.content[3].sections[2].content), 6)
+
+        # section-03 -- sub-section[2] content[0--1] <T> 
+        self.assertIsInstance(middle.content[3].sections[2].content[0], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[2].content[1], rfc.T)
+
+        # section-03 -- sub-section[1] content[2] <Artwork>
+        self.assertIsInstance(middle.content[3].sections[2].content[2], rfc.Artwork)
+        if not isinstance(middle.content[3].sections[2].content[2], rfc.Artwork):
+            return
+        self.assertIsInstance(middle.content[3].sections[2].content[2].content, list)
+        if not isinstance(middle.content[3].sections[2].content[2].content, list):
+            return
+        self.assertEqual( len(middle.content[3].sections[2].content[2].content), 1)
+        self.assertIsInstance( middle.content[3].sections[2].content[2].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[2].content[2].content[0], rfc.Text):
+            return
+        self.assertEqual( middle.content[3].sections[2].content[2].content[0].content, 
+"""0                   1
+0 1 2 3 4 5 6 7 8 9 0 1 2 3
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|M|M|M|M|M|C|M|M|M|C|M|M|M|M|
+|B|A|9|8|7|1|6|5|4|0|3|2|1|0|
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+""")
+        # section-03 -- sub-section[2] content[2] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
+        self.assertEqual ( middle.content[3].sections[2].content[2].align, "left")
+        self.assertIsNone( middle.content[3].sections[2].content[2].alt)
+        self.assertIsNone( middle.content[3].sections[2].content[2].anchor)
+        self.assertIsNone( middle.content[3].sections[2].content[2].height) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].name)
+        self.assertIsNone( middle.content[3].sections[2].content[2].src)
+        self.assertIsNone( middle.content[3].sections[2].content[2].type) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].width) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].xmlSpace) 
+
+
+
+        # section-03 -- sub-section[2] content[3--5] <T> 
+        self.assertIsInstance(middle.content[3].sections[2].content[3], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[2].content[4], rfc.T)
+        self.assertIsInstance(middle.content[3].sections[2].content[5], rfc.T)
+
+        # section-03 -- sub-section[2] sections 
+        self.assertIsInstance(middle.content[3].sections[2].sections, list)
+        if not isinstance(middle.content[3].sections[2].sections, list):
+            return
+        self.assertEqual(len(middle.content[3].sections[2].sections), 0)
+
+        # section-03 -- sub-section[2] anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[3].sections[2].anchor)
+        self.assertTrue(middle.content[3].sections[2].numbered)
+        self.assertFalse(middle.content[3].sections[2].removeInRFC)
+        self.assertIsNone(middle.content[3].sections[2].title)
+        self.assertEqual(middle.content[3].sections[2].toc, "default" )
+
+        # section-03 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[3].anchor)
+        self.assertTrue(middle.content[3].numbered)
+        self.assertFalse(middle.content[3].removeInRFC)
+        self.assertIsNone(middle.content[3].title)
+        self.assertEqual(middle.content[3].toc, "default" )
+
+        # sec-04
+        self.assertIsInstance(middle.content[4], rfc.Section)
+        # section-04 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[4].anchor)
+        self.assertTrue(middle.content[4].numbered)
+        self.assertFalse(middle.content[4].removeInRFC)
+        self.assertIsNone(middle.content[4].title)
+        self.assertEqual(middle.content[4].toc, "default" )
+
+        # sec-05
+        self.assertIsInstance(middle.content[5], rfc.Section)
+        # section-05 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[5].anchor)
+        self.assertTrue(middle.content[5].numbered)
+        self.assertFalse(middle.content[5].removeInRFC)
+        self.assertIsNone(middle.content[5].title)
+        self.assertEqual(middle.content[5].toc, "default" )
+
+        # sec-06
+        self.assertIsInstance(middle.content[6], rfc.Section)
+        # section-06 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[6].anchor)
+        self.assertTrue(middle.content[6].numbered)
+        self.assertFalse(middle.content[6].removeInRFC)
+        self.assertIsNone(middle.content[6].title)
+        self.assertEqual(middle.content[6].toc, "default" )
+
+        # sec-07
+        self.assertIsInstance(middle.content[7], rfc.Section)
+        # section-07 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[7].anchor)
+        self.assertTrue(middle.content[7].numbered)
+        self.assertFalse(middle.content[7].removeInRFC)
+        self.assertIsNone(middle.content[7].title)
+        self.assertEqual(middle.content[7].toc, "default" )
+
+        # sec-08
+        self.assertIsInstance(middle.content[8], rfc.Section)
+        # section-08 -- anchor, numbered, removeInRFC, title, toc
+        self.assertIsNone(middle.content[8].anchor)
+        self.assertTrue(middle.content[8].numbered)
+        self.assertFalse(middle.content[8].removeInRFC)
+        self.assertIsNone(middle.content[8].title)
+        self.assertEqual(middle.content[8].toc, "default" )
