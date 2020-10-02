@@ -101,3 +101,21 @@ fn test_parse_pdu_multiplefieldheader() {
         }
     }
 }
+
+#[test]
+fn test_parse_variable_length_field_header() {
+    let mut cap = Capture::from_file("../pcaps/vlfh-valid.pcap").unwrap();
+    while let Ok(packet) = cap.next() {
+        let mut context = Context { data_size: packet.data.len() as u32 };
+        let parsed_pkt = parse_variable_length_field_header((packet.data, 0), &mut context);
+        match parsed_pkt {
+            (Result::Ok(((x, 0), pkt)), con) => {
+                assert_eq!(con.data_size, packet.data.len() as u32);
+                assert_eq!(x, []);
+                assert_eq!(pkt.length.0, 5);
+                assert_eq!(pkt.payload.0, "Hello".as_bytes());
+            },
+            _ => panic!("Invalid packet")
+        }
+    }
+}
