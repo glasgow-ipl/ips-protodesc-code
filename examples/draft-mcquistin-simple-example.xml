@@ -143,14 +143,56 @@
                     </dd>
                 </dl>
             </section>
+            <section>
+                <name>Variable Length Field Header</name>
+                    <t>
+                     A Variable Length Field Header is formatted as follows:
+                    </t>
+                    <artwork>
+         0                   1                   2                   3
+         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |     Length    |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |                                                               :
+        :                            Payload                            :
+        :                                                               |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    </artwork>
+                    <t>
+                        where:
+                    </t>
+                    <dl>
+                        <dt>
+                            Length (L): 1 byte.
+                        </dt>
+                        <dd>
+                            <t>
+                                This is a fixed-width field, whose full label is shown
+                                in the diagram. The field's width -- 1 byte -- is given
+                                in the label of the description list, separated from the
+                                field's label by a colon.
+                            </t>
+                        </dd>
+                        <dt>
+                            Payload: 8*L bits.
+                        </dt>
+                        <dd>
+                            <t>
+                                This is a variable-length field, whose length is defined
+                                in terms of the value of another field.
+                            </t>
+                        </dd>
+                    </dl>
+                </section>
 
             <section anchor='ascii-pdus'>
                 <name>Specifying Protocol Data Units</name>
                 <t>
-                  This document describes the Example protocol. The Example protocol uses Single Field Headers, and Multiple Field Headers.
+                  This document describes the Example protocol. The Example protocol uses Single Field Headers, Multiple Field Headers, and Variable Length Field Headers.
                 </t>
             </section>
-        
+
         <section anchor='IANA'>
             <name>IANA Considerations</name>
             <t>
