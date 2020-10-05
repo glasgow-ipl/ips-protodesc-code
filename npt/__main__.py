@@ -181,13 +181,11 @@ def main():
                         formatter.format_function(protocol.get_func(type_name))
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_{pt} failed)")
-                raise e
                 continue
             try:
                 formatter.format_protocol(protocol)
             except Exception as e:
                 print(f"Error : File {doc.get_filepath_in()}: Could not format protocol with '{o_fmt}' formatter (format_protocol failed)")
-                raise e
                 continue
 
             output_dir = doc.gen_filepath_out(opt.root_dir, o_fmt)
