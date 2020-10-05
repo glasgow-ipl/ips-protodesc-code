@@ -15,3 +15,8 @@ class Udp(Packet):
 cap = PcapWriter("pcaps/udp-valid-1.pcap")
 packet = Udp()
 cap.write(packet)
+
+# UDP - bad length value
+cap = PcapWriter("pcaps/udp-invalid-badlength.pcap")
+packet = Udp(length=7)
+cap.write(packet)
