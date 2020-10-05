@@ -1,16 +1,16 @@
 # Copyright (C) 2020 University of Glasgow
-# 
+#
 # Redistribution and use in source and binary forms, with or without
-# modification, are permitted provided that the following conditions 
+# modification, are permitted provided that the following conditions
 # are met:
-# 
+#
 # 1. Redistributions of source code must retain the above copyright notice,
 #    this list of conditions and the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright
 #    notice, this list of conditions and the following disclaimer in the
 #    documentation and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -39,9 +39,9 @@ test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 unittests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
 	@python3 -m unittest discover -s tests/ -v
 
-tests/simple-protocol-testing/pcaps: tests/simple-protocol-testing/generate-pcaps.py
-	mkdir -p tests/simple-protocol-testing/pcaps
-	cd tests/simple-protocol-testing && python generate-pcaps.py
+tests/%/pcaps: tests/%/generate-pcaps.py
+	mkdir -p tests/$(*)/pcaps
+	cd tests/$(*) && python generate-pcaps.py
 
 examples/output/draft/%/rust: examples/%.xml
 	npt $< -of rust
@@ -49,12 +49,12 @@ examples/output/draft/%/rust: examples/%.xml
 # =================================================================================================
 # The CI build runs the following in the rust-testing environment:
 
-integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust tests/simple-protocol-testing/pcaps
+integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust tests/simple-protocol-testing/pcaps examples/output/draft/draft-mcquistin-augmented-udp-example/rust tests/udp-testing/pcaps
 	cd tests/simple-protocol-testing/testharness && cargo test
+	cd tests/udp-testing/udp-testharness && cargo test
 
 # =================================================================================================
 
 clean:
 	rm -f  test-results/typecheck.xml
 	rm -fr examples/output
-
