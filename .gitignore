@@ -5,3 +5,5 @@ test-results/
 *.pyc
 tests/simple-protocol-testing/pcaps
 tests/simple-protocol-testing/testharness/target
+tests/udp-testing/pcaps
+tests/udp-testing/udp-testharness/target
