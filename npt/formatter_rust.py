@@ -69,9 +69,11 @@ class RustFormatter(Formatter):
 
     def format_methodinvocationexpr(self, target: Any, method_name: str, arg_exprs: List[Any]) -> Any:
         if method_name == "pow":
-            return f"{target}.pow({arg_exprs[0]})"
+            return f"({target}.pow({arg_exprs[0]}))"
         elif method_name == "multiply":
-            return f"{target}*{arg_exprs[0]}"
+            return f"({target}*{arg_exprs[0]})"
+        elif method_name == "minus":
+            return f"({target}-{arg_exprs[0]})"
         if method_name == "to_number":
             return f"{target}"
         return ""
@@ -125,6 +127,8 @@ class RustFormatter(Formatter):
         else:
             self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context){{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
         if data_type == "Vec<u8>":
+            if size[0] == "(" and size[-1] == ")":
+                size = size[1:-1]
             self.output.append(f"    let mut {bitstring.name.lower()}_size = {size};\n")
             self.output.append(f"    let mut {bitstring.name.lower()} = {camelcase(bitstring.name)}(Vec::new());\n")
             self.output.append(f"    let mut input = input;\n")
