@@ -74,6 +74,8 @@ class RustFormatter(Formatter):
             return f"({target}*{arg_exprs[0]})"
         elif method_name == "minus":
             return f"({target}-{arg_exprs[0]})"
+        elif method_name == "ge":
+            return f"({target} >= {arg_exprs[0]})"
         if method_name == "to_number":
             return f"{target}"
         return ""
@@ -168,7 +170,7 @@ class RustFormatter(Formatter):
         else:
             return 128
 
-    def format_struct_field(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str]):
+    def format_struct_field(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str], constraints):
         args = []
         if parser_func_names[index] in self.struct_field_signatures:
             args = [f"o{field_names.index(arg)}.0 as usize" for arg in self.struct_field_signatures[parser_func_names[index]]]
@@ -179,6 +181,19 @@ class RustFormatter(Formatter):
         if index > 0:
             input_str = f"i{index-1}"
             context_str = f"con{index-1}"
+
+        # process constraints: find those that can be expressed here
+        handled_constraints = []
+        unhandled_constraints = []
+        for constraint in constraints:
+            if all(field in field_names[:index+1] for field in constraint[1]):
+                constraint_expr = constraint[0]
+                for field in constraint[1]:
+                    constraint_expr = constraint_expr.replace(field, f"o{field_names.index(field)}.0")
+                handled_constraints.append((constraint_expr, constraint[0]))
+            else:
+                unhandled_constraints.append(constraint)
+
         if len(args) > 0:
             generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str}, {context_str}, {', '.join(args)});\n")
         else:
@@ -186,20 +201,31 @@ class RustFormatter(Formatter):
         generated_code.append(f"{indentation}match {field_names[index]} {{\n")
         if index+1 == len(field_names):
             struct_instantiation_fields = ", ".join([f"{field_names[i]}: o{i}" for i in range(len(field_names))])
-            generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index}),\n")
+            if len(handled_constraints) > 0:
+                generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
+                for constraint in handled_constraints:
+                    generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
+                generated_code.append(f"{indentation}        nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index})}},\n")
+            else:
+                generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index}),\n")
             generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
             generated_code.append(f"{indentation}}}\n")
         else:
             generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
-            generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names)
+            for constraint in handled_constraints:
+                generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
+            generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names, unhandled_constraints)
             generated_code.append(f"{indentation}    }}\n")
             generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
             generated_code.append(f"{indentation}}}\n")
         return generated_code
 
     def format_struct(self, struct: Struct, constraints: List[str]):
-        # FIXME: need to handle constraints
         assert struct.name not in self.output
+        # process constraints - pick out field names and build structure
+        processed_constraints = []
+        for constraint in constraints:
+            processed_constraints.append((re.sub(r"self\(([\w]*)\)", r"\1", constraint), re.findall(r"self\(([\w]*)\)", constraint)))
         #traits need to be added up here when using !derive (eg. Eq, Ord)
         self.output.append(f"\n// Structure and parser for {struct.name}\n")
         self.output.append("\n#[derive(Debug")
@@ -220,7 +246,7 @@ class RustFormatter(Formatter):
             field_names.append(f"{field.field_name}")
         self.output.append("}\n")
         self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
-        self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions)
+        self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions, processed_constraints)
         self.output.append("}\n")
         self.struct_field_signatures = {}
 
