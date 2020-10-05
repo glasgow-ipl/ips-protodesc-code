@@ -1,0 +1,172 @@
+<?xml version='1.0' encoding='US-ASCII'?>
+<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-augmented-udp-example-00' category='exp'>
+    <front>
+        <title abbrev='APHD Example'>
+            Describing UDP with Augmented Packet Header Diagrams
+        </title>
+        <seriesInfo name='Internet-Draft' value='drdraft-mcquistin-augmented-udp-example-00' status="experimental" />
+
+        <author fullname='Stephen McQuistin' initials='S.' surname='McQuistin'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>sm@smcquistin.uk</email>
+            </address>
+        </author>
+
+        <author fullname='Vivian Band' initials='V.' surname='Band'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>vivianband0@gmail.com</email>
+            </address>
+        </author>
+
+        <author fullname='Dejice Jacob' initials='D.' surname='Jacob'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>d.jacob.1@research.gla.ac.uk</email>
+            </address>
+        </author>
+
+        <author fullname='Colin Perkins' initials='C. S.' surname='Perkins'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>csp@csperkins.org</email>
+            </address>
+        </author>
+
+        <?date year='2020' month='October' day='5'/?>
+
+        <abstract>
+            <t>
+              This document is defines UDP using
+              Augmented Packet Header diagrams.
+            </t>
+        </abstract>
+    </front>
+
+    <middle>
+            <section>
+                <name>UDP Header</name>
+                <t>
+                  This document describes the UDP protocol. The UDP protocol uses UDP Headers.
+                </t>
+                    <t>
+                     A UDP Header is formatted as follows:
+                    </t>
+                    <artwork>
+         0                   1                   2                   3
+         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |           Source port         |       Destination port        |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |              Length           |           Checksum            |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+        |                                                               :
+        :                            Payload                            :
+        :                                                               |
+        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                    </artwork>
+                    <t>
+                        where:
+                    </t>
+                    <dl>
+                        <dt>
+                            Source port (Src): 2 bytes.
+                        </dt>
+                        <dd>
+                            <t>
+                                Sending port.
+                            </t>
+                        </dd>
+                        <dt>
+                            Destination port (Dest): 2 bytes.
+                        </dt>
+                        <dd>
+                            <t>
+                                Destination port.
+                            </t>
+                        </dd>
+                        <dt>
+                            Length (L): 2 bytes.
+                        </dt>
+                        <dd>
+                            <t>
+                                Length of the header and payload in bytes.
+                            </t>
+                        </dd>
+                        <dt>
+                            Checksum: 2 bytes.
+                        </dt>
+                        <dd>
+                            <t>
+                                Checksum.
+                            </t>
+                        </dd>
+                        <dt>
+                            Payload: L-8 bytes.
+                        </dt>
+                        <dd>
+                            <t>
+                                Payload.
+                            </t>
+                        </dd>
+                    </dl>
+                </section>
+
+        <section anchor='IANA'>
+            <name>IANA Considerations</name>
+            <t>
+                This document contains no actions for IANA.
+            </t>
+        </section>
+
+        <section anchor='security'>
+            <name>Security Considerations</name>
+            <t>
+                The security of the Example protocol has not been considered.
+            </t>
+        </section>
+
+        <section anchor='Acknowledgements'>
+            <name>Acknowledgements</name>
+            <t>
+                This work has received funding from the UK Engineering and Physical
+                Sciences Research Council under grant EP/R04144X/1.
+            </t>
+        </section>
+    </middle>
+
+    <back>
+        <section anchor='source'>
+            <name>Source code repository</name>
+            <t>
+                The source code for tooling that can be used to parse this document is available
+                from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />.
+            </t>
+        </section>
+    </back>
+ </rfc>
