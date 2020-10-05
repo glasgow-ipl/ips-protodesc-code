@@ -111,7 +111,7 @@
                             </t>
                         </dd>
                         <dt>
-                            Length (L): 2 bytes.
+                            Length (L): 2 bytes; L >= 8.
                         </dt>
                         <dd>
                             <t>
