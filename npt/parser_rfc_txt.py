@@ -33,6 +33,7 @@ import parsley
 import string
 
 import npt.rfc as rfc
+import npt.parser_rfc_postprocess as domProcess
 
 from typing import Dict, List
 
@@ -103,6 +104,7 @@ def parse_rfc(rfcTxt):
     rfcTxt = trim_blank_lines(rfcTxt)
     parser = generate_parser("npt/grammar_rfc.txt")
     rfc = parser("".join(rfcTxt)).rfc()
+    rfc = domProcess.text_to_dl(rfc, {'tab': ''.join( parser('   ').tab())})
     return rfc
 
 if __name__ == "__main__":
