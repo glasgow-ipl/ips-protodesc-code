@@ -15,7 +15,8 @@ ws = ' '*
 nl = '\n'
 
 line = tab ws <((word|number) ws)+>:txt nl:newline -> txt+newline
-t = line+:lines -> rfc.T([rfc.Text("".join(lines))], None, None, None, None)
+paragraph_line = <tab ws>:indentation <((word|number) ws)+>:txt nl:newline -> indentation+txt+newline
+t = paragraph_line+:lines -> rfc.T([rfc.Text("".join(lines))], None, None, None, None)
 tocline = tab ws <(letter '.')?>:alpha <(number '.')*>:num ws (word ws)+ number? nl -> infer_toc(alpha, num)
 section_name = <(number '.')+>:number ws <(word ws)+>:name nl -> (number.count('.'), name)
 appendix_name = "Appendix " (letter '.') ws <(word ws)+>:name nl -> (1, name)
