@@ -196,7 +196,6 @@ def main():
                 output_filepath.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
                 with open(output_filepath, "w") as out_fp:
                     out_fp.write(output[output_filename])
-                print(f"\t{output_filepath}")
 
 
 if __name__ == "__main__":
