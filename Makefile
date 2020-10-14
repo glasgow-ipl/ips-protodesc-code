@@ -43,7 +43,7 @@ tests/%/pcaps: tests/%/generate-pcaps.py
 	mkdir -p tests/$(*)/pcaps
 	cd tests/$(*) && python generate-pcaps.py
 
-examples/output/draft/%/rust: examples/%.xml
+examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 	npt $< -of rust
 
 # =================================================================================================
@@ -56,5 +56,7 @@ integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust test
 # =================================================================================================
 
 clean:
+	rm -rf tests/simple-protocol-testing/pcaps
+	rm -rf tests/udp-testing/pcaps
 	rm -f  test-results/typecheck.xml
 	rm -fr examples/output
