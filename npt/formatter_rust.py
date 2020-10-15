@@ -258,7 +258,7 @@ class RustFormatter(Formatter):
         for field in struct.get_fields():
             print(field.is_present)
             type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
-            if not(type(field.is_present) is ConstantExpression and type(field.is_present.constant_type) is Boolean and field.is_present.constant_value is True):
+            if not(isinstance(field.is_present, ConstantExpression) and type(field.is_present.constant_type) is Boolean and field.is_present.constant_value is True):
                 self.output.append("    pub %s: Option<%s>,\n" % (field.field_name, camelcase(type_name)))
             else:
                 self.output.append("    pub %s: %s,\n" % (field.field_name, camelcase(type_name)))
@@ -295,21 +295,22 @@ class RustFormatter(Formatter):
         self.output.append(f"\n// Parse enum `{enum.name}`\n")
         self.output.append("\n#[derive(Debug)]")
         self.output.append(f"\npub enum {camelcase(enum.name)} {{\n")
-        self.output.append(",\n".join([f"\t{camelcase(variant.name)}({camelcase(variant.name)})" for variant in enum.variants]))
+        self.output.append(",\n".join([f"\t{camelcase(variant.name)}({camelcase(variant.name)})" for variant in enum.variants if isinstance(variant, ConstructableType)]))
         self.output.append("\n}\n\n")
         parse_funcs = []
         variant_names = []
         for variant in enum.variants:
-            type_name = camelcase(variant.name)
-            parse_func_name = variant.name.replace(" ", "_").replace("-", "_").lower()
-            parse_funcs.append(f"parse_{func_name}_{parse_func_name}")
-            variant_names.append(f"{func_name}_{parse_func_name}")
-            self.output.append(f"pub fn parse_{func_name}_{parse_func_name}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
-            self.output.append(f"\tmatch parse_{parse_func_name}(input, context) {{\n")
-            self.output.append(f"\t\t(nom::IResult::Ok((([], 0), o)), con) => (nom::IResult::Ok(((&[], 0), {camelcase(enum.name)}::{type_name}(o))), con),\n")
-            self.output.append(f"\t\t(nom::IResult::Ok(((i, c), _o)), con) => (nom::IResult::Err(nom::Err::Error(((i, c), nom::error::ErrorKind::NonEmpty))), con),\n")
-            self.output.append(f"\t\t(nom::IResult::Err(e), con) => (nom::IResult::Err(e), con)\n")
-            self.output.append("\t}\n}\n\n")
+            if isinstance(variant, ConstructableType):
+                type_name = camelcase(variant.name)
+                parse_func_name = variant.name.replace(" ", "_").replace("-", "_").lower()
+                parse_funcs.append(f"parse_{func_name}_{parse_func_name}")
+                variant_names.append(f"{func_name}_{parse_func_name}")
+                self.output.append(f"pub fn parse_{func_name}_{parse_func_name}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
+                self.output.append(f"\tmatch parse_{parse_func_name}(input, context) {{\n")
+                self.output.append(f"\t\t(nom::IResult::Ok((([], 0), o)), con) => (nom::IResult::Ok(((&[], 0), {camelcase(enum.name)}::{type_name}(o))), con),\n")
+                self.output.append(f"\t\t(nom::IResult::Ok(((i, c), _o)), con) => (nom::IResult::Err(nom::Err::Error(((i, c), nom::error::ErrorKind::NonEmpty))), con),\n")
+                self.output.append(f"\t\t(nom::IResult::Err(e), con) => (nom::IResult::Err(e), con)\n")
+                self.output.append("\t}\n}\n\n")
         self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
         self.output += self.format_pdu_variants(0, "bleh", variant_names, parse_funcs)
         self.output.append("}")
