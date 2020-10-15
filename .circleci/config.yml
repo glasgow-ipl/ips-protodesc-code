@@ -12,46 +12,18 @@ jobs:
 
       - run:
           command: |
+            sudo apt-get update
+            sudo apt-get install curl
+            curl https://sh.rustup.rs -sSf | sh -s -- -y
             sudo pip install pipenv
             pipenv install --dev
       - run:
           name: run tests
           command: |
-            pipenv run make unittests examples/output/draft/draft-mcquistin-simple-example/rust tests/simple-protocol-testing/pcaps examples/output/draft/draft-mcquistin-augmented-udp-example/rust tests/udp-testing/pcaps
+            pipenv run make test
       - store_artifacts:
           path: test-results
           destination: test-results
 
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-
-  rust-testing:
-    docker:
-      - image: circleci/rust:1.45-buster
-
-    working_directory: ~/ips-protodesc-code
-
-    steps:
-      - checkout
-
-      - attach_workspace:
-          at: .
-
-      - run: sudo apt-get update
-      - run: sudo apt-get install libpcap-dev
-
-      - run:
-          name: run tests
-          command: |
-            make integrationtests
-
-workflows:
-  version: 2
-  testing:
-    jobs:
-      - python-testing
-      - rust-testing:
-          requires:
-            - python-testing
+          path: examples/output
+          destination: output
