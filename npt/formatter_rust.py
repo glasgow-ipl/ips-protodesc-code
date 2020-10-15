@@ -192,9 +192,7 @@ class RustFormatter(Formatter):
             else:
                 unhandled_constraints.append(constraint)
 
-        print(handled_constraints)
         constraint_code = "\n" + "\n".join([f"            assert!({constraint[0]}); // check constraint: {constraint[1]}" for constraint in handled_constraints]) + "\n"
-        print(constraint_code)
         if index+1 == len(field_names):
             struct_instantiation_fields = ", ".join([f"{field_names[i]}" for i in range(len(field_names))])
             if len(args) > 0:
@@ -206,15 +204,6 @@ class RustFormatter(Formatter):
             else:
                 generated_code.append(f"       (nom::IResult::Ok((i, {field_names[index]})), c) => (nom::IResult::Ok((i, {struct_name}{{{struct_instantiation_fields}}})), c),\n")
             generated_code.append("       (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c)\n    }\n")
-            # if len(handled_constraints) > 0:
-            #     generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
-            #     for constraint in handled_constraints:
-            #         generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
-            #     generated_code.append(f"{indentation}        (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index})\n{indentation}    }},\n")
-            # else:
-            #     generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index}),\n")
-            # generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
-            # generated_code.append(f"{indentation}}}\n")
         else:
             if len(args) > 0:
                 generated_code.append(f"   let {field_names[index]} = match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
@@ -226,13 +215,6 @@ class RustFormatter(Formatter):
                 generated_code.append("        (nom::IResult::Ok((i, o)), c) => {input = i; context = c; o},\n")
             generated_code.append("        (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c)\n")
             generated_code.append("   };\n\n")
-            # generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
-            # for constraint in handled_constraints:
-            #     generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
-            # generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names, unhandled_constraints)
-            # generated_code.append(f"{indentation}    }}\n")
-            # generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
-            # generated_code.append(f"{indentation}}}\n")
             generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names, unhandled_constraints)
         return generated_code
 
@@ -256,7 +238,6 @@ class RustFormatter(Formatter):
         field_names = []
         generator = self.closure_term_gen()
         for field in struct.get_fields():
-            print(field.is_present)
             type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
             if not(isinstance(field.is_present, ConstantExpression) and type(field.is_present.constant_type) is Boolean and field.is_present.constant_value is True):
                 self.output.append("    pub %s: Option<%s>,\n" % (field.field_name, camelcase(type_name)))
