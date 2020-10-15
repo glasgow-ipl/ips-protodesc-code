@@ -21,9 +21,11 @@ jobs:
           name: run tests
           command: |
             pipenv run make test
+
       - store_artifacts:
           path: test-results
           destination: test-results
 
+      - store_artifacts:
           path: examples/output
           destination: output
