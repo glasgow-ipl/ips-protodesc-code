@@ -76,6 +76,8 @@ class RustFormatter(Formatter):
             return f"({target}-{arg_exprs[0]})"
         elif method_name == "ge":
             return f"({target} >= {arg_exprs[0]})"
+        elif method_name == "eq":
+            return f"({target} == {arg_exprs[0]})"
         if method_name == "to_number":
             return f"{target}"
         return ""
@@ -173,14 +175,9 @@ class RustFormatter(Formatter):
     def format_struct_field(self, index: int, struct_name: str, field_names: List[str], parser_func_names: List[str], constraints):
         args = []
         if parser_func_names[index] in self.struct_field_signatures:
-            args = [f"o{field_names.index(arg)}.0 as usize" for arg in self.struct_field_signatures[parser_func_names[index]]]
+            args = [f"{arg}.0 as usize" for arg in self.struct_field_signatures[parser_func_names[index]]]
         indentation = "    "*(index+1) + "    "*(index)
         generated_code = []
-        context_str = "context"
-        input_str = "input"
-        if index > 0:
-            input_str = f"i{index-1}"
-            context_str = f"con{index-1}"
 
         # process constraints: find those that can be expressed here
         handled_constraints = []
@@ -189,35 +186,54 @@ class RustFormatter(Formatter):
             if all(field in field_names[:index+1] for field in constraint[1]):
                 constraint_expr = constraint[0]
                 for field in constraint[1]:
-                    constraint_expr = constraint_expr.replace(field, f"o{field_names.index(field)}.0")
+                    if field == field_names[index]:
+                        constraint_expr = constraint_expr.replace(field, "o.0")
                 handled_constraints.append((constraint_expr, constraint[0]))
             else:
                 unhandled_constraints.append(constraint)
 
-        if len(args) > 0:
-            generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str}, {context_str}, {', '.join(args)});\n")
-        else:
-            generated_code.append(f"{indentation}let {field_names[index]} = {parser_func_names[index]}({input_str}, {context_str});\n")
-        generated_code.append(f"{indentation}match {field_names[index]} {{\n")
+        print(handled_constraints)
+        constraint_code = "\n" + "\n".join([f"            assert!({constraint[0]}); // check constraint: {constraint[1]}" for constraint in handled_constraints]) + "\n"
+        print(constraint_code)
         if index+1 == len(field_names):
-            struct_instantiation_fields = ", ".join([f"{field_names[i]}: o{i}" for i in range(len(field_names))])
-            if len(handled_constraints) > 0:
-                generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
-                for constraint in handled_constraints:
-                    generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
-                generated_code.append(f"{indentation}        nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index})}},\n")
+            struct_instantiation_fields = ", ".join([f"{field_names[i]}" for i in range(len(field_names))])
+            if len(args) > 0:
+                generated_code.append(f"   match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
             else:
-                generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index}),\n")
-            generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
-            generated_code.append(f"{indentation}}}\n")
+                generated_code.append(f"   match {parser_func_names[index]}(input, context) {{ \n")
+            if len(handled_constraints) > 0:
+                generated_code.append(f"       (nom::IResult::Ok((i, {field_names[index]})), c) => {{{constraint_code}            (nom::IResult::Ok((i, {struct_name}{{{struct_instantiation_fields}}})), c)}},\n")
+            else:
+                generated_code.append(f"       (nom::IResult::Ok((i, {field_names[index]})), c) => (nom::IResult::Ok((i, {struct_name}{{{struct_instantiation_fields}}})), c),\n")
+            generated_code.append("       (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c)\n    }\n")
+            # if len(handled_constraints) > 0:
+            #     generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
+            #     for constraint in handled_constraints:
+            #         generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
+            #     generated_code.append(f"{indentation}        (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index})\n{indentation}    }},\n")
+            # else:
+            #     generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => (nom::IResult::Ok((i{index}, {struct_name}{{{struct_instantiation_fields}}})), con{index}),\n")
+            # generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
+            # generated_code.append(f"{indentation}}}\n")
         else:
-            generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
-            for constraint in handled_constraints:
-                generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
+            if len(args) > 0:
+                generated_code.append(f"   let {field_names[index]} = match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
+            else:
+                generated_code.append(f"   let {field_names[index]} = match {parser_func_names[index]}(input, context) {{ \n")
+            if len(handled_constraints) > 0:
+                generated_code.append(f"        (nom::IResult::Ok((i, o)), c) => {{{constraint_code}            input = i; context = c; o}},\n")
+            else:
+                generated_code.append("        (nom::IResult::Ok((i, o)), c) => {input = i; context = c; o},\n")
+            generated_code.append("        (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c)\n")
+            generated_code.append("   };\n\n")
+            # generated_code.append(f"{indentation}    (nom::IResult::Ok((i{index}, o{index})), con{index}) => {{\n")
+            # for constraint in handled_constraints:
+            #     generated_code.append(f"{indentation}        assert!({constraint[0]}); // check constraint: {constraint[1]}\n")
+            # generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names, unhandled_constraints)
+            # generated_code.append(f"{indentation}    }}\n")
+            # generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
+            # generated_code.append(f"{indentation}}}\n")
             generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names, unhandled_constraints)
-            generated_code.append(f"{indentation}    }}\n")
-            generated_code.append(f"{indentation}    (nom::IResult::Err(e), con{index}) => (nom::IResult::Err(e), con{index})\n")
-            generated_code.append(f"{indentation}}}\n")
         return generated_code
 
     def format_struct(self, struct: Struct, constraints: List[str]):
@@ -240,12 +256,16 @@ class RustFormatter(Formatter):
         field_names = []
         generator = self.closure_term_gen()
         for field in struct.get_fields():
+            print(field.is_present)
             type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
-            self.output.append("    pub %s: %s,\n" % (field.field_name, camelcase(type_name)))
+            if not(type(field.is_present) is ConstantExpression and type(field.is_present.constant_type) is Boolean and field.is_present.constant_value is True):
+                self.output.append("    pub %s: Option<%s>,\n" % (field.field_name, camelcase(type_name)))
+            else:
+                self.output.append("    pub %s: %s,\n" % (field.field_name, camelcase(type_name)))
             parser_functions.append("parse_{name}".format(name=type_name.lower()))
             field_names.append(f"{field.field_name}")
         self.output.append("}\n")
-        self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
+        self.output.append("\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
         self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions, processed_constraints)
         self.output.append("}\n")
         self.struct_field_signatures = {}
@@ -271,13 +291,28 @@ class RustFormatter(Formatter):
         self.output.append("\n\n")
 
     def format_enum(self, enum:Enum):
-        assert enum.name not in self.output
-        self.output.append("#[derive(Debug)]")
-        self.output.extend(["\nenum ", "%s {\n" % camelcase(enum.name)])
+        func_name = enum.name.replace(" ", "_").replace("-", "_").lower()
+        self.output.append(f"\n// Parse enum `{enum.name}`\n")
+        self.output.append("\n#[derive(Debug)]")
+        self.output.append(f"\npub enum {camelcase(enum.name)} {{\n")
+        self.output.append(",\n".join([f"\t{camelcase(variant.name)}({camelcase(variant.name)})" for variant in enum.variants]))
+        self.output.append("\n}\n\n")
+        parse_funcs = []
+        variant_names = []
         for variant in enum.variants:
-            variant_type_name = variant.name if isinstance(variant, ConstructableType) else "nothing"
-            self.output.append("    %s,\n" % camelcase(variant_type_name))
-        self.output.append("}\n\n")
+            type_name = camelcase(variant.name)
+            parse_func_name = variant.name.replace(" ", "_").replace("-", "_").lower()
+            parse_funcs.append(f"parse_{func_name}_{parse_func_name}")
+            variant_names.append(f"{func_name}_{parse_func_name}")
+            self.output.append(f"pub fn parse_{func_name}_{parse_func_name}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
+            self.output.append(f"\tmatch parse_{parse_func_name}(input, context) {{\n")
+            self.output.append(f"\t\t(nom::IResult::Ok((([], 0), o)), con) => (nom::IResult::Ok(((&[], 0), {camelcase(enum.name)}::{type_name}(o))), con),\n")
+            self.output.append(f"\t\t(nom::IResult::Ok(((i, c), _o)), con) => (nom::IResult::Err(nom::Err::Error(((i, c), nom::error::ErrorKind::NonEmpty))), con),\n")
+            self.output.append(f"\t\t(nom::IResult::Err(e), con) => (nom::IResult::Err(e), con)\n")
+            self.output.append("\t}\n}\n\n")
+        self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
+        self.output += self.format_pdu_variants(0, "bleh", variant_names, parse_funcs)
+        self.output.append("}")
 
     def format_function(self, function:Function):
         assert function.name not in self.output
