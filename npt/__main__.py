@@ -62,8 +62,8 @@ def dfs_array(array: Array, type_names:List[str]):
 def dfs_enum(enum: Enum, type_names:List[str]):
     for variant in enum.variants:
         dfs_protocoltype(variant, type_names)
-    dfs_protocoltype(enum.parse_from, type_names)
-    dfs_protocoltype(enum.serialise_to, type_names)
+    #dfs_protocoltype(enum.parse_from, type_names)
+    #dfs_protocoltype(enum.serialise_to, type_names)
 
 def dfs_function(function: Function, type_names:List[str]):
     for parameter in function.parameters:
