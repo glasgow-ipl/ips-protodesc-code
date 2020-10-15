@@ -197,9 +197,9 @@ class RustFormatter(Formatter):
         if index+1 == len(field_names):
             struct_instantiation_fields = ", ".join([f"{field_names[i]}" for i in range(len(field_names))])
             if len(args) > 0:
-                generated_code.append(f"   match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
+                generated_code.append(f"    match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
             else:
-                generated_code.append(f"   match {parser_func_names[index]}(input, context) {{ \n")
+                generated_code.append(f"    match {parser_func_names[index]}(input, context) {{ \n")
             if len(handled_constraints) > 0:
                 generated_code.append(f"       (nom::IResult::Ok((i, {field_names[index]})), c) => {{{constraint_code}            (nom::IResult::Ok((i, {struct_name}{{{struct_instantiation_fields}}})), c)}},\n")
             else:
@@ -207,15 +207,15 @@ class RustFormatter(Formatter):
             generated_code.append("       (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c)\n    }\n")
         else:
             if len(args) > 0:
-                generated_code.append(f"   let {field_names[index]} = match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
+                generated_code.append(f"    let {field_names[index]} = match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
             else:
-                generated_code.append(f"   let {field_names[index]} = match {parser_func_names[index]}(input, context) {{ \n")
+                generated_code.append(f"    let {field_names[index]} = match {parser_func_names[index]}(input, context) {{ \n")
             if len(handled_constraints) > 0:
                 generated_code.append(f"        (nom::IResult::Ok((i, o)), c) => {{{constraint_code}            input = i; context = c; o}},\n")
             else:
                 generated_code.append("        (nom::IResult::Ok((i, o)), c) => {input = i; context = c; o},\n")
             generated_code.append("        (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c)\n")
-            generated_code.append("   };\n\n")
+            generated_code.append("    };\n\n")
             generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names, unhandled_constraints)
         return generated_code
 
