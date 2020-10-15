@@ -44,7 +44,7 @@ tests/%/pcaps: tests/%/generate-pcaps.py
 	cd tests/$(*) && python generate-pcaps.py
 
 examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
-	npt $< -of rust
+	python3 -m npt $< -of rust
 
 # =================================================================================================
 # The CI build runs the following in the rust-testing environment:

@@ -272,7 +272,6 @@ class DownloadClient:
 
             if self._write_file(infile, dl.text):
                 doclist.append(doc)
-                print(f"Stored input file {infile}")
             else:
                 print("Error storing input file {infile}")
         return doclist
@@ -561,8 +560,6 @@ def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionCon
         with RootWorkingDir(root=opt.root_dir) as rwd, DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
             drafts = fetch_new_drafts(rwd.prev_sync_time('draft',None if cmd_obj.newdraft == epoch else cmd_obj.newdraft))
-            for _idx, u in enumerate(drafts):
-                print(f"Fetch draft [{_idx}] --> {u}")
             dlclient.download_files(drafts)
 
             opt.infiles += drafts
@@ -575,8 +572,6 @@ def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionCon
         with RootWorkingDir(root=opt.root_dir) as rwd,DownloadClient(fs=rwd, dlopts=opt.dlopts) as dlclient:
             # preprocessing before actual parser call
             rfcs = fetch_new_rfcs(rwd.prev_sync_time('rfc', None if cmd_obj.newrfc == epoch else cmd_obj.newrfc))
-            for _idx, u in enumerate(rfcs):
-                print(f"Fetch rfc [{_idx}]  --> {u}")
             dlclient.download_files(rfcs)
 
             opt.infiles += rfcs
@@ -599,8 +594,6 @@ def setup_opts( cmd_obj: argparse.Namespace , opt: OptionContainer) -> OptionCon
             dlclient.download_files(remote)
             opt.infiles += remote
 
-        for idx, inf in enumerate(opt.infiles):
-            print(f"File [{idx}]  --> {inf.get_filepath_in()}")
     return opt
 
 
