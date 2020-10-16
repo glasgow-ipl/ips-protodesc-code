@@ -5,6 +5,8 @@ jobs:
     docker:
       - image: circleci/python:3.7.2
 
+    shell: /bin/bash
+        
     working_directory: ~/ips-protodesc-code
 
     steps:
