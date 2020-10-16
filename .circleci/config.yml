@@ -13,7 +13,7 @@ jobs:
       - run:
           command: |
             sudo apt-get update
-            sudo apt-get install curl
+            sudo apt-get install curl libpcap-dev
             curl https://sh.rustup.rs -sSf | sh -s -- -y
             echo 'export PATH=$HOME/.cargo/bin:$PATH' >> $BASH_ENV
             sudo pip install pipenv
