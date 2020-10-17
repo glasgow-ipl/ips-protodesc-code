@@ -290,6 +290,7 @@ class RustFormatter(Formatter):
                 parse_funcs.append(f"parse_{parse_func_name}")
         self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
         self.output += self.format_pdu_variants(camelcase(enum.name), 0, parse_funcs, type_names)
+        self.output.append("    (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), context)\n")
         self.output.append("}")
 
     def format_function(self, function:Function):
