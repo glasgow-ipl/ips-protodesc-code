@@ -266,7 +266,7 @@ class RustFormatter(Formatter):
         self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
         self.output.append(f"\n    let mut {fname} = {camelcase(array.name)}(Vec::new());")
         self.output.append(f"\n    for _n in 1..={self.expr_traversal.dfs_expression(array.length)} {{")
-        self.output.append(f"\n        match parse_{array.element_type.name.replace(' ', '_').replace('-', '_').lower()}(input, context) {{")
+        self.output.append(f"\n        match parse_{element_type_name.replace(' ', '_').replace('-', '_').lower()}(input, context) {{")
         self.output.append(f"\n            (nom::IResult::Ok((i, o)), c) => {{ input = i; context = c; {fname}.0.push(o); }},")
         self.output.append(f"\n            (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c),")
         self.output.append(f"\n        }}")

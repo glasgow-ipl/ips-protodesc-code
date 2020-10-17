@@ -260,7 +260,7 @@ class AsciiDiagramsParser(Parser):
                     #if size_expr is not None:
                     #    constraints.append(size_expr)
             else:
-                if not(size_expr is not None and type(size_expr) is npt.protocol.ConstantExpression and size_expr.constant_value == 1):
+                if not(size_expr is not None and type(size_expr) is npt.protocol.ConstantExpression and size_expr.constant_value == 1) and isinstance(field_type, npt.protocol.RepresentableType):
                     field_type = npt.protocol.Array(struct_name + "_" + field["full_label"], field_type, size_expr)
                     self.proto.add_type(field_type)
             if field["is_present"] is not None:
