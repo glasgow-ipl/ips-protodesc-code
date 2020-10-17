@@ -263,9 +263,9 @@ class RustFormatter(Formatter):
         self.output.append(f"\n// Structure and parser for {array.name}\n")
         self.output.append("\n#[derive(Debug)]")
         self.output.append("\npub struct %s(pub Vec<%s>);\n" % (camelcase(array.name), camelcase(element_type_name)))
-        self.output.append(f"\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
+        self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
         self.output.append(f"\n    let mut {fname} = {camelcase(array.name)}(Vec::new());")
-        self.output.append(f"\n    for n in 1..={self.expr_traversal.dfs_expression(array.length)} {{")
+        self.output.append(f"\n    for _n in 1..={self.expr_traversal.dfs_expression(array.length)} {{")
         self.output.append(f"\n        match parse_{array.element_type.name.replace(' ', '_').replace('-', '_').lower()}(input, context) {{")
         self.output.append(f"\n            (nom::IResult::Ok((i, o)), c) => {{ input = i; context = c; {fname}.0.push(o); }},")
         self.output.append(f"\n            (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c),")
@@ -291,7 +291,7 @@ class RustFormatter(Formatter):
         self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
         self.output += self.format_pdu_variants(camelcase(enum.name), 0, parse_funcs, type_names)
         self.output.append("    (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), context)\n")
-        self.output.append("}")
+        self.output.append("}\n")
 
     def format_function(self, function:Function):
         assert function.name not in self.output
