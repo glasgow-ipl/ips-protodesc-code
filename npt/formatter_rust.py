@@ -258,23 +258,21 @@ class RustFormatter(Formatter):
 
     def format_array(self, array: Array):
         assert array.name not in self.output
+        fname = array.name.replace(" ", "_").replace("-", "_").lower()
         element_type_name = array.element_type.name if isinstance(array.element_type, ConstructableType) else "nothing"
-        if array.length is None:
-            closure_terms = self.closure_term_gen()
-            self.output.append("#[derive(Debug)]")
-            self.output.append("\nstruct %s(Vec<%s" % (camelcase(array.name), camelcase(element_type_name)))
-            if isinstance(array.element_type, BitString):
-                self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
-            self.output.append(">);")
-            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n    unimplemented!()\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
-        else:
-            self.output.append("#[derive(Debug)]")
-            self.output.append("\nstruct %s([%s" % (camelcase(array.name), camelcase(element_type_name)))
-            if isinstance(array.element_type, BitString):
-                self.output.append("(u%d)" % self.assign_int_size(self.expr_traversal.dfs_expression(array.element_type.size)))
-            self.output.append("; %s]);" % self.expr_traversal.dfs_expression(array.length))
-            self.output.append("\nfn parse_{fname}(input: (&[u8], usize)) -> nom::IResult<(&[u8], usize), {typename}>{{\n    // TODO: implement\n    unimplemented!()\n}}".format(fname=array.name.replace(" ", "_").replace("-", "_").lower(), typename=camelcase(array.name)))
-        self.output.append("\n\n")
+        self.output.append(f"\n// Structure and parser for {array.name}\n")
+        self.output.append("\n#[derive(Debug)]")
+        self.output.append("\npub struct %s(pub Vec<%s>);\n" % (camelcase(array.name), camelcase(element_type_name)))
+        self.output.append(f"\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
+        self.output.append(f"\n    let mut {fname} = {camelcase(array.name)}(Vec::new());")
+        self.output.append(f"\n    for n in 1..={self.expr_traversal.dfs_expression(array.length)} {{")
+        self.output.append(f"\n        match parse_{array.element_type.name.replace(' ', '_').replace('-', '_').lower()}(input, context) {{")
+        self.output.append(f"\n            (nom::IResult::Ok((i, o)), c) => {{ input = i; context = c; {fname}.0.push(o); }},")
+        self.output.append(f"\n            (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c),")
+        self.output.append(f"\n        }}")
+        self.output.append(f"\n    }}")
+        self.output.append(f"\n    (nom::IResult::Ok((input, {fname})), context)")
+        self.output.append(f"\n}}\n")
 
     def format_enum(self, enum:Enum):
         func_name = enum.name.replace(" ", "_").replace("-", "_").lower()

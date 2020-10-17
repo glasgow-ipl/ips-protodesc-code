@@ -56,8 +56,8 @@ def dfs_struct(struct: Struct, type_names:List[str]):
 
 def dfs_array(array: Array, type_names:List[str]):
     dfs_protocoltype(array.element_type, type_names)
-    dfs_protocoltype(array.parse_from, type_names)
-    dfs_protocoltype(array.serialise_to, type_names)
+    #dfs_protocoltype(array.parse_from, type_names)
+    #dfs_protocoltype(array.serialise_to, type_names)
 
 def dfs_enum(enum: Enum, type_names:List[str]):
     for variant in enum.variants:
