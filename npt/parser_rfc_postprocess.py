@@ -28,17 +28,17 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-#import abc
-#from typing       import Dict, List, Tuple, Optional, Any, Union
-#from npt.protocol import Protocol
-
-from typing       import Dict
+from typing       import Dict, List, Tuple, Optional, Union, cast, Any
 import npt.rfc as rfc
 import npt.protocol
 import npt.parser_asciidiagrams as ascii_parser
 
 
 def iter_child(node): 
+    """
+    Iterate over all the child elements in classes
+    decorated with @dataclass
+    """
     if getattr(node, "__annotations__", None) == None : 
         return 
 
@@ -50,6 +50,17 @@ def iter_child(node):
 
 
 class NodeVisitor:
+    """
+    Base class that walks the DOM structure and calls a visitor function
+    on eah function type. 
+
+    This class should be sub-classed by to over-ride default behaviour. 
+    A visitor function may be overridden in the inherited class by defining
+    a method with the name `visit_<class-type>'. 
+    
+    Assumes that all classes in the DOM structure are data-classes 
+    i.e. decorated with @dataclass
+    """
     def isiterable(self, node):
         try : 
             k = iter(node)
@@ -61,25 +72,28 @@ class NodeVisitor:
     def visit(self, node):
         method = "visit_" + node.__class__.__name__
         visitor = getattr(self, method, self.generic_visit)
-        #print(f"calling  {method} ---> {visitor}")
         return visitor(node) 
 
     def generic_visit(self, node):
         for name, field in iter_child( node ):
-            #print(f"key [{name}]  -> field {type(field)}")
             if field is None :   # check if optional 
-                #print(f"1. ####### key {name}  is Optional\n") 
                 pass
             elif self.isiterable(field): # check if iterable 
-                #print(f"2. ####### key {name}  is iterable\n") 
                 for item in field :
-                    #print(f">>>>>>>>> key {name} visiting {type(item)} \n") 
                     self.visit(item)
             else : # check object type which needs to be recursed 
-                #print(f"3. ####### key {name}  is {type(field)} \n") 
                 self.visit(field)
 
 class TraverseRFC(NodeVisitor):
+    """
+    DOM walker class to post-process Sections parsed by the RFC text parser.
+    The content in all (sub)-sections are searched for rfc.Artwork elements. 
+
+    If any field names are found when parsing the  rfc.Artwork element, 
+    the following rfc.T elements corresponding to these field descriptions 
+    are converted to an rfc.DL element to ensure conformity with later 
+    parsing stages. 
+    """
     def __init__(self, root, symbols):
         self.root = root 
         self.sym = symbols
@@ -88,39 +102,19 @@ class TraverseRFC(NodeVisitor):
         asciiParser.proto = npt.protocol.Protocol()
         self.parser = asciiParser.build_parser()
 
-    def visit_RFC(self, node ):
+    def visit_Section(self,node: rfc.Section) -> None:
         self.generic_visit(node)
 
-    def visit_Middle(self, node):
-        self.generic_visit(node)
-
-    def visit_Section(self,node):
-        self.generic_visit(node)
-        xform_dl: List[Tuple[int,rfc.DL]] = [] 
-
-        flag = False
         for pdu_grp in reversed(self._group_pdu(node)):
             self._convert_to_pdu(node, pdu_grp)
-            flag = True
 
-        if flag : 
-            print(f"\n\n-----------AFTER CONVERSION BEGIN :--------------") 
-            for idx,child in enumerate(node.content): 
-                if not isinstance(child,rfc.DL): 
-                    print(f"[{idx}] ******\n{child}") 
-                else: 
-                    for i,dl in enumerate(child.content):
-                        print(f"  [{idx}.{i}] -> dt = {dl[0]}") 
-                        print(f"  [{idx}.{i}] -> dd = {dl[1]}") 
-            print(f"-----------AFTER CONVERSION END :-------------\n\n")
-
-    def _group_pdu(self, section):
+    def _group_pdu(self, section: rfc.Section) -> List[Tuple[Optional[int], int, Optional[rfc.Artwork]]]:
         start = anchor = None
-        rawPDU = [] # start-idx, end-idx+1 , art-work node
+        rawPDU : List[Tuple[Optional[int], int, Optional[rfc.Artwork]]] = list()  # start-idx, end-idx+1 , art-work node
 
         for idx, child in enumerate(section.content): 
             if isinstance(child, rfc.Artwork):
-                if anchor != None : # more than one artwork 
+                if anchor !=  None : # more than one artwork 
                     rawPDU.append((start, idx, anchor))
                 start, anchor = (idx, child)
         else :
@@ -149,17 +143,16 @@ class TraverseRFC(NodeVisitor):
         # Parse out all field names
         try: 
             artwork_fields = self.parser(artwork.strip()).diagram() 
-            #print(f"Diagram ->\n{artwork}\n-----------------\nArt Fields -> {artwork_fields}")
         except Exception as e:
             return
 
         # verify  number of field descriptions match list of fields
         if (end - start) < (len(artwork_fields) + 2):
-            #print(f"ASSERT--ASSERT --> ({end}-{start}) < {len(artwork_fields)}+2")
             return
 
         # parse each <t> element and convert to (<dt>, <dd>) pairs
-        field_desc, consumed = [], 0
+        field_desc: List[Tuple[rfc.DT, rfc.DD]] = list() 
+        consumed : int  = 0 
         try: 
             for elem_t in section.content[start+2:end]:
                 if len(field_desc) == len(artwork_fields): 
@@ -178,24 +171,29 @@ class TraverseRFC(NodeVisitor):
                     delim = text.index(".")
 
                 # check if current <t> section is a new field description or 
+                # another paragraph within the current field description
                 if (len(text) - len(text.lstrip())) == len( self.sym['tab']): 
-                    field_desc.append( (rfc.DT([rfc.Text( text[:delim+1])], None), 
-                                        rfc.DD([rfc.Text( text[delim+1:])], None)) ) 
+                    dt_content = cast( List[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]], [rfc.Text( text[:delim+1])])
+                    dd_content = cast(Union[List[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]], 
+                                            List[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]]] , 
+                                            [rfc.Text( text[delim+1:])])
+                    field_desc.append( (rfc.DT(dt_content, None), 
+                                        rfc.DD(dd_content, None)) ) 
                 elif len(field_desc) > 0 :
                     if isinstance(field_desc[-1][1].content[0], rfc.Text): 
                         # convert to list of <t> elements
-                        field_desc[-1][1].content[0] = rfc.T( [field_desc[-1][1].content[0]], None, None, False, False)
-                        #assert False, f"1. Are we here yet? text = {text}\n<T> = {field_desc[-1][1].content[0]}\n</T>\ntype = {type(field_desc[-1][1].content[0])}"
+                        elem_t = cast( Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef], rfc.T( [field_desc[-1][1].content[0]] , None, None, False, False))
+                        field_desc[-1][1].content[0] = elem_t
+                       
                     # generate <t> element and append to previous PDU desc <dd> 
-                    field_desc[-1][1].content.append( rfc.T( [rfc.Text(text)], None, None, False, False))
+                    elem_t = cast( Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef], rfc.T( [rfc.Text(text)], None, None, False, False))
+                    field_desc[-1][1].content.append( elem_t )
                 else :
                     raise Exception(f"Formatting error in PDU description."
                                     f"Field name description does not start with correct indentation. Text = \n"
                                     f"{text}")
                 consumed+=1
         except Exception as e:
-            #print(f"\n\n<><><><><><><><><>\n<><><><><><><><><>\n<><><><><><><><><>\n<><><><><><><><><>\n{e}")
-            #print(f"<><><><><><><><><>\n<><><><><><><><><>\n<><><><><><><><><>\n<><><><><><><><><>\n")
             return
 
         section.content.insert(start+2, rfc.DL( field_desc, None , True , "normal")) 
@@ -204,8 +202,7 @@ class TraverseRFC(NodeVisitor):
 
 
 # Convert relevant <t> elements to <dl> 
-def text_to_dl( root_node: rfc , symbols: Dict[str,str]) -> rfc : 
+def text_to_dl( root_node , symbols: Dict[str,str]): 
     postProcess = TraverseRFC(root_node.middle, symbols )
     postProcess.visit(root_node.middle)
-    #assert False, "We are here"
     return root_node 
