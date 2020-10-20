@@ -639,7 +639,7 @@ class Protocol(InternalType, ConstructableType):
 
     def _check_typename(self, name: str):
         if name in self._types:
-            raise ProtocolTypeError(f"Cannot create type {self.name}: already exists")
+            raise ProtocolTypeError(f"Cannot create type {name}: already exists")
 
     # =============================================================================================
     # Public API:
