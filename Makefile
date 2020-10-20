@@ -26,6 +26,15 @@
 PYTHON_SRC   = $(wildcard npt/*.py)
 PYTHON_TESTS = $(wildcard tests/*.py)
 
+SIMPLE_GEN_PCAPS = tests/simple-protocol-testing/pcaps/mfh-valid.pcap \
+                   tests/simple-protocol-testing/pcaps/sfh-2-valid.pcap \
+				   tests/simple-protocol-testing/pcaps/vlfh-valid.pcap
+
+UDP_GEN_PCAPS = tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
+				tests/udp-testing/pcaps/udp-valid-1.pcap
+
+TCP_PCAPS = tests/tcp-testing/pcaps/ten_tcp_packets.pcap
+
 .PHONY: test unittests integrationtests
 
 test: unittests integrationtests
@@ -39,9 +48,13 @@ test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 unittests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
 	@python3 -m unittest discover -s tests/ -v
 
-tests/%/pcaps: tests/%/generate-pcaps.py
-	mkdir -p tests/$(*)/pcaps
-	cd tests/$(*) && python generate-pcaps.py
+$(SIMPLE_GEN_PCAPS): tests/simple-protocol-testing/generate-pcaps.py
+	mkdir -p tests/simple-protocol-testing/pcaps
+	cd tests/simple-protocol-testing && python generate-pcaps.py
+
+$(UDP_GEN_PCAPS): tests/udp-testing/generate-pcaps.py
+	mkdir -p tests/udp-testing/pcaps
+	cd tests/udp-testing && python generate-pcaps.py
 
 examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 	python3 -m npt $< -of rust
@@ -49,7 +62,7 @@ examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 # =================================================================================================
 # The CI build runs the following in the rust-testing environment:
 
-integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust tests/simple-protocol-testing/pcaps examples/output/draft/draft-mcquistin-augmented-udp-example/rust tests/udp-testing/pcaps examples/output/draft/draft-mcquistin-augmented-tcp-example/rust tests/tcp-testing/pcaps
+integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust $(SIMPLE_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-udp-example/rust $(UDP_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-tcp-example/rust $(TCP_PCAPS)
 	cd tests/simple-protocol-testing/testharness && cargo test
 	cd tests/udp-testing/udp-testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
@@ -57,7 +70,7 @@ integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust test
 # =================================================================================================
 
 clean:
-	rm -rf tests/simple-protocol-testing/pcaps
-	rm -rf tests/udp-testing/pcaps
+	rm -rf $(SIMPLE_GEN_PCAPS)
+	rm -rf $(UDP_GEN_PCAPS)
 	rm -f  test-results/typecheck.xml
 	rm -fr examples/output
