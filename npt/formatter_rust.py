@@ -207,7 +207,7 @@ class RustFormatter(Formatter):
         else:
             presence_constraint = ""
             presence_else = ""
-        constraint_code = "\n" + "\n".join([f"            assert!({constraint[0]}); // check constraint: {constraint[1]}" for constraint in handled_constraints]) + "\n"
+        constraint_code = "\n" + "\n".join([f"            if !({constraint[0]}) {{ return (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), c); }}; // check constraint: {constraint[1]}" for constraint in handled_constraints]) + "\n"
         if len(args) > 0:
             generated_code.append(f"    let {field_names[index]} = {presence_constraint}match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
         else:
