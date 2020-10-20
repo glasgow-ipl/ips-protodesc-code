@@ -233,7 +233,18 @@ class AsciiDiagramsParser(Parser):
             if field["units"] not in ["bits", "bit", "bytes", "byte", None]:
                 if field["is_array"]:
                     name = struct_name + "_" + field["full_label"]
-                    field_type = npt.protocol.Array(name, self.build_type(valid_type_name_convertor(field["units"])), None)
+                    bitsize_expr = self.build_expr(field["value_constraint"], struct_name)
+                    array_size = None
+                    if isinstance(bitsize_expr, npt.protocol.MethodInvocationExpression) and \
+                       isinstance(bitsize_expr.target, npt.protocol.MethodInvocationExpression) and \
+                       isinstance(bitsize_expr.target.target, npt.protocol.FieldAccessExpression) and \
+                       isinstance(bitsize_expr.target.target.target, npt.protocol.SelfExpression) and \
+                       bitsize_expr.target.target.field_name == field["full_label"] and \
+                       bitsize_expr.target.method_name == "size" and \
+                       bitsize_expr.method_name == "eq":
+                        array_size = bitsize_expr.arg_exprs[0].arg_value
+                        field["value_constraint"] = None
+                    field_type = npt.protocol.Array(name, self.build_type(valid_type_name_convertor(field["units"])), None, size=array_size)
                     self.proto.add_type(field_type)
                 else:
                     field_type = self.build_type(valid_type_name_convertor(field["units"]))
@@ -260,7 +271,7 @@ class AsciiDiagramsParser(Parser):
                     #if size_expr is not None:
                     #    constraints.append(size_expr)
             else:
-                if not(size_expr is not None and type(size_expr) is npt.protocol.ConstantExpression and size_expr.constant_value == 1) and isinstance(field_type, npt.protocol.RepresentableType):
+                if size_expr is not None and not(type(size_expr) is npt.protocol.ConstantExpression and size_expr.constant_value == 1) and isinstance(field_type, npt.protocol.RepresentableType):
                     field_type = npt.protocol.Array(struct_name + "_" + field["full_label"], field_type, size_expr)
                     self.proto.add_type(field_type)
             if field["is_present"] is not None:
