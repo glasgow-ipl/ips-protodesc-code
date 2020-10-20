@@ -699,7 +699,10 @@ class Protocol(InternalType, ConstructableType):
                     for field_name in ptype.fields:
                         field_size = ptype.fields[field_name].field_type.size
                         if field_size is not None and calculated_size is not None:
-                            calculated_size = MethodInvocationExpression(calculated_size, "plus", [ArgumentExpression("other", field_size)])
+                            if isinstance(calculated_size, ConstantExpression) and isinstance(field_size, ConstantExpression):
+                                calculated_size = ConstantExpression(Number(), calculated_size.constant_value + field_size.constant_value)
+                            else:
+                                calculated_size = MethodInvocationExpression(calculated_size, "plus", [ArgumentExpression("other", field_size)])
                         elif field_size is not None and calculated_size is None:
                             calculated_size = field_size
                         else:
