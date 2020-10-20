@@ -9,14 +9,13 @@ lxml = "*"
 pavlova = "*"
 ietfdata = "*"
 requests = "*"
-e1839a8 = {path = "."}
-npt = {editable = true, path = "."}
 scapy = "*"
 
 [dev-packages]
 mypy = "*"
 pytest = "*"
 coverage = "*"
+npt = {editable = true,path = "."}
 
 [requires]
 python_version = "3.7"
