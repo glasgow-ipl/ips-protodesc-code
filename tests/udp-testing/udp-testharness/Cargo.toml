@@ -9,3 +9,4 @@ edition = "2018"
 [dependencies]
 draft_mcquistin_augmented_udp_example = { path = "../../../examples/output/draft/draft-mcquistin-augmented-udp-example/rust" }
 pcap = "*"
+matches = "*"

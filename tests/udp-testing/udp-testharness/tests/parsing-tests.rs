@@ -1,3 +1,5 @@
+#[macro_use]
+extern crate matches;
 extern crate draft_mcquistin_augmented_udp_example;
 extern crate pcap;
 
@@ -26,11 +28,10 @@ fn test_parse_udp_header() {
 }
 
 #[test]
-#[should_panic]
 fn test_parse_udp_header_badlength() {
     let mut cap = Capture::from_file("../pcaps/udp-invalid-badlength.pcap").unwrap();
     while let Ok(packet) = cap.next() {
         let mut context = Context { data_size: packet.data.len() as u32 };
-        let _parsed_pkt = parse_udp_header((packet.data, 0), &mut context);
+        assert!(matches!(parse_udp_header((packet.data, 0), &mut context), (Result::Err(_), _)));
     }
 }
