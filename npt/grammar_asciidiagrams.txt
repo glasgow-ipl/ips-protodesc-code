@@ -70,8 +70,9 @@ field_title_array = field_name:full_label ('(' short_field_name:short_label ')' 
 field_title_size = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' equality_expr:size ' ' ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, size, units, None, is_present, False)
 field_title_size_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' (equality_expr:size)? ' ' ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units '; ' equality_expr:value_constraint ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, size, units, value_constraint, is_present, False)
 field_title_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' equality_expr:value_constraint '.' ('; present only when ' equality_expr:is_present -> is_present)?:is_present -> new_field(full_label, short_label, None, None, value_constraint, is_present, False)
+field_title_array_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': [' pdu_name:element_type_name ']' '; ' equality_expr:value_constraint ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, None, element_type_name, value_constraint, is_present, True)
 
-field_title = field_title_name_only | field_title_size | field_title_size_constraint | field_title_constraint | field_title_array
+field_title = field_title_name_only | field_title_size | field_title_size_constraint | field_title_constraint | field_title_array | field_title_array_constraint
 
 # Preamble
 
