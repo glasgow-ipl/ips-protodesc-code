@@ -27,18 +27,18 @@ Overview
  The project uses Pipenv for dependency management. To begin, run:
 
  ```~~~~~~~~
- pipenv install --dev
+ pipenv install --dev -e .
  ```
 
-to create a Python virtual environment with appropriate packages install.
-Then, run:
+ to create a Python virtual environment with appropriate packages installed,
+ and the npt tool installed in editable mode ready for development.
+ Then, run:
  ```~~~~~~~~
  pipenv shell
  ```
+ to start the virtual environment, within which you can run the scripts.
 
-to start the virtual environment, within which you can run the scripts.
-
-To run the project's test suite, run:
+ To run the project's test suite, run:
  ```~~~~~~~~
  pipenv run tests
  ```

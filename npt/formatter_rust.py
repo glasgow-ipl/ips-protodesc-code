@@ -150,12 +150,7 @@ class RustFormatter(Formatter):
             self.output.append(f"    }}\n")
             self.output.append(f"    (nom::IResult::Ok((input, {bitstring.name.lower()})), context)\n")
         else:
-            self.output.append(f"    (take({size} as usize)(input).map(|(i, o)| (i, {camelcase(bitstring.name)}(o))), context)\n")
-            #self.output.append("    let {fname} = take({size}_usize)(input);\n".format(fname=bitstring.name.lower(), size=size))
-            #self.output.append("    match {fname} {{\n".format(fname=bitstring.name.lower()))
-            #self.output.append("        nom::IResult::Ok((i, o)) => (nom::IResult::Ok((i, {name}(o))), context),\n".format(name=camelcase(bitstring.name)))
-            #self.output.append("        nom::IResult::Err(e) => (nom::IResult::Err(e), context)\n")
-            #self.output.append("    }\n")
+            self.output.append(f"    (take({size}_usize)(input).map(|(i, o)| (i, {camelcase(bitstring.name)}(o))), context)\n")
         self.output.append("}\n")
 
 
