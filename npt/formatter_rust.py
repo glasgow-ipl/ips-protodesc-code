@@ -96,7 +96,7 @@ class RustFormatter(Formatter):
             return None
 
     def format_contextaccessexpr(self, field_name: str) -> Any:
-        return f"context.{field_name}"
+        return f"context.{field_name} as usize"
 
     def format_ifelseexpr(self, condition: Any, if_true: Any, if_false: Any) -> Any:
         return ""
