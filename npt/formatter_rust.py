@@ -315,7 +315,7 @@ class RustFormatter(Formatter):
                 parse_func_name = variant.name.replace(" ", "_").replace("-", "_").lower()
                 parse_funcs.append(f"parse_{parse_func_name}")
         self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
-        self.output += self.format_pdu_variants(camelcase(enum.name), 0, parse_funcs, type_names)
+        self.output += self.format_enum_variants(camelcase(enum.name), 0, parse_funcs, type_names)
         self.output.append("    (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), context)\n")
         self.output.append("}\n")
 
@@ -360,6 +360,16 @@ class RustFormatter(Formatter):
 
         if index+1 < len(parser_func_names):
             generated_code = generated_code + self.format_pdu_variants(container_name, index+1, parser_func_names, type_names)
+        return generated_code
+
+    def format_enum_variants(self, container_name: str, index: int, parser_func_names: List[str], type_names: List[str]):
+        generated_code = []
+        generated_code.append(f"    match {parser_func_names[index]}(input, context) {{\n")
+        generated_code.append(f"        (nom::IResult::Ok((i, o)), c) => return (nom::IResult::Ok((i, {container_name}::{type_names[index]}(o))), c),\n")
+        generated_code.append(f"        (nom::IResult::Err(_), c) =>  {{ context = c; }}\n    }}\n\n")
+
+        if index+1 < len(parser_func_names):
+            generated_code = generated_code + self.format_enum_variants(container_name, index+1, parser_func_names, type_names)
         return generated_code
 
     def format_protocol(self, protocol: Protocol):
