@@ -50,33 +50,33 @@ from npt.helpers              import *
 
 # Protocol DFS
 
-def dfs_struct(struct: Struct, type_names:List[str]):
+def dfs_struct(struct: Struct, type_names:List[str]) -> None:
     for field in struct.get_fields():
         dfs_protocoltype(field.field_type, type_names)
 
-def dfs_array(array: Array, type_names:List[str]):
+def dfs_array(array: Array, type_names:List[str]) -> None:
     dfs_protocoltype(array.element_type, type_names)
     #dfs_protocoltype(array.parse_from, type_names)
     #dfs_protocoltype(array.serialise_to, type_names)
 
-def dfs_enum(enum: Enum, type_names:List[str]):
+def dfs_enum(enum: Enum, type_names:List[str]) -> None:
     for variant in enum.variants:
         dfs_protocoltype(variant, type_names)
     #dfs_protocoltype(enum.parse_from, type_names)
     #dfs_protocoltype(enum.serialise_to, type_names)
 
-def dfs_function(function: Function, type_names:List[str]):
+def dfs_function(function: Function, type_names:List[str]) -> None:
     for parameter in function.parameters:
         if not isinstance(parameter.param_type, TypeVariable) and isinstance(parameter.param_type, ConstructableType) and parameter.param_type.name not in type_names:
             dfs_protocoltype(parameter.param_type, type_names)
     if not isinstance(function.return_type, TypeVariable) and isinstance(function.return_type, ConstructableType) and function.return_type.name not in type_names:
         dfs_protocoltype(function.return_type, type_names)
 
-def dfs_context(context: Context, type_names:List[str]):
+def dfs_context(context: Context, type_names:List[str]) -> None:
     for field in context.get_fields():
         dfs_protocoltype(field.field_type, type_names)
 
-def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[str]):
+def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[str]) -> None:
     if isinstance(pt, BitString):
         type_names.append(pt.name)
     elif isinstance(pt, Struct):
@@ -97,7 +97,7 @@ def dfs_protocoltype(pt: Union[None, Function, ProtocolType], type_names:List[st
     elif pt is None:
         return
 
-def dfs_protocol(protocol: Protocol):
+def dfs_protocol(protocol: Protocol) -> List[str]:
     type_names : List[str] = []
 
     for pdu_name in protocol.get_pdu_names():
