@@ -693,6 +693,22 @@ class Protocol(InternalType, ConstructableType):
                                         [Parameter("from", ptype)],
                                         Option("STReturn", cast(RepresentableType, self.get_type("DataUnit"))))
                     ptype.serialise_to = st_func
+                if isinstance(ptype, Struct):
+                    calculated_size : Optional[Expression] = None
+                    none_size = None
+                    for field_name in ptype.fields:
+                        field_size = ptype.fields[field_name].field_type.size
+                        if field_size is not None and calculated_size is not None:
+                            calculated_size = MethodInvocationExpression(calculated_size, "plus", [ArgumentExpression("other", field_size)])
+                        elif field_size is not None and calculated_size is None:
+                            calculated_size = field_size
+                        else:
+                            if none_size is None:
+                                none_size = ptype.fields[field_name].field_type
+                            else:
+                                raise ProtocolTypeError("Cannot define struct type with multiple fields of undefined length")
+                    if none_size is not None and calculated_size is not None:
+                        none_size.size = MethodInvocationExpression(ContextAccessExpression(self._context, "data_size"), "minus", [ArgumentExpression("other", calculated_size)])
 
     def get_protocol_name(self) -> Optional[str]:
         return self.name
