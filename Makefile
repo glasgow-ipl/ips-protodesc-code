@@ -49,9 +49,10 @@ examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 # =================================================================================================
 # The CI build runs the following in the rust-testing environment:
 
-integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust tests/simple-protocol-testing/pcaps examples/output/draft/draft-mcquistin-augmented-udp-example/rust tests/udp-testing/pcaps
+integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust tests/simple-protocol-testing/pcaps examples/output/draft/draft-mcquistin-augmented-udp-example/rust tests/udp-testing/pcaps examples/output/draft/draft-mcquistin-augmented-tcp-example/rust tests/tcp-testing/pcaps
 	cd tests/simple-protocol-testing/testharness && cargo test
 	cd tests/udp-testing/udp-testharness && cargo test
+	cd tests/tcp-testing/testharness && cargo test
 
 # =================================================================================================
 
