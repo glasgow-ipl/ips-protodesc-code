@@ -425,7 +425,7 @@ class Array(RepresentableType, ConstructableType):
     parse_from   : Optional["Function"]
     serialise_to : Optional["Function"]
 
-    def __init__(self, name: str, element_type: RepresentableType, length: Optional[Expression]):
+    def __init__(self, name: str, element_type: RepresentableType, length: Optional[Expression], size: Optional[Expression] = None):
         super().__init__(name=name, size=None)
         self.element_type = element_type
         self.length = length
@@ -433,6 +433,7 @@ class Array(RepresentableType, ConstructableType):
         self.serialise_to = None
         self.implement_trait(Equality())
         self.implement_trait(IndexCollection(), {TypeVariable("ET"): element_type})
+        self.size = size
 
         #if self.length is None and element_type.size is None:
         #    raise ProtocolTypeError(f"Cannot construct Array: one of length or element size must be specified")
