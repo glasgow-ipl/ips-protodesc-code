@@ -48,50 +48,50 @@ from typing import Union, Optional, List, Tuple
 
 
 class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
-#    def test_xml_rfc_root(self) :
-#        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
-#            raw_content = fd.read()
-#            xml_tree = ET.fromstring(raw_content)
-#            node = npt.parser_rfc_xml.parse_rfc(xml_tree)
-#            self._verify_rfc_dom_root(node, True)
-#
-#    def test_xml_rfc_front(self):
-#        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
-#            raw_content = fd.read()
-#            xml_tree = ET.fromstring(raw_content)
-#            node = npt.parser_rfc_xml.parse_rfc(xml_tree).front
-#            self._verify_rfc_dom_front(node)
-#
-#    def test_xml_rfc_middle(self):
-#        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
-#            raw_content = fd.read()
-#            xml_tree = ET.fromstring(raw_content)
-#            middle = npt.parser_rfc_xml.parse_rfc(xml_tree).middle
-#            self._verify_rfc_middle(middle)
-#
-#
-#    def test_xml_rfc_back(self):
-#        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
-#            raw_content = fd.read()
-#            xml_tree = ET.fromstring(raw_content)
-#            back = npt.parser_rfc_xml.parse_rfc(xml_tree).back 
-#            if back is not None : 
-#                self._verify_rfc_dom_back(back)
-#
-#    def test_txt_rfc_root(self):
-#        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
-#            content = fd.readlines()
-#            root = npt.parser_rfc_txt.parse_rfc(content)
-#            self.assertIsInstance(root, rfc.RFC)
-#            self._verify_rfc_dom_root(root, False)
-#
-#
-#    def test_txt_rfc_front(self):
-#        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
-#            content = fd.readlines()
-#            root = npt.parser_rfc_txt.parse_rfc(content)
-#            self.assertIsInstance(root, rfc.RFC)
-#            self._verify_rfc_txt_dom_front(root.front)
+    def test_xml_rfc_root(self) :
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+            raw_content = fd.read()
+            xml_tree = ET.fromstring(raw_content)
+            node = npt.parser_rfc_xml.parse_rfc(xml_tree)
+            self._verify_rfc_dom_root(node, True)
+
+    def test_xml_rfc_front(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+            raw_content = fd.read()
+            xml_tree = ET.fromstring(raw_content)
+            node = npt.parser_rfc_xml.parse_rfc(xml_tree).front
+            self._verify_rfc_dom_front(node)
+
+    def test_xml_rfc_middle(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+            raw_content = fd.read()
+            xml_tree = ET.fromstring(raw_content)
+            middle = npt.parser_rfc_xml.parse_rfc(xml_tree).middle
+            self._verify_rfc_middle(middle)
+
+
+    def test_xml_rfc_back(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+            raw_content = fd.read()
+            xml_tree = ET.fromstring(raw_content)
+            back = npt.parser_rfc_xml.parse_rfc(xml_tree).back 
+            if back is not None : 
+                self._verify_rfc_dom_back(back)
+
+    def test_txt_rfc_root(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+            content = fd.readlines()
+            root = npt.parser_rfc_txt.parse_rfc(content)
+            self.assertIsInstance(root, rfc.RFC)
+            self._verify_rfc_dom_root(root, False)
+
+
+    def test_txt_rfc_front(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+            content = fd.readlines()
+            root = npt.parser_rfc_txt.parse_rfc(content)
+            self.assertIsInstance(root, rfc.RFC)
+            self._verify_rfc_txt_dom_front(root.front)
 
     def test_txt_rfc_middle(self):
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
@@ -100,12 +100,12 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             self.assertIsInstance(root, rfc.RFC)
             self._verify_rfc_txt_dom_middle(root.middle)
 
-#    def test_txt_rfc_back(self):
-#        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
-#            content = fd.readlines()
-#            root = npt.parser_rfc_txt.parse_rfc(content)
-#            self.assertIsInstance(root, rfc.RFC)
-#            self._verify_rfc_txt_dom_back(root.back)
+    def test_txt_rfc_back(self):
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+            content = fd.readlines()
+            root = npt.parser_rfc_txt.parse_rfc(content)
+            self.assertIsInstance(root, rfc.RFC)
+            self._verify_rfc_txt_dom_back(root.back)
 
     def _verify_rfc_dom_root(self, root: rfc.RFC, xml_doc: bool) :
         self.assertIsInstance( root.links, list)
