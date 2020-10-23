@@ -52,6 +52,7 @@ def valid_field_name_convertor(name):
 def valid_type_name_convertor(name):
     if name[0].isdigit():
         name = "T" + name
+    name = ' '.join(name.replace('\n',' ').split())
     return name.capitalize().replace(" ", "_")
 
 class AsciiDiagramsParser(Parser):
