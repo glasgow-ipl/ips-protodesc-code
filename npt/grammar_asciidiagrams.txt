@@ -14,7 +14,8 @@ number           = <digit+>:ds -> int(ds)
 
 capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
 
-pdu_name = <(alphanum:w ?(w != "is" and w != "protocol" and w != "PDUs" and w != "and" and w != "or" and w != "using")' '?)>*:name -> stem("".join(name).strip())
+pdu_part = <(alphanum:w ?(w not in ["is", "protocol", "PDUs", "and", "or", "using"]))>:name -> name
+pdu_name = <(pdu_part ws)*>:name -> stem("".join(name).strip())
 
 # expressions redo
 parens = '(' ws equality_expr:e ws ')' -> e
@@ -107,6 +108,5 @@ serialised_to_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu
 parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:to_type "is parsed from " ("an " | "a ") pdu_name:from_type 'using the ' short_field_name:func_name  ' function.' anything* -> (from_type, to_type, func_name)
 
 # Protocol Definition
-
-pdu_list = pdu_name:name (', ' ('and ')? pdu_name:names)*:names -> [name] + names
-protocol_definition = <(word:w ?(w != 'The' and w != "This")' '?)+>? 'This' ws 'document' ws 'describes' ws 'the' ws pdu_name:p_name 'protocol.' ws 'The' ws pdu_name:name ws 'protocol' ws 'uses' ws pdu_list:names '.' -> (name, names)
+pdu_list = pdu_name:name (',' ws ('and ')? pdu_name:names)*:names -> [name] + names
+protocol_definition = <(word:w ?(w != 'The' and w != "This") ws)+>? 'This' ws 'document' ws 'describes' ws 'the' ws pdu_name:p_name_1 ws 'protocol.' ws 'The' ws pdu_name:p_name_2 ws 'protocol' ws 'uses' ws pdu_list:names '.' -> (p_name_1, names)
