@@ -470,6 +470,7 @@ class Struct(RepresentableType, ConstructableType):
         self.fields = {}
         self.constraints = []
         self.actions = []
+        self.size = ConstantExpression(Number(), 0)
         for field in fields:
             self.add_field(field)
         for constraint in constraints:
@@ -483,6 +484,10 @@ class Struct(RepresentableType, ConstructableType):
     def add_field(self, field: StructField) -> None:
         if field.field_name in self.fields:
             raise ProtocolTypeError(f"{self.name} already contains a field named {field.field_name}")
+        if field.field_type.size is not None and self.size is not None and isinstance(field.field_type.size, ConstantExpression) and isinstance(self.size, ConstantExpression):
+            self.size = ConstantExpression(Number(), self.size.constant_value + field.field_type.size.constant_value)
+        else:
+            self.size = None
         self.fields[field.field_name] = field
 
     def add_constraint(self, constraint: Expression) -> None:
