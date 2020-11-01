@@ -188,7 +188,7 @@ func apply_protection(to: Unprotected Packet)
                     The next bit (0x40) of byte 0 is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded.
                 </dd>
                 <dt>
-                    Unpredictable Bits (UB): UB.Size > 38.
+                    Unpredictable Bits (UB): UB#Size > 38.
                 </dt>
                 <dd>
                     The remainder of the first byte and an arbitrary number of bytes following it that are set to unpredictable values.
@@ -903,7 +903,7 @@ func apply_protection(to: Unprotected Packet)
   0                   1                   2                   3
   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  +-+-+-+-+-+-+-+-+
- |0|1|S| ProcRKP |
+ |0|1|S|Res|K|PNL|
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  |                   Destination Connection ID                 ...
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -937,10 +937,22 @@ func apply_protection(to: Unprotected Packet)
                   The third most significant bit (0x20) of byte 0 is the latency spin bit.
                </dd>
                <dt>
-                  Protected Bits (ProcRKP): 5 bits.
+                  Reserved Bits (Res): 2 bits.
                </dt>
                <dd>
-                  Five header protected bits.
+                  Two reserved bits.
+               </dd>
+               <dt>
+                  Key Phase (K): 1 bit.
+               </dt>
+               <dd>
+                  Key phase bit.
+               </dd>
+               <dt>
+                  Packet Number Length (PNL): 2 bits.
+               </dt>
+               <dd>
+                  The length of the packet number field is the value of this field, plus one.
                </dd>
                <dt>
                   Destination Connection ID: 20 bytes.
@@ -949,7 +961,7 @@ func apply_protection(to: Unprotected Packet)
                   The Destination Connection ID is a connection ID that is chosen by the intended recipient of the packet.
                </dd>
                <dt>
-                  Packet Number.
+                  Packet Number: PNL+1 bytes.
                </dt>
                <dd>
                   The packet number field is 1 to 4 bytes long. The packet number has confidentiality protection separate from packet protection.  The length of the packet number field is encoded in Packet Number Length field.

@@ -486,8 +486,8 @@ class Struct(RepresentableType, ConstructableType):
             raise ProtocolTypeError(f"{self.name} already contains a field named {field.field_name}")
         if field.field_type.size is not None and self.size is not None and isinstance(field.field_type.size, ConstantExpression) and isinstance(self.size, ConstantExpression):
             self.size = ConstantExpression(Number(), self.size.constant_value + field.field_type.size.constant_value)
-        else:
-            self.size = None
+        elif field.field_type.size is not None:
+            self.size = MethodInvocationExpression(self.size, "plus", [ArgumentExpression("other", field.field_type.size)])
         self.fields[field.field_name] = field
 
     def add_constraint(self, constraint: Expression) -> None:
@@ -714,7 +714,7 @@ class Protocol(InternalType, ConstructableType):
                             if none_size is None:
                                 none_size = ptype.fields[field_name].field_type
                             else:
-                                raise ProtocolTypeError("Cannot define struct type with multiple fields of undefined length")
+                                raise ProtocolTypeError(f"Cannot define struct type ({ptype.name}) with multiple fields of undefined length")
                     if none_size is not None and calculated_size is not None:
                         none_size.size = MethodInvocationExpression(ContextAccessExpression(self._context, "data_size"), "minus", [ArgumentExpression("other", calculated_size)])
 
