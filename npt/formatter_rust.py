@@ -82,6 +82,8 @@ class RustFormatter(Formatter):
             return f"({target} == {arg_exprs[0]})"
         elif method_name == "plus":
             return f"({target} + {arg_exprs[0]})"
+        elif method_name == "and":
+            return f"({target} && {arg_exprs[0]}"
         if method_name == "to_number":
             return f"{target}"
         return ""
