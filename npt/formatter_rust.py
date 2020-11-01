@@ -59,7 +59,7 @@ class RustFormatter(Formatter):
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
         manifest = f"[package]\nname = \"{output_name.replace('-', '_')}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
-        self.output = ["extern crate nom;\n\nuse nom::bits::complete::take;\n"] + self.output
+        self.output = ["extern crate nom;\n\nuse nom::bits::complete::take;\nuse nom::IResult;\nuse nom::Err;\nuse nom::error::ErrorKind;\n"] + self.output
         output_files = {Path(f"src/lib.rs"): "".join(self.output),
                         Path(f"Cargo.toml"): manifest}
         return output_files
@@ -133,9 +133,9 @@ class RustFormatter(Formatter):
         self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
         self.output.extend(["pub struct ", camelcase(bitstring.name), "(pub %s);\n" % (data_type)])
         if len(required_vars) > 0:
-            self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context, {required_vars_signatures}) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context){{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name), required_vars_signatures=", ".join(required_vars)))
+            self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context, {required_vars_signatures}) -> (IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name), required_vars_signatures=", ".join(required_vars)))
         else:
-            self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context){{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
+            self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context) -> (IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name)))
         if data_type == "Vec<u8>":
             if size[0] == "(" and size[-1] == ")":
                 size = size[1:-1]
@@ -145,14 +145,17 @@ class RustFormatter(Formatter):
             self.output.append(f"    while {bitstring.name.lower()}_size > 0 {{\n")
             self.output.append(f"        let bits_consumed = if {bitstring.name.lower()}_size > 8 {{ 8 }} else {{ {bitstring.name.lower()}_size }};\n")
             self.output.append(f"        match take(bits_consumed as usize)(input) {{\n")
-            self.output.append(f"            nom::IResult::Ok((i, o)) => {{ input = i; {bitstring.name.lower()}.0.push(o); }},\n")
-            self.output.append(f"            nom::IResult::Err(e) => return (nom::IResult::Err(e), context)\n")
+            self.output.append(f"            IResult::Ok((i, o)) => {{\n")
+            self.output.append(f"                input = i;\n")
+            self.output.append(f"                {bitstring.name.lower()}.0.push(o);\n")
+            self.output.append(f"            }},\n")
+            self.output.append(f"            IResult::Err(e) => return (IResult::Err(e), context)\n")
             self.output.append(f"        }}\n")
             self.output.append(f"        {bitstring.name.lower()}_size -= bits_consumed;\n")
             self.output.append(f"    }}\n")
-            self.output.append(f"    (nom::IResult::Ok((input, {bitstring.name.lower()})), context)\n")
+            self.output.append(f"    (IResult::Ok((input, {bitstring.name.lower()})), context)\n")
         else:
-            self.output.append(f"    (take({size}_usize)(input).map(|(i, o)| (i, {camelcase(bitstring.name)}(o))), context)\n")
+            self.output.append(f"    (take({size} as usize)(input).map(|(i, o)| (i, {camelcase(bitstring.name)}(o))), context)\n")
         self.output.append("}\n")
 
 
@@ -204,16 +207,23 @@ class RustFormatter(Formatter):
         else:
             presence_constraint = ""
             presence_else = ""
-        constraint_code = "\n" + "\n".join([f"            if !({constraint[0]}) {{ return (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), c); }}; // check constraint: {constraint[1]}" for constraint in handled_constraints]) + "\n"
+        constraint_code = "\n" + "\n".join([f"            // check constraint: {constraint[1]}\n            if !({constraint[0]}) {{\n                return (IResult::Err(Err::Error((input, ErrorKind::NonEmpty))), c);\n            }};" for constraint in handled_constraints]) + "\n"
         if len(args) > 0:
-            generated_code.append(f"    let {field_names[index]} = {presence_constraint}match {parser_func_names[index]}(input, context, {', '.join(args)}) {{ \n")
+            generated_code.append(f"    let {field_names[index]} = {presence_constraint}match {parser_func_names[index]}(input, context, {', '.join(args)}) {{\n")
         else:
-            generated_code.append(f"    let {field_names[index]} = {presence_constraint}match {parser_func_names[index]}(input, context) {{ \n")
+            generated_code.append(f"    let {field_names[index]} = {presence_constraint}match {parser_func_names[index]}(input, context) {{\n")
         if len(handled_constraints) > 0:
-            generated_code.append(f"        (nom::IResult::Ok((i, o)), c) => {{{constraint_code}            input = i; context = c; o}},\n")
+            generated_code.append(f"        (IResult::Ok((i, o)), c) => {{{constraint_code}            input = i;\n")
+            generated_code.append(f"            context = c;\n")
+            generated_code.append(f"            o\n")
+            generated_code.append(f"        }},\n")
         else:
-            generated_code.append("        (nom::IResult::Ok((i, o)), c) => {input = i; context = c; o},\n")
-        generated_code.append("        (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c)\n")
+            generated_code.append("        (IResult::Ok((i, o)), c) => {\n");
+            generated_code.append("            input = i;\n");
+            generated_code.append("            context = c;\n");
+            generated_code.append("            o\n")
+            generated_code.append("        }\n")
+        generated_code.append("        (IResult::Err(e), c) => return (IResult::Err(e), c),\n")
         generated_code.append(f"    {presence_else}}};\n\n")
         if index+1 < len(field_names):
             generated_code = generated_code + self.format_struct_field(index+1, struct_name, field_names, parser_func_names, unhandled_constraints, presence_constraints)
@@ -249,9 +259,16 @@ class RustFormatter(Formatter):
             parser_functions.append("parse_{name}".format(name=type_name.lower()))
             field_names.append(f"{field.field_name}")
         self.output.append("}\n")
-        self.output.append("\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
+        self.output.append("\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
         self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions, processed_constraints, presence_constraints)
-        self.output.append(f"    (nom::IResult::Ok((input, {camelcase(struct.name)}{{{', '.join(field_names)}}})), context)\n")
+        self.output.append(f"    (IResult::Ok((\n")
+        self.output.append(f"        input,\n")
+        self.output.append(f"        {camelcase(struct.name)} {{\n")
+        for field_name in field_names:
+            self.output.append(f"            {field_name},\n")
+        self.output.append(f"        }},\n")
+        self.output.append(f"    )),\n")
+        self.output.append(f"    context)\n")
         self.output.append("}\n")
         self.struct_field_signatures = {}
 
@@ -263,15 +280,15 @@ class RustFormatter(Formatter):
         self.output.append("\n#[derive(Debug)]")
         self.output.append("\npub struct %s(pub Vec<%s>);\n" % (camelcase(array.name), camelcase(element_type_name)))
         if (array.length is not None):
-            self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
+            self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
             self.output.append(f"\n    let mut {fname} = {camelcase(array.name)}(Vec::new());")
             self.output.append(f"\n    for _n in 1..={self.expr_traversal.dfs_expression(array.length)} {{")
             self.output.append(f"\n        match parse_{element_type_name.replace(' ', '_').replace('-', '_').lower()}(input, context) {{")
-            self.output.append(f"\n            (nom::IResult::Ok((i, o)), c) => {{ input = i; context = c; {fname}.0.push(o); }},")
-            self.output.append(f"\n            (nom::IResult::Err(e), c) => return (nom::IResult::Err(e), c),")
+            self.output.append(f"\n            (IResult::Ok((i, o)), c) => {{ input = i; context = c; {fname}.0.push(o); }},")
+            self.output.append(f"\n            (IResult::Err(e), c) => return (IResult::Err(e), c),")
             self.output.append(f"\n        }}")
             self.output.append(f"\n    }}")
-            self.output.append(f"\n    (nom::IResult::Ok((input, {fname})), context)")
+            self.output.append(f"\n    (IResult::Ok((input, {fname})), context)")
         elif array.size is not None:
             size_expr = self.expr_traversal.dfs_expression(array.size)
             self_vars = re.findall(r"self\(([\w]*)\)", size_expr)
@@ -279,21 +296,29 @@ class RustFormatter(Formatter):
             self.struct_field_signatures[f"parse_{fname}"] = self_vars
             required_vars = [f"{var_name}: usize" for var_name in self_vars]
             required_vars_signatures=", ".join(required_vars)
-            self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context, {required_vars_signatures}) -> (nom::IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
+            self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context, {required_vars_signatures}) -> (IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
             self.output.append(f"\n    let mut {fname} = {camelcase(array.name)}(Vec::new());")
             self.output.append(f"\n    let mut bits_read = 0;")
             self.output.append(f"\n    let bits_to_read = {size_expr};")
             self.output.append(f"\n    while bits_to_read > bits_read {{")
             self.output.append(f"\n        match parse_{element_type_name.replace(' ', '_').replace('-', '_').lower()}(input, context) {{")
-            self.output.append(f"\n            (nom::IResult::Ok((i, o)), c) => {{ bits_read += (input.1 - i.1) + (input.0.len() - i.0.len())*8; input = i; context = c; {fname}.0.push(o); }},")
-            self.output.append(f"\n            (nom::IResult::Err(_e), c) => {{ context = c; break }}")
+            self.output.append(f"\n            (IResult::Ok((i, o)), c) => {{")
+            self.output.append(f"\n                bits_read += (input.1 - i.1) + (input.0.len() - i.0.len())*8;")
+            self.output.append(f"\n                input = i;")
+            self.output.append(f"\n                context = c;")
+            self.output.append(f"\n                {fname}.0.push(o);")
+            self.output.append(f"\n            }},")
+            self.output.append(f"\n            (IResult::Err(_e), c) => {{")
+            self.output.append(f"\n                context = c;")
+            self.output.append(f"\n                break")
+            self.output.append(f"\n            }}")
             self.output.append(f"\n        }}")
             self.output.append(f"\n    }}")
             self.output.append(f"\n")
             self.output.append(f"\n    if bits_read != bits_to_read {{")
-            self.output.append(f"\n        (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), context)")
+            self.output.append(f"\n        (IResult::Err(Err::Error((input, ErrorKind::NonEmpty))), context)")
             self.output.append(f"\n    }} else {{")
-            self.output.append(f"\n        (nom::IResult::Ok((input, tcp_header_options)), context)")
+            self.output.append(f"\n        (IResult::Ok((input, {fname})), context)")
             self.output.append(f"\n    }}")
         self.output.append(f"\n}}\n")
 
@@ -302,7 +327,7 @@ class RustFormatter(Formatter):
         self.output.append(f"\n// Parse enum `{enum.name}`\n")
         self.output.append("\n#[derive(Debug)]")
         self.output.append(f"\npub enum {camelcase(enum.name)} {{\n")
-        self.output.append(",\n".join([f"\t{camelcase(variant.name)}({camelcase(variant.name)})" for variant in enum.variants if isinstance(variant, ConstructableType)]))
+        self.output.append("\n".join([f"    {camelcase(variant.name)}({camelcase(variant.name)})," for variant in enum.variants if isinstance(variant, ConstructableType)]))
         self.output.append("\n}\n\n")
         parse_funcs = []
         type_names = []
@@ -311,9 +336,9 @@ class RustFormatter(Formatter):
                 type_names.append(camelcase(variant.name))
                 parse_func_name = variant.name.replace(" ", "_").replace("-", "_").lower()
                 parse_funcs.append(f"parse_{parse_func_name}")
-        self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
+        self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
         self.output += self.format_enum_variants(camelcase(enum.name), 0, parse_funcs, type_names)
-        self.output.append("    (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), context)\n")
+        self.output.append("    (IResult::Err(Err::Error((input, ErrorKind::NonEmpty))), context)\n")
         self.output.append("}\n")
 
     def format_function(self, function:Function):
@@ -339,9 +364,9 @@ class RustFormatter(Formatter):
         for field in context.get_fields():
             if isinstance(field.field_type, BitString):
                 size = self.assign_int_size(self.expr_traversal.dfs_expression(field.field_type.size))
-                fields_output.append(f"    pub {field.field_name} : {size}")
+                fields_output.append(f"    pub {field.field_name}: {size},")
             if isinstance(field.field_type, Number):
-                fields_output.append(f"    pub {field.field_name} : u32")
+                fields_output.append(f"    pub {field.field_name}: u32,")
         context_output += ",\n".join(fields_output) + "\n}\n"
         self.output = [context_output] + self.output
 
@@ -352,8 +377,8 @@ class RustFormatter(Formatter):
     def format_pdu_variants(self, container_name: str, index: int, parser_func_names: List[str], type_names: List[str]):
         generated_code = []
         generated_code.append(f"    match {parser_func_names[index]}(input, context) {{\n")
-        generated_code.append(f"        (nom::IResult::Ok((([], 0), o)), c) => return (nom::IResult::Ok(((&[], 0), {container_name}::{type_names[index]}(o))), c),\n")
-        generated_code.append(f"        (nom::IResult::Ok(_), c) | (nom::IResult::Err(_), c) => {{ context = c; }}\n    }}\n\n")
+        generated_code.append(f"        (IResult::Ok((([], 0), o)), c) => return (IResult::Ok(((&[], 0), {container_name}::{type_names[index]}(o))), c),\n")
+        generated_code.append(f"        (IResult::Ok(_), c) | (IResult::Err(_), c) => {{ context = c; }}\n    }}\n\n")
 
         if index+1 < len(parser_func_names):
             generated_code = generated_code + self.format_pdu_variants(container_name, index+1, parser_func_names, type_names)
@@ -362,8 +387,8 @@ class RustFormatter(Formatter):
     def format_enum_variants(self, container_name: str, index: int, parser_func_names: List[str], type_names: List[str]):
         generated_code = []
         generated_code.append(f"    match {parser_func_names[index]}(input, context) {{\n")
-        generated_code.append(f"        (nom::IResult::Ok((i, o)), c) => return (nom::IResult::Ok((i, {container_name}::{type_names[index]}(o))), c),\n")
-        generated_code.append(f"        (nom::IResult::Err(_), c) =>  {{ context = c; }}\n    }}\n\n")
+        generated_code.append(f"        (IResult::Ok((i, o)), c) => return (IResult::Ok((i, {container_name}::{type_names[index]}(o))), c),\n")
+        generated_code.append(f"        (IResult::Err(_), c) =>  {{ context = c; }}\n    }}\n\n")
 
         if index+1 < len(parser_func_names):
             generated_code = generated_code + self.format_enum_variants(container_name, index+1, parser_func_names, type_names)
@@ -373,14 +398,14 @@ class RustFormatter(Formatter):
         self.output.append("\n// Parse incoming PDUs\n")
         self.output.append("\n#[derive(Debug)]")
         self.output.append("\npub enum PDU {\n")
-        self.output.append(",\n".join([f"\t{camelcase(pdu_name)}({camelcase(pdu_name)})" for pdu_name in protocol.get_pdu_names()]))
+        self.output.append("\n".join([f"    {camelcase(pdu_name)}({camelcase(pdu_name)})," for pdu_name in protocol.get_pdu_names()]))
         self.output.append("\n}\n\n")
         parse_funcs = []
         type_names = []
         for pdu_name in protocol.get_pdu_names():
             type_names.append(camelcase(pdu_name))
             parse_funcs.append(f"parse_{pdu_name.replace(' ', '_').replace('-', '_').lower()}")
-        self.output.append("pub fn parse_pdu<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (nom::IResult<(&'a [u8], usize), PDU>, &'a mut Context) {\n")
+        self.output.append("pub fn parse_pdu<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), PDU>, &'a mut Context) {\n")
         self.output += self.format_pdu_variants("PDU", 0, parse_funcs, type_names)
-        self.output.append("    (nom::IResult::Err(nom::Err::Error((input, nom::error::ErrorKind::NonEmpty))), context)")
+        self.output.append("    (IResult::Err(Err::Error((input, ErrorKind::NonEmpty))), context)")
         self.output.append("\n}")
