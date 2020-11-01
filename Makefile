@@ -39,9 +39,6 @@ TCP_PCAPS = tests/tcp-testing/pcaps/ten_tcp_packets.pcap
 
 test: unittests integrationtests
 
-# =================================================================================================
-# The CI build runs the following in the python-testing environment:
-
 test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
@@ -59,10 +56,7 @@ $(UDP_GEN_PCAPS): tests/udp-testing/generate-pcaps.py
 examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 	python3 -m npt $< -of rust
 
-# =================================================================================================
-# The CI build runs the following in the rust-testing environment:
-
-integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust $(SIMPLE_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-udp-example/rust $(UDP_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-tcp-example/rust $(TCP_PCAPS)
+integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust $(SIMPLE_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-udp-example/rust $(UDP_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-tcp-example/rust $(TCP_PCAPS) examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust
 	cd tests/simple-protocol-testing/testharness && cargo test
 	cd tests/udp-testing/udp-testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
