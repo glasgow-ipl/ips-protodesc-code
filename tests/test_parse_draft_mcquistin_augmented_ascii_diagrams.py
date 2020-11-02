@@ -74,8 +74,8 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
-            back = npt.parser_rfc_xml.parse_rfc(xml_tree).back 
-            if back is not None : 
+            back = npt.parser_rfc_xml.parse_rfc(xml_tree).back
+            if back is not None :
                 self._verify_rfc_dom_back(back)
 
     def test_txt_rfc_root(self):
@@ -121,10 +121,10 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         if xml_doc :
             self.assertEqual ( root.category, "exp")
-        else : 
+        else :
             self.assertIsNone ( root.category)
         self.assertFalse     ( root.consensus)
-        self.assertEqual     ( root.docName, "draft-mcquistin-augmented-ascii-diagrams-05")
+        self.assertEqual     ( root.docName, "draft-mcquistin-augmented-ascii-diagrams-07")
         self.assertTrue      ( root.indexInclude)
         self.assertEqual     ( root.ipr, 'trust200902')
         self.assertIsNone    ( root.iprExtract)
@@ -157,7 +157,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         self.assertEqual(len(front.seriesInfo), 1)
         self.assertEqual(front.seriesInfo[0].name,   "Internet-Draft")
-        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-05")
+        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-07")
         self.assertIsNone(front.seriesInfo[0].status)
 
         # authors
@@ -204,7 +204,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         if not isinstance( front.abstract.content[0].content[0], rfc.Text) :
             return
         self.assertIsInstance( front.abstract.content[0].content[0].content , str)
-        self.maxDiff = None 
+        self.maxDiff = None
         self.assertEqual     ( front.abstract.content[0].content[0].content,
 """   This document describes a machine-readable format for specifying the
    syntax of protocol data units within a protocol specification.  This
@@ -481,24 +481,25 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             return
         self.assertIsInstance(back.sections[0].sections[0].content[0].content, rfc.Text)
         self.assertEqual(back.sections[0].sections[0].content[0].content.content, """
-    cond-expr = eq-expr "?" cond-expr ":" eq-expr
-    eq-expr   = bool-expr eq-op   bool-expr
-    bool-expr = ord-expr  bool-op ord-expr
-    ord-expr  = add-expr  ord-op  add-expr
-
-    add-expr  = mul-expr  add-op  mul-expr
-    mul-expr  = expr      mul-op  expr
-    expr      = *DIGIT / field-name /
-                field-name-ws / "(" expr ")"
-
-    field-name    = *ALPHA
-    field-name-ws = *(field-name " ")
-
-    mul-op  = "*" / "/" / "%"
-    add-op  = "+" / "-"
-    ord-op  = "<=" / "<" / ">=" / ">"
-    bool-op = "&&" / "||" / "!"
-    eq-op   = "==" / "!="
+constant = %x31-39 *(%x30-39)  ; natural numbers without leading 0s
+short-name = ALPHA *(ALPHA / DIGIT / "-" / "_")
+name = short-name *(" " short-name)
+sp = [" "] ; optional space in expression
+bool-expr = "(" sp bool-expr sp ")" /
+           "!" sp bool-expr /
+           bool-expr sp bool-op sp bool-expr /
+           bool-expr sp "?" sp expr sp ":" sp expr /
+           expr sp cmp-op sp expr
+bool-op = "&amp;&amp;" / "||"
+cmp-op = "==" / "!=" / "&lt;" / "&lt;=" / ">" / ">="
+expr = "(" sp expr sp ")" /
+      expr sp op sp expr /
+      bool-expr "?" expr ":" expr /
+      name / short-name "." short-name /
+      constant
+op = "+" / "-" / "*" / "/" / "%" / "^"
+length = expr sp unit / "[" sp name sp "]"
+unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
                 """)
         # section-00 -- (sub) section-00 -- sourcecode anchor, numbered, removeInRFC, title, toc
         self.assertIsNone(back.sections[0].sections[0].content[0].anchor)
@@ -773,7 +774,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(back.sections[0].sections[0].content[1].content, list)
         self.assertEqual(len(back.sections[0].sections[0].content[1].content), 1)
         self.assertIsInstance(back.sections[0].sections[0].content[1].content[0], rfc.Text)
-        if not isinstance(back.sections[0].sections[0].content[1].content[0], rfc.Text): # type-check 
+        if not isinstance(back.sections[0].sections[0].content[1].content[0], rfc.Text): # type-check
             return
         self.assertEqual(back.sections[0].sections[0].content[1].content[0].content,
 """       add-expr  = mul-expr  add-op  mul-expr
@@ -866,7 +867,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(back.sections[0].sections[1].content[0].content, list)
         self.assertEqual(len(back.sections[0].sections[1].content[0].content), 1)
         self.assertIsInstance(back.sections[0].sections[1].content[0].content[0], rfc.Text)
-        if not isinstance(back.sections[0].sections[1].content[0].content[0], rfc.Text): # type-check 
+        if not isinstance(back.sections[0].sections[1].content[0].content[0], rfc.Text): # type-check
             return
         self.assertEqual(back.sections[0].sections[1].content[0].content[0].content,
 """   Future revisions of this draft will include an ABNF specification for
@@ -973,19 +974,19 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         # sec-00
         self.assertIsInstance(middle.content[0], rfc.Section)
 
-        # sec-00  name 
-        self.assertIsNotNone( middle.content[0].name) 
+        # sec-00  name
+        self.assertIsNotNone( middle.content[0].name)
         self.assertIsInstance( middle.content[0].name, rfc.Name)
         if not isinstance(middle.content[0].name, rfc.Name):
             return
         self.assertIsInstance( middle.content[0].name.content, list)
         self.assertEqual( len(middle.content[0].name.content), 1)
         self.assertIsInstance( middle.content[0].name.content[0], rfc.Text)
-        self.assertEqual( middle.content[0].name.content[0].content, "Introduction") 
-        # sec-00  content 
+        self.assertEqual( middle.content[0].name.content[0].content, "Introduction")
+        # sec-00  content
         self.assertIsInstance( middle.content[0].content, list)
         self.assertEqual( len(middle.content[0].content), 7)
-        # sec-00  content[0] <T> 
+        # sec-00  content[0] <T>
         self.assertIsInstance( middle.content[0].content[0], rfc.T)
         if not isinstance(middle.content[0].content[0], rfc.T): # type-check
             return
@@ -1009,7 +1010,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[0].content[0].keepWithPrevious)
 
 
-        # sec-00  content[1] <T> 
+        # sec-00  content[1] <T>
         self.assertIsInstance( middle.content[0].content[1], rfc.T)
         if not isinstance( middle.content[0].content[1], rfc.T): # type-check
             return
@@ -1028,7 +1029,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( middle.content[0].content[1].content[1].format, "default")
         self.assertFalse( middle.content[0].content[1].content[1].pageno)
         self.assertEqual( middle.content[0].content[1].content[1].target, "tcp-header-format")
-        self.assertIsInstance( middle.content[0].content[1].content[2], rfc.Text) 
+        self.assertIsInstance( middle.content[0].content[1].content[2], rfc.Text)
         if not isinstance( middle.content[0].content[1].content[2], rfc.Text) : # type-check
             return
         self.assertEqual( middle.content[0].content[1].content[2].content, """ gives an example of how packet
@@ -1049,7 +1050,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
 
 
-        # sec-00  content[2] <Figure> 
+        # sec-00  content[2] <Figure>
         self.assertIsInstance( middle.content[0].content[2], rfc.Figure)
         if not isinstance( middle.content[0].content[2], rfc.Figure): # type-check
             return
@@ -1129,7 +1130,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsNone( middle.content[0].content[2].width)
 
 
-        # sec-00  content[3] <T> 
+        # sec-00  content[3] <T>
         self.assertIsInstance(middle.content[0].content[3], rfc.T)
         if not isinstance(middle.content[0].content[3], rfc.T): #type-check
             return
@@ -1137,7 +1138,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[0].content[3].content, list)
         self.assertEqual( len(middle.content[0].content[3].content), 1)
         self.assertIsInstance( middle.content[0].content[3].content[0], rfc.Text)
-        if not isinstance( middle.content[0].content[3].content[0], rfc.Text): # type-check 
+        if not isinstance( middle.content[0].content[3].content[0], rfc.Text): # type-check
             return
 
         self.assertEqual( middle.content[0].content[3].content[0].content, """
@@ -1156,7 +1157,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[0].content[3].keepWithNext)
         self.assertFalse( middle.content[0].content[3].keepWithPrevious)
 
-        # sec-00  content[4] <T> 
+        # sec-00  content[4] <T>
         self.assertIsInstance(middle.content[0].content[4], rfc.T)
         if not isinstance(middle.content[0].content[4], rfc.T): #type-check
             return
@@ -1182,7 +1183,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[0].content[4].keepWithPrevious)
 
 
-        # sec-00  content[5] <T> 
+        # sec-00  content[5] <T>
         self.assertIsInstance(middle.content[0].content[5], rfc.T)
         if not isinstance(middle.content[0].content[5], rfc.T): # type-check
             return
@@ -1206,7 +1207,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[0].content[5].keepWithPrevious)
 
 
-        # sec-00  content[6] <T> 
+        # sec-00  content[6] <T>
         self.assertIsInstance(middle.content[0].content[6], rfc.T)
         if not isinstance(middle.content[0].content[6], rfc.T): # type-check
             return
@@ -1253,7 +1254,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
 
 
-        # sec-00  sections 
+        # sec-00  sections
         self.assertIsInstance(middle.content[0].sections, list)
         if not isinstance(middle.content[0].sections, list): # type-check
             return
@@ -1269,24 +1270,24 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-01
         self.assertIsInstance(middle.content[1], rfc.Section)
-        # sec-01  name 
-        self.assertIsNotNone( middle.content[1].name) 
-        self.assertIsInstance( middle.content[1].name, rfc.Name) 
+        # sec-01  name
+        self.assertIsNotNone( middle.content[1].name)
+        self.assertIsInstance( middle.content[1].name, rfc.Name)
         if not isinstance( middle.content[1].name, rfc.Name) : # type-check
             return
-        self.assertEqual( len(middle.content[1].name.content), 1) 
-        self.assertIsInstance( middle.content[1].name.content[0], rfc.Text) 
-        self.assertEqual( middle.content[1].name.content[0].content, "Background") 
+        self.assertEqual( len(middle.content[1].name.content), 1)
+        self.assertIsInstance( middle.content[1].name.content[0], rfc.Text)
+        self.assertEqual( middle.content[1].name.content[0].content, "Background")
         # sec-01  content
-        self.assertIsInstance( middle.content[1].content, list) 
-        self.assertEqual( len(middle.content[1].content), 2) 
+        self.assertIsInstance( middle.content[1].content, list)
+        self.assertEqual( len(middle.content[1].content), 2)
         # sec-01  content[0] <T>
-        self.assertIsInstance( middle.content[1].content[0], rfc.T) 
+        self.assertIsInstance( middle.content[1].content[0], rfc.T)
         if not isinstance( middle.content[1].content[0], rfc.T) : # type-check
             return
-        self.assertIsInstance( middle.content[1].content[0].content, list) 
-        self.assertEqual( len(middle.content[1].content[0].content), 1) 
-        self.assertIsInstance( middle.content[1].content[0].content[0], rfc.Text) 
+        self.assertIsInstance( middle.content[1].content[0].content, list)
+        self.assertEqual( len(middle.content[1].content[0].content), 1)
+        self.assertIsInstance( middle.content[1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[1].content[0].content[0], rfc.Text) : # type-check
             return
         self.assertEqual( middle.content[1].content[0].content[0].content, """
@@ -1302,12 +1303,12 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[1].content[0].keepWithPrevious)
 
         # sec-01  content[1] <T>
-        self.assertIsInstance( middle.content[1].content[1], rfc.T) 
+        self.assertIsInstance( middle.content[1].content[1], rfc.T)
         if not isinstance( middle.content[1].content[1], rfc.T) : # type-check
             return
-        self.assertIsInstance( middle.content[1].content[1].content, list) 
-        self.assertEqual( len(middle.content[1].content[1].content), 1) 
-        self.assertIsInstance( middle.content[1].content[1].content[0], rfc.Text) 
+        self.assertIsInstance( middle.content[1].content[1].content, list)
+        self.assertEqual( len(middle.content[1].content[1].content), 1)
+        self.assertIsInstance( middle.content[1].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[1].content[1].content[0], rfc.Text) : # type-check
             return
         self.assertEqual( middle.content[1].content[1].content[0].content, """
@@ -1324,21 +1325,21 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[1].content[1].keepWithPrevious)
 
         # sec-01  sections
-        self.assertIsInstance( middle.content[1].sections, list) 
+        self.assertIsInstance( middle.content[1].sections, list)
         if not isinstance( middle.content[1].sections, list) : # type-check
             return
-        self.assertEqual( len(middle.content[1].sections), 2) 
-        # sec-01  sub-sec[0] 
-        self.assertIsInstance( middle.content[1].sections[0], rfc.Section) 
+        self.assertEqual( len(middle.content[1].sections), 2)
+        # sec-01  sub-sec[0]
+        self.assertIsInstance( middle.content[1].sections[0], rfc.Section)
         # sec-01  sub-sec[0] name
         self.assertIsNotNone( middle.content[1].sections[0].name)
-        self.assertIsInstance( middle.content[1].sections[0].name, rfc.Name) 
+        self.assertIsInstance( middle.content[1].sections[0].name, rfc.Name)
         if not isinstance( middle.content[1].sections[0].name, rfc.Name) : # type-check
             return
-        self.assertIsInstance( middle.content[1].sections[0].name.content, list) 
-        self.assertEqual( len(middle.content[1].sections[0].name.content), 1) 
-        self.assertIsInstance( middle.content[1].sections[0].name.content[0],  rfc.Text) 
-        self.assertEqual( middle.content[1].sections[0].name.content[0].content, "Limitations of Current Packet Format Diagrams" ) 
+        self.assertIsInstance( middle.content[1].sections[0].name.content, list)
+        self.assertEqual( len(middle.content[1].sections[0].name.content), 1)
+        self.assertIsInstance( middle.content[1].sections[0].name.content[0],  rfc.Text)
+        self.assertEqual( middle.content[1].sections[0].name.content[0].content, "Limitations of Current Packet Format Diagrams" )
         # sec-01  sub-sec[0] content
         self.assertIsInstance( middle.content[1].sections[0].content, list)
         self.assertEqual( len( middle.content[1].sections[0].content), 5)
@@ -1346,7 +1347,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[0], rfc.Figure)
         if not isinstance( middle.content[1].sections[0].content[0], rfc.Figure): # type-check
             return
-        # sec-01  sub-sec[0] content[0] <Figure> name 
+        # sec-01  sub-sec[0] content[0] <Figure> name
         self.assertIsNotNone( middle.content[1].sections[0].content[0].name)
         self.assertIsInstance( middle.content[1].sections[0].content[0].name, rfc.Name)
         if not isinstance( middle.content[1].sections[0].content[0].name, rfc.Name): # type-check
@@ -1458,10 +1459,10 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( middle.content[1].sections[0].content[1].content[2].content, """.
                 """)
         # sec-01  sub-sec[0] content[2] <T>  anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[1].sections[0].content[1].anchor) 
-        self.assertIsNone( middle.content[1].sections[0].content[1].hangText) 
-        self.assertFalse( middle.content[1].sections[0].content[1].keepWithNext) 
-        self.assertFalse( middle.content[1].sections[0].content[1].keepWithPrevious) 
+        self.assertIsNone( middle.content[1].sections[0].content[1].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[1].hangText)
+        self.assertFalse( middle.content[1].sections[0].content[1].keepWithNext)
+        self.assertFalse( middle.content[1].sections[0].content[1].keepWithPrevious)
 
 
         # sec-01  sub-sec[0] content[2] <T>
@@ -1482,21 +1483,21 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                   to work with programmatically:
                 """)
         # sec-01  sub-sec[0] content[2] <T>  anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[1].sections[0].content[2].anchor) 
-        self.assertIsNone( middle.content[1].sections[0].content[2].hangText) 
-        self.assertFalse( middle.content[1].sections[0].content[2].keepWithNext) 
-        self.assertFalse( middle.content[1].sections[0].content[2].keepWithPrevious) 
+        self.assertIsNone( middle.content[1].sections[0].content[2].anchor)
+        self.assertIsNone( middle.content[1].sections[0].content[2].hangText)
+        self.assertFalse( middle.content[1].sections[0].content[2].keepWithNext)
+        self.assertFalse( middle.content[1].sections[0].content[2].keepWithPrevious)
 
         # sec-01  sub-sec[0] content[3] <DL>
-        self.assertIsInstance( middle.content[1].sections[0].content[3], rfc.DL) 
+        self.assertIsInstance( middle.content[1].sections[0].content[3], rfc.DL)
         if not isinstance( middle.content[1].sections[0].content[3], rfc.DL) : # type-check
             return
         # sec-01  sub-sec[0] content[3] <DL> content
-        self.assertIsInstance( middle.content[1].sections[0].content[3].content, list) 
-        self.assertEqual( len(middle.content[1].sections[0].content[3].content), 4) 
-        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>> 
+        self.assertIsInstance( middle.content[1].sections[0].content[3].content, list)
+        self.assertEqual( len(middle.content[1].sections[0].content[3].content), 4)
+        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0], tuple)
-        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [0] <DT> 
+        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [0] <DT>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][0], rfc.DT)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][0].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[0][0].content), 1)
@@ -1507,11 +1508,11 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                     Inconsistent syntax:
                   """)
         self.assertIsNone( middle.content[1].sections[0].content[3].content[0][0].anchor)
-        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> 
+        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1], rfc.DD)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[0][1].content), 3)
-        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[0] <T> 
+        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[0] <T>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[0], rfc.T)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[0], rfc.T): # type-check
             return
@@ -1531,7 +1532,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[0].keepWithNext)
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[0].keepWithPrevious)
 
-        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[1] <T> 
+        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[1] <T>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1], rfc.T)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1], rfc.T): # type-check
             return
@@ -1552,7 +1553,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[2], rfc.Text)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[2], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[2].content, 
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[2].content,
                         """ gives an example of internal
                         inconsistency. Here, the packet diagram shows a field labelled
                         "Application Error Code", while the accompanying description lists
@@ -1571,7 +1572,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[4], rfc.Text)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[4], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[4].content, 
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[4].content,
                         """ gives a further example, where
                         the description includes an "Option-Code" field that does not appear
                         in the packet diagram; and where the description states that
@@ -1589,7 +1590,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[6], rfc.Text)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[1].content[6], rfc.Text): #type-check
             return
-        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[6].content, 
+        self.assertEqual( middle.content[1].sections[0].content[3].content[0][1].content[1].content[6].content,
                       """, where the packet
                         format diagram showing the structure of the Burst/Gap Loss Metrics
                         Report Block shows the Number of Bursts field as being 12 bits wide
@@ -1600,7 +1601,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[1].keepWithNext)
         self.assertFalse( middle.content[1].sections[0].content[3].content[0][1].content[1].keepWithPrevious)
 
-        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[2] <T> 
+        # sec-01  sub-sec[0] content[3] <DL> content[0] <tuple<DT,DD>>  [1] <DD> content[2] <T>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[0][1].content[2], rfc.T)
         if not isinstance( middle.content[1].sections[0].content[3].content[0][1].content[2], rfc.T): # type-check
             return
@@ -1651,7 +1652,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1], tuple)
-        # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [0] <DT> 
+        # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [0] <DT>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][0], rfc.DT)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][0].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[1][0].content), 1)
@@ -1662,11 +1663,11 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                       Ambiguous constraints:
                     """)
         self.assertIsNone( middle.content[1].sections[0].content[3].content[1][0].anchor)
-        # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [1] <DD> 
+        # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [1] <DD>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][1], rfc.DD)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][1].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[1][1].content), 3)
-        # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [1] <DD> content[0] <Text> 
+        # sec-01  sub-sec[0] content[3] <DL> content[1] <tuple<DT,DD>>  [1] <DD> content[0] <Text>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[1][1].content[0], rfc.Text)
         if not isinstance( middle.content[1].sections[0].content[3].content[1][1].content[0], rfc.Text): # type-check
             return
@@ -1695,11 +1696,11 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                     """)
 
         self.assertIsNone( middle.content[1].sections[0].content[3].content[1][1].anchor)
-                    
+
 
         # sec-01  sub-sec[0] content[3] <DL> content[2] <tuple<DT,DD>>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2], tuple)
-        # sec-01  sub-sec[0] content[3] <DL> content[2] <tuple<DT,DD>>  [0] <DT> 
+        # sec-01  sub-sec[0] content[3] <DL> content[2] <tuple<DT,DD>>  [0] <DT>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][0], rfc.DT)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][0].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[2][0].content), 1)
@@ -1710,7 +1711,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                       Poor linking between sub-structures:
                     """)
         self.assertIsNone( middle.content[1].sections[0].content[3].content[2][0].anchor)
-        # sec-01  sub-sec[0] content[3] <DL> content[2] <tuple<DT,DD>>  [1] <DD> 
+        # sec-01  sub-sec[0] content[3] <DL> content[2] <tuple<DT,DD>>  [1] <DD>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][1], rfc.DD)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][1].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[2][1].content), 2)
@@ -1742,7 +1743,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[2][1].content[1].content), 3)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content[0], rfc.Text)
-        if not isinstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content[0], rfc.Text): # type-check 
+        if not isinstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content[0], rfc.Text): # type-check
             return
         self.assertEqual( middle.content[1].sections[0].content[3].content[2][1].content[1].content[0].content, """
                         """)
@@ -1756,7 +1757,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content[2], rfc.Text)
         if not isinstance( middle.content[1].sections[0].content[3].content[2][1].content[1].content[2], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[1].sections[0].content[3].content[2][1].content[1].content[2].content, 
+        self.assertEqual( middle.content[1].sections[0].content[3].content[2][1].content[1].content[2].content,
                       """ highlights the difficulty that
                         machine parsers have in chaining structures together. Two fields
                         ("Stream ID" and "Final Size") are described as being encoded as
@@ -1774,7 +1775,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[3], tuple)
-        # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DT> 
+        # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DT>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[3][0], rfc.DT)
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[3][0].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content[3].content[3][0].content), 1)
@@ -1785,7 +1786,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                         Lack of extension and evolution syntax:
                     """)
         self.assertIsNone( middle.content[1].sections[0].content[3].content[3][0].anchor)
-        # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DD> 
+        # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DD>
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[3][1], rfc.DD)
         # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DD> content
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[3][1].content, list)
@@ -1818,14 +1819,14 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[3].content[3][1].content[0].content[2], rfc.Text)
         if not isinstance( middle.content[1].sections[0].content[3].content[3][1].content[0].content[2], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[1].sections[0].content[3].content[3][1].content[0].content[2].content, 
+        self.assertEqual( middle.content[1].sections[0].content[3].content[3][1].content[0].content[2].content,
                         """) or because definition of a protocol
                             data unit has changed and evolved over time. As a result, it is
                             essential that syntax be provided to allow for a complete
                             definition of a protocol's parsing process to be constructed
                             across multiple documents.
                         """)
-        # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DD> content[0] <T> 
+        # sec-01  sub-sec[0] content[3] <DL> content[3] <tuple<DT,DD>>  [0] <DD> content[0] <T>
         # anchor, hangText, keepWithNext, keepWithPrevious
         self.assertIsNone( middle.content[1].sections[0].content[3].content[3][1].content[0].anchor)
         self.assertIsNone( middle.content[1].sections[0].content[3].content[3][1].content[0].hangText)
@@ -1845,7 +1846,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[0].content[4], rfc.Figure)
         if not isinstance( middle.content[1].sections[0].content[4], rfc.Figure): # type-check
             return
-        # sec-01  sub-sec[0] content[4] <Figure> name 
+        # sec-01  sub-sec[0] content[4] <Figure> name
         self.assertIsNotNone( middle.content[1].sections[0].content[4].name)
         self.assertIsInstance( middle.content[1].sections[0].content[4].name, rfc.Name)
         if not isinstance( middle.content[1].sections[0].content[4].name, rfc.Name): # type-check
@@ -1926,7 +1927,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-01  sub-sec[0] sections
         self.assertIsInstance( middle.content[1].sections[0].sections, list)
-        if not isinstance( middle.content[1].sections[0].sections, list): # type-check 
+        if not isinstance( middle.content[1].sections[0].sections, list): # type-check
             return
         self.assertEqual( len( middle.content[1].sections[0].sections), 0)
         # sec-01  sub-sec[0] anchor, numbered, removeInRFC, title, toc
@@ -1936,9 +1937,9 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsNone(middle.content[1].sections[0].title)
         self.assertEqual(middle.content[1].sections[0].toc, "default" )
 
-        # sec-01  sub-sec[1] 
+        # sec-01  sub-sec[1]
         self.assertIsInstance(middle.content[1].sections[1], rfc.Section)
-        # sec-01  sub-sec[1] name 
+        # sec-01  sub-sec[1] name
         self.assertIsInstance(middle.content[1].sections[1].name, rfc.Name)
         if not isinstance(middle.content[1].sections[1].name, rfc.Name): # type-check
             return
@@ -1946,7 +1947,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[1].sections[1].name.content), 1)
         self.assertIsInstance( middle.content[1].sections[1].name.content[0], rfc.Text)
         self.assertEqual( middle.content[1].sections[1].name.content[0].content, "Formal languages in standards documents")
-        # sec-01  sub-sec[1] content 
+        # sec-01  sub-sec[1] content
         self.assertIsInstance( middle.content[1].sections[1].content, list)
         self.assertEqual( len(middle.content[1].sections[1].content), 1)
         self.assertIsInstance( middle.content[1].sections[1].content[0], rfc.T)
@@ -1955,7 +1956,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[1].sections[1].content[0].content, list)
         self.assertEqual( len(middle.content[1].sections[1].content[0].content), 11)
         self.assertIsInstance( middle.content[1].sections[1].content[0].content[0], rfc.Text)
-        if not isinstance( middle.content[1].sections[1].content[0].content[0], rfc.Text): # type-check 
+        if not isinstance( middle.content[1].sections[1].content[0].content[0], rfc.Text): # type-check
             return
         self.assertEqual( middle.content[1].sections[1].content[0].content[0].content, """
                     A small proportion of IETF standards documents contain
@@ -2031,7 +2032,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[1].sections[1].content[0].keepWithNext)
         self.assertFalse( middle.content[1].sections[1].content[0].keepWithPrevious)
 
-        # sec-01  sub-sec[1] sections 
+        # sec-01  sub-sec[1] sections
         self.assertIsInstance( middle.content[1].sections[1].sections, list)
         if not isinstance( middle.content[1].sections[1].sections, list): # type-check
             return
@@ -2054,13 +2055,13 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         # sec-02
         self.assertIsInstance(middle.content[2], rfc.Section)
         # sec-02 name
-        self.assertIsNotNone( middle.content[2].name) 
-        self.assertIsInstance( middle.content[2].name, rfc.Name) 
+        self.assertIsNotNone( middle.content[2].name)
+        self.assertIsInstance( middle.content[2].name, rfc.Name)
         if not isinstance( middle.content[2].name, rfc.Name) : # type-check
             return
-        self.assertEqual( len(middle.content[2].name.content), 1) 
-        self.assertIsInstance( middle.content[2].name.content[0], rfc.Text) 
-        self.assertEqual( middle.content[2].name.content[0].content, "Design Principles") 
+        self.assertEqual( len(middle.content[2].name.content), 1)
+        self.assertIsInstance( middle.content[2].name.content[0], rfc.Text)
+        self.assertEqual( middle.content[2].name.content[0].content, "Design Principles")
 
         # sec-02 content
         self.assertIsInstance( middle.content[2].content, list)
@@ -2408,7 +2409,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
              return
         self.assertEqual( len(middle.content[2].content[4].content[3][1].content[1].content), 3)
         self.assertIsInstance( middle.content[2].content[4].content[3][1].content[1].content[0], rfc.Text)
-        if not isinstance( middle.content[2].content[4].content[3][1].content[1].content[0], rfc.Text): 
+        if not isinstance( middle.content[2].content[4].content[3][1].content[1].content[0], rfc.Text):
              return
         self.assertEqual( middle.content[2].content[4].content[3][1].content[1].content[0].content, """
                         It may be desirable to restrict expressiveness, however, to
@@ -2427,7 +2428,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[2].content[4].content[3][1].content[1].content[2], rfc.Text)
         if not isinstance( middle.content[2].content[4].content[3][1].content[1].content[2], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[2].content[4].content[3][1].content[1].content[2].content, 
+        self.assertEqual( middle.content[2].content[4].content[3][1].content[1].content[2].content,
                     """) community advocates for programming
                         language design to be informed by the desired properties of
                         the parsers for those languages, protocol designers should be
@@ -2518,8 +2519,8 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-02 content[4] <DL> anchor, hanging, spacing
         self.assertIsNone( middle.content[2].content[4].anchor)
-        self.assertTrue( middle.content[2].content[4].hanging) 
-        self.assertEqual( middle.content[2].content[4].spacing, "normal") 
+        self.assertTrue( middle.content[2].content[4].hanging)
+        self.assertEqual( middle.content[2].content[4].spacing, "normal")
 
 
         # sec-02 sections
@@ -2539,24 +2540,24 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         # sec-03
         self.assertIsInstance(middle.content[3], rfc.Section)
         # sec-03 name
-        self.assertIsNotNone( middle.content[3].name) 
-        self.assertIsInstance( middle.content[3].name, rfc.Name) 
+        self.assertIsNotNone( middle.content[3].name)
+        self.assertIsInstance( middle.content[3].name, rfc.Name)
         if not isinstance( middle.content[3].name, rfc.Name) : # type-check
             return
-        self.assertEqual( len(middle.content[3].name.content), 1) 
-        self.assertIsInstance( middle.content[3].name.content[0], rfc.Text) 
+        self.assertEqual( len(middle.content[3].name.content), 1)
+        self.assertIsInstance( middle.content[3].name.content[0], rfc.Text)
         self.assertEqual( middle.content[3].name.content[0].content, "Augmented Packet Header Diagrams")
 
         # sec-03 content
-        self.assertIsInstance( middle.content[3].content, list) 
-        self.assertEqual( len(middle.content[3].content), 3) 
+        self.assertIsInstance( middle.content[3].content, list)
+        self.assertEqual( len(middle.content[3].content), 3)
         # sec-03 content[0] <T>
-        self.assertIsInstance( middle.content[3].content[0], rfc.T) 
+        self.assertIsInstance( middle.content[3].content[0], rfc.T)
         if not isinstance( middle.content[3].content[0], rfc.T) : # type-check
             return
         # sec-03 content[0] <T> content
-        self.assertIsInstance( middle.content[3].content[0].content, list) 
-        self.assertEqual( len(middle.content[3].content[0].content), 3) 
+        self.assertIsInstance( middle.content[3].content[0].content, list)
+        self.assertEqual( len(middle.content[3].content[0].content), 3)
         self.assertIsInstance( middle.content[3].content[0].content[0], rfc.Text )
         if not isinstance( middle.content[3].content[0].content[0], rfc.Text ): # type-check
             return
@@ -2581,18 +2582,18 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                 existing publication processes.
             """)
         # sec-03 content[0] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].content[0].anchor) 
+        self.assertIsNone( middle.content[3].content[0].anchor)
         self.assertIsNone( middle.content[3].content[0].hangText)
         self.assertFalse( middle.content[3].content[0].keepWithNext)
         self.assertFalse( middle.content[3].content[0].keepWithPrevious)
 
         # sec-03 content[1] <T>
-        self.assertIsInstance( middle.content[3].content[1], rfc.T) 
+        self.assertIsInstance( middle.content[3].content[1], rfc.T)
         if not isinstance( middle.content[3].content[1], rfc.T) : # type-check
             return
         # sec-03 content[1] <T> content
-        self.assertIsInstance( middle.content[3].content[1].content, list) 
-        self.assertEqual( len(middle.content[3].content[1].content), 3) 
+        self.assertIsInstance( middle.content[3].content[1].content, list)
+        self.assertEqual( len(middle.content[3].content[1].content), 3)
         self.assertIsInstance( middle.content[3].content[1].content[0], rfc.Text )
         if not isinstance( middle.content[3].content[1].content[0], rfc.Text ): # type-check
             return
@@ -2606,7 +2607,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse( middle.content[3].content[1].content[1].pageno)
         self.assertEqual( middle.content[3].content[1].content[1].target, """background-ascii""")
         self.assertIsInstance( middle.content[3].content[1].content[2], rfc.Text )
-        if not isinstance( middle.content[3].content[1].content[2], rfc.Text ): # type-check 
+        if not isinstance( middle.content[3].content[1].content[2], rfc.Text ): # type-check
             return
         self.assertEqual( middle.content[3].content[1].content[2].content,
             """ there are
@@ -2615,18 +2616,18 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                 header diagram format is described.
             """)
         # sec-03 content[1] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].content[1].anchor) 
+        self.assertIsNone( middle.content[3].content[1].anchor)
         self.assertIsNone( middle.content[3].content[1].hangText)
         self.assertFalse( middle.content[3].content[1].keepWithNext)
         self.assertFalse( middle.content[3].content[1].keepWithPrevious)
 
         # sec-03 content[2] <T>
-        self.assertIsInstance( middle.content[3].content[2], rfc.T) 
+        self.assertIsInstance( middle.content[3].content[2], rfc.T)
         if not isinstance( middle.content[3].content[2], rfc.T) : # type-check
             return
         # sec-03 content[2] <T> content
-        self.assertIsInstance( middle.content[3].content[2].content, list) 
-        self.assertEqual( len(middle.content[3].content[2].content), 3) 
+        self.assertIsInstance( middle.content[3].content[2].content, list)
+        self.assertEqual( len(middle.content[3].content[2].content), 3)
         self.assertIsInstance( middle.content[3].content[2].content[0], rfc.Text )
         if not isinstance( middle.content[3].content[2].content[0], rfc.Text ):
             return
@@ -2636,7 +2637,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                 provided tools, and a formal specification of the augmented packet
                 diagrams will be given in """)
         self.assertIsInstance( middle.content[3].content[2].content[1], rfc.XRef )
-        if not isinstance( middle.content[3].content[2].content[1], rfc.XRef ): 
+        if not isinstance( middle.content[3].content[2].content[1], rfc.XRef ):
             return
         self.assertIsNone( middle.content[3].content[2].content[1].content)
         self.assertEqual( middle.content[3].content[2].content[1].format, "default")
@@ -2648,19 +2649,19 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( middle.content[3].content[2].content[2].content, """.
             """)
         # sec-03 content[2] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].content[2].anchor) 
+        self.assertIsNone( middle.content[3].content[2].anchor)
         self.assertIsNone( middle.content[3].content[2].hangText)
         self.assertFalse( middle.content[3].content[2].keepWithNext)
         self.assertFalse( middle.content[3].content[2].keepWithPrevious)
 
         # sec-03 sub-sec
-        self.assertIsInstance( middle.content[3].sections, list) 
+        self.assertIsInstance( middle.content[3].sections, list)
         if not isinstance( middle.content[3].sections, list) :
             return
-        self.assertEqual( len(middle.content[3].sections), 10) 
-        # sec-03 sub-sec[0] 
+        self.assertEqual( len(middle.content[3].sections), 10)
+        # sec-03 sub-sec[0]
         self.assertIsInstance( middle.content[3].sections[0], rfc.Section)
-        # sec-03 sub-sec[0] name 
+        # sec-03 sub-sec[0] name
         self.assertIsInstance( middle.content[3].sections[0].name, rfc.Name)
         if not isinstance( middle.content[3].sections[0].name, rfc.Name): #type-check
             return
@@ -2668,7 +2669,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].name.content), 1)
         self.assertIsInstance( middle.content[3].sections[0].name.content[0], rfc.Text)
         self.assertEqual( middle.content[3].sections[0].name.content[0].content, "PDUs with Fixed and Variable-Width Fields")
-        # sec-03 sub-sec[0] content 
+        # sec-03 sub-sec[0] content
         self.assertIsInstance( middle.content[3].sections[0].content, list)
         self.assertEqual( len(middle.content[3].sections[0].content), 10)
 
@@ -2688,7 +2689,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                   in the packet format.
                 """)
         # sec-03 sub-sec[0] content [0] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[0].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[0].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[0].hangText)
         self.assertFalse( middle.content[3].sections[0].content[0].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[0].keepWithPrevious)
@@ -2711,7 +2712,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                   fields.
                 """)
         # sec-03 sub-sec[0] content [1] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[1].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[1].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[1].hangText)
         self.assertFalse( middle.content[3].sections[0].content[1].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[1].keepWithPrevious)
@@ -2734,7 +2735,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                   from the total size of the containing PDU.
                 """)
         # sec-03 sub-sec[0] content [2] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[2].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[2].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[2].hangText)
         self.assertFalse( middle.content[3].sections[0].content[2].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[2].keepWithPrevious)
@@ -2759,7 +2760,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                   <dl> list, after a paragraph containing the text "where:".
                 """)
         # sec-03 sub-sec[0] content [3] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[3].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[3].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[3].hangText)
         self.assertFalse( middle.content[3].sections[0].content[3].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[3].keepWithPrevious)
@@ -2791,7 +2792,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( middle.content[3].sections[0].content[4].content[2].content, """).
                 """)
         # sec-03 sub-sec[0] content [4] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[4].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[4].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[4].hangText)
         self.assertFalse( middle.content[3].sections[0].content[4].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[4].keepWithPrevious)
@@ -2831,7 +2832,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                   be unique within a given structure definition.
                 """)
         # sec-03 sub-sec[0] content [5] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[5].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[5].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[5].hangText)
         self.assertFalse( middle.content[3].sections[0].content[5].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[5].keepWithPrevious)
@@ -2864,7 +2865,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                  as follows:
                 """)
         # sec-03 sub-sec[0] content [6] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[6].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[6].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[6].hangText)
         self.assertFalse( middle.content[3].sections[0].content[6].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[6].keepWithPrevious)
@@ -2923,7 +2924,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                     where:
                 """)
         # sec-03 sub-sec[0] content [8] <T> anchor, hangText, keepWithNext, keepWithPrevious
-        self.assertIsNone( middle.content[3].sections[0].content[8].anchor) 
+        self.assertIsNone( middle.content[3].sections[0].content[8].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[8].hangText)
         self.assertFalse( middle.content[3].sections[0].content[8].keepWithNext)
         self.assertFalse( middle.content[3].sections[0].content[8].keepWithPrevious)
@@ -2932,7 +2933,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9], rfc.DL)
         if not isinstance( middle.content[3].sections[0].content[9], rfc.DL) : # type-check
             return
-        # sec-03 sub-sec[0] content [9] <DL> content 
+        # sec-03 sub-sec[0] content [9] <DL> content
         self.assertIsInstance( middle.content[3].sections[0].content[9].content, list)
         self.assertEqual( len(middle.content[3].sections[0].content[9].content), 15)
 
@@ -2944,7 +2945,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[0][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[0][0].content[0].content, """
                         Version (V): 4 bits.
                     """)
@@ -3385,10 +3386,10 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-03 sub-sec[0] content [9] <DL> anchor, hanging, spacing
         self.assertIsNone( middle.content[3].sections[0].content[9].anchor)
-        self.assertTrue( middle.content[3].sections[0].content[9].hanging) 
-        self.assertEqual( middle.content[3].sections[0].content[9].spacing, "normal") 
+        self.assertTrue( middle.content[3].sections[0].content[9].hanging)
+        self.assertEqual( middle.content[3].sections[0].content[9].spacing, "normal")
 
-        # sec-03 sub-sec[0] sections 
+        # sec-03 sub-sec[0] sections
         self.assertIsInstance( middle.content[3].sections[0].sections, list)
         if not isinstance( middle.content[3].sections[0].sections, list): # type-check
             return
@@ -3401,7 +3402,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual(middle.content[3].sections[0].toc, "default")
 
 
-        # sec-03 sub-sec[1] 
+        # sec-03 sub-sec[1]
         self.assertIsInstance( middle.content[3].sections[1], rfc.Section)
         # sec-03  sub-sec[1] anchor, numbered removeInRFC, title,  toc
         self.assertEqual(middle.content[3].sections[1].anchor, "ascii-xref")
@@ -3411,30 +3412,30 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual(middle.content[3].sections[1].toc, "default")
 
 
-        # sec-03 sub-sec[2] 
+        # sec-03 sub-sec[2]
         self.assertIsInstance( middle.content[3].sections[2], rfc.Section)
-        # ...... 
-        # sec-03 sub-sec[3] 
+        # ......
+        # sec-03 sub-sec[3]
         self.assertIsInstance( middle.content[3].sections[3], rfc.Section)
-        # ...... 
-        # sec-03 sub-sec[4] 
+        # ......
+        # sec-03 sub-sec[4]
         self.assertIsInstance( middle.content[3].sections[4], rfc.Section)
-        # ...... 
-        # sec-03 sub-sec[5] 
+        # ......
+        # sec-03 sub-sec[5]
         self.assertIsInstance( middle.content[3].sections[5], rfc.Section)
-        # ...... 
-        # sec-03 sub-sec[6] 
+        # ......
+        # sec-03 sub-sec[6]
         self.assertIsInstance( middle.content[3].sections[6], rfc.Section)
-        # ...... 
-        # sec-03 sub-sec[7] 
+        # ......
+        # sec-03 sub-sec[7]
         self.assertIsInstance( middle.content[3].sections[7], rfc.Section)
-        # ...... 
-        # sec-03 sub-sec[8] 
+        # ......
+        # sec-03 sub-sec[8]
         self.assertIsInstance( middle.content[3].sections[8], rfc.Section)
-        # ...... 
-        # sec-03 sub-sec[9] 
+        # ......
+        # sec-03 sub-sec[9]
         self.assertIsInstance( middle.content[3].sections[9], rfc.Section)
-        # ...... 
+        # ......
 
 
         # sec-03  anchor, numbered removeInRFC, title,  toc
@@ -3449,7 +3450,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-04
         self.assertIsInstance(middle.content[4], rfc.Section)
-        # sec-04  name 
+        # sec-04  name
         self.assertIsInstance(middle.content[4].name, rfc.Name)
         if not isinstance(middle.content[4].name, rfc.Name): # type-check
             return
@@ -3457,14 +3458,14 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual(len(middle.content[4].name.content), 1)
         self.assertIsInstance(middle.content[4].name.content[0], rfc.Text)
         self.assertEqual(middle.content[4].name.content[0].content, "Open Issues")
-        # sec-04  content 
+        # sec-04  content
         self.assertIsInstance(middle.content[4].content, list)
         self.assertEqual(len(middle.content[4].content), 1)
-        # sec-04  content [0] <UL> 
+        # sec-04  content [0] <UL>
         self.assertIsInstance(middle.content[4].content[0], rfc.UL)
         if not isinstance(middle.content[4].content[0], rfc.UL): # type-check
             return
-        # sec-04  content [0] <UL> content 
+        # sec-04  content [0] <UL> content
         self.assertIsInstance(middle.content[4].content[0].content, list)
         self.assertEqual(len(middle.content[4].content[0].content), 3)
         # sec-04  content [0] <UL> content [0] <LI>
@@ -3514,11 +3515,11 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsNone(middle.content[4].content[0].content[2].anchor)
         # sec-04  content [0] <UL> anchor, empty, spacing
         self.assertIsInstance(middle.content[4].content[0], rfc.UL)
-        self.assertIsNone(middle.content[4].content[0].anchor) 
-        self.assertFalse(middle.content[4].content[0].empty) 
-        self.assertEqual(middle.content[4].content[0].spacing, "normal") 
+        self.assertIsNone(middle.content[4].content[0].anchor)
+        self.assertFalse(middle.content[4].content[0].empty)
+        self.assertEqual(middle.content[4].content[0].spacing, "normal")
 
-        # sec-04  sections 
+        # sec-04  sections
         self.assertIsInstance(middle.content[4].sections, list)
         if not isinstance(middle.content[4].sections, list): # type-check
             return
@@ -3559,7 +3560,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(middle.content[0].content, list)
         self.assertEqual( len(middle.content[0].content), 8)
 
-        # section-00 -- content[0] <T> 
+        # section-00 -- content[0] <T>
         self.assertIsInstance(middle.content[0].content[0], rfc.T)
         if not isinstance(middle.content[0].content[0], rfc.T):
             return
@@ -3582,7 +3583,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[0].content[0].keepWithNext)
         self.assertFalse ( middle.content[0].content[0].keepWithPrevious)
 
-        # section-00 -- content[1] <T> 
+        # section-00 -- content[1] <T>
         self.assertIsInstance(middle.content[0].content[1], rfc.T)
         if not isinstance(middle.content[0].content[1], rfc.T):
             return
@@ -3647,7 +3648,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsNone( middle.content[0].content[2].width)
         self.assertIsNone( middle.content[0].content[2].xmlSpace)
 
-        # section-00 -- content[3] <T> 
+        # section-00 -- content[3] <T>
         self.assertIsInstance(middle.content[0].content[3], rfc.T)
         if not isinstance(middle.content[0].content[3], rfc.T):
             return
@@ -3673,7 +3674,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[0].content[3].keepWithNext)
         self.assertFalse ( middle.content[0].content[3].keepWithPrevious)
 
-        # section-00 -- content[4] <T> 
+        # section-00 -- content[4] <T>
         self.assertIsInstance(middle.content[0].content[4], rfc.T)
         if not isinstance(middle.content[0].content[4], rfc.T):
             return
@@ -3698,7 +3699,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[0].content[4].keepWithNext)
         self.assertFalse ( middle.content[0].content[4].keepWithPrevious)
 
-        # section-00 -- content[5] <T> 
+        # section-00 -- content[5] <T>
         self.assertIsInstance(middle.content[0].content[5], rfc.T)
         if not isinstance(middle.content[0].content[5], rfc.T):
             return
@@ -3722,7 +3723,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[0].content[5].keepWithNext)
         self.assertFalse ( middle.content[0].content[5].keepWithPrevious)
 
-        # section-00 -- content[6] <T> 
+        # section-00 -- content[6] <T>
         self.assertIsInstance(middle.content[0].content[6], rfc.T)
         if not isinstance(middle.content[0].content[6], rfc.T):
             return
@@ -3742,7 +3743,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[0].content[6].keepWithNext)
         self.assertFalse ( middle.content[0].content[6].keepWithPrevious)
 
-        # section-00 -- content[7] <T> 
+        # section-00 -- content[7] <T>
         self.assertIsInstance(middle.content[0].content[7], rfc.T)
         if not isinstance(middle.content[0].content[7], rfc.T):
             return
@@ -3789,7 +3790,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(middle.content[1].content, list)
         self.assertEqual( len(middle.content[1].content), 2)
 
-        # section-01 -- content[0] <T> 
+        # section-01 -- content[0] <T>
         self.assertIsInstance(middle.content[1].content[0], rfc.T)
         if not isinstance(middle.content[1].content[0], rfc.T):
             return
@@ -3812,7 +3813,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].content[0].keepWithPrevious)
 
 
-        # section-01 -- content[1] <T> 
+        # section-01 -- content[1] <T>
         self.assertIsInstance(middle.content[1].content[1], rfc.T)
         if not isinstance(middle.content[1].content[1], rfc.T):
             return
@@ -3836,14 +3837,14 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].content[1].keepWithPrevious)
 
 
-        # section-01 -- sections 
+        # section-01 -- sections
         self.assertIsInstance(middle.content[1].sections, list)
         if not isinstance(middle.content[1].sections, list):
             return
         self.assertEqual( len(middle.content[1].sections), 2)
-        # section-01 -- section [0] 
+        # section-01 -- section [0]
         self.assertIsInstance(middle.content[1].sections[0], rfc.Section)
-        # section-01 -- section [0] name 
+        # section-01 -- section [0] name
         self.assertIsInstance(middle.content[1].sections[0].name, rfc.Name)
         if not isinstance(middle.content[1].sections[0].name, rfc.Name): # type-check
             return
@@ -3852,7 +3853,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(middle.content[1].sections[0].name.content[0], rfc.Text)
         self.assertEqual(middle.content[1].sections[0].name.content[0].content, "Limitations of Current Packet Format Diagrams")
 
-        # section-01 -- subsection [0] content 
+        # section-01 -- subsection [0] content
         self.assertIsInstance(middle.content[1].sections[0].content, list)
         self.assertEqual( len(middle.content[1].sections[0].content), 13)
 
@@ -3888,7 +3889,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 :
 :   Final Size: A variable-length integer indicating the final size
 :      of the stream by the RESET_STREAM sender, in unit of bytes.
-""") 
+""")
 
         # section-01 -- subsection [0] content [0] <Artwork> align, alt, anchor, height, name, src, type, width, xmlSpace
         self.assertEqual ( middle.content[1].sections[0].content[0].align, "left")
@@ -3902,7 +3903,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsNone( middle.content[1].sections[0].content[0].xmlSpace)
 
 
-        # section-01 -- subsection[0] content [1] <T> 
+        # section-01 -- subsection[0] content [1] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[1], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[1], rfc.T):
             return
@@ -3923,7 +3924,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[1].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[1].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [2] <T> 
+        # section-01 -- subsection[0] content [2] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[2], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[2], rfc.T):
             return
@@ -3943,7 +3944,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[2].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[2].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [3] <T> 
+        # section-01 -- subsection[0] content [3] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[3], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[3], rfc.T):
             return
@@ -3965,7 +3966,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[3].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[3].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [4] <T> 
+        # section-01 -- subsection[0] content [4] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[4], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[4], rfc.T):
             return
@@ -3987,7 +3988,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[4].keepWithPrevious)
 
 
-        # section-01 -- subsection[0] content [5] <T> 
+        # section-01 -- subsection[0] content [5] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[5], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[5], rfc.T):
             return
@@ -4018,7 +4019,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[5].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[5].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [6] <T> 
+        # section-01 -- subsection[0] content [6] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[6], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[6], rfc.T):
             return
@@ -4041,7 +4042,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[6].keepWithPrevious)
 
 
-        # section-01 -- subsection[0] content [7] <T> 
+        # section-01 -- subsection[0] content [7] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[7], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[7], rfc.T):
             return
@@ -4067,7 +4068,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[7].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[7].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [8] <T> 
+        # section-01 -- subsection[0] content [8] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[8], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[8], rfc.T):
             return
@@ -4086,7 +4087,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[8].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[8].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [9] <T> 
+        # section-01 -- subsection[0] content [9] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[9], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[9], rfc.T):
             return
@@ -4107,7 +4108,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[9].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[9].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [10] <T> 
+        # section-01 -- subsection[0] content [10] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[10], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[10], rfc.T):
             return
@@ -4132,7 +4133,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[10].keepWithPrevious)
 
 
-        # section-01 -- subsection[0] content [11] <T> 
+        # section-01 -- subsection[0] content [11] <T>
         self.assertIsInstance(middle.content[1].sections[0].content[11], rfc.T)
         if not isinstance(middle.content[1].sections[0].content[11], rfc.T):
             return
@@ -4157,7 +4158,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[0].content[11].keepWithNext)
         self.assertFalse ( middle.content[1].sections[0].content[11].keepWithPrevious)
 
-        # section-01 -- subsection[0] content [12] <Artwork> 
+        # section-01 -- subsection[0] content [12] <Artwork>
         self.assertIsInstance(middle.content[1].sections[0].content[12], rfc.Artwork)
         if not isinstance(middle.content[1].sections[0].content[12], rfc.Artwork):
             return
@@ -4199,7 +4200,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsNone( middle.content[1].sections[0].content[12].xmlSpace)
 
 
-        # section-01 -- section [0] sections 
+        # section-01 -- section [0] sections
         self.assertIsInstance(middle.content[1].sections[0].sections, list)
         if not isinstance(middle.content[1].sections[0].sections, list):
             return
@@ -4212,9 +4213,9 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual(middle.content[1].sections[0].toc, "default" )
 
 
-        # section-01 -- subsection [1] 
+        # section-01 -- subsection [1]
         self.assertIsInstance(middle.content[1].sections[1], rfc.Section)
-        # section-01 -- subsection [1] content 
+        # section-01 -- subsection [1] content
         self.assertIsInstance(middle.content[1].sections[1].content, list)
         self.assertEqual( len(middle.content[1].sections[1].content), 1)
         # section-01 -- subsection [1] content [0] <T>
@@ -4245,7 +4246,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[1].sections[1].content[0].keepWithPrevious)
 
 
-        # section-01 -- subsection [1] sections 
+        # section-01 -- subsection [1] sections
         self.assertIsInstance(middle.content[1].sections[1].sections, list)
         if not isinstance(middle.content[1].sections[1].sections, list):
             return
@@ -4341,10 +4342,10 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual(len(middle.content[3].sections[0].name.content), 1)
         self.assertIsInstance(middle.content[3].sections[0].name.content[0], rfc.Text)
         self.assertEqual(middle.content[3].sections[0].name.content[0].content, "PDUs with Fixed and Variable-Width Fields")
-        # section-03 -- sub-section[0] content 
+        # section-03 -- sub-section[0] content
         self.assertIsInstance(middle.content[3].sections[0].content, list)
         self.assertEqual(len(middle.content[3].sections[0].content), 10)
-        # section-03 -- sub-section[0] content[0--6] <T> 
+        # section-03 -- sub-section[0] content[0--6] <T>
         self.assertIsInstance(middle.content[3].sections[0].content[0], rfc.T)
         self.assertIsInstance(middle.content[3].sections[0].content[1], rfc.T)
         self.assertIsInstance(middle.content[3].sections[0].content[2], rfc.T)
@@ -4352,14 +4353,14 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(middle.content[3].sections[0].content[4], rfc.T)
         self.assertIsInstance(middle.content[3].sections[0].content[5], rfc.T)
         self.assertIsInstance(middle.content[3].sections[0].content[6], rfc.T)
-        # section-03 -- sub-section[0] content[7] <Artwork> 
+        # section-03 -- sub-section[0] content[7] <Artwork>
         self.assertIsInstance(middle.content[3].sections[0].content[7], rfc.Artwork)
         if not isinstance(middle.content[3].sections[0].content[7], rfc.Artwork):
             return
         self.assertIsInstance( middle.content[3].sections[0].content[7].content, rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[7].content, rfc.Text):
             return
-        self.assertEqual( middle.content[3].sections[0].content[7].content.content, 
+        self.assertEqual( middle.content[3].sections[0].content[7].content.content,
 """0                   1                   2                   3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4384,15 +4385,15 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual ( middle.content[3].sections[0].content[7].align, "left")
         self.assertIsNone( middle.content[3].sections[0].content[7].alt)
         self.assertIsNone( middle.content[3].sections[0].content[7].anchor)
-        self.assertIsNone( middle.content[3].sections[0].content[7].height) 
+        self.assertIsNone( middle.content[3].sections[0].content[7].height)
         self.assertIsNone( middle.content[3].sections[0].content[7].name)
         self.assertIsNone( middle.content[3].sections[0].content[7].src)
-        self.assertIsNone( middle.content[3].sections[0].content[7].type) 
-        self.assertIsNone( middle.content[3].sections[0].content[7].width) 
-        self.assertIsNone( middle.content[3].sections[0].content[7].xmlSpace) 
+        self.assertIsNone( middle.content[3].sections[0].content[7].type)
+        self.assertIsNone( middle.content[3].sections[0].content[7].width)
+        self.assertIsNone( middle.content[3].sections[0].content[7].xmlSpace)
 
 
-        # section-03 -- sub-section[0] content[8] <T> 
+        # section-03 -- sub-section[0] content[8] <T>
         self.assertIsInstance(middle.content[3].sections[0].content[8], rfc.T)
         if not isinstance(middle.content[3].sections[0].content[8], rfc.T):
             return
@@ -4409,7 +4410,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9], rfc.DL)
         if not isinstance( middle.content[3].sections[0].content[9], rfc.DL) : # type-check
             return
-        # sec-03 sub-section[0] content [9] <DL> content 
+        # sec-03 sub-section[0] content [9] <DL> content
         self.assertIsInstance( middle.content[3].sections[0].content[9].content, list)
         self.assertEqual( len(middle.content[3].sections[0].content[9].content), 15)
 
@@ -4421,7 +4422,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[0][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[0][0].content[0].content, "   Version (V): 4 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[0][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [0] <Tuple<DL,DD>> [1] <DD>
@@ -4432,7 +4433,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[0][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[0][1].content[0].content,
 """  This is a fixed-width field, whose full label
       is shown in the diagram.  The field's width -- 4 bits -- is given
       in the label of the description list, separated from the field's
@@ -4449,7 +4450,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[1][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[1][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[1][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[1][0].content[0].content, "   Internet Header Length (IHL): 4 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[1][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [1] <Tuple<DL,DD>> [1] <DD>
@@ -4460,7 +4461,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[1][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[1][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[1][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[1][1].content[0].content,
 """  This is a shorter field, whose
       full label is too large to be shown in the diagram.  A short label
       (IHL) is used in the diagram, and this short label is provided, in
@@ -4479,7 +4480,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[2][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[2][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[2][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[2][0].content[0].content, "   Differentiated Services Code Point (DSCP): 6 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[2][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [2] <Tuple<DL,DD>> [1] <DD>
@@ -4490,7 +4491,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[2][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[2][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[2][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[2][1].content[0].content,
 """  This is a fixed-
       width field, as previously discussed.
 """)
@@ -4506,7 +4507,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[3][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[3][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[3][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[3][0].content[0].content, "   Explicit Congestion Notification (ECN): 2 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[3][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [3] <Tuple<DL,DD>> [1] <DD>
@@ -4517,7 +4518,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[3][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[3][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[3][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[3][1].content[0].content,
 """  This is a fixed-
       width field, as previously discussed.
 """)
@@ -4533,7 +4534,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[4][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[4][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[4][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[4][0].content[0].content, "   Total Length (TL): 2 bytes.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[4][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [4] <Tuple<DL,DD>> [1] <DD>
@@ -4544,7 +4545,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[4][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[4][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[4][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[4][1].content[0].content,
 """  This is a fixed-width field, as
       previously discussed.  Where fields are an integral number of
       bytes in size, the field length can be given in bytes rather than
@@ -4563,7 +4564,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[5][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[5][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[5][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[5][0].content[0].content, "   Identification: 2 bytes.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[5][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [5] <Tuple<DL,DD>> [1] <DD>
@@ -4574,7 +4575,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[5][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[5][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[5][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[5][1].content[0].content,
 """  This is a fixed-width field, as previously
       discussed.
 """)
@@ -4591,7 +4592,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[6][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[6][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[6][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[6][0].content[0].content, "   Flags: 3 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[6][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [6] <Tuple<DL,DD>> [1] <DD>
@@ -4602,7 +4603,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[6][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[6][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[6][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[6][1].content[0].content,
 """  This is a fixed-width field, as previously discussed.
 """)
         # sec-03 sub-section[0] content [9] <DL> content [6] <Tuple<DL,DD>> [0] <DD> anchor
@@ -4617,7 +4618,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[7][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[7][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[7][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[7][0].content[0].content, "   Fragment Offset: 13 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[7][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [7] <Tuple<DL,DD>> [1] <DD>
@@ -4628,7 +4629,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[7][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[7][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[7][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[7][1].content[0].content,
 """  This is a fixed-width field, as previously
       discussed.
 """)
@@ -4644,7 +4645,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[8][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[8][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[8][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[8][0].content[0].content, "   Time to Live (TTL): 1 byte.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[8][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [8] <Tuple<DL,DD>> [1] <DD>
@@ -4655,7 +4656,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[8][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[8][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[8][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[8][1].content[0].content,
 """  This is a fixed-width field, as
       previously discussed.
 """)
@@ -4673,7 +4674,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[9][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[9][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[9][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[9][0].content[0].content, "   Protocol: 1 byte.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[9][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [9] <Tuple<DL,DD>> [1] <DD>
@@ -4684,7 +4685,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[9][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[9][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[9][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[9][1].content[0].content,
 """  This is a fixed-width field, as previously
       discussed.
 """)
@@ -4703,7 +4704,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[10][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[10][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[10][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[10][0].content[0].content, "   Header Checksum: 2 bytes.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[10][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [10] <Tuple<DL,DD>> [1] <DD>
@@ -4714,7 +4715,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[10][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[10][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[10][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[10][1].content[0].content,
 """  This is a fixed-width field, as previously
       discussed.
 """)
@@ -4732,7 +4733,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[11][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[11][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[11][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[11][0].content[0].content, "   Source Address: 32 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[11][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [11] <Tuple<DL,DD>> [1] <DD>
@@ -4743,7 +4744,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[11][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[11][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[11][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[11][1].content[0].content,
 """  This is a fixed-width field, as previously
       discussed.
 """)
@@ -4761,7 +4762,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[12][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[12][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[12][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[12][0].content[0].content, "   Destination Address: 32 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[12][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [12] <Tuple<DL,DD>> [1] <DD>
@@ -4772,7 +4773,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[12][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[12][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[12][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[12][1].content[0].content,
 """  This is a fixed-width field, as
       previously discussed.
 """)
@@ -4791,7 +4792,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[13][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[13][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[13][0].content[0].content, "   Options: (IHL-5)*32 bits.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[13][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [13] <Tuple<DL,DD>> [1] <DD>
@@ -4802,7 +4803,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[13][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[13][1].content[0].content,
 """  This is a variable-length field, whose
       length is defined by the value of the field with short label IHL
       (Internet Header Length).  Constraint expressions can be used in
@@ -4827,7 +4828,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[14][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[14][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[14][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[0].content[9].content[14][0].content[0].content, "   Payload: TL - ((IHL*32)/8) bytes.")
         self.assertIsNone( middle.content[3].sections[0].content[9].content[14][0].anchor)
         # sec-03 sub-section[0] content [9] <DL> content [14] <Tuple<DL,DD>> [1] <DD>
@@ -4838,7 +4839,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[14][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[14][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[0].content[9].content[14][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[14][1].content[0].content,
 """  This is a multi-row variable-
       length field, constrained by the values of fields TL and IHL.
       Instead of the "..." notation, ":" is used to indicate that the
@@ -4858,7 +4859,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-03 sub-section[0] content [9] <DL>
         self.assertIsInstance( middle.content[3].sections[0].content[9], rfc.DL)
-        # sec-03 sub-section[0] content [9] <DL> content 
+        # sec-03 sub-section[0] content [9] <DL> content
         self.assertIsInstance( middle.content[3].sections[0].content[9].content, list)
         self.assertEqual( len(middle.content[3].sections[0].content[9].content), 15)
 
@@ -4877,7 +4878,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][1].content), 1)
         # sec-03 sub-section[0] content [9] <DL> content [0] <Tuple<DL,DD>> [1] <DD> content[0] <Text>
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[0], rfc.Text)
-        self.assertEqual( middle.content[3].sections[0].content[9].content[0][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[0].content[9].content[0][1].content[0].content,
 """  This is a fixed-width field, whose full label
       is shown in the diagram.  The field's width -- 4 bits -- is given
       in the label of the description list, separated from the field's
@@ -4888,12 +4889,12 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-03 sub-section[0] content [9] <DL> anchor, hanging, spacing
         self.assertIsNone( middle.content[3].sections[0].content[9].anchor)
-        self.assertTrue( middle.content[3].sections[0].content[9].hanging) 
-        self.assertEqual( middle.content[3].sections[0].content[9].spacing, "normal") 
+        self.assertTrue( middle.content[3].sections[0].content[9].hanging)
+        self.assertEqual( middle.content[3].sections[0].content[9].spacing, "normal")
 
 
 
-        # section-03 -- sub-section[0] sections 
+        # section-03 -- sub-section[0] sections
         self.assertIsInstance(middle.content[3].sections[0].sections, list)
         if not isinstance(middle.content[3].sections[0].sections, list):
             return
@@ -4917,26 +4918,26 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(middle.content[3].sections[1].name.content[0], rfc.Text)
         self.assertEqual(middle.content[3].sections[1].name.content[0].content, "PDUs That Cross-Reference Previously Defined Fields")
 
-        # section-03 -- sub-section[1] content 
+        # section-03 -- sub-section[1] content
         self.assertIsInstance(middle.content[3].sections[1].content, list)
         self.assertEqual(len(middle.content[3].sections[1].content), 9)
 
-        # section-03 -- sub-section[1] sections 
+        # section-03 -- sub-section[1] sections
         self.assertIsInstance(middle.content[3].sections[1].sections, list)
         if not isinstance(middle.content[3].sections[1].sections, list):
             return
         self.assertEqual(len(middle.content[3].sections[1].sections), 0)
-        # section-03 -- sub-section[0] content[0] <T> 
+        # section-03 -- sub-section[0] content[0] <T>
         self.assertIsInstance(middle.content[3].sections[1].content[0], rfc.T)
 
-        # section-03 -- sub-section[1] content[1] <Artwork> 
+        # section-03 -- sub-section[1] content[1] <Artwork>
         self.assertIsInstance(middle.content[3].sections[1].content[1], rfc.Artwork)
         if not isinstance(middle.content[3].sections[1].content[1], rfc.Artwork):
             return
         self.assertIsInstance( middle.content[3].sections[1].content[1].content, rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[1].content, rfc.Text):
             return
-        self.assertEqual( middle.content[3].sections[1].content[1].content.content, 
+        self.assertEqual( middle.content[3].sections[1].content[1].content.content,
 """0                   1                   2                   3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -4947,15 +4948,15 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual ( middle.content[3].sections[1].content[1].align, "left")
         self.assertIsNone( middle.content[3].sections[1].content[1].alt)
         self.assertIsNone( middle.content[3].sections[1].content[1].anchor)
-        self.assertIsNone( middle.content[3].sections[1].content[1].height) 
+        self.assertIsNone( middle.content[3].sections[1].content[1].height)
         self.assertIsNone( middle.content[3].sections[1].content[1].name)
         self.assertIsNone( middle.content[3].sections[1].content[1].src)
-        self.assertIsNone( middle.content[3].sections[1].content[1].type) 
-        self.assertIsNone( middle.content[3].sections[1].content[1].width) 
-        self.assertIsNone( middle.content[3].sections[1].content[1].xmlSpace) 
+        self.assertIsNone( middle.content[3].sections[1].content[1].type)
+        self.assertIsNone( middle.content[3].sections[1].content[1].width)
+        self.assertIsNone( middle.content[3].sections[1].content[1].xmlSpace)
 
 
-        # section-03 -- sub-section[0] content[2] <T> 
+        # section-03 -- sub-section[0] content[2] <T>
         self.assertIsInstance(middle.content[3].sections[1].content[2], rfc.T)
         if not isinstance(middle.content[3].sections[1].content[2], rfc.T):
             return
@@ -4974,7 +4975,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[3], rfc.DL)
         if not isinstance( middle.content[3].sections[1].content[3], rfc.DL) : # type-check
             return
-        # sec-03 sub-section[1] content [3] <DL> content 
+        # sec-03 sub-section[1] content [3] <DL> content
         self.assertIsInstance( middle.content[3].sections[1].content[3].content, list)
         self.assertEqual( len(middle.content[3].sections[1].content[3].content), 1)
 
@@ -4986,7 +4987,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[1].content[3].content[0][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[3].content[0][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[3].content[0][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[1].content[3].content[0][0].content[0].content, "   SSRC: 32 bits.")
         self.assertIsNone( middle.content[3].sections[1].content[3].content[0][0].anchor)
         # sec-03 sub-section[1] content [3] <DL> content [1] <Tuple<DL,DD>> [1] <DD>
@@ -4997,18 +4998,18 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[3].content[0][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[3].content[0][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[1].content[3].content[0][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[3].content[0][1].content[0].content,
 """  This is a fixed-width field, as described previously.
 """)
 
 
         # sec-03 sub-section[1] content [3] <DL> anchor, hanging, spacing
         self.assertIsNone( middle.content[3].sections[1].content[3].anchor)
-        self.assertTrue( middle.content[3].sections[1].content[3].hanging) 
-        self.assertEqual( middle.content[3].sections[1].content[3].spacing, "normal") 
+        self.assertTrue( middle.content[3].sections[1].content[3].hanging)
+        self.assertEqual( middle.content[3].sections[1].content[3].spacing, "normal")
 
 
-        # section-03 -- sub-section[0] content[4] <T> 
+        # section-03 -- sub-section[0] content[4] <T>
         self.assertIsInstance(middle.content[3].sections[1].content[4], rfc.T)
         if not isinstance(middle.content[3].sections[1].content[4], rfc.T):
             return
@@ -5029,7 +5030,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[3].sections[1].content[4].keepWithNext)
         self.assertFalse ( middle.content[3].sections[1].content[4].keepWithPrevious)
 
-        # section-03 -- sub-section[1] content[5] <T> 
+        # section-03 -- sub-section[1] content[5] <T>
         self.assertIsInstance(middle.content[3].sections[1].content[5], rfc.T)
         if not isinstance(middle.content[3].sections[1].content[5], rfc.T):
             return
@@ -5049,14 +5050,14 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
 
 
-        # section-03 -- sub-section[1] content[6] <Artwork> 
+        # section-03 -- sub-section[1] content[6] <Artwork>
         self.assertIsInstance(middle.content[3].sections[1].content[6], rfc.Artwork)
         if not isinstance(middle.content[3].sections[1].content[6], rfc.Artwork):
             return
         self.assertIsInstance( middle.content[3].sections[1].content[6].content, rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[6].content, rfc.Text):
             return
-        self.assertEqual( middle.content[3].sections[1].content[6].content.content, 
+        self.assertEqual( middle.content[3].sections[1].content[6].content.content,
 """0                   1                   2                   3
 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5081,15 +5082,15 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual ( middle.content[3].sections[1].content[6].align, "left")
         self.assertIsNone( middle.content[3].sections[1].content[6].alt)
         self.assertIsNone( middle.content[3].sections[1].content[6].anchor)
-        self.assertIsNone( middle.content[3].sections[1].content[6].height) 
+        self.assertIsNone( middle.content[3].sections[1].content[6].height)
         self.assertIsNone( middle.content[3].sections[1].content[6].name)
         self.assertIsNone( middle.content[3].sections[1].content[6].src)
-        self.assertIsNone( middle.content[3].sections[1].content[6].type) 
-        self.assertIsNone( middle.content[3].sections[1].content[6].width) 
-        self.assertIsNone( middle.content[3].sections[1].content[6].xmlSpace) 
+        self.assertIsNone( middle.content[3].sections[1].content[6].type)
+        self.assertIsNone( middle.content[3].sections[1].content[6].width)
+        self.assertIsNone( middle.content[3].sections[1].content[6].xmlSpace)
 
 
-        # section-03 -- sub-section[1] content[7] <T> 
+        # section-03 -- sub-section[1] content[7] <T>
         self.assertIsInstance(middle.content[3].sections[1].content[7], rfc.T)
         if not isinstance(middle.content[3].sections[1].content[7], rfc.T):
             return
@@ -5108,11 +5109,11 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertFalse ( middle.content[3].sections[1].content[7].keepWithPrevious)
 
 
-        # section-03 -- sub-section[1] content[8] <DL> 
+        # section-03 -- sub-section[1] content[8] <DL>
         self.assertIsInstance(middle.content[3].sections[1].content[8], rfc.DL)
         if not isinstance( middle.content[3].sections[1].content[8], rfc.DL) : # type-check
             return
-        # sec-03 sub-section[1] content [8] <DL> content 
+        # sec-03 sub-section[1] content [8] <DL> content
         self.assertIsInstance( middle.content[3].sections[1].content[8].content, list)
         self.assertEqual( len(middle.content[3].sections[1].content[8].content), 14)
 
@@ -5125,7 +5126,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[0][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[0][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[0][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[1].content[8].content[0][0].content[0].content, "   Version (V): 2 bits.")
         self.assertIsNone( middle.content[3].sections[1].content[8].content[0][0].anchor)
         # sec-03 sub-section[1] content [8] <DL> content [0] <Tuple<DL,DD>> [1] <DD>
@@ -5136,7 +5137,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[0][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[0][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[1].content[8].content[0][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[8].content[0][1].content[0].content,
 """  This is a fixed-width field, as described
       previously.
 """)
@@ -5152,7 +5153,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[1][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[1][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[1][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[1].content[8].content[1][0].content[0].content, "   Padding (P): 1 bit.")
         self.assertIsNone( middle.content[3].sections[1].content[8].content[1][0].anchor)
         # sec-03 sub-section[1] content [8] <DL> content [1] <Tuple<DL,DD>> [1] <DD>
@@ -5163,7 +5164,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[1][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[1][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[1].content[8].content[1][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[8].content[1][1].content[0].content,
 """  This is a fixed-width field, as described
       previously.
 """)
@@ -5172,8 +5173,8 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-03 sub-section[1] content [3] <DL> anchor, hanging, spacing
         self.assertIsNone( middle.content[3].sections[1].content[8].anchor)
-        self.assertTrue( middle.content[3].sections[1].content[8].hanging) 
-        self.assertEqual( middle.content[3].sections[1].content[8].spacing, "normal") 
+        self.assertTrue( middle.content[3].sections[1].content[8].hanging)
+        self.assertEqual( middle.content[3].sections[1].content[8].spacing, "normal")
 
 
 
@@ -5185,7 +5186,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[8][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[8][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[1].content[8].content[8][0].content[0].content, "   Synchronization Source identifier: 1 Source Identifier.")
         self.assertIsNone( middle.content[3].sections[1].content[8].content[8][0].anchor)
         # sec-03 sub-section[1] content [8] <DL> content [2] <Tuple<DL,DD>> [1] <DD>
@@ -5196,7 +5197,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[1].content[8].content[8][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[8].content[8][1].content[0].content,
 """  This is a
       field whose structure is a previously defined PDU format (Source
       Identifier).  To indicate this, the width of the field is
@@ -5217,7 +5218,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[9][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[9][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[9][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[1].content[8].content[9][0].content[0].content, "   Contributing Source identifiers: CC Source Identifier.")
         self.assertIsNone( middle.content[3].sections[1].content[8].content[9][0].anchor)
         # sec-03 sub-section[1] content [8] <DL> content [9] <Tuple<DL,DD>> [1] <DD>
@@ -5236,7 +5237,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[9][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[9][1].content[0].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[1].content[8].content[9][1].content[0].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[8].content[9][1].content[0].content[0].content,
 """  Where a field
       is comprised of a sequence of previously defined structures,
       square brackets can be used to indicate this in the diagram.  The
@@ -5262,9 +5263,9 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[9][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[9][1].content[1].content[0], rfc.Text)
-        if not isinstance( middle.content[3].sections[1].content[8].content[9][1].content[1].content[0], rfc.Text): # type-check 
+        if not isinstance( middle.content[3].sections[1].content[8].content[9][1].content[1].content[0], rfc.Text): # type-check
             return
-        self.assertEqual( middle.content[3].sections[1].content[8].content[9][1].content[1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[8].content[9][1].content[1].content[0].content,
 """      In this example, both a PDU name (Source Identifier) and a field
       name (CC) are used in the constraint expression.  The PDU name
       refers to the length of the PDU, while the field name refers to
@@ -5290,7 +5291,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[10][0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[10][0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[10][0].content[0], rfc.Text): # type-check
-             return 
+             return
         self.assertEqual( middle.content[3].sections[1].content[8].content[10][0].content[0].content, "   Header Extension: 32 bits; present only when X == 1.")
         self.assertIsNone( middle.content[3].sections[1].content[8].content[10][0].anchor)
         # sec-03 sub-section[1] content [8] <DL> content [10] <Tuple<DL,DD>> [1] <DD>
@@ -5309,7 +5310,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[10][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[10][1].content[0].content[0], rfc.Text): # type-check
              return
-        self.assertEqual( middle.content[3].sections[1].content[8].content[10][1].content[0].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[8].content[10][1].content[0].content[0].content,
 """  This is a field
       whose presence is predicated on an expression given using the
       constraint expression grammar described earlier.  Optional fields
@@ -5337,7 +5338,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[10][1].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[10][1].content[1].content[0], rfc.Text): #type-check
             return
-        self.assertEqual( middle.content[3].sections[1].content[8].content[10][1].content[1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[1].content[8].content[10][1].content[1].content[0].content,
 """      [Note that this example deviates from the format as described in
       [RFC3550].  As specified in that document, the Header Extension
       would be a cross-referenced structure.  This is not shown here for
@@ -5363,8 +5364,8 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         # sec-03 sub-section[1] content [3] <DL> anchor, hanging, spacing
         self.assertIsNone( middle.content[3].sections[1].content[8].anchor)
-        self.assertTrue( middle.content[3].sections[1].content[8].hanging) 
-        self.assertEqual( middle.content[3].sections[1].content[8].spacing, "normal") 
+        self.assertTrue( middle.content[3].sections[1].content[8].hanging)
+        self.assertEqual( middle.content[3].sections[1].content[8].spacing, "normal")
 
 
 
@@ -5388,11 +5389,11 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance(middle.content[3].sections[2].name.content[0], rfc.Text)
         self.assertEqual(middle.content[3].sections[2].name.content[0].content, "PDUs with Non-Contiguous Fields")
 
-        # section-03 -- sub-section[2] content 
+        # section-03 -- sub-section[2] content
         self.assertIsInstance(middle.content[3].sections[2].content, list)
         self.assertEqual(len(middle.content[3].sections[2].content), 6)
 
-        # section-03 -- sub-section[2] content[0--1] <T> 
+        # section-03 -- sub-section[2] content[0--1] <T>
         self.assertIsInstance(middle.content[3].sections[2].content[0], rfc.T)
         self.assertIsInstance(middle.content[3].sections[2].content[1], rfc.T)
 
@@ -5403,7 +5404,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertIsInstance( middle.content[3].sections[2].content[2].content, rfc.Text)
         if not isinstance( middle.content[3].sections[2].content[2].content, rfc.Text):
             return
-        self.assertEqual( middle.content[3].sections[2].content[2].content.content, 
+        self.assertEqual( middle.content[3].sections[2].content[2].content.content,
 """0                   1
 0 1 2 3 4 5 6 7 8 9 0 1 2 3
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -5415,21 +5416,21 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         self.assertEqual ( middle.content[3].sections[2].content[2].align, "left")
         self.assertIsNone( middle.content[3].sections[2].content[2].alt)
         self.assertIsNone( middle.content[3].sections[2].content[2].anchor)
-        self.assertIsNone( middle.content[3].sections[2].content[2].height) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].height)
         self.assertIsNone( middle.content[3].sections[2].content[2].name)
         self.assertIsNone( middle.content[3].sections[2].content[2].src)
-        self.assertIsNone( middle.content[3].sections[2].content[2].type) 
-        self.assertIsNone( middle.content[3].sections[2].content[2].width) 
-        self.assertIsNone( middle.content[3].sections[2].content[2].xmlSpace) 
+        self.assertIsNone( middle.content[3].sections[2].content[2].type)
+        self.assertIsNone( middle.content[3].sections[2].content[2].width)
+        self.assertIsNone( middle.content[3].sections[2].content[2].xmlSpace)
 
 
 
-        # section-03 -- sub-section[2] content[3--5] <T> 
+        # section-03 -- sub-section[2] content[3--5] <T>
         self.assertIsInstance(middle.content[3].sections[2].content[3], rfc.T)
         self.assertIsInstance(middle.content[3].sections[2].content[4], rfc.T)
         self.assertIsInstance(middle.content[3].sections[2].content[5], rfc.T)
 
-        # section-03 -- sub-section[2] sections 
+        # section-03 -- sub-section[2] sections
         self.assertIsInstance(middle.content[3].sections[2].sections, list)
         if not isinstance(middle.content[3].sections[2].sections, list):
             return
