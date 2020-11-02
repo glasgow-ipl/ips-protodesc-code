@@ -486,7 +486,7 @@ class Struct(RepresentableType, ConstructableType):
             raise ProtocolTypeError(f"{self.name} already contains a field named {field.field_name}")
         if field.field_type.size is not None and self.size is not None and isinstance(field.field_type.size, ConstantExpression) and isinstance(self.size, ConstantExpression):
             self.size = ConstantExpression(Number(), self.size.constant_value + field.field_type.size.constant_value)
-        elif field.field_type.size is not None:
+        elif field.field_type.size is not None and self.size is not None:
             self.size = MethodInvocationExpression(self.size, "plus", [ArgumentExpression("other", field.field_type.size)])
         self.fields[field.field_name] = field
 
