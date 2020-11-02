@@ -49,21 +49,21 @@ from typing import Union, Optional, List, Tuple
 
 class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
     def test_xml_rfc_root(self) :
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
             node = npt.parser_rfc_xml.parse_rfc(xml_tree)
             self._verify_rfc_dom_root(node, True)
 
     def test_xml_rfc_front(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
             node = npt.parser_rfc_xml.parse_rfc(xml_tree).front
             self._verify_rfc_dom_front(node)
 
     def test_xml_rfc_middle(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
             middle = npt.parser_rfc_xml.parse_rfc(xml_tree).middle
@@ -71,7 +71,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
 
     def test_xml_rfc_back(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.xml" , 'r') as fd:
             raw_content = fd.read()
             xml_tree = ET.fromstring(raw_content)
             back = npt.parser_rfc_xml.parse_rfc(xml_tree).back
@@ -79,7 +79,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
                 self._verify_rfc_dom_back(back)
 
     def test_txt_rfc_root(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.txt" , 'r') as fd:
             content = fd.readlines()
             root = npt.parser_rfc_txt.parse_rfc(content)
             self.assertIsInstance(root, rfc.RFC)
@@ -87,21 +87,21 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
 
     def test_txt_rfc_front(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.txt" , 'r') as fd:
             content = fd.readlines()
             root = npt.parser_rfc_txt.parse_rfc(content)
             self.assertIsInstance(root, rfc.RFC)
             self._verify_rfc_txt_dom_front(root.front)
 
     def test_txt_rfc_middle(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.txt" , 'r') as fd:
             content = fd.readlines()
             root = npt.parser_rfc_txt.parse_rfc(content)
             self.assertIsInstance(root, rfc.RFC)
             self._verify_rfc_txt_dom_middle(root.middle)
 
     def test_txt_rfc_back(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.txt" , 'r') as fd:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-05.txt" , 'r') as fd:
             content = fd.readlines()
             root = npt.parser_rfc_txt.parse_rfc(content)
             self.assertIsInstance(root, rfc.RFC)
@@ -124,7 +124,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         else :
             self.assertIsNone ( root.category)
         self.assertFalse     ( root.consensus)
-        self.assertEqual     ( root.docName, "draft-mcquistin-augmented-ascii-diagrams-07")
+        self.assertEqual     ( root.docName, "draft-mcquistin-augmented-ascii-diagrams-05")
         self.assertTrue      ( root.indexInclude)
         self.assertEqual     ( root.ipr, 'trust200902')
         self.assertIsNone    ( root.iprExtract)
@@ -157,7 +157,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         self.assertEqual(len(front.seriesInfo), 1)
         self.assertEqual(front.seriesInfo[0].name,   "Internet-Draft")
-        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-07")
+        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-05")
         self.assertIsNone(front.seriesInfo[0].status)
 
         # authors
@@ -253,7 +253,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         self.assertEqual(len(front.seriesInfo), 1)
         self.assertEqual(front.seriesInfo[0].name,   "Internet-Draft")
-        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-07")
+        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-05")
         self.assertEqual(front.seriesInfo[0].status, "experimental")
 
         # authors
@@ -481,25 +481,24 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
             return
         self.assertIsInstance(back.sections[0].sections[0].content[0].content, rfc.Text)
         self.assertEqual(back.sections[0].sections[0].content[0].content.content, """
-constant = %x31-39 *(%x30-39)  ; natural numbers without leading 0s
-short-name = ALPHA *(ALPHA / DIGIT / "-" / "_")
-name = short-name *(" " short-name)
-sp = [" "] ; optional space in expression
-bool-expr = "(" sp bool-expr sp ")" /
-           "!" sp bool-expr /
-           bool-expr sp bool-op sp bool-expr /
-           bool-expr sp "?" sp expr sp ":" sp expr /
-           expr sp cmp-op sp expr
-bool-op = "&&" / "||"
-cmp-op = "==" / "!=" / "<" / "<=" / ">" / ">="
-expr = "(" sp expr sp ")" /
-      expr sp op sp expr /
-      bool-expr "?" expr ":" expr /
-      name / short-name "." short-name /
-      constant
-op = "+" / "-" / "*" / "/" / "%" / "^"
-length = expr sp unit / "[" sp name sp "]"
-unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
+    cond-expr = eq-expr "?" cond-expr ":" eq-expr
+    eq-expr   = bool-expr eq-op   bool-expr
+    bool-expr = ord-expr  bool-op ord-expr
+    ord-expr  = add-expr  ord-op  add-expr
+
+    add-expr  = mul-expr  add-op  mul-expr
+    mul-expr  = expr      mul-op  expr
+    expr      = *DIGIT / field-name /
+                field-name-ws / "(" expr ")"
+
+    field-name    = *ALPHA
+    field-name-ws = *(field-name " ")
+
+    mul-op  = "*" / "/" / "%"
+    add-op  = "+" / "-"
+    ord-op  = "<=" / "<" / ">=" / ">"
+    bool-op = "&&" / "||" / "!"
+    eq-op   = "==" / "!="
                 """)
         # section-00 -- (sub) section-00 -- sourcecode anchor, numbered, removeInRFC, title, toc
         self.assertIsNone(back.sections[0].sections[0].content[0].anchor)
