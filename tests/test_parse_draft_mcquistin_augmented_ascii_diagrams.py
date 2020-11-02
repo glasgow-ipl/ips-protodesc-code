@@ -253,7 +253,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
 
         self.assertEqual(len(front.seriesInfo), 1)
         self.assertEqual(front.seriesInfo[0].name,   "Internet-Draft")
-        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-05")
+        self.assertEqual(front.seriesInfo[0].value,  "draft-mcquistin-augmented-ascii-diagrams-07")
         self.assertEqual(front.seriesInfo[0].status, "experimental")
 
         # authors
@@ -490,8 +490,8 @@ bool-expr = "(" sp bool-expr sp ")" /
            bool-expr sp bool-op sp bool-expr /
            bool-expr sp "?" sp expr sp ":" sp expr /
            expr sp cmp-op sp expr
-bool-op = "&amp;&amp;" / "||"
-cmp-op = "==" / "!=" / "&lt;" / "&lt;=" / ">" / ">="
+bool-op = "&&" / "||"
+cmp-op = "==" / "!=" / "<" / "<=" / ">" / ">="
 expr = "(" sp expr sp ")" /
       expr sp op sp expr /
       bool-expr "?" expr ":" expr /
