@@ -62,13 +62,20 @@
 
         <abstract>
             <t>
-              This document is defines UDP using
-              Augmented Packet Header diagrams.
+                This document is an example of the Augmented Packet Header Diagram language. The document describes UDP using Augmented Packet Header Diagrams.
             </t>
         </abstract>
     </front>
 
     <middle>
+        <section>
+            <name>
+                Introduction
+            </name>
+            <t>
+                This document uses Augmented Packet Header Diagrams <xref target="AUGMENTED-DIAGRAMS" /> to describe UDP, and is intended to further discussion about the design and implementation of the Augmented Packet Header Diagram language and tooling. Given this purpose, this document is not intended as a contribution to any ongoing or future work on maintaining or extending UDP. Further, this document does not necessarily reflect UDP, and its extensions, as presently standardised.
+            </t>
+        </section>
             <section>
                 <name>UDP Header</name>
                 <t>
@@ -78,17 +85,17 @@
                      A UDP Header is formatted as follows:
                     </t>
                     <artwork>
-         0                   1                   2                   3
-         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        |           Source port         |       Destination port        |
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        |              Length           |           Checksum            |
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-        |                                                               :
-        :                            Payload                            :
-        :                                                               |
-        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|           Source port         |       Destination port        |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|              Length           |           Checksum            |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                                                               :
+:                            Payload                            :
+:                                                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
                     </artwork>
                     <t>
                         where:
@@ -161,6 +168,24 @@
     </middle>
 
     <back>
+        <references>
+            <name>Informative References</name>
+            <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-06.txt">
+                <front>
+                    <title>Describing Protocol Data Units with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='July' day='13' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-06' />
+            </reference>
+        </references>
+
         <section anchor='source'>
             <name>Source code repository</name>
             <t>
