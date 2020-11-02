@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='US-ASCII'?>
-<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-quic-augmented-diagrams-01' category='exp'>
+<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-quic-augmented-diagrams-03' category='exp'>
     <front>
         <title abbrev='QUIC Augmented Packet Diagrams'>
             Describing QUIC's Protocol Data Units with Augmented Packet Header Diagrams
         </title>
-        <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-01' status="experimental" />
+        <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-03' status="experimental" />
 
         <author fullname='Stephen McQuistin' initials='S.' surname='McQuistin'>
             <organization>University of Glasgow</organization>
@@ -58,7 +58,7 @@
             </address>
         </author>
 
-        <?date year='2020' month='April' day='24'/?>
+        <?date year='2020' month='November' day='2'/?>
 
         <abstract>
             <t>
@@ -501,7 +501,7 @@ func apply_protection(to: Unprotected Packet)
                      A variable-length integer specifying the length of the Token field, in bytes.
                   </dd>
                   <dt>
-                     Token: TL.Value bytes; present only when TL.Value &gt; 0.
+                     Token: TL bytes; present only when TL &gt; 0.
                   </dt>
                   <dd>
                      The value of the token that was previously provided in a Retry packet or NEW_TOKEN frame.
@@ -562,7 +562,7 @@ func apply_protection(to: Unprotected Packet)
                      A variable-length integer specifying the length of the Token field, in bytes.
                   </dd>
                   <dt>
-                     Token: TL.Value bytes; present only when TL.Value &gt; 0.
+                     Token: TL bytes; present only when TL &gt; 0.
                   </dt>
                   <dd>
                      The value of the token that was previously provided in a Retry packet or NEW_TOKEN frame.
@@ -580,7 +580,7 @@ func apply_protection(to: Unprotected Packet)
                      The packet number field, with header protection.
                   </dd>
                   <dt>
-                     Protected Payload: (Length.Value-(LH.P+1)) bytes.
+                     Protected Payload: (Length-(LH.P+1)) bytes.
                   </dt>
                   <dd>
                      The protected payload field.
@@ -673,7 +673,7 @@ func apply_protection(to: Unprotected Packet)
                      The packet number field, with header protection.
                   </dd>
                   <dt>
-                     Protected Payload: (Length.Value-(LH.P+1)) bytes.
+                     Protected Payload: (Length-(LH.P+1)) bytes.
                   </dt>
                   <dd>
                      The protected payload field.
@@ -766,7 +766,7 @@ func apply_protection(to: Unprotected Packet)
                      The packet number field, with header protection.
                   </dd>
                   <dt>
-                     Protected Payload: (Length.Value-(LH.P+1)) bytes.
+                     Protected Payload: (Length-(LH.P+1)) bytes.
                   </dt>
                   <dd>
                      The protected payload field.
@@ -903,7 +903,7 @@ func apply_protection(to: Unprotected Packet)
   0                   1                   2                   3
   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
  +-+-+-+-+-+-+-+-+
- |0|1|S|Res|K|PNL|
+ |0|1|S| R |K| P |
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  |                   Destination Connection ID                 ...
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -937,22 +937,22 @@ func apply_protection(to: Unprotected Packet)
                   The third most significant bit (0x20) of byte 0 is the latency spin bit.
                </dd>
                <dt>
-                  Reserved Bits (Res): 2 bits.
+                  Reserved Bits (R): 2 bits.
                </dt>
                <dd>
-                  Two reserved bits.
+                  The next two bits (those with a mask of 0x18) of byte 0 are reserved. These bits are protected using header protection.  The value included prior to protection MUST be set to 0.
                </dd>
                <dt>
                   Key Phase (K): 1 bit.
                </dt>
                <dd>
-                  Key phase bit.
+                  The next bit (0x04) of byte 0 indicates the key phase, which allows a recipient of a packet to identify the packet protection keys that are used to protect the packet. This bit is protected using header protection.
                </dd>
                <dt>
-                  Packet Number Length (PNL): 2 bits.
+                  Packet Number Length (P): 2 bits.
                </dt>
                <dd>
-                  The length of the packet number field is the value of this field, plus one.
+                  In packet types which contain a Packet Number field, the least significant two bits (those with a mask of 0x03) of byte 0 contain the length of the packet number, encoded as an unsigned, two-bit integer that is one less than the length of the packet number field in bytes. These bits are protected using header protection.
                </dd>
                <dt>
                   Destination Connection ID: 20 bytes.
@@ -961,7 +961,7 @@ func apply_protection(to: Unprotected Packet)
                   The Destination Connection ID is a connection ID that is chosen by the intended recipient of the packet.
                </dd>
                <dt>
-                  Packet Number: PNL+1 bytes.
+                  Packet Number: P+1 bytes.
                </dt>
                <dd>
                   The packet number field is 1 to 4 bytes long. The packet number has confidentiality protection separate from packet protection.  The length of the packet number field is encoded in Packet Number Length field.
@@ -977,7 +977,7 @@ func apply_protection(to: Unprotected Packet)
 
         <section anchor='frames'>
             <name>Frames and Frame Formats</name>
-            <t>A Frame is one of: a PADDING frame, a PING frame, an ACK frame, a RESET_STREAM frame, a STOP_SENDING frame, a CRYPTO frame, a NEW_TOKEN frame, a STREAM frame, a MAX_DATA frame, a MAX_STREAM_DATA frame, a MAX_STREAMS frame, a DATA_BLOCKED frame, a STREAM_DATA_BLOCKED frame, a STREAMS_BLOCKED frame, a NEW_CONNECTION_ID frame, a PATH_CHALLENGE frame, a PATH_RESPONSE frame, a CONNECTION_CLOSE frame, or a HANDSHAKE_DONE frame.</t>
+            <t>A Frame is one of: a PADDING Frame, a PING Frame, an ACK Frame, a RESET_STREAM Frame, a STOP_SENDING Frame, a CRYPTO Frame, a NEW_TOKEN Frame, a STREAM Frame, a MAX_DATA Frame, a MAX_STREAM_DATA Frame, a MAX_STREAMS Frame, a DATA_BLOCKED Frame, a STREAM_DATA_BLOCKED Frame, a STREAMS_BLOCKED Frame, a NEW_CONNECTION_ID Frame, a PATH_CHALLENGE Frame, a PATH_RESPONSE Frame, a CONNECTION_CLOSE Frame, or a HANDSHAKE_DONE Frame.</t>
             <section anchor='frames_padding'>
                <name>PADDING frame</name>
                <t>A PADDING Frame is formatted as follows:</t>
@@ -1279,7 +1279,7 @@ func apply_protection(to: Unprotected Packet)
                      A variable-length integer specifying the length of the Crypto Data field in this CRYPTO frame.
                   </dd>
                   <dt>
-                     Crypto Data: Length.Value bytes.
+                     Crypto Data: Length bytes.
                   </dt>
                   <dd>
                      The cryptographic message data.
@@ -1319,7 +1319,7 @@ func apply_protection(to: Unprotected Packet)
                      A variable-length integer specifying the length of the token in bytes.
                   </dd>
                   <dt>
-                     Token: TL.Value bytes.
+                     Token: TL bytes.
                   </dt>
                   <dd>
                      An opaque blob that the client may use with a future Initial packet.
@@ -1393,7 +1393,7 @@ func apply_protection(to: Unprotected Packet)
                      A variable-length integer specifying the length of the Stream Data field in this STREAM frame.  This field is present when the LEN bit is set to 1.  When the LEN bit is set to 0, the Stream Data field consumes all the remaining bytes in the packet.
                   </dd>
                   <dt>
-                     Stream Data: Length.Value bytes.
+                     Stream Data: Length bytes.
                   </dt>
                   <dd>
                      The bytes from the designated stream to be delivered.
@@ -1807,7 +1807,7 @@ func apply_protection(to: Unprotected Packet)
                     A variable-length integer specifying the length of the reason phrase in bytes.
                   </dd>
                   <dt>
-                     Reason Phrase: Length.Value bytes.
+                     Reason Phrase: Length bytes.
                   </dt>
                   <dd>
                      A human-readable explanation for why the connection was closed.
@@ -1854,7 +1854,7 @@ func apply_protection(to: Unprotected Packet)
 
                 <seriesInfo name='Internet-Draft' value='draft-ietf-quic-transport-27' />
             </reference>
-            <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-04.txt">
+            <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-06.txt">
                 <front>
                     <title>Describing Protocol Data Units with Augmented Packet Header Diagrams</title>
 
@@ -1863,10 +1863,10 @@ func apply_protection(to: Unprotected Packet)
                     <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
                     <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
 
-                    <date month='April' day='24' year='2020' />
+                    <date month='July' day='13' year='2020' />
                 </front>
 
-                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-04' />
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-06' />
             </reference>
         </references>
 
