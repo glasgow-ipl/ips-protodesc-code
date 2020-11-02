@@ -73,7 +73,7 @@
                 Introduction
             </name>
             <t>
-                This document uses Augmented Packet Header Diagrams <xref target="AUGMENTED-DIAGRAMS" /> to describe TCP, and is intended to further discussion about the design and implementation of the Augmented Packet Header Diagram language and tooling. Given this purpose, this document is not intended as a contribution to any ongoing or future work on maintaining or extending TCP. Further, this document does not necessarily reflect TCP, and its extensions, as presently standardised.
+                This document uses Augmented Packet Header Diagrams <xref target="AUGMENTED-DIAGRAMS" /> to describe TCP <xref target="RFC793" />, and is intended to further discussion about the design and implementation of the Augmented Packet Header Diagram language and tooling. Given this purpose, this document is not intended as a contribution to any ongoing or future work on maintaining or extending TCP. Further, this document does not necessarily reflect TCP, and its extensions, as presently standardised.
             </t>
         </section>
             <section>
@@ -503,7 +503,8 @@
         <section anchor='security'>
             <name>Security Considerations</name>
             <t>
-                Nil.
+                The security implications of the Augmented Packet Header Diagrams format are
+                considered in <xref target="AUGMENTED-DIAGRAMS" />.
             </t>
         </section>
 
@@ -533,13 +534,23 @@
 
                 <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-06' />
             </reference>
+            <reference anchor="RFC793" target="https://www.rfc-editor.org/info/rfc793">
+                <front>
+                    <title>Transmission Control Protocol</title>
+
+                    <author initials='J' surname='Postel' fullname='Jon Postel'><organization /></author>
+
+                    <date month='September' year='1981' />
+                </front>
+                <seriesInfo name='RFC' value='793'/>
+            </reference>
         </references>
 
         <section anchor='source'>
             <name>Source code repository</name>
             <t>
-                The source code for tooling that can be used to parse this document is available
-                from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />.
+                The source code for tooling that can be used to parse this document, and generate
+                parser code for the protocol it describes, is available from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />.
             </t>
         </section>
     </back>

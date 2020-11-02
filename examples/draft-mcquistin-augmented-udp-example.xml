@@ -73,7 +73,7 @@
                 Introduction
             </name>
             <t>
-                This document uses Augmented Packet Header Diagrams <xref target="AUGMENTED-DIAGRAMS" /> to describe UDP, and is intended to further discussion about the design and implementation of the Augmented Packet Header Diagram language and tooling. Given this purpose, this document is not intended as a contribution to any ongoing or future work on maintaining or extending UDP. Further, this document does not necessarily reflect UDP, and its extensions, as presently standardised.
+                This document uses Augmented Packet Header Diagrams <xref target="AUGMENTED-DIAGRAMS" /> to describe UDP <xref target="RFC768" />, and is intended to further discussion about the design and implementation of the Augmented Packet Header Diagram language and tooling. Given this purpose, this document is not intended as a contribution to any ongoing or future work on maintaining or extending UDP. Further, this document does not necessarily reflect UDP, and its extensions, as presently standardised.
             </t>
         </section>
             <section>
@@ -154,7 +154,8 @@
         <section anchor='security'>
             <name>Security Considerations</name>
             <t>
-                The security of the Example protocol has not been considered.
+                The security implications of the Augmented Packet Header Diagrams format are
+                considered in <xref target="AUGMENTED-DIAGRAMS" />.
             </t>
         </section>
 
@@ -184,13 +185,23 @@
 
                 <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-06' />
             </reference>
+            <reference anchor="RFC768" target="https://www.rfc-editor.org/info/rfc768">
+                <front>
+                    <title>User Datagram Protocol</title>
+
+                    <author initials='J' surname='Postel' fullname='Jon Postel'><organization /></author>
+
+                    <date month='August' year='1980' />
+                </front>
+                <seriesInfo name='RFC' value='768'/>
+            </reference>
         </references>
 
         <section anchor='source'>
             <name>Source code repository</name>
             <t>
-                The source code for tooling that can be used to parse this document is available
-                from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />.
+                The source code for tooling that can be used to parse this document, and generate
+                parser code for the protocol it describes, is available from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />.
             </t>
         </section>
     </back>
