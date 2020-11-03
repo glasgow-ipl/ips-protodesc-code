@@ -15,7 +15,7 @@ scapy = "*"
 mypy = "*"
 pytest = "*"
 coverage = "*"
-npt = {editable = true,path = "."}
+npt = {editable = true, path = "."}
 
 [requires]
 python_version = "3.7"
