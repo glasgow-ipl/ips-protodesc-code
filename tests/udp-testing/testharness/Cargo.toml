@@ -1,5 +1,5 @@
 [package]
-name = "udp_testharness"
+name = "testharness"
 version = "0.1.0"
 authors = ["Stephen McQuistin <sm@smcquistin.uk>"]
 edition = "2018"

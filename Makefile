@@ -49,7 +49,7 @@ examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 	python3 -m npt $< -of rust
 
 integrationtests: examples/output/draft/draft-mcquistin-augmented-udp-example-00/rust $(UDP_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-tcp-example-00/rust $(TCP_PCAPS) examples/output/draft/draft-mcquistin-augmented-ascii-diagrams-07/rust
-	cd tests/udp-testing/udp-testharness && cargo test
+	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 
 # =================================================================================================
