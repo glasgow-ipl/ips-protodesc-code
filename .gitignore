@@ -3,7 +3,8 @@ htmlcov/
 test-results/
 .DS_Store
 *.pyc
-tests/simple-protocol-testing/pcaps
-tests/simple-protocol-testing/testharness/target
 tests/udp-testing/pcaps
-tests/udp-testing/udp-testharness/target
+tests/udp-testing/testharness/target
+tests/tcp-testing/testharness/target
+tmp*
+examples/output
