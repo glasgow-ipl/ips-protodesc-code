@@ -209,8 +209,10 @@ optional arguments:
 
 *Example Usage*
 ```
-   python npt examples/draft-mcquistin-quic-augmented-diagrams.xml -of simple
-   python npt examples/draft-mcquistin-augmented-ascii-diagrams.xml -of simple
+   python npt examples/draft-mcquistin-quic-augmented-diagrams-03.xml -of simple
+   python npt examples/draft-mcquistin-augmented-ascii-diagrams-07.xml -of simple
+   python npt examples/draft-mcquistin-augmented-udp-example-00.xml -of rust
+   python npt examples/draft-mcquistin-augmented-tcp-example-00.xml -of rust
 ```
 
 ## Acknowledgements
