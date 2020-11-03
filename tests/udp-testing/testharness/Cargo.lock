@@ -19,7 +19,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4785bdd1c96b2a846b2bd7cc02e86b6b3dbf14e7e53446c4f54c92a361040822"
 
 [[package]]
-name = "draft_mcquistin_augmented_tcp_example_00"
+name = "draft_mcquistin_augmented_udp_example_00"
 version = "0.1.0"
 dependencies = [
  "nom",
@@ -43,6 +43,12 @@ name = "libc"
 version = "0.2.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2448f6066e80e3bfc792e9c98bf705b4b0fc6e8ef5b43e5889aff0eaa9c58743"
+
+[[package]]
+name = "matches"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7ffc5c5338469d4d3ea17d269fa8ea3512ad247247c30bd2df69e68309ed0a08"
 
 [[package]]
 name = "memchr"
@@ -86,7 +92,8 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "testharness"
 version = "0.1.0"
 dependencies = [
- "draft_mcquistin_augmented_tcp_example_00",
+ "draft_mcquistin_augmented_udp_example_00",
+ "matches",
  "pcap",
 ]
 
