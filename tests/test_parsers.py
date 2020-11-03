@@ -48,7 +48,7 @@ from npt.parser_asciidiagrams import AsciiDiagramsParser
 
 class TestParsers(unittest.TestCase):
     def setUp(self):
-        with open("examples/draft-mcquistin-augmented-ascii-diagrams.xml" , 'r') as example_file:
+        with open("examples/draft-mcquistin-augmented-ascii-diagrams-07.xml" , 'r') as example_file:
             raw_content = example_file.read()
             xml_tree = ET.fromstring(raw_content)
             self.content = npt.parser_rfc_xml.parse_rfc(xml_tree)

@@ -247,8 +247,8 @@ class Test_Cmdline(ut.TestCase):
         opts = npt.util.read_usr_opts(argv)
         self.assertIsInstance(opts.infiles[0].infile, pathlib.Path)
         if opts.infiles[0].infile is not None :
-            self.assertTrue(opts.infiles[0].infile.exists()) 
-            self.assertEqual( opts.infiles[0].infile.parent, rootdir / "draft" / "draft-mcquistin-augmented-ascii-diagrams" / "06") 
+            self.assertTrue(opts.infiles[0].infile.exists())
+            self.assertEqual( opts.infiles[0].infile.parent, rootdir / "draft" / "draft-mcquistin-augmented-ascii-diagrams" / "06")
             self.assertEqual(opts.infiles[0].infile.suffix, '.xml')
 
         if rootdir.exists():
@@ -262,10 +262,10 @@ class Test_Cmdline(ut.TestCase):
         opts = npt.util.read_usr_opts(argv)
         for f in opts.infiles:
             self.assertIsInstance(f.infile, pathlib.Path)
-            if f.infile is not None : 
-                self.assertTrue(f.infile.exists()) 
-                self.assertIn(f.name, draft_name) 
-                self.assertEqual( f.infile.parent, rootdir / "draft" / '-'.join( (f.infile.stem.split(sep='-')[:-1])) / f.infile.stem.split(sep='-')[-1]) 
+            if f.infile is not None :
+                self.assertTrue(f.infile.exists())
+                self.assertIn(f.name, draft_name)
+                self.assertEqual( f.infile.parent, rootdir / "draft" / '-'.join( (f.infile.stem.split(sep='-')[:-1])) / f.infile.stem.split(sep='-')[-1])
                 self.assertEqual(f.infile.suffix, '.xml')
 
         if rootdir.exists():
@@ -306,17 +306,18 @@ class Test_Cmdline(ut.TestCase):
 
     def test_mutliple_local_files( self ):
         rootdir = pathlib.Path(tempfile.mkdtemp(dir=pathlib.Path().cwd())).resolve()
-        draft_orig = [ 'draft-mcquistin-augmented-ascii-diagrams.xml', 'draft-mcquistin-quic-augmented-diagrams.xml' ]
+        draft_orig = [ 'draft-mcquistin-augmented-ascii-diagrams-07.xml', 'draft-mcquistin-quic-augmented-diagrams-03.xml' ]
         drafts = [ shutil.copy( pathlib.Path.cwd()/ "examples"/ in_file , rootdir ) for in_file in draft_orig ]
         argv = " ".join( drafts ).split()
 
-        formats = ["simple", "rust"] 
+        formats = ["simple", "rust"]
         opts = npt.util.read_usr_opts(argv)
 
-        for _file in opts.infiles : 
-            for _fmt in formats : 
-                outdir = rootdir / "output" / "draft" / _file.name / _fmt 
-                self.assertEqual( outdir , _file.gen_filepath_out(opts.root_dir, _fmt ))
+        for _file in opts.infiles :
+            for _fmt in formats :
+                if _file.rev is not None:
+                    outdir = rootdir / "output" / "draft" / _file.name / _file.rev / _fmt
+                    self.assertEqual( outdir , _file.gen_filepath_out(opts.root_dir, _fmt ))
 
         if rootdir.exists():
             shutil.rmtree(rootdir)
