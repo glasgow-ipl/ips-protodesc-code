@@ -58,7 +58,7 @@
             </address>
         </author>
 
-        <?date year='2020' month='November' day='2'/?>
+        <?date year='2019' month='November' day='12'/?>
 
         <abstract>
             <t>
@@ -144,10 +144,19 @@
             </t>
             <t>
                 This draft describes early work. As consensus builds around the
-                particular syntax of the format described, both a formal ABNF
-                specification (<xref target="ABNF"/>) and code (<xref target="source"/>) that
-                parses it (and, as described above, this document) will be provided.
+                particular syntax of the format described, a formal ABNF
+                specification (<xref target="ABNF"/>) will be provided.
             </t>
+            <t>
+                Example specifications of a number of IETF protocols described using the
+                Augmented Packet Header Diagram format are available. These documents
+                describe UDP <xref target="draft-mcquistin-augmented-udp-example"/>,
+                TCP <xref target="draft-mcquistin-augmented-tcp-example"/>, and QUIC
+                <xref target="draft-mcquistin-quic-augmented-diagrams"/>. Code that parses
+                those documents and automatically generates parser code for the described
+                protocols is described in <xref target="source"/>.
+            </t>
+
         </section>
 
         <section anchor='background'>
@@ -1563,6 +1572,48 @@ func apply_protection(to: Unprotected Packet)
                 </front>
                 <refcontent>;login: -- December 2011, Volume 36, Number 6</refcontent>
             </reference>
+            <reference anchor="draft-mcquistin-augmented-udp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-udp-00.txt">
+                <front>
+                    <title>Describing UDP with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='November' day='2' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-udp-example-00' />
+            </reference>
+            <reference anchor="draft-mcquistin-augmented-tcp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-tcp-example-00.txt">
+                <front>
+                    <title>Describing TCP with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='November' day='2' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-udp-example-00' />
+            </reference>
+            <reference anchor="draft-mcquistin-quic-augmented-diagrams" target="http://www.ietf.org/internet-drafts/draft-mcquistin-quic-augmented-diagrams-03.txt">
+                <front>
+                    <title>Describing QUIC's Protocol Data Units with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='November' day='2' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-03' />
+            </reference>
         </references>
 
         <section anchor='ABNF'>
@@ -1607,14 +1658,18 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         </section>
 
         <section anchor='source'>
-            <name>Source code repository</name>
+            <name>Tooling &amp; source code</name>
             <t>
                 The source for this draft is available from
                 <eref target="https://github.com/glasgow-ipl/draft-mcquistin-augmented-ascii-diagrams" />.
             </t>
             <t>
                 The source code for tooling that can be used to parse this document is available
-                from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />.
+                from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />. This tooling
+                supports the automatic generation of Rust parser code from protocol descriptions written
+                in the Augmented Packet Header Diagram format. It also provides test harnesses that
+                demonstrate that example descriptions of UDP <xref target="draft-mcquistin-augmented-udp-example" />
+                and TCP <xref target="draft-mcquistin-augmented-udp-example" /> function as expected.
             </t>
         </section>
     </back>

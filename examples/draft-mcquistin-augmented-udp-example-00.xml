@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='US-ASCII'?>
 <rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-augmented-udp-example-00' category='exp'>
     <front>
-        <title abbrev='APHD Example'>
+        <title abbrev='UDP APHD Example'>
             Describing UDP with Augmented Packet Header Diagrams
         </title>
         <seriesInfo name='Internet-Draft' value='drdraft-mcquistin-augmented-udp-example-00' status="experimental" />
@@ -62,7 +62,10 @@
 
         <abstract>
             <t>
-                This document is an example of the Augmented Packet Header Diagram language. The document describes UDP using Augmented Packet Header Diagrams.
+                This document describes UDP using Augmented Packet Header
+                Diagrams. This document is an example of the Augmented Packet
+                Header Diagram language: it is not intended as a contribution to
+                any ongoing or future work on maintaining or extending UDP.
             </t>
         </abstract>
     </front>
@@ -130,7 +133,11 @@
                         </dt>
                         <dd>
                             <t>
-                                Checksum.
+                                Checksum is the 16-bit one's complement of the
+                                one's complement sum of a pseudo header of
+                                information from the IP header, the UDP header,
+                                and the data, padded with zero octets at the end
+                                (if necessary) to make a multiple of two octets.
                             </t>
                         </dd>
                         <dt>
@@ -138,7 +145,9 @@
                         </dt>
                         <dd>
                             <t>
-                                Payload.
+                                The payload of the UDP datagram, which is the
+                                whose size is the value of the Length field,
+                                less 8 bytes for the header.
                             </t>
                         </dd>
                     </dl>
@@ -171,7 +180,7 @@
     <back>
         <references>
             <name>Informative References</name>
-            <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-06.txt">
+            <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-07.txt">
                 <front>
                     <title>Describing Protocol Data Units with Augmented Packet Header Diagrams</title>
 
@@ -180,10 +189,10 @@
                     <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
                     <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
 
-                    <date month='July' day='13' year='2020' />
+                    <date month='November' day='2' year='2020' />
                 </front>
 
-                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-06' />
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-07' />
             </reference>
             <reference anchor="RFC768" target="https://www.rfc-editor.org/info/rfc768">
                 <front>
