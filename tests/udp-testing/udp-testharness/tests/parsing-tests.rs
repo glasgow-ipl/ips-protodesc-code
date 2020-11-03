@@ -1,9 +1,9 @@
 #[macro_use]
 extern crate matches;
-extern crate draft_mcquistin_augmented_udp_example;
+extern crate draft_mcquistin_augmented_udp_example_00;
 extern crate pcap;
 
-use draft_mcquistin_augmented_udp_example::*;
+use draft_mcquistin_augmented_udp_example_00::*;
 use pcap::Capture;
 
 #[test]

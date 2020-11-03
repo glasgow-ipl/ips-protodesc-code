@@ -1,7 +1,7 @@
-extern crate draft_mcquistin_augmented_tcp_example;
+extern crate draft_mcquistin_augmented_tcp_example_00;
 extern crate pcap;
 
-use draft_mcquistin_augmented_tcp_example::*;
+use draft_mcquistin_augmented_tcp_example_00::*;
 use pcap::Capture;
 
 fn pretty_print_tcp_header(header: &TcpHeader) {
@@ -19,7 +19,7 @@ fn pretty_print_tcp_header(header: &TcpHeader) {
         }
     }
     let options_str = options.join(" ");
-    print!("TCP Header\n  src_port: {:?}, dst_port: {:?}\n  seq_num: {:?}, ack_num: {:?}\n  data_offset: {:?}\n  reserved: {:?}, flags: ns: {:?}, cwr: {:?}, ece: {:?}, urg: {:?}, ack: {:?}, psh: {:?}, rst: {:?}, syn: {:?}, fin: {:?}\n  window size: {:?}\n  checksum: {:?}\n  urgent_pointer: {:?}\n  options: {}\n  payload length: {:?}\n\n", header.source_port.0, header.destination_port.0, header.sequence_number.0, header.acknowledgment_number.0, header.data_offset.0, header.reserved.0, header.ns.0, header.cwr.0, header.ece.0, header.urg.0, header.ack.0, header.psh.0, header.rst.0, header.syn.0, header.fin.0, header.window_size.0, header.checksum.0, header.urgent_pointer.0, options_str, header.payload.0.len());
+    print!("TCP Header\n  src_port: {:?}, dst_port: {:?}\n  seq_num: {:?}, ack_num: {:?}\n  data_offset: {:?}\n  reserved: {:?}, flags: cwr: {:?}, ece: {:?}, urg: {:?}, ack: {:?}, psh: {:?}, rst: {:?}, syn: {:?}, fin: {:?}\n  window size: {:?}\n  checksum: {:?}\n  urgent_pointer: {:?}\n  options: {}\n  payload length: {:?}\n\n", header.source_port.0, header.destination_port.0, header.sequence_number.0, header.acknowledgment_number.0, header.data_offset.0, header.reserved.0, header.cwr.0, header.ece.0, header.urg.0, header.ack.0, header.psh.0, header.rst.0, header.syn.0, header.fin.0, header.window_size.0, header.checksum.0, header.urgent_pointer.0, options_str, header.payload.0.len());
 }
 
 #[test]

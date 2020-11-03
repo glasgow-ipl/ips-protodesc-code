@@ -7,5 +7,5 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-draft_mcquistin_augmented_tcp_example = { path = "../../../examples/output/draft/draft-mcquistin-augmented-tcp-example/rust" }
+draft_mcquistin_augmented_tcp_example_00 = { path = "../../../examples/output/draft/draft-mcquistin-augmented-tcp-example/00/rust" }
 pcap = "*"
