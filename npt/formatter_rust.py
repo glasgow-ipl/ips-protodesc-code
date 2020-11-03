@@ -113,11 +113,8 @@ class RustFormatter(Formatter):
             return str(constant_value)
 
     def format_expression(self, expr:Expression):
-        #TODO
         return ""
 
-
-    #bitstrings are formatted as structs containing a single int to differentiate between bitstrings which serve different purposes (eg. Timestamp, SeqNum, PortNum)
     def format_bitstring(self, bitstring:BitString, size: Any):
         required_vars = []
         if type(size) is not str:
@@ -159,11 +156,7 @@ class RustFormatter(Formatter):
         self.output.append("}\n")
 
 
-    #assign the smallest possible unsigned int which can accommodate the size given
     def assign_int_size(self, bitstring_size: Optional[int]):
-        #TODO: determine how to handle bitstrings which aren't given an explicit size
-        #exception was being thrown here when a BitString had size None
-        #TODO: see if there's a better way of handling this than just writing a u8
         if bitstring_size is None:
             return 8
         elif bitstring_size <= 8:
@@ -235,7 +228,6 @@ class RustFormatter(Formatter):
         processed_constraints = []
         for constraint in constraints:
             processed_constraints.append((re.sub(r"self\(([\w]*)\)", r"\1", constraint), re.findall(r"self\(([\w]*)\)", constraint)))
-        #traits need to be added up here when using !derive (eg. Eq, Ord)
         self.output.append(f"\n// Structure and parser for {struct.name}\n")
         self.output.append("\n#[derive(Debug")
         for trait in struct.traits:
@@ -247,7 +239,6 @@ class RustFormatter(Formatter):
         self.output.extend(["pub struct ", camelcase(struct.name), " {\n"])
         parser_functions = []
         field_names = []
-        generator = self.closure_term_gen()
         presence_constraints = []
         for field in struct.get_fields():
             type_name = field.field_type.name if isinstance(field.field_type, ConstructableType) else "nothing"
@@ -369,10 +360,6 @@ class RustFormatter(Formatter):
                 fields_output.append(f"    pub {field.field_name}: u32,")
         context_output += ",\n".join(fields_output) + "\n}\n"
         self.output = [context_output] + self.output
-
-    def closure_term_gen(self):
-        for i in range(len(ascii_letters)):
-            yield ascii_letters[i]
 
     def format_pdu_variants(self, container_name: str, index: int, parser_func_names: List[str], type_names: List[str]):
         generated_code = []
