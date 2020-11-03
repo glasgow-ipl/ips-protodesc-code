@@ -26,10 +26,6 @@
 PYTHON_SRC   = $(wildcard npt/*.py)
 PYTHON_TESTS = $(wildcard tests/*.py)
 
-SIMPLE_GEN_PCAPS = tests/simple-protocol-testing/pcaps/mfh-valid.pcap \
-                   tests/simple-protocol-testing/pcaps/sfh-2-valid.pcap \
-				   tests/simple-protocol-testing/pcaps/vlfh-valid.pcap
-
 UDP_GEN_PCAPS = tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
 				tests/udp-testing/pcaps/udp-valid-1.pcap
 
@@ -45,10 +41,6 @@ test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 unittests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
 	@python3 -m unittest discover -s tests/ -v
 
-$(SIMPLE_GEN_PCAPS): tests/simple-protocol-testing/generate-pcaps.py
-	mkdir -p tests/simple-protocol-testing/pcaps
-	cd tests/simple-protocol-testing && python generate-pcaps.py
-
 $(UDP_GEN_PCAPS): tests/udp-testing/generate-pcaps.py
 	mkdir -p tests/udp-testing/pcaps
 	cd tests/udp-testing && python generate-pcaps.py
@@ -56,15 +48,13 @@ $(UDP_GEN_PCAPS): tests/udp-testing/generate-pcaps.py
 examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 	python3 -m npt $< -of rust
 
-integrationtests: examples/output/draft/draft-mcquistin-simple-example/rust $(SIMPLE_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-udp-example/rust $(UDP_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-tcp-example/rust $(TCP_PCAPS) examples/output/draft/draft-mcquistin-augmented-ascii-diagrams/rust
-	cd tests/simple-protocol-testing/testharness && cargo test
+integrationtests: examples/output/draft/draft-mcquistin-augmented-udp-example-00/rust $(UDP_GEN_PCAPS) examples/output/draft/draft-mcquistin-augmented-tcp-example-00/rust $(TCP_PCAPS) examples/output/draft/draft-mcquistin-augmented-ascii-diagrams-07/rust
 	cd tests/udp-testing/udp-testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 
 # =================================================================================================
 
 clean:
-	rm -rf $(SIMPLE_GEN_PCAPS)
 	rm -rf $(UDP_GEN_PCAPS)
 	rm -f  test-results/typecheck.xml
 	rm -fr examples/output
