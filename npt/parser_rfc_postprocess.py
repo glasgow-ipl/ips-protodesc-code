@@ -98,9 +98,9 @@ class TraverseRFC(NodeVisitor):
         self.root = root 
         self.sym = symbols
 
-        asciiParser = ascii_parser.AsciiDiagramsParser()
-        asciiParser.proto = npt.protocol.Protocol()
-        self.parser = asciiParser.build_parser()
+        self.asciiParser = ascii_parser.AsciiDiagramsParser()
+        self.asciiParser.proto = npt.protocol.Protocol()
+        self.parser = self.asciiParser.build_parser()
 
     def visit_Section(self,node: rfc.Section) -> None:
         self.generic_visit(node)
@@ -142,7 +142,7 @@ class TraverseRFC(NodeVisitor):
 
         # Parse out all field names
         try: 
-            artwork_fields = self.parser(artwork.strip()).diagram() 
+            artwork_fields = self.asciiParser.process_diagram(artwork, self.parser)
         except Exception as e:
             return
 

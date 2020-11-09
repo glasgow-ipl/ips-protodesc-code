@@ -80,11 +80,18 @@ field_title = field_title_name_only | field_title_size | field_title_size_constr
 preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name "is" ws "formatted" ws "as" ws "follows:" -> name
 
 # Diagram
+vsep = ws <'+-'+ '+'?>:unit -> unit
+vcontent = ws <(anything:x ?(x != '+') | ('+' ~'-'))>+:c  vsep -> "".join(c)
+diagram = ws (anything:x ?(x != '+'))+:hdr
+            vsep  vcontent*:vc -> [ _v.strip() for _v in vc]
 
-separator_line = ('|'|'..') ws '+-'+ '+'? <(anything:x ?(x != "|" and x != '.'))*>:ls -> None
-diagram_field_var = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls '.' -> ("var", str(ls).strip())
-diagram_field = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls -> (int((len(str(ls))+1)/2), str(ls).strip())
-diagram = <(anything:x ?(x != "|" and x != '.'))*> (separator_line|diagram_field_var|diagram_field)+:fields <(anything:x ?(x != "|" and x != '.'))*> -> proc_diagram_fields(fields)
+fchar = anything:x ?(x not in ['|', ':', '.', '+' ]):field  ->  field
+dfield = <fchar*>:c <('|' | ':' | '...' | '+')>:delim  ->  (c.strip(), delim, int((len(c)+1)/2))
+one_line =  ws ('|' | ':' ) dfield*:field_name  ws ->  [ ('var' if delim == '...' else len, desc)
+                                                         for desc, delim, len in field_name]
+multi_line =  ws ('|' | ':' | '+') ws dfield*:field_name  ws ->  [resolve_multiline_length(field_name)]
+multi_line_split = one_line+:m -> m
+
 
 # Enums
 variant_list = ("an " | "a ") pdu_name:name (', ' ('or ')? ("an " | "a ") pdu_name:names)*:names -> [name] + names
