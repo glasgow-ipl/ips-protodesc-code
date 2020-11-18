@@ -4486,16 +4486,29 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][1].content), 2)
         # sec-03 sub-section[0] content [9] <DL> content [0] <Tuple<DL,DD>> [1] <DD> [0] <T>
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[0], rfc.T)
+        if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[0], rfc.T):
+            return
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content, list)
         if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content, list): # type-check
             return
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content[0], rfc.Text):
+            return
         self.assertEqual( middle.content[3].sections[0].content[9].content[0][1].content[0].content[0].content,
 """  This is a fixed-width field, whose full label
 """)
         # sec-03 sub-section[0] content [9] <DL> content [0] <Tuple<DL,DD>> [1] <DD> [1] <T>
+        self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[1], rfc.T)
+        if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[1], rfc.T):
+            return
+        self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content, list)
+        if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content, list): # type-check
+            return
+        self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content[0], rfc.Text):
+            return
         self.assertEqual( middle.content[3].sections[0].content[9].content[0][1].content[1].content[0].content,
 """      is shown in the diagram.  The field's width -- 4 bits -- is given
       in the label of the description list, separated from the field's
@@ -4866,11 +4879,15 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[13][1].content), 2)
         # sec-03 sub-section[0] content [9] <DL> content [13] <Tuple<DL,DD>> [1] <DD> [0] <T>
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[0], rfc.T)
+        if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[0], rfc.T):
+            return
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content, list)
         if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content, list): # type-check
             return
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[13][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content[0], rfc.Text):
+            return
         self.assertEqual( middle.content[3].sections[0].content[9].content[13][1].content[0].content[0].content,
 """  This is a variable-length field, whose
       length is defined by the value of the field with short label IHL
@@ -4879,7 +4896,16 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
       is defined in Appendix A.1.  Constraints can include a previously
 """)
         # sec-03 sub-section[0] content [9] <DL> content [13] <Tuple<DL,DD>> [1] <DD> [1] <T>
+        self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[1], rfc.T)
+        if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[1], rfc.T):
+            return
+        self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content, list)
+        if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content, list): # type-check
+            return
+        self.assertEqual( len(middle.content[3].sections[0].content[9].content[13][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content[0], rfc.Text):
+            return
         self.assertEqual( middle.content[3].sections[0].content[9].content[13][1].content[1].content[0].content,
 """      defined field's short or full label, where one has been defined.
       Short variable-length fields are indicated by "..." instead of a
@@ -5235,16 +5261,29 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
 
         # sec-03 sub-section[1] content [8] <DL> content [2] <Tuple<DL,DD>> [1] <DD> [0] <T>
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[0], rfc.T)
+        if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[0], rfc.T):
+            return
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content, list)
         if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content, list): # type-check
             return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[8][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content[0], rfc.Text):
+            return
         self.assertEqual( middle.content[3].sections[1].content[8].content[8][1].content[0].content[0].content,
 """  This is a
 """)
         # sec-03 sub-section[1] content [8] <DL> content [2] <Tuple<DL,DD>> [1] <DD> [1] <T>
+        self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[1], rfc.T)
+        if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[1], rfc.T):
+            return
+        self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content, list)
+        if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content, list): # type-check
+            return
+        self.assertEqual( len(middle.content[3].sections[1].content[8].content[8][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content[0], rfc.Text)
+        if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content[0], rfc.Text):
+            return
         self.assertEqual( middle.content[3].sections[1].content[8].content[8][1].content[1].content[0].content,
 """      field whose structure is a previously defined PDU format (Source
       Identifier).  To indicate this, the width of the field is
