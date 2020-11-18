@@ -137,13 +137,6 @@ class AsciiDiagramsParser(Parser):
                                      "resolve_multiline_length" : resolve_multiline_length,
                                      "protocol"                 : self.proto
                                    })
-                                   #  "djnew_field"                : self.djnew_field,
-                                   #  "debug"                    : self.debug, 
-    def debug(self, rule, arg): 
-        print(f"debug {rule} -- {arg}") 
-        return arg
-
-
 
     def process_diagram(self, artwork: str, parser) -> List[Tuple[Union[int, str], str]]:
         delim_units = parser(artwork.strip()).diagram()
