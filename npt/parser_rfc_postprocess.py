@@ -146,16 +146,14 @@ class TraverseRFC(NodeVisitor):
         except Exception as e:
             return
 
-        # verify  number of field descriptions match list of fields
-        if (end - start) < (len(artwork_fields) + 2):
-            return
 
         # parse each <t> element and convert to (<dt>, <dd>) pairs
         field_desc: List[Tuple[rfc.DT, rfc.DD]] = list() 
         consumed : int  = 0 
+        num_fields : int = len(artwork_fields)
         try: 
             for elem_t in section.content[start+2:end]:
-                if len(field_desc) == len(artwork_fields): 
+                if len(field_desc) == num_fields:
                     break 
 
                 # check paragraph description is a <t> element
@@ -173,6 +171,15 @@ class TraverseRFC(NodeVisitor):
                 # check if current <t> section is a new field description or 
                 # another paragraph within the current field description
                 if (len(text) - len(text.lstrip())) == len( self.sym['tab']): 
+                    # check if a split field reduces the number of <dl> units required
+                    title = self.parser(text[:delim+1].strip()).field_title()
+                    if title['options'] is not None and 'split field' in title['options']:
+                        t_type, s_type, size = title['size']
+                        if t_type == 'const' and s_type == 'Number':
+                            num_fields -= (size-1)
+
+                    #print(f"0.2 > text = {text}")
+
                     dt_content = cast( List[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]], [rfc.Text( text[:delim+1])])
                     dd_content = cast(Union[List[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]], 
                                             List[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]]] , 

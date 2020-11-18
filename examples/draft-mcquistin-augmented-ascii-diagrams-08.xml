@@ -1,0 +1,1676 @@
+<?xml version='1.0' encoding='US-ASCII'?>
+<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-augmented-ascii-diagrams-08' category='exp'>
+    <front>
+        <title abbrev='Augmented Packet Diagrams'>
+            Describing Protocol Data Units with Augmented Packet Header Diagrams
+        </title>
+        <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-08' status="experimental" />
+
+        <author fullname='Stephen McQuistin' initials='S.' surname='McQuistin'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>sm@smcquistin.uk</email>
+            </address>
+        </author>
+
+        <author fullname='Vivian Band' initials='V.' surname='Band'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>vivianband0@gmail.com</email>
+            </address>
+        </author>
+
+        <author fullname='Dejice Jacob' initials='D.' surname='Jacob'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>d.jacob.1@research.gla.ac.uk</email>
+            </address>
+        </author>
+
+        <author fullname='Colin Perkins' initials='C. S.' surname='Perkins'>
+            <organization>University of Glasgow</organization>
+            <address>
+                <postal>
+                    <street>School of Computing Science</street>
+                    <city>Glasgow</city>
+                    <code>G12 8QQ</code>
+                    <country>UK</country>
+                </postal>
+                <email>csp@csperkins.org</email>
+            </address>
+        </author>
+
+        <?date year='2019' month='November' day='12'/?>
+
+        <abstract>
+            <t>
+              This document describes a machine-readable format for specifying
+              the syntax of protocol data units within a protocol specification.
+              This format is comprised of a consistently formatted packet header
+              diagram, followed by structured explanatory text. It is
+              designed to maintain human readability while enabling support for
+              automated parser generation from the specification document. This
+              document is itself an example of how the format can be used.
+            </t>
+        </abstract>
+    </front>
+
+    <middle>
+        <section anchor='intro'>
+            <name>Introduction</name>
+            <t>
+                Packet header diagrams have become a widely used format for
+                describing the syntax of binary protocols. In otherwise largely textual
+                documents, they allow for the visualisation of packet formats, reducing
+                human error, and aiding in the implementation of parsers for the protocols
+                that they specify.
+            </t>
+            <t>
+                <xref target="tcp-header-format"/> gives an example of how packet
+                header diagrams are used to define binary protocol formats. The format
+                has an obvious structure: the diagram clearly delineates each field,
+                showing its width and its position within the header. This type of diagram is
+                designed for human readers, but is consistent enough that it should
+                be possible to develop a tool that generates a parser for the packet
+                format from the diagram.
+
+            </t>
+        <figure anchor="tcp-header-format">
+            <name>TCP's header format (from <xref target="RFC793"/>)</name>
+            <artwork>
+:    0                   1                   2                   3
+:    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |          Source Port          |       Destination Port        |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                        Sequence Number                        |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                    Acknowledgment Number                      |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |  Data |           |U|A|P|R|S|F|                               |
+:   | Offset| Reserved  |R|C|S|S|Y|I|            Window             |
+:   |       |           |G|K|H|T|N|N|                               |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |           Checksum            |         Urgent Pointer        |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                    Options                    |    Padding    |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                             data                              |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+            </artwork>
+        </figure>
+            <t>
+                Unfortunately, the format of such packet diagrams varies both within
+                and between documents. This variation makes it difficult to build
+                tools to generate parsers from the specifications. Better tooling
+                could be developed if protocol specifications adopted a consistent
+                format for their packet descriptions. Indeed,
+                this underpins the format described by this draft: we want to
+                retain the benefits that packet header diagrams provide, while identifying
+                the benefits of adopting a consistent format.
+             </t>
+            <t>
+                This document describes a consistent packet header diagram format and
+                accompanying structured text constructs that allow for the parsing process
+                of protocol headers to be fully specified. This provides support for the
+                automatic generation of parser code. Broad design principles, that seek
+                to maintain the primacy of human readability and flexibility in
+                writing, are described, before the format itself is given.
+            </t>
+            <t>
+                This document is itself an example of the approach that it describes, with
+                the packet header diagrams and structured text format described by example.
+                Examples that do not form part of the protocol description language are
+                marked by a colon at the beginning of each line; this prevents them from
+                being parsed by the accompanying tooling.
+            </t>
+            <t>
+                This draft describes early work. As consensus builds around the
+                particular syntax of the format described, a formal ABNF
+                specification (<xref target="ABNF"/>) will be provided.
+            </t>
+            <t>
+                Example specifications of a number of IETF protocols described using the
+                Augmented Packet Header Diagram format are available. These documents
+                describe UDP <xref target="draft-mcquistin-augmented-udp-example"/>,
+                TCP <xref target="draft-mcquistin-augmented-tcp-example"/>, and QUIC
+                <xref target="draft-mcquistin-quic-augmented-diagrams"/>. Code that parses
+                those documents and automatically generates parser code for the described
+                protocols is described in <xref target="source"/>.
+            </t>
+
+        </section>
+
+        <section anchor='background'>
+            <name>Background</name>
+            <t>
+                This section begins by considering how packet header diagrams are
+                used in existing documents. This exposes the limitations that the current
+                usage has in terms of machine-readability, guiding the design of the
+                format that this document proposes.
+            </t>
+            <t>
+                While this document focuses on the machine-readability of packet format
+                diagrams, this section also discusses the use of other structured or formal
+                languages within IETF documents. Considering how and why these languages
+                are used provides an instructive contrast to the relatively incremental
+                approach proposed here.
+            </t>
+
+            <section anchor='background-ascii'>
+                <name>Limitations of Current Packet Format Diagrams</name>
+
+                <figure anchor="quic-reset-stream">
+                  <name>QUIC's RESET_STREAM frame format (from <xref target="QUIC-TRANSPORT"/>)</name>
+                  <artwork>
+:   The RESET_STREAM frame is as follows:
+:
+:    0                   1                   2                   3
+:    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                        Stream ID (i)                        ...
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |  Application Error Code (16)  |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |                        Final Size (i)                       ...
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:
+:   RESET_STREAM frames contain the following fields:
+:
+:   Stream ID:  A variable-length integer encoding of the Stream ID
+:      of the stream being terminated.
+:
+:   Application Protocol Error Code:  A 16-bit application protocol
+:      error code (see Section 20.1) which indicates why the stream
+:      is being closed.
+:
+:   Final Size: A variable-length integer indicating the final size
+:      of the stream by the RESET_STREAM sender, in unit of bytes.
+                  </artwork>
+                </figure>
+
+                <t>
+                  Packet header diagrams are frequently used in IETF standards to describe the
+                  format of binary protocols. While there is no standard for how
+                  these diagrams should be formatted, they have a broadly similar structure,
+                  where the layout of a protocol data unit (PDU) or structure is shown in
+                  diagrammatic form, followed by a description list of the fields that it
+                  contains. An example of this format, taken from the QUIC specification,
+                  is given in <xref target="quic-reset-stream"/>.
+                </t>
+
+                <t>
+                  These packet header diagrams, and the accompanying descriptions, are
+                  formatted for human readers rather than for automated processing. As
+                  a result, while there is rough consistency in how packet header diagrams are
+                  formatted, there are a number of limitations that make them difficult
+                  to work with programmatically:
+                </t>
+                <dl>
+                  <dt>
+                    Inconsistent syntax:
+                  </dt>
+                  <dd>
+                    <t>
+                      There are two classes of consistency that are needed to support
+                      automated processing of specifications: internal consistency
+                      within a diagram or document, and external consistency across
+                      all documents.
+                    </t>
+                      <t>
+                        <xref target="quic-reset-stream"/> gives an example of internal
+                        inconsistency. Here, the packet diagram shows a field labelled
+                        "Application Error Code", while the accompanying description lists
+                        the field as "Application Protocol Error Code". The use of an
+                        abbreviated name is suitable for human readers, but makes parsing
+                        the structure difficult for machines.
+
+                        <xref target="dhcpv6-relaysrcopt"/> gives a further example, where
+                        the description includes an "Option-Code" field that does not appear
+                        in the packet diagram; and where the description states that
+                        each field is 16 bits in length, but the diagram shows
+                        the OPTION_RELAY_PORT as 13 bits, and Option-Len as 19 bits.
+
+                        Another example is <xref target="RFC6958"/>, where the packet
+                        format diagram showing the structure of the Burst/Gap Loss Metrics
+                        Report Block shows the Number of Bursts field as being 12 bits wide
+                        but the corresponding text describes it as 16 bits.
+                      </t>
+
+                      <t>
+                        Comparing <xref target="quic-reset-stream"/> with
+                        <xref target="dhcpv6-relaysrcopt"/> exposes external
+                        inconsistency across documents. While the packet format
+                        diagrams are broadly similar, the surrounding text is
+                        formatted differently. If machine parsing is to be made
+                        possible, then this text must be structured consistently.
+                      </t>
+                    </dd>
+
+                    <dt>
+                      Ambiguous constraints:
+                    </dt>
+                    <dd>
+                      The constraints that are enforced on a particular field are often
+                      described ambiguously, or in a way that cannot be parsed easily.
+                      In <xref target="dhcpv6-relaysrcopt"/>, each of the three fields
+                      in the structure is constrained. The first two fields
+                      ("Option-Code" and "Option-Len") are to be set to constant values
+                      (note the inconsistency in how these constraints are expressed in
+                      the description). However, the third field ("Downstream Source
+                      Port") can take a value from a constrained set. This constraint
+                      is expressed in prose that cannot readily by understood by machine.
+                    </dd>
+
+                    <dt>
+                      Poor linking between sub-structures:
+                    </dt>
+                    <dd>
+                      <t>
+                        Protocol data units and other structures are often comprised of
+                        sub-structures that are defined elsewhere, either in the same
+                        document, or within another document. Chaining these structures
+                        together is essential for machine parsing: the parsing process for
+                        a protocol data unit is only fully expressed if all elements can
+                        be parsed.
+                      </t>
+                      <t>
+                        <xref target="quic-reset-stream"/> highlights the difficulty that
+                        machine parsers have in chaining structures together. Two fields
+                        ("Stream ID" and "Final Size") are described as being encoded as
+                        variable-length integers; this is a structure described elsewhere
+                        in the same document. Structured text is required both alongside
+                        the definition of the containing structure and with the definition
+                        of the sub-structure, to allow a parser to link the two together.
+                      </t>
+                    </dd>
+
+                    <dt>
+                        Lack of extension and evolution syntax:
+                    </dt>
+                    <dd>
+                        <t>
+                            Protocols are often specified across multiple documents, either
+                            because the protocol explicitly includes extension points (e.g.,
+                            profiles and payload format specifications in RTP
+                            <xref target="RFC3550"/>) or because definition of a protocol
+                            data unit has changed and evolved over time. As a result, it is
+                            essential that syntax be provided to allow for a complete
+                            definition of a protocol's parsing process to be constructed
+                            across multiple documents.
+                        </t>
+                    </dd>
+                </dl>
+
+                <figure anchor="dhcpv6-relaysrcopt">
+                  <name>DHCPv6's Relay Source Port Option (from <xref target="RFC8357"/>)</name>
+                  <artwork>
+:   The format of the "Relay Source Port Option" is shown below:
+:
+:    0                   1                   2                   3
+:    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |    OPTION_RELAY_PORT    |         Option-Len                  |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:   |    Downstream Source Port     |
+:   +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+:
+:   Where:
+:
+:   Option-Code:  OPTION_RELAY_PORT. 16-bit value, 135.
+:
+:   Option-Len:  16-bit value to be set to 2.
+:
+:   Downstream Source Port:  16-bit value.  To be set by the IPv6
+:      relay either to the downstream relay agent's UDP source port
+:      used for the UDP packet, or to zero if only the local relay
+:      agent uses the non-DHCP UDP port (not 547).
+                  </artwork>
+                </figure>
+            </section>
+
+            <section anchor='background-others'>
+                <name>Formal languages in standards documents</name>
+
+                <t>
+                    A small proportion of IETF standards documents contain
+                    structured and formal languages, including ABNF <xref target="RFC5234"/>,
+                    ASN.1 <xref target="ASN1"/>, C, CBOR <xref target="RFC7049"/>, JSON,
+                    the TLS presentation language <xref target="RFC8446"/>, YANG models
+                    <xref target="RFC7950"/>, and XML. While this broad
+                    range of languages may be problematic for the development of tooling
+                    to parse specifications, these, and other, languages serve a range of
+                    different use cases. ABNF, for example, is typically used to specify
+                    text protocols, while ASN.1 is used to specify data structure
+                    serialisation. This document specifies a structured language for specifying
+                    the parsing of binary protocol data units.
+                </t>
+            </section>
+        </section>
+
+        <section anchor='designprinciples'>
+            <name>Design Principles</name>
+            <t>
+                The use of structures that are designed to support machine readability
+                might potentially interfere with the existing ways in which protocol
+                specifications are used and authored. To the extent that these existing uses
+                are more important than machine readability, such interference must be
+                minimised.
+            </t>
+            <t>
+                In this section, the broad design principles that underpin the format
+                described by this document are given. However, these principles apply more
+                generally to any approach that introduces structured and formal languages
+                into standards documents.
+            </t>
+            <t>
+                It should be noted that these are design principles: they expose the
+                trade-offs that are inherent within any given approach. Violating these
+                principles is sometimes necessary and beneficial, and this document sets
+                out the potential consequences of doing so.
+            </t>
+            <t>
+                The central tenet that underpins these design principles is a recognition
+                that the standardisation process is not broken, and so does not need to be
+                fixed. Failure to recognise this will likely lead to approaches that are
+                incompatible with the standards process, or that will see limited
+                adoption. However, the standards process can be improved with appropriate
+                approaches, as guided by the following broad design principles:
+            </t>
+            <dl>
+                <dt>
+                    Most readers are human:
+                </dt>
+                <dd>
+                    <t>
+                        Primarily, standards documents should be written for people, who
+                        require text and diagrams that they can understand. Structures that
+                        cannot be easily parsed by people should be avoided, and if
+                        included, should be clearly delineated from human-readable
+                        content.
+                    </t>
+                    <t>
+                        Any approach that shifts this balance -- that is, that primarily
+                        targets machine readers -- is likely to be disruptive to the
+                        standardisation process, which relies upon discussion centered
+                        around documents written in prose.
+                    </t>
+                </dd>
+
+                <dt>
+                    Writing tools are diverse:
+                </dt>
+                <dd>
+                    <t>
+                        Standards document writing is a distributed process that involves a diverse set of
+                        tools and workflows. The introduction of machine-readable
+                        structures into specifications should not require that specific tools are
+                        used to produce standards documents, to ensure that disruption to
+                        existing workflows is minimised. This does not preclude the
+                        development of optional, supplementary tools that aid in the
+                        authoring machine-readable structures.
+                    </t>
+                    <t>
+                        The immediate impact of requiring specific tooling is that
+                        adoption is likely to be limited. A long-term impact might be that
+                        authors whose workflows are incompatible might be alienated from
+                        the process.
+                    </t>
+                </dd>
+
+                <dt>
+                    Canonical specifications:
+                </dt>
+                <dd>
+                    <t>
+                        As far as possible, machine-readable structures should not
+                        replicate the human readable specification of the protocol
+                        within the same document. Machine-readable structures should form part
+                        of a canonical specification of the protocol. Adding supplementary
+                        machine-readable structures, in parallel to the existing
+                        human readable text, is undesirable because it creates
+                        the potential for inconsistency.
+                    </t>
+                    <t>
+                        As an example, program code that describes how a protocol data
+                        unit can be parsed might be provided as an appendix within a
+                        standards document. This code would provide a specification of
+                        the protocol that is separate to the prose description in the
+                        main body of the document. This has the undesirable effect of
+                        introducing the potential for the program code to specify behaviour
+                        that the prose-based specification does not, and vice-versa.
+                    </t>
+                </dd>
+
+                <dt>
+                    Expressiveness:
+                </dt>
+                <dd>
+                    <t>
+                        Any approach should be expressive enough to capture the syntax
+                        and parsing process for the majority of binary protocols. If a
+                        given language is not sufficiently expressive, then adoption is
+                        likely to be limited. At the limits of what can be expressed by
+                        the language, authors are likely to revert to defining the
+                        protocol in prose: this undermines the broad goal of using
+                        structured and formal languages. Equally, though, understandable
+                        specifications and ease of use are critical for adoption. A
+                        tool that is simple to use and addresses the most common use
+                        cases might be preferred to a complex tool that addresses all
+                        use cases.
+                    </t>
+                    <t>
+                        It may be desirable to restrict expressiveness, however, to
+                        guarantee intrinsic safety, security, and computability
+                        properties of both the generated parser code for the protocol,
+                        and the parser of the description language itself. In
+                        much the same way as the language-theoretic security
+                        (<xref target="LANGSEC"/>) community advocates for programming
+                        language design to be informed by the desired properties of
+                        the parsers for those languages, protocol designers should be
+                        aware of the implications of their design choices. The
+                        expressiveness of the protocol description languages that they use to
+                        define their protocols can force such awareness.
+                    </t>
+                    <t>
+                        Broadly, those languages that have grammars which are more expressive tend to
+                        have parsers that are more complex and less safe. As a
+                        result, while considering the other goals described in
+                        this document, protocol description languages should attempt to be
+                        minimally expressive, and either restrict protocol designs to
+                        those for which safe and secure parsers can be generated, or
+                        as a minimum, ensure that protocol designers are aware of the boundaries their
+                        designs cross, in terms of computability and decidability <xref target="SASSAMAN" />.
+                    </t>
+                </dd>
+
+                <dt>
+                    Minimise required change:
+                </dt>
+                <dd>
+                    <t>
+                        Any approach should require as few changes as possible to the way
+                        that documents are formatted, authored, and published. Forcing adoption
+                        of a particular structured or formal language is incompatible with
+                        the IETF's standardisation process: there are very few components
+                        of standards documents that are non-optional.
+                    </t>
+                </dd>
+            </dl>
+        </section>
+
+        <section anchor='augmentedascii'>
+            <name>Augmented Packet Header Diagrams</name>
+            <t>
+                The design principles described in <xref target="designprinciples"/> can
+                largely be met by the existing uses of packet header diagrams. These
+                diagrams aid human readability, do not require new or specialised
+                tools to write, do not split the specification into multiple parts,
+                can express most binary protocol features, and require no changes to
+                existing publication processes.
+            </t>
+            <t>
+                However, as discussed in <xref target="background-ascii"/> there are
+                limitations to how packet header diagrams are used that must be addressed if they
+                are to be parsed by machine. In this section, an augmented packet
+                header diagram format is described.
+            </t>
+            <t>
+                The concept is first illustrated by example. This is appropriate, given the visual
+                nature of the language. In future drafts, these examples will be parsable using
+                provided tools, and a formal specification of the augmented packet
+                diagrams will be given in <xref target="ABNF"/>.
+            </t>
+
+            <section anchor='ascii-simple'>
+                <name>PDUs with Fixed and Variable-Width Fields</name>
+                <t>
+                  The simplest PDU is one that contains only a set of fixed-width
+                  fields in a known order, with no optional fields or variation
+                  in the packet format.
+                </t>
+
+                <t>
+                  Some packet formats include variable-width fields, where
+                  the size of a field is either derived from the value of
+                  some previous field, or is unspecified and inferred from
+                  the total size of the packet and the size of the other
+                  fields.
+                </t>
+
+                <t>
+                  To ensure that there is no ambiguity, a PDU description
+                  can contain only one field whose length is unspecified.
+                  The length of a single field, where all other fields are
+                  of known (but perhaps variable) length, can be inferred
+                  from the total size of the containing PDU.
+                </t>
+
+                <t>
+                  A PDU description is introduced by the exact phrase "A/An
+                  _______ is formatted as follows:" at the end of a paragraph.
+                  This is followed by the PDU description itself, as a packet
+                  diagram within an &lt;artwork> element in the XML representation,
+                  starting with a header line to show the bit width of the diagram.
+                  The description of the fields follows the diagram, as an XML
+                  &lt;dl> list, after a paragraph containing the text "where:".
+                </t>
+
+                <t>
+                  PDU names must be unique, both within a document, and across
+                  all documents that are linked together (i.e., using the
+                  structured language defined in <xref target="ascii-import" />).
+                </t>
+
+                <t>
+                  Each field of the description starts with a &lt;dt> tag
+                  comprising the field name and an optional short name in
+                  parenthesis. These are followed by a colon, the field
+                  length, an optional presence expression (described in
+                  <xref target="ascii-xref"/>), and a terminating period. The following &lt;dd>
+                  tag contains a prose description of the field. Field names
+                  cannot be the same as a previously defined PDU name, and must
+                  be unique within a given structure definition.
+                </t>
+
+                <t>
+                 For example, this can be illustrated using the IPv4 Header
+                 Format <xref target="RFC791"/>. An IPv4 Header is formatted
+                 as follows:
+                </t>
+                <artwork>
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |Version|   IHL |    DSCP   |ECN|         Total Length          |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |         Identification        |Flags|     Fragment Offset     |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    | Time to Live  |    Protocol   |        Header Checksum        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                         Source Address                        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                      Destination Address                      |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                            Options                          ...
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                                                               :
+    :                            Payload                            :
+    :                                                               |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                </artwork>
+                <t>
+                    where:
+                </t>
+                <dl>
+                    <dt>
+                        Version (V): 4 bits.
+                    </dt>
+                    <dd>
+                        <t>
+                            This is a fixed-width field, whose full label is shown
+                            in the diagram. The field's width -- 4 bits -- is given
+                            in the label of the description list, separated from the
+                            field's label by a colon.
+                        </t>
+                    </dd>
+                    <dt>
+                        Internet Header Length (IHL): 4 bits.
+                    </dt>
+                    <dd>
+                        This is a shorter field, whose full label is too large to be
+                        shown in the diagram. A short label (IHL) is used in the diagram, and this
+                        short label is provided, in brackets, after the full label
+                        in the description list.
+                    </dd>
+                    <dt>
+                        Differentiated Services Code Point (DSCP): 6 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Explicit Congestion Notification (ECN): 2 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Total Length (TL): 2 bytes.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed. Where
+                        fields are an integral number of bytes in size, the field
+                        length can be given in bytes rather than in bits.
+                    </dd>
+                    <dt>
+                        Identification: 2 bytes.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Flags: 3 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Fragment Offset: 13 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Time to Live (TTL): 1 byte.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Protocol: 1 byte.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Header Checksum: 2 bytes.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Source Address: 32 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Destination Address: 32 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as previously discussed.
+                    </dd>
+                    <dt>
+                        Options: (IHL-5)*32 bits.
+                    </dt>
+                    <dd>
+                      This is a variable-length field, whose length is defined
+                      by the value of the field with short label IHL (Internet
+                      Header Length).  Constraint expressions can be used in place of
+                      constant values: the grammar for the expression language is
+                      defined in <xref target="ABNF-constraints"/>. Constraints can
+                      include a previously defined field's short or full label, where one has been
+                      defined. Short variable-length fields are indicated by "..."
+                      instead of a pipe at the end of the row.
+                    </dd>
+                    <dt>
+                        Payload: TL - ((IHL*32)/8) bytes.
+                    </dt>
+                    <dd>
+                      This is a multi-row variable-length field, constrained by
+                      the values of fields TL and IHL.  Instead of the "..." notation,
+                      ":" is used to indicate that the field is variable-length.
+                      The use of ":" instead of "..." indicates the field is likely
+                      to be a longer, multi-row field.  However, semantically, there
+                      is no difference: these different notations are for the benefit
+                      of human readers.
+                    </dd>
+                </dl>
+            </section>
+
+            <section anchor="ascii-xref">
+              <name>PDUs That Cross-Reference Previously Defined Fields</name>
+              <t>
+                Binary formats often reference sub-structures that have been
+                defined earlier in the specification. For example, in RTP
+                <xref target="RFC3550"/>, the Contributing Source Identifiers
+                in an RTP Data Packet are defined as comprising a list of Source
+                Identifier elements. A Source Identifier is formatted as follows:
+              </t>
+
+              <artwork>
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                               SSRC                            |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+              </artwork>
+              <t>
+                  where:
+              </t>
+              <dl>
+                  <dt>
+                      SSRC: 32 bits.
+                  </dt>
+                  <dd>
+                      This is a fixed-width field, as described previously.
+                  </dd>
+              </dl>
+
+              <t>
+                The following example shows how a Source Identifier can be referenced
+                in the description of an RTP Data Packet. It also shows how the presence
+                of some fields in a format may be dependent on the values of an earlier
+                field.
+              </t>
+              <t>
+                An RTP Data Packet is formatted as follows:
+              </t>
+              <artwork>
+     0                   1                   2                   3
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    | V |P|X|  CC   |M|     PT      |       Sequence Number         |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                           Timestamp                           |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                Synchronization Source identifier              |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                [Contributing Source identifiers]              |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                       Header Extension                        |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                             Payload                           :
+    :                                                               :
+    :                                                               |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |                           Padding             | Padding Count |
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                </artwork>
+                <t>
+                    where:
+                </t>
+                <dl>
+                    <dt>
+                        Version (V): 2 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        Padding (P): 1 bit.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        Extension (X): 1 bit.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        CSRC count (CC): 4 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        Marker (M): 1 bit.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        Payload Type (PT): 7 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        Sequence Number (PT): 16 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        Timestamp (PT): 32 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, as described previously.
+                    </dd>
+                    <dt>
+                        Synchronization Source identifier: 1 Source Identifier.
+                    </dt>
+                    <dd>
+                        This is a field whose structure is a previously defined PDU format (Source Identifier).
+                        To indicate this, the width of the field is expressed in terms of
+                        cross-referenced structure. When used in constraint expressions, PDU names refer to the
+                        length of that PDU structure.
+                    </dd>
+                    <dt>
+                        Contributing Source identifiers: CC Source Identifier.
+                    </dt>
+                    <dd>
+                      <t>
+                        Where a field is comprised of a sequence of previously defined structures,
+                        square brackets can be used to indicate this in the diagram.  The length
+                        of the sequence can be defined using the constraint expression
+                        grammar as described earlier. Where the length is unknown, the type of each
+                        element of the sequence must be given in square brackets.
+                      </t>
+                      <t>
+                        In this example, both a PDU name (Source Identifier) and a field name (CC) are
+                        used in the constraint expression. The PDU name refers to the length of the
+                        PDU, while the field name refers to the value of the field. This is possible
+                        because field names cannot be the same as previously defined PDU names.
+                      </t>
+                    </dd>
+                    <dt>
+                      Header Extension: 32 bits; present only when X == 1.
+                    </dt>
+                    <dd>
+                      <t>
+                        This is a field whose presence is predicated
+                        on an expression given using the constraint expression grammar described
+                        earlier.  Optional fields can be of any previously defined format (e.g.,
+                        fixed- or variable-width).  Optional fields are indicated by the presence
+                        of "; present only when [expr]." at the end of the definition term (i.e.,
+                        the text contained within the &lt;dt> tag).
+                      </t>
+                      <t>
+                        [Note that this example deviates from the format as described in
+                        <xref target="RFC3550"/>. As specified in that document, the Header
+                        Extension would be a cross-referenced structure. This is not shown
+                        here for brevity.]
+                      </t>
+                    </dd>
+                    <dt>
+                      Payload.
+                    </dt>
+                    <dd>
+                      The length of the Payload is not specified, and hence needs to be
+                      inferred from the total length of the packet and the lengths of
+                      the known fields. There can only be one field of unspecified size
+                      in a PDU.
+                    </dd>
+                    <dt>
+                      Padding: PC bytes; present only when (P == 1) &amp;&amp;
+                      (PC > 0).
+                    </dt>
+                    <dd>
+                      This is a variable size field, with size dependent on a later
+                      field in the packet. Fields can only depend on the value of a
+                      later field if they follow a field with unspecified size.
+                    </dd>
+                    <dt>
+                      Padding Count (PC): 1 byte; present only when P == 1.
+                    </dt>
+                    <dd>
+                      This is a fixed-width field, as previously discussed.
+                    </dd>
+                </dl>
+            </section>
+
+            <section anchor='ascii-split'>
+                <name>PDUs with Non-Contiguous Fields</name>
+                <t>
+                  In some binary formats, fields are striped across multiple
+                  non-contiguous bits. This is often to allow for backwards
+                  compatibility with previous definitions of the same fields
+                  in earlier documents: striping in this way allows for
+                  careful use of the possible range of values.
+                </t>
+                <t>
+                  This format is illustrated using the STUN Message Type
+                  <xref target="draft-ietf-tram-stunbis-21"/>.
+                  A STUN Message Type is formatted as follows:
+                </t>
+                <artwork>
+     0                   1
+     0 1 2 3 4 5 6 7 8 9 0 1 2 3
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+    |M|M|M|M|M|C|M|M|M|C|M|M|M|M|
+    |B|A|9|8|7|1|6|5|4|0|3|2|1|0|
+    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                </artwork>
+                <t>
+                    where:
+                </t>
+                <dl>
+                    <dt>
+                        Method (M): 12 bits (split field).
+                    </dt>
+                    <dd>
+                        This field is comprised of multiple sub-fields (M0 through
+                        MB) as shown in the diagram. That these sub-fields should be
+                        concatenated, after parsing, into a single field is indicated
+                        by their being labelled using the 'M' short field name
+                        followed by a single hexadecimal digit, with the least significant
+                        bit labelled with 0, and subsequent bits labelled in sequence.
+                    </dd>
+                    <dt>
+                        Class (C): 2 bits (split field).
+                    </dt>
+                    <dd>
+                        This field follows the same format as M described above.
+                    </dd>
+                </dl>
+            </section>
+
+            <section anchor='ascii-value_constraints'>
+                <name>PDUs with Constraints on Field Values</name>
+                <t>
+                    A PDU may be defined not only by the layout and type of
+                    its fields, but also by the value of those fields. For
+                    example, field values may be constrained to be of a
+                    known exact value or to be within a range. More generally,
+                    our format enables a boolean expression to be attached to
+                    a field, which must be true for the PDU to be parsed
+                    successfully.
+                </t>
+                <t>
+                  This format is illustrated using the QUIC Long Header Packet format
+                  <xref target="QUIC-TRANSPORT"/>.
+                  A Long Header is formatted as follows:
+                </t>
+                <artwork>
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+
+|1|1| T | R | P |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                             Version                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    DCID Len   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                 Destination Connection ID (DCID)            ...
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|    SCID Len   |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                  Source Connection ID (SCID)                ...
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                </artwork>
+                <t>
+                    where:
+                </t>
+                <dl>
+                    <dt>
+                        Header Form (HF): 1 bit; HF == 1.
+                    </dt>
+                    <dd>
+                            This is a fixed-width field, constrained to be a of an known, exact value. At most one field value constraint may be given, and if provided, it must be given as a boolean expression, separated by a semi-colon in the field definition name (i.e., the text contained within the &lt;dt> tag). If present, a value constraint must follow the name, short name, and length of the field, but appear before any presence constraint, if applicable. The order of the field must be the same in both the diagram and description list.
+                    </dd>
+                    <dt>
+                        Fixed Bit (FB): 1 bit; FB == 1.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, with a value constraint, as previously described.
+                    </dd>
+                    <dt>
+                        Long Packet Type (T): 2 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field as previously described.
+                    </dd>
+                    <dt>
+                        Reserved Bits (R): 2 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field as previously described.
+                    </dd>
+                    <dt>
+                        Packet Number Length (P): 2 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field as previously described.
+                    </dd>
+                    <dt>
+                        Version: 32 bits.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field as previously described.
+                    </dd>
+                    <dt>
+                        DCID Len (DLen): 1 byte; DLen &lt;= 20.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, with a value constraint, as previously described. Note that the constraint language is not limited to equality; it is defined fully in <xref target="ABNF-constraints"/>.
+                    </dd>
+                    <dt>
+                        Destination Connection ID: DLen bytes.
+                    </dt>
+                    <dd>
+                        This is a variable-width field as previously described.
+                    </dd>
+                    <dt>
+                        SCID Len (SLen): 1 byte; SLen &lt;= 20.
+                    </dt>
+                    <dd>
+                        This is a fixed-width field, with a value constraint, as previously described.
+                    </dd>
+                    <dt>
+                        Source Connection ID: SLen bytes.
+                    </dt>
+                    <dd>
+                        This is a variable-width field as previously described.
+                    </dd>
+                </dl>
+            </section>
+
+            <section anchor='ascii-extendstructures'>
+             <name>PDUs That Extend Sub-Structures</name>
+             <t>
+                A PDU may not only use or reference existing sub-structures, but they
+                may extend them, adding new fields, or enforcing different or additional constraints.
+             </t>
+             <t>
+               Where a sub-structure is extended, the diagram may show the sub-structure as
+               a block, labelled with the sub-structure name. It may also be desirable to
+               show the sub-structure diagram in full; in this case, the fields must be
+               given in the same order and be of the same length. New field constraints
+               can be shown. Similarly, in the description list, those fields inherited
+               without change (i.e., with no change to their constraints) do not need to
+               be repeated. Those with different or additional constraints must be described,
+               and the order of the fields in the description list must match that of the
+               sub-structure and the containing structure.
+             </t>
+             <t>
+               This format is illustrated using the QUIC Retry Packet format
+               <xref target="QUIC-TRANSPORT"/>.
+               A Retry Packet is formatted as follows:</t>
+               <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               :
+ :                          Long Header                          :
+ :                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                          Retry Token                        ...
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +                     Retry Integrity Tag                       +
+ |                                                               |
+ +                                                               +
+ |                                                               |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                    Long Header (LH): 1 Long Header; LH.T == 3.
+                  </dt>
+                  <dd>
+                    This field is a previously defined sub-structure. Its constraints can access fields in that sub-structure. In this example, the T field of the Long Header must be equal to 3.
+                  </dd>
+                  <dt>
+                     Retry Token.
+                  </dt>
+                  <dd>
+                    This is a variable-length field as previously defined.
+                  </dd>
+                  <dt>
+                    Retry Integrity Tag: 128 bits.
+                  </dt>
+                  <dd>
+                    This is a fixed-width field as previously defined.
+                  </dd>
+               </dl>
+               <t>
+                 As shown, the Long Header packet sub-structure is included. The Retry Packet enforces
+                 a new value constraint on the Long Packet Type (T) field.
+               </t>
+            </section>
+
+            <section anchor='ascii-store'>
+                <name>Storing Data for Parsing</name>
+                <t>
+                  The parsing process may require data from previously parsed structures. This means that
+                  data needs to be stored persistently throughout the process. This data needs to be
+                  identified.
+                </t>
+                <t>
+                  That the value of a particular field be stored upon parsing is indicated by the exact phrase "On receipt, the value of &lt;field name> is stored as &lt;stored name>." being present at the end of the description of a field (i.e., at the end of the &lt;dd> element.)
+              </t>
+                <t>An Initial Packet is formatted as follows:</t>
+                <artwork>
+   0                   1                   2                   3
+   0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+  |                                                               :
+  :                          Long Header                          :
+  :                                                               |
+  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                </artwork>
+                <t>
+                   where:
+                </t>
+                <dl>
+                   <dt>
+                      Long Header (LH): 1 Long Header; LH.T == 0.
+                   </dt>
+                   <dd>
+                      This is field is a sub-structure, with a constraint, as previously defined. On receipt, the value of LH.DCID is stored as Initial DCID.
+                   </dd>
+               </dl>
+                <t>
+                  In this example, the value of the DCID field of the Long Header sub-structure is stored as Initial DCID.
+                </t>
+            </section>
+
+            <section anchor='ascii-functions'>
+              <name>Connecting Structures with Functions</name>
+              <t>
+                The parsing or serialisation of some binary formats cannot be fully described without
+                the use of functions. These functions take arguments (values from another structure),
+                perform some computation, and generate a new structure.
+              </t>
+              <t>
+                Given the goal of fully capturing the parsing or serialisation of binary protocols, it
+                is necessary to include the signature of these helper functions.
+              </t>
+              <t>
+                Function signatures are described in &lt;artwork> elements. They are constructed as
+                the word "func", followed by a space, then the name of the function. This is immediately
+                followed by a set of brackets containing a comma separated list of the function's parameters,
+                formatted as "&lt;parameter name>: &lt;parameter type>". This is followed by "->"
+                and the return type of the function, followed by a colon.
+              </t>
+              <t>
+                The body of the function is not captured, owing to the complexity of both capturing and translating
+                arbitrary code. As a result, it can be described in whichever format is most suitable for the
+                document and its readership.
+              </t>
+              <t>
+                  Those values that are stored persistently, as defined in <xref target="ascii-store"/>, are accessible by functions.
+            </t>
+              <t>
+                As an example, the "apply_protection" function is defined as:
+              </t>
+            <artwork>
+func apply_protection(to: Unprotected Packet)
+                -> Protected Packet:
+   apply packet protection to payload
+   apply header protection to first_byte and packet_number
+   construct appropriate Protected Packet based on first_byte
+   return Protected Packet
+            </artwork>
+            <t>
+              In this example, 'Unprotected Packet' and 'Protected Packet' are existing types.
+            </t>
+            <t>
+                To indicate that a PDU is created from another by way of a
+                function, the sentence "A/An &lt;PDU name A> is parsed from a
+                &lt;PDU name B> using the &lt;function name> function" is used.
+                This indicates that a PDU A is generated by passing PDU B into
+                the named function. The function must take a single parameter,
+                of the same type as PDU B, and return a PDU B.
+            </t>
+            <t>
+                To indicate that a PDU can be serialised to another by way of a
+                function, the sentence "A/An &lt;PDU name A> is serialised to a
+                &lt;PDU name B> using the &lt;function name> function" is used.
+                This indicates that a PDU B is generated by passing PDU A into
+                the named function. The function must take a single parameter,
+                of the same type as PDU A, and return a PDU B.
+            </t>
+            </section>
+
+            <section anchor='ascii-enums'>
+                <name>Specifying Enumerated Types</name>
+                <t>
+                  In addition to the use of the sub-structures, it is desirable to be able to define a type that
+                  may take the value of one of a set of alternative structures.
+                </t>
+               <t>
+                  The alternative structures that comprise an enumerated type are identified using the exact phrase "The &lt;enumerated type name>
+                   is one of: &lt;list of structure names>" where the list of structure names is a comma
+                  separated list (with the last element, if there is more than one element, preceded by 'or'),
+                  each optionally preceded by "a" or "an". The structure names must be defined within the document or a linked document.
+                </t>
+                <t>
+                    Where an enumerated type has only two variants, an alternative phrase can be used: "The &lt;enumerated type name> is either a &lt;variant 1 name> or &lt;variant 2 name>". The names of the variants must be defined within the document or a linked document.
+                </t>
+                <t>A PING Frame is formatted as follows:</t>
+                <artwork>
+  0                   1                   2                   3
+  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |       1       |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                </artwork>
+                <t>
+                   where:
+                </t>
+                <dl>
+                   <dt>
+                      Frame Type (FT): 1 Variable Length Integer Encoding; FT.T == 1.
+                   </dt>
+                   <dd>
+                      Frame type, set to 1 for PING frames.
+                   </dd>
+                </dl>
+               <t>A HANDSHAKE_DONE Frame is formatted as follows:</t>
+               <artwork>
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       30      |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+               </artwork>
+               <t>
+                  where:
+               </t>
+               <dl>
+                  <dt>
+                     Frame Type (FT): 1 Variable Length Integer Encoding; FT.T == 30.
+                  </dt>
+                  <dd>
+                     Frame type, set to 30 for HANDSHAKE_DONE frames.
+                  </dd>
+               </dl>
+               <t>
+                  A Frame is either a PING Frame or a HANDSHAKE_DONE Frame.
+               </t>
+            </section>
+
+            <section anchor='ascii-pdus'>
+                <name>Specifying Protocol Data Units</name>
+                <t>
+                  A document will set out different structures that are not, on their own, protocol data units.
+                  To capture the parsing or serialisation of a protocol, it is necessary to be able to identify
+                  or construct those packets that are valid PDUs. As a result, it is necessary for the document
+                  to identify those structures that are PDUs.
+                </t>
+                <t>
+                  The PDUs that comprise a protocol are identified using the
+                  exact phrase "This document describes the &lt;protocol name>
+                  protocol. The &lt;protocol name> protocol uses &lt;list of PDU
+                  names>" where the list of PDU names is a comma separated list
+                  (with the last element, if there is more than one element,
+                  preceded by 'and'), each optionally preceded by "a" or "an".
+                  The PDU names must be structure names defined in the document
+                  or a linked document. The PDU names are pluralised in the
+                  list. A document must contain exactly one instance of this
+                  phrase.
+                </t>
+                <t>
+                  This document describes the Example protocol. The Example protocol uses Long Headers, STUN Message Types, IPv4 Headers, and RTP Data Packets.
+                </t>
+            </section>
+
+            <section anchor='ascii-import'>
+                <name>Importing PDU Definitions from Other Documents</name>
+                <t>
+                  Protocols are often specified across multiple documents, either because
+                  the specification of a protocol's data units has changed over time, or
+                  because of explicit extension points contained in the protocol's original
+                  specification. To allow a document to make use of a previous PDU definition,
+                  it is possible to import PDU definitions (written in the format described in
+                  this document) from other documents.
+                </t>
+                <t>
+                  A PDU definition is imported using the exact phrase "A/An ________ is formatted as
+                  described in &lt;document identifier>". The document identifier must refer, unambiguously,
+                  to an existing document. An Internet-Draft is identified by its name. RFCs are identified by
+                  "RFC" followed by their number.
+                </t>
+            </section>
+
+        </section>
+
+        <section anchor="issues">
+          <name>Open Issues</name>
+          <ul>
+            <li>
+              Need a simple syntax for defining a list of identical objects,
+              and a way of referring to the size of the enclosing packet.
+              The format cannot currently represent RFC 6716 section 3.2.3,
+              and should be able to (the underlying type system can do so).
+            </li>
+            <li>
+              Need some discussion about the checks that the tooling might
+              perform, and the implications of those checks. For example,
+              the tooling checks for consistency between the diagram and
+              the description list of fields, ensuring that fields match
+              by name and width. -01 of this draft had a field that
+              mismatched because of case: is this something that the
+              tooling should identify? More broadly, what is the trade-off
+              between the rigour that the tooling can enforce, and the
+              flexibility desired/needed by authors?
+            </li>
+            <li>
+              Need to describe the rules governing the import of PDU definitions
+              from other documents.
+            </li>
+          </ul>
+        </section>
+
+        <section anchor='IANA'>
+            <name>IANA Considerations</name>
+            <t>
+                This document contains no actions for IANA.
+            </t>
+        </section>
+
+        <section anchor='security'>
+            <name>Security Considerations</name>
+            <t>
+                Poorly implemented parsers are a frequent source of security
+                vulnerabilities in protocol implementations. Structuring the
+                description of a protocol data unit so that a parser can be
+                automatically derived from the specification can reduce the
+                likelihood of vulnerable implementations.
+            </t>
+            <t>
+                As described in <xref target="designprinciples"/>, the expressiveness
+                of a protocol description language has implications for the safety,
+                security, and computability properties of the parser for the protocol
+                description language itself, and on the generated parser code for the
+                protocols described using it. The language-theoretic security (<xref target="LANGSEC" />)
+                community explores the security implications of programming language
+                design; the principles developed in that community should guide the
+                development of protocol description languages.
+            </t>
+        </section>
+
+        <section anchor='Acknowledgements'>
+            <name>Acknowledgements</name>
+            <t>
+              The authors would like to thank Marc Petit-Huguenin for
+              extensive feedback on the draft, including work on formalising
+              the constraint syntax as given in <xref target="ABNF-constraints" />.
+            </t>
+            <t>
+                The authors would like to thank David Southgate for preparing
+                a prototype implementation of some of the ideas described here.
+            </t>
+            <t>
+                This work has received funding from the UK Engineering and Physical
+                Sciences Research Council under grant EP/R04144X/1.
+            </t>
+        </section>
+    </middle>
+
+    <back>
+        <references>
+            <name>Informative References</name>
+            <reference  anchor="RFC8357" target='https://www.rfc-editor.org/info/rfc8357'>
+                <front>
+                    <title>Generalized UDP Source Port for DHCP Relay</title>
+
+                    <author initials='S.' surname='Deering' fullname='S. Deering'><organization /></author>
+                    <author initials='R.' surname='Hinden' fullname='R. Hinden'><organization /></author>
+
+                    <date year='2018' month='March' />
+                </front>
+                <seriesInfo name='RFC' value='8357'/>
+            </reference>
+            <reference anchor="QUIC-TRANSPORT" target="http://www.ietf.org/internet-drafts/draft-ietf-quic-transport-27.txt">
+                <front>
+                    <title>QUIC: A UDP-Based Multiplexed and Secure Transport</title>
+
+                    <author initials='J' surname='Iyengar' fullname='Jana Iyengar'><organization /></author>
+                    <author initials='M' surname='Thomson' fullname='Martin Thomson'><organization /></author>
+
+                    <date month='February' day='21' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-ietf-quic-transport-27' />
+            </reference>
+            <reference anchor="RFC6958" target="https://www.rfc-editor.org/info/rfc6958">
+                <front>
+                    <title>RTP Control Protocol (RTCP) Extended Report (XR) Block for Burst/Gap Loss Metric Reporting</title>
+
+                    <author initials='A' surname='Clark' fullname='Alan Clark'><organization /></author>
+                    <author initials='S' surname='Zhang' fullname='Sunshine Zhang'><organization /></author>
+                    <author initials='J' surname='Zhao' fullname='Jing Zhao'><organization /></author>
+                    <author initials='Q' surname='Wu' fullname='Qin Wu'><organization /></author>
+
+                    <date month='May' year='2013' />
+                </front>
+                <seriesInfo name='RFC' value='6958'/>
+            </reference>
+            <reference anchor="RFC7950" target="https://www.rfc-editor.org/info/rfc7950">
+                <front>
+                    <title>The YANG 1.1 Data Modeling Language</title>
+
+                    <author initials='M' surname='Bjorklund' fullname='Martin Bjorklund'><organization /></author>
+
+                    <date month='August' year='2016' />
+                </front>
+                <seriesInfo name='RFC' value='7950'/>
+            </reference>
+            <reference anchor="RFC8446" target="https://www.rfc-editor.org/info/rfc8446">
+                <front>
+                    <title>The Transport Layer Security (TLS) Protocol Version 1.3</title>
+
+                    <author initials='E' surname='Rescorla' fullname='Eric Rescorla'><organization /></author>
+
+                    <date month='August' year='2018' />
+                </front>
+                <seriesInfo name='RFC' value='8446'/>
+            </reference>
+            <reference anchor="RFC5234" target="https://www.rfc-editor.org/info/rfc5234">
+                <front>
+                    <title>Augmented BNF for Syntax Specifications: ABNF</title>
+
+                    <author initials='D' surname='Crocker' fullname='Dave Crocker'><organization /></author>
+                    <author initials='P' surname='Overell' fullname='Paul Overell'><organization /></author>
+
+                    <date month='January' year='2008' />
+                </front>
+                <seriesInfo name='RFC' value='5234'/>
+            </reference>
+            <reference anchor="RFC7405" target="https://www.rfc-editor.org/info/rfc7405">
+              <front>
+                <title>Case-Sensitive String Support in ABNF</title>
+
+                <author initials='P' surname='Kyzivat' fullname='Paul Kyzivat'><organization /></author>
+
+                <date month='December' year='2014' />
+              </front>
+              <seriesInfo name='RFC' value='7405'/>
+            </reference>
+            <reference anchor="ASN1">
+                <front>
+                    <title>ITU-T Recommendation X.680, X.681, X.682, and X.683</title>
+
+                    <author fullname='ITU-T'><organization /></author>
+                </front>
+                <seriesInfo name='ITU-T Recommendation' value='X.680, X.681, X.682, and X.683'/>
+            </reference>
+            <reference anchor="RFC7049" target="https://www.rfc-editor.org/info/rfc7049">
+                <front>
+                    <title>Concise Binary Object Representation (CBOR)</title>
+
+                    <author initials='C' surname='Bormann' fullname='Carsten Bormann'><organization /></author>
+                    <author initials='P' surname='Hoffman' fullname='Paul Hoffman'><organization /></author>
+
+                    <date month='October' year='2013' />
+                </front>
+                <seriesInfo name='RFC' value='7049'/>
+            </reference>
+            <reference anchor="RFC3550" target="https://www.rfc-editor.org/info/rfc3550">
+                <front>
+                    <title>RTP: A Transport Protocol for Real-Time Applications</title>
+
+                    <author initials='H' surname='Schulzrinne' fullname='Henning Schulzrinne'><organization /></author>
+                    <author initials='S' surname='Casner' fullname='Stephen L. Casner'><organization /></author>
+                    <author initials='R' surname='Frederick' fullname='Ron Frederick'><organization /></author>
+                    <author initials='V' surname='Jacobson' fullname='Van Jacobson'><organization /></author>
+
+                    <date month='July' year='2003' />
+                </front>
+                <seriesInfo name='RFC' value='3550'/>
+            </reference>
+            <reference anchor="draft-ietf-tram-stunbis-21" target="http://www.ietf.org/internet-drafts/draft-ietf-tram-stunbis-21.txt">
+                <front>
+                    <title>Session Traversal Utilities for NAT (STUN)</title>
+
+                    <author initials='M' surname='Petit-Huguenin' fullname='Marc Petit-Huguenin'><organization /></author>
+                    <author initials='G' surname='Salgueiro' fullname='Gonzalo Salgueiro'><organization /></author>
+                    <author initials='J' surname='Rosenberg' fullname='Jonathan Rosenberg'><organization /></author>
+                    <author initials='D' surname='Wing' fullname='Dan Wing'><organization /></author>
+                    <author initials='R' surname='Mahy' fullname='Rohan Mahy'><organization /></author>
+                    <author initials='P' surname='Matthews' fullname='Philip Matthews'><organization /></author>
+
+                    <date month='March' day='21' year='2019' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-ietf-tram-stunbis-21' />
+            </reference>
+            <reference anchor="RFC791" target="https://www.rfc-editor.org/info/rfc791">
+                <front>
+                    <title>Internet Protocol</title>
+
+                    <author initials='J' surname='Postel' fullname='Jon Postel'><organization /></author>
+
+                    <date month='September' year='1981' />
+                </front>
+                <seriesInfo name='RFC' value='791'/>
+            </reference>
+            <reference anchor="RFC793" target="https://www.rfc-editor.org/info/rfc793">
+                <front>
+                    <title>Transmission Control Protocol</title>
+
+                    <author initials='J' surname='Postel' fullname='Jon Postel'><organization /></author>
+
+                    <date month='September' year='1981' />
+                </front>
+                <seriesInfo name='RFC' value='793'/>
+            </reference>
+            <reference anchor="LANGSEC" target="http://langsec.org">
+                <front>
+                    <title>LANGSEC: Language-theoretic Security</title>
+
+                    <author fullname='LANGSEC'></author>
+                </front>
+            </reference>
+            <reference anchor="SASSAMAN" target="https://www.usenix.org/publications/login/december-2011-volume-36-number-6/halting-problems-network-stack-insecurity">
+                <front>
+                    <title>The Halting Problems of Network Stack Insecurity</title>
+
+                    <author initials='L' surname='Sassaman' fullname='Len Sassaman'><organization /></author>
+                    <author initials='M. L' surname='Patterson' fullname='Meredith L. Patterson'><organization /></author>
+                    <author initials='S' surname='Bratus' fullname='Sergey Bratus'><organization /></author>
+                    <author initials='A' surname='Shubina' fullname='Anna Shubina'><organization /></author>
+                </front>
+                <refcontent>;login: -- December 2011, Volume 36, Number 6</refcontent>
+            </reference>
+            <reference anchor="draft-mcquistin-augmented-udp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-udp-00.txt">
+                <front>
+                    <title>Describing UDP with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='November' day='2' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-udp-example-00' />
+            </reference>
+            <reference anchor="draft-mcquistin-augmented-tcp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-tcp-example-00.txt">
+                <front>
+                    <title>Describing TCP with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='November' day='2' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-udp-example-00' />
+            </reference>
+            <reference anchor="draft-mcquistin-quic-augmented-diagrams" target="http://www.ietf.org/internet-drafts/draft-mcquistin-quic-augmented-diagrams-03.txt">
+                <front>
+                    <title>Describing QUIC's Protocol Data Units with Augmented Packet Header Diagrams</title>
+
+                    <author initials='S' surname='McQuistin' fullname='Stephen McQuistin'><organization /></author>
+                    <author initials='V' surname='Band' fullname='Vivian Band'><organization /></author>
+                    <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
+                    <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
+
+                    <date month='November' day='2' year='2020' />
+                </front>
+
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-03' />
+            </reference>
+        </references>
+
+        <section anchor='ABNF'>
+            <name>ABNF specification</name>
+            <section anchor='ABNF-constraints'>
+                <name>Constraint Expressions</name>
+                <sourcecode type="abnf">
+constant = %x31-39 *(%x30-39)  ; natural numbers without leading 0s
+short-name = ALPHA *(ALPHA / DIGIT / "-" / "_")
+name = short-name *(" " short-name)
+sp = [" "] ; optional space in expression
+bool-expr = "(" sp bool-expr sp ")" /
+           "!" sp bool-expr /
+           bool-expr sp bool-op sp bool-expr /
+           bool-expr sp "?" sp expr sp ":" sp expr /
+           expr sp cmp-op sp expr
+bool-op = "&amp;&amp;" / "||"
+cmp-op = "==" / "!=" / "&lt;" / "&lt;=" / ">" / ">="
+expr = "(" sp expr sp ")" /
+      expr sp op sp expr /
+      bool-expr "?" expr ":" expr /
+      name / short-name "." short-name /
+      constant
+op = "+" / "-" / "*" / "/" / "%" / "^"
+length = expr sp unit / "[" sp name sp "]"
+unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
+                </sourcecode>
+            </section>
+
+            <section anchor='ABNF-diagrams'>
+                <name>Augmented packet diagrams</name>
+                <t>
+                    Future revisions of this draft will include an ABNF specification for
+                    the augmented packet diagram format described in
+                    <xref target="augmentedascii"/>. Such a specification is omitted from
+                    this draft given that the format is likely to change as its syntax is
+                    developed. Given the visual nature of the format, it is more
+                    appropriate for discussion to focus on the examples given in
+                    <xref target="augmentedascii"/>.
+                </t>
+            </section>
+        </section>
+
+        <section anchor='source'>
+            <name>Tooling &amp; source code</name>
+            <t>
+                The source for this draft is available from
+                <eref target="https://github.com/glasgow-ipl/draft-mcquistin-augmented-ascii-diagrams" />.
+            </t>
+            <t>
+                The source code for tooling that can be used to parse this document is available
+                from <eref target="https://github.com/glasgow-ipl/ips-protodesc-code" />. This tooling
+                supports the automatic generation of Rust parser code from protocol descriptions written
+                in the Augmented Packet Header Diagram format. It also provides test harnesses that
+                demonstrate that example descriptions of UDP <xref target="draft-mcquistin-augmented-udp-example" />
+                and TCP <xref target="draft-mcquistin-augmented-udp-example" /> function as expected.
+            </t>
+        </section>
+    </back>
+ </rfc>

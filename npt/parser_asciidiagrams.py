@@ -57,17 +57,17 @@ def valid_type_name_convertor(name):
 
 def resolve_multiline_length(tokens):
     # scan for variable length
+    field = " ".join([ desc for desc, delim, length in tokens if len(desc) > 0 ])
     length = "var"  if len([ delim for desc, delim, length in tokens if delim in [ ':', '...' ]]) > 0 \
-                    else max([ length for desc, delim, length in tokens])
-
-    return ( length , " ".join([ desc for desc, delim, length in tokens if len(desc) > 0 ]))
+                    else max([ length for desc, delim, length in tokens]) * (field.count('\n')+1)
+    return ( length , field.strip())
 
 class AsciiDiagramsParser(Parser):
     def __init__(self) -> None:
         super().__init__()
 
-    def new_field(self, full_label, short_label, size, units, value_constraint, is_present, is_array):
-        return {"full_label": valid_field_name_convertor(full_label), "short_label": valid_field_name_convertor(short_label), "size": size, "units": units, "value_constraint": value_constraint, "is_present": is_present, "is_array": is_array}
+    def new_field(self, full_label, short_label, options, size, units, value_constraint, is_present, is_array):
+        return {"full_label": valid_field_name_convertor(full_label), "short_label": valid_field_name_convertor(short_label), "options" : options, "size": size, "units": units, "value_constraint": value_constraint, "is_present": is_present, "is_array": is_array}
 
     def new_this(self):
         return ("this")
@@ -137,6 +137,13 @@ class AsciiDiagramsParser(Parser):
                                      "resolve_multiline_length" : resolve_multiline_length,
                                      "protocol"                 : self.proto
                                    })
+                                   #  "djnew_field"                : self.djnew_field,
+                                   #  "debug"                    : self.debug, 
+    def debug(self, rule, arg): 
+        print(f"debug {rule} -- {arg}") 
+        return arg
+
+
 
     def process_diagram(self, artwork: str, parser) -> List[Tuple[Union[int, str], str]]:
         delim_units = parser(artwork.strip()).diagram()
