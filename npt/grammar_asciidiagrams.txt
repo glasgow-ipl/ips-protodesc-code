@@ -66,12 +66,97 @@ field_name = <(alphanum:w ' '?)*>:name -> name.strip()
 
 short_field_name = alphanum:name -> name.strip()
 
-field_title_name_only = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label '.' -> new_field(full_label, short_label, None, None, None, None, False)
-field_title_array = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': [' pdu_name:element_type_name ']' '.' -> new_field(full_label, short_label, None, element_type_name, None, None, True)
-field_title_size = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' equality_expr:size ' ' ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, size, units, None, is_present, False)
-field_title_size_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' (equality_expr:size)? ' ' ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units '; ' equality_expr:value_constraint ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, size, units, value_constraint, is_present, False)
-field_title_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': ' equality_expr:value_constraint '.' ('; present only when ' equality_expr:is_present -> is_present)?:is_present -> new_field(full_label, short_label, None, None, value_constraint, is_present, False)
-field_title_array_constraint = field_name:full_label ('(' short_field_name:short_label ')' -> short_label)?:short_label ': [' pdu_name:element_type_name ']' '; ' equality_expr:value_constraint ('; present only when ' equality_expr:is_present -> is_present)?:is_present '.' -> new_field(full_label, short_label, None, element_type_name, value_constraint, is_present, True)
+words = <alphanum ws>*:w -> " ".join(w)
+field_opts = words:start (',' ws words)*:rest  -> [" ".join(start.split()) ] + [ " ".join(r.split()) for r in rest]
+
+field_title_name_only = ws field_name:full_label
+                        ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                        '.' -> new_field(full_label,
+                                         short_label,
+                                         None,
+                                         None,
+                                         None,
+                                         None,
+                                         None,
+                                         False)
+
+field_title_array = ws field_name:full_label
+                    ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                    ': [' pdu_name:element_type_name ']'
+                    '.' -> new_field(full_label,
+                                     short_label,
+                                     None,
+                                     None,
+                                     element_type_name,
+                                     None,
+                                     None,
+                                     True)
+
+field_title_size = ws field_name:full_label
+                   ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                   ': '
+                   equality_expr:size
+                   ' '
+                   ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units
+                   ws ('(' field_opts:opts ')' -> opts)?:opts
+                   ('; present only when ' equality_expr:is_present -> is_present)?:is_present
+                   '.' -> new_field(full_label,
+                                    short_label,
+                                    opts,
+                                    size,
+                                    units,
+                                    None,
+                                    is_present,
+                                    False)
+
+field_title_size_constraint = ws field_name:full_label
+                              ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                              ': '
+                              (equality_expr:size)?
+                              ' '
+                              ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units
+                              ws ('(' field_opts:opts ')' -> opts )?:opts
+                              '; '
+                              equality_expr:value_constraint
+                              ('; present only when ' equality_expr:is_present -> is_present)?:is_present
+                              '.' -> new_field(full_label,
+                                               short_label,
+                                               opts,
+                                               size,
+                                               units,
+                                               value_constraint,
+                                               is_present,
+                                               False)
+
+field_title_constraint = ws field_name:full_label
+                         ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                         ': '
+                         equality_expr:value_constraint
+                         ws ('(' field_opts:opts ')' -> opts )?:opts
+                         '.'
+                         ('; present only when ' equality_expr:is_present -> is_present)?:is_present
+                         -> new_field(full_label,
+                                      short_label,
+                                      opts,
+                                      None,
+                                      None,
+                                      value_constraint,
+                                      is_present,
+                                      False)
+
+field_title_array_constraint = ws field_name:full_label
+                               ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                               ': [' pdu_name:element_type_name ']' '; '
+                               equality_expr:value_constraint
+                               ('; present only when ' equality_expr:is_present -> is_present)?:is_present
+                               '.' -> new_field(full_label,
+                                                short_label,
+                                                None,
+                                                None,
+                                                element_type_name,
+                                                value_constraint,
+                                                is_present,
+                                                True)
 
 field_title = field_title_name_only | field_title_size | field_title_size_constraint | field_title_constraint | field_title_array | field_title_array_constraint
 
@@ -80,11 +165,18 @@ field_title = field_title_name_only | field_title_size | field_title_size_constr
 preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name "is" ws "formatted" ws "as" ws "follows:" -> name
 
 # Diagram
+vsep = ws <'+-'+ '+'?>:unit -> unit
+vcontent = ws <(anything:x ?(x != '+') | ('+' ~'-'))>+:c  vsep -> "".join(c)
+diagram = ws (anything:x ?(x != '+'))+:hdr
+          vsep  vcontent*:vc -> [ _v.strip() for _v in vc]
 
-separator_line = ('|'|'..') ws '+-'+ '+'? <(anything:x ?(x != "|" and x != '.'))*>:ls -> None
-diagram_field_var = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls '.' -> ("var", str(ls).strip())
-diagram_field = ('|'|'..') <(anything:x ?(x != "|" and x != '.'))*>:ls -> (int((len(str(ls))+1)/2), str(ls).strip())
-diagram = <(anything:x ?(x != "|" and x != '.'))*> (separator_line|diagram_field_var|diagram_field)+:fields <(anything:x ?(x != "|" and x != '.'))*> -> proc_diagram_fields(fields)
+fchar = anything:x ?(x not in ['|', ':', '.', '+' ]):field  ->  field
+dfield = <fchar*>:c <('|' | ':' | '...' | '+')>:delim  ->  (c.strip(' '), delim, int((len(c)+1)/2))
+one_line =  ws ('|' | ':' ) dfield*:field_name  ws ->  [ ('var' if delim == '...' else len, desc.strip())
+                                                         for desc, delim, len in field_name]
+multi_line =  ws ('|' | ':' | '+') ws dfield*:field_name  ws ->  [resolve_multiline_length(field_name)]
+multi_line_split = one_line+:m -> m
+
 
 # Enums
 variant_list = ("an " | "a ") pdu_name:name (', ' ('or ')? ("an " | "a ") pdu_name:names)*:names -> [name] + names
