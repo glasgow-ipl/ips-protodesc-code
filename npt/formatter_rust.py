@@ -58,7 +58,7 @@ class RustFormatter(Formatter):
         self.expr_traversal = ExpressionTraversal(self)
 
     def generate_output(self, output_name: str) -> Dict[Path, str]:
-        manifest = f"[package]\nname = \"{output_name.replace('-', '_')}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"*\"\n\n"
+        manifest = f"[package]\nname = \"{output_name.replace('-', '_')}\"\nversion = \"0.1.0\"\n\n[dependencies]\nnom = \"5.1.2\"\n\n"
         self.output = ["extern crate nom;\n\nuse nom::bits::complete::take;\nuse nom::IResult;\nuse nom::Err;\nuse nom::error::ErrorKind;\n"] + self.output
         output_files = {Path(f"src/lib.rs"): "".join(self.output),
                         Path(f"Cargo.toml"): manifest}
