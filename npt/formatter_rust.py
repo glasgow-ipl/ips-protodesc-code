@@ -273,9 +273,15 @@ class RustFormatter(Formatter):
         self.output.append("\n#[derive(Debug)]")
         self.output.append("\npub struct %s(pub Vec<%s>);\n" % (camelcase(array.name), camelcase(element_type_name)))
         if (array.length is not None):
-            self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
+            size = self.expr_traversal.dfs_expression(array.length)
+            self_vars = re.findall(r"self\(([\w]*)\)", size)
+            size = re.sub(r"self\(([\w]*)\)", r"\1", size)
+            self.struct_field_signatures[f"parse_{fname}"] = self_vars
+            required_vars = [f"{var_name}: usize" for var_name in self_vars]
+            required_vars_signatures=", ".join(required_vars)
+            self.output.append(f"\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context, {required_vars_signatures}) -> (IResult<(&'a [u8], usize), {camelcase(array.name)}>, &'a mut Context) {{")
             self.output.append(f"\n    let mut {fname} = {camelcase(array.name)}(Vec::new());")
-            self.output.append(f"\n    for _n in 1..={self.expr_traversal.dfs_expression(array.length)} {{")
+            self.output.append(f"\n    for _n in 1..={size} {{")
             self.output.append(f"\n        match parse_{element_type_name.replace(' ', '_').replace('-', '_').lower()}(input, context) {{")
             self.output.append(f"\n            (IResult::Ok((i, o)), c) => {{ input = i; context = c; {fname}.0.push(o); }},")
             self.output.append(f"\n            (IResult::Err(e), c) => return (IResult::Err(e), c),")
