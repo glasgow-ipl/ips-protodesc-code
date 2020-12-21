@@ -72,6 +72,8 @@ class RustFormatter(Formatter):
             return f"({target}.pow({arg_exprs[0]}))"
         elif method_name == "multiply":
             return f"({target}*{arg_exprs[0]})"
+        elif method_name == "divide":
+            return f"({target}/{arg_exprs[0]})"
         elif method_name == "minus":
             return f"({target}-{arg_exprs[0]})"
         elif method_name == "ge":
