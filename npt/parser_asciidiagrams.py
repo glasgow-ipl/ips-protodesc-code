@@ -35,7 +35,7 @@ import npt.rfc as rfc
 import npt.protocol
 
 from npt.parser import Parser
-from typing     import cast, Optional, Union, List
+from typing     import cast, Optional, Union, List, Tuple
 
 def stem(phrase):
     if phrase[-1] == 's':
@@ -55,12 +55,19 @@ def valid_type_name_convertor(name):
     name = ' '.join(name.replace('\n',' ').split())
     return name.capitalize().replace(" ", "_")
 
+def resolve_multiline_length(tokens):
+    # scan for variable length
+    field = " ".join([ desc for desc, delim, length in tokens if len(desc) > 0 ])
+    length = "var"  if len([ delim for desc, delim, length in tokens if delim in [ ':', '...' ]]) > 0 \
+                    else max([ length for desc, delim, length in tokens]) * (field.count('\n')+1)
+    return ( length , field.strip())
+
 class AsciiDiagramsParser(Parser):
     def __init__(self) -> None:
         super().__init__()
 
-    def new_field(self, full_label, short_label, size, units, value_constraint, is_present, is_array):
-        return {"full_label": valid_field_name_convertor(full_label), "short_label": valid_field_name_convertor(short_label), "size": size, "units": units, "value_constraint": value_constraint, "is_present": is_present, "is_array": is_array}
+    def new_field(self, full_label, short_label, options, size, units, value_constraint, is_present, is_array):
+        return {"full_label": valid_field_name_convertor(full_label), "short_label": valid_field_name_convertor(short_label), "options" : options, "size": size, "units": units, "value_constraint": value_constraint, "is_present": is_present, "is_array": is_array}
 
     def new_this(self):
         return ("this")
@@ -115,20 +122,48 @@ class AsciiDiagramsParser(Parser):
         with open("npt/grammar_asciidiagrams.txt") as grammarFile:
             return parsley.makeGrammar(grammarFile.read(),
                                    {
-                                     "ascii_uppercase"         : string.ascii_uppercase,
-                                     "ascii_lowercase"         : string.ascii_lowercase,
-                                     "ascii_letters"           : string.ascii_letters,
-                                     "punctuation"             : string.punctuation,
-                                     "new_constant"            : self.new_constant,
-                                     "build_tree"              : self.build_tree,
-                                     "new_fieldaccess"         : self.new_fieldaccess,
-                                     "new_methodinvocation"    : self.new_methodinvocation,
-                                     "new_this"                : self.new_this,
-                                     "new_field"               : self.new_field,
-                                     "proc_diagram_fields"     : self.proc_diagram_fields,
-                                     "stem"                    : stem,
-                                     "protocol"                : self.proto
+                                     "ascii_uppercase"          : string.ascii_uppercase,
+                                     "ascii_lowercase"          : string.ascii_lowercase,
+                                     "ascii_letters"            : string.ascii_letters,
+                                     "punctuation"              : string.punctuation,
+                                     "new_constant"             : self.new_constant,
+                                     "build_tree"               : self.build_tree,
+                                     "new_fieldaccess"          : self.new_fieldaccess,
+                                     "new_methodinvocation"     : self.new_methodinvocation,
+                                     "new_this"                 : self.new_this,
+                                     "new_field"                : self.new_field,
+                                     "proc_diagram_fields"      : self.proc_diagram_fields,
+                                     "stem"                     : stem,
+                                     "resolve_multiline_length" : resolve_multiline_length,
+                                     "protocol"                 : self.proto
                                    })
+
+    def process_diagram(self, artwork: str, parser) -> List[Tuple[Union[int, str], str]]:
+        delim_units = parser(artwork.strip()).diagram()
+        fields : List[Tuple[Union[int, str], str]] = []
+
+        for d_unit in delim_units:
+            hlines =  d_unit.split(sep="\n")
+            begin, end = hlines[0][0], hlines[0][-1] if hlines[0][-1] in ['|', ':'] else '...'
+            min_sep = 2 if end == '|' else 1
+            if len(hlines) == 1:
+                fl = parser(d_unit).one_line()
+            elif hlines[0].count('|') == min_sep:
+                fl = parser(d_unit).multi_line()
+            else:
+                split_fields = []
+                for line in hlines:
+                    vertical_fragments = parser(line).one_line()
+                    split_fields.append(vertical_fragments)
+
+                num_lines = len(split_fields)
+                num_fields = len(split_fields[0]) if num_lines > 0 else 0
+                fl = [( split_fields[0][j][0],
+                        "".join([split_fields[i][j][1] for i in range(num_lines)]))
+                        for j in range(num_fields)]
+            fields += fl
+        return fields
+
 
     def process_section(self, section : rfc.Section, parser, structs):
         for i in range(len(section.content)):
@@ -139,7 +174,7 @@ class AsciiDiagramsParser(Parser):
                     try:
                         pdu_name = parser(inner_t.content.strip()).preamble()
                         artwork = cast(rfc.Artwork, section.content[i+1]).content
-                        artwork_fields = parser(cast(rfc.Text, artwork).content.strip()).diagram()
+                        artwork_fields = self.process_diagram( cast(rfc.Text, artwork).content, parser)
                         where = section.content[i+2]
                         desc_list = cast(rfc.DL, section.content[i+3])
                         fields = {}
@@ -189,7 +224,7 @@ class AsciiDiagramsParser(Parser):
                     except Exception as e:
                         pass
 
-                    try:
+                    try: 
                         protocol_name, pdus = parser(inner_t.content.strip()).protocol_definition()
                         self.protocol_name = protocol_name
                         self.pdus = [valid_type_name_convertor(pdu) for pdu in pdus]
