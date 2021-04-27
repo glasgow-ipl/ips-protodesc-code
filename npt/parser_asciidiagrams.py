@@ -53,7 +53,7 @@ def valid_type_name_convertor(name):
     if name[0].isdigit():
         name = "T" + name
     name = ' '.join(name.replace('\n',' ').split())
-    return name.capitalize().replace(" ", "_")
+    return name.capitalize().replace(" ", "_").replace("-", "_")
 
 def resolve_multiline_length(tokens):
     # scan for variable length
@@ -173,24 +173,36 @@ class AsciiDiagramsParser(Parser):
                     inner_t = cast(rfc.Text, t.content[j])
                     try:
                         pdu_name = parser(inner_t.content.strip()).preamble()
-                        artwork = cast(rfc.Artwork, section.content[i+1]).content
+                        if type(section.content[i+1]) == rfc.Figure:
+                            artwork = section.content[i+1].content[0].content
+                        else:
+                            artwork = cast(rfc.Artwork, section.content[i+1]).content
                         artwork_fields = self.process_diagram( cast(rfc.Text, artwork).content, parser)
                         where = section.content[i+2]
-                        desc_list = cast(rfc.DL, section.content[i+3])
                         fields = {}
                         name_map = {}
-                        for k in range(len(desc_list.content)):
-                            title, desc = desc_list.content[k]
-                            field = parser(cast(rfc.Text, title.content[0]).content.strip()).field_title()
-                            try:
-                                context_field = parser(cast(rfc.Text, desc.content[-1]).content.strip()).context_use()
-                            except:
-                                context_field = None
-                            field["context_field"] = context_field
-                            if field["short_label"] is not None:
-                                name_map[field["short_label"]] = field["full_label"]
-                            fields[field["full_label"]] = field
-
+                        if type(section.content[i+2].content[1]) == rfc.List:
+                            desc_list = section.content[i+2].content[1].content[0].content
+                            for element in desc_list:
+                                if type(element) == rfc.T and element.hangText is not None:
+                                    field = parser(element.hangText.strip()).field_title()
+                                    field["context_field"] = None
+                                    if field["short_label"] is not None:
+                                        name_map[field["short_label"]] = field["full_label"]
+                                    fields[field["full_label"]] = field
+                        else:
+                            desc_list = cast(rfc.DL, section.content[i+3])
+                            for k in range(len(desc_list.content)):
+                                title, desc = desc_list.content[k]
+                                field = parser(cast(rfc.Text, title.content[0]).content.strip()).field_title()
+                                try:
+                                    context_field = parser(cast(rfc.Text, desc.content[-1]).content.strip()).context_use()
+                                except:
+                                    context_field = None
+                                field["context_field"] = context_field
+                                if field["short_label"] is not None:
+                                    name_map[field["short_label"]] = field["full_label"]
+                                fields[field["full_label"]] = field
                         self.structs[valid_type_name_convertor(pdu_name)] = {}
                         self.structs[valid_type_name_convertor(pdu_name)]["name_map"] = name_map
                         self.structs[valid_type_name_convertor(pdu_name)]["fields"] = fields
@@ -224,7 +236,7 @@ class AsciiDiagramsParser(Parser):
                     except Exception as e:
                         pass
 
-                    try: 
+                    try:
                         protocol_name, pdus = parser(inner_t.content.strip()).protocol_definition()
                         self.protocol_name = protocol_name
                         self.pdus = [valid_type_name_convertor(pdu) for pdu in pdus]

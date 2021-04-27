@@ -285,8 +285,12 @@ def parse_t(xmlElement: ET.Element) -> rfc.T:
             content.append(parse_tt(child))
         elif child.tag == "vspace":
             content.append(parse_vspace(child))
+        elif child.tag == "t":
+            content.append(parse_t(child))
         elif child.tag == "xref":
             content.append(parse_xref(child))
+        elif child.tag == "list":
+            content.append(parse_list(child))
         if child.tail is not None:
             content.append(rfc.Text(child.tail))
     if xmlElement.tail is not None and len(xmlElement.tail.strip()) != 0:
@@ -1005,6 +1009,8 @@ def parse_section(xmlElement: ET.Element) -> rfc.Section:
             content.append(parse_texttable(sectionChild))
         elif sectionChild.tag == "ul":
             content.append(parse_ul(sectionChild))
+        elif sectionChild.tag == "list":
+            content.append(parse_list(sectionChild))
         elif sectionChild.tag == "section":
             sections.append(parse_section(sectionChild))
         elif sectionChild.tag == "name":
@@ -1028,7 +1034,7 @@ def parse_middle(xmlElement: ET.Element) -> rfc.Middle:
 
 
 def parse_street(xmlElement: ET.Element) -> rfc.Street:
-    assert xmlElement.text is not None
+    #assert xmlElement.text is not None
     return rfc.Street(rfc.Text(xmlElement.text), xmlElement.attrib.get("ascii", None))
 
 
@@ -1043,7 +1049,7 @@ def parse_postalline(xmlElement: ET.Element) -> rfc.PostalLine:
 
 
 def parse_city(xmlElement: ET.Element) -> rfc.City:
-    assert xmlElement.text is not None
+    #assert xmlElement.text is not None
     return rfc.City(rfc.Text(xmlElement.text), xmlElement.attrib.get("ascii", None))
 
 

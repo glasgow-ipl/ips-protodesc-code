@@ -82,10 +82,14 @@ class RustFormatter(Formatter):
             return f"({target} > {arg_exprs[0]})"
         elif method_name == "eq":
             return f"({target} == {arg_exprs[0]})"
+        elif method_name == "ne":
+            return f"({target} != {arg_exprs[0]})"
         elif method_name == "plus":
             return f"({target} + {arg_exprs[0]})"
         elif method_name == "and":
-            return f"({target} && {arg_exprs[0]}"
+            return f"({target} && {arg_exprs[0]})"
+        elif method_name == "or":
+            return f"({target} || {arg_exprs[0]})"
         if method_name == "to_number":
             return f"{target}"
         return ""
@@ -115,6 +119,7 @@ class RustFormatter(Formatter):
             return str(constant_value)
 
     def format_expression(self, expr:Expression):
+        print(expr)
         return ""
 
     def format_bitstring(self, bitstring:BitString, size: Any):
@@ -129,8 +134,9 @@ class RustFormatter(Formatter):
             required_vars = [f"{var_name}: usize" for var_name in self_vars]
         assert bitstring.name not in self.output
         self.output.append(f"\n// Structure and parser for {bitstring.name} (bitstring type)\n")
-        self.output.append("\n#[derive(Debug, PartialEq, Eq)]\n")
+        self.output.append("\n#[derive(Clone, Debug, PartialEq, Eq)]\n")
         self.output.extend(["pub struct ", camelcase(bitstring.name), "(pub %s);\n" % (data_type)])
+        self.output.extend(["\n#[inline]"])
         if len(required_vars) > 0:
             self.output.append("\npub fn parse_{fname}<'a>(input: (&'a [u8], usize), context: &'a mut Context, {required_vars_signatures}) -> (IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=bitstring.name.lower(), typename=camelcase(bitstring.name), required_vars_signatures=", ".join(required_vars)))
         else:
@@ -188,6 +194,8 @@ class RustFormatter(Formatter):
                 for field in constraint[1]:
                     if field == field_names[index]:
                         constraint_expr = constraint_expr.replace(field, "o.0")
+                    else:
+                        constraint_expr = constraint_expr.replace(field, f"{field}.0")
                 handled_constraints.append((constraint_expr, constraint[0]))
             else:
                 unhandled_constraints.append(constraint)
@@ -231,7 +239,7 @@ class RustFormatter(Formatter):
         for constraint in constraints:
             processed_constraints.append((re.sub(r"self\(([\w]*)\)", r"\1", constraint), re.findall(r"self\(([\w]*)\)", constraint)))
         self.output.append(f"\n// Structure and parser for {struct.name}\n")
-        self.output.append("\n#[derive(Debug")
+        self.output.append("\n#[derive(Clone, Debug, PartialEq, Eq")
         for trait in struct.traits:
             if trait == "Equality":
                 self.output.append(", PartialEq, Eq")
@@ -252,6 +260,7 @@ class RustFormatter(Formatter):
             parser_functions.append("parse_{name}".format(name=type_name.lower()))
             field_names.append(f"{field.field_name}")
         self.output.append("}\n")
+        self.output.extend(["\n#[inline]"])
         self.output.append("\npub fn parse_{fname}<'a>(mut input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), {typename}>, &'a mut Context) {{\n".format(fname=struct.name.replace(" ", "_").replace("-", "_").lower(),typename=camelcase(struct.name)))
         self.output += self.format_struct_field(0, camelcase(struct.name), field_names, parser_functions, processed_constraints, presence_constraints)
         self.output.append(f"    (IResult::Ok((\n")
@@ -270,8 +279,9 @@ class RustFormatter(Formatter):
         fname = array.name.replace(" ", "_").replace("-", "_").lower()
         element_type_name = array.element_type.name if isinstance(array.element_type, ConstructableType) else "nothing"
         self.output.append(f"\n// Structure and parser for {array.name}\n")
-        self.output.append("\n#[derive(Debug)]")
+        self.output.append("\n#[derive(Clone, Debug, PartialEq, Eq)]")
         self.output.append("\npub struct %s(pub Vec<%s>);\n" % (camelcase(array.name), camelcase(element_type_name)))
+        self.output.extend(["\n#[inline]"])
         if (array.length is not None):
             size = self.expr_traversal.dfs_expression(array.length)
             self_vars = re.findall(r"self\(([\w]*)\)", size)
@@ -324,7 +334,7 @@ class RustFormatter(Formatter):
     def format_enum(self, enum:Enum):
         func_name = enum.name.replace(" ", "_").replace("-", "_").lower()
         self.output.append(f"\n// Parse enum `{enum.name}`\n")
-        self.output.append("\n#[derive(Debug)]")
+        self.output.append("\n#[derive(Clone, Debug, PartialEq, Eq)]")
         self.output.append(f"\npub enum {camelcase(enum.name)} {{\n")
         self.output.append("\n".join([f"    {camelcase(variant.name)}({camelcase(variant.name)})," for variant in enum.variants if isinstance(variant, ConstructableType)]))
         self.output.append("\n}\n\n")
@@ -335,6 +345,7 @@ class RustFormatter(Formatter):
                 type_names.append(camelcase(variant.name))
                 parse_func_name = variant.name.replace(" ", "_").replace("-", "_").lower()
                 parse_funcs.append(f"parse_{parse_func_name}")
+        self.output.extend(["\n#[inline]"])
         self.output.append(f"pub fn parse_{func_name}<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), {camelcase(enum.name)}>, &'a mut Context) {{\n")
         self.output += self.format_enum_variants(camelcase(enum.name), 0, parse_funcs, type_names)
         self.output.append("    (IResult::Err(Err::Error((input, ErrorKind::NonEmpty))), context)\n")
@@ -391,7 +402,7 @@ class RustFormatter(Formatter):
 
     def format_protocol(self, protocol: Protocol):
         self.output.append("\n// Parse incoming PDUs\n")
-        self.output.append("\n#[derive(Debug)]")
+        self.output.append("\n#[derive(Clone, Debug, PartialEq, Eq)]")
         self.output.append("\npub enum PDU {\n")
         self.output.append("\n".join([f"    {camelcase(pdu_name)}({camelcase(pdu_name)})," for pdu_name in protocol.get_pdu_names()]))
         self.output.append("\n}\n\n")
@@ -400,6 +411,7 @@ class RustFormatter(Formatter):
         for pdu_name in protocol.get_pdu_names():
             type_names.append(camelcase(pdu_name))
             parse_funcs.append(f"parse_{pdu_name.replace(' ', '_').replace('-', '_').lower()}")
+        self.output.extend(["#[inline]\n"])
         self.output.append("pub fn parse_pdu<'a>(input: (&'a [u8], usize), mut context: &'a mut Context) -> (IResult<(&'a [u8], usize), PDU>, &'a mut Context) {\n")
         self.output += self.format_pdu_variants("PDU", 0, parse_funcs, type_names)
         self.output.append("    (IResult::Err(Err::Error((input, ErrorKind::NonEmpty))), context)")

@@ -7,6 +7,7 @@ letterdigit = letter|digit
 word        = <(letter|punc|number)+>:ls -> str(ls)
 alphanum    = <(letter|number|'_')+>:ls -> str(ls)
 wordnum     = <(letter|number|punc)+>:ls -> str(ls)
+alphanumhyp = <(letter|number|'_'|'-')+>:ls -> str(ls)
 
 uppercase_letter = anything:x ?(x in ascii_uppercase) -> x
 lowercase_letter = anything:x ?(x in ascii_lowercase) -> x
@@ -14,7 +15,7 @@ number           = <digit+>:ds -> int(ds)
 
 capitalised_word = uppercase_letter:l <(lowercase_letter|punc)*>:ls -> str(l + ls)
 
-pdu_part = <(alphanum:w ?(w not in ["is", "protocol", "PDUs", "and", "or", "using"]))>:name -> name
+pdu_part = <(alphanumhyp:w ?(w not in ["is", "protocol", "PDUs", "and", "or", "using"]))>:name -> name
 pdu_name = <(pdu_part ws)*>:name -> stem("".join(name).strip())
 
 # expressions redo
@@ -71,6 +72,18 @@ field_opts = words:start (',' ws words)*:rest  -> [" ".join(start.split()) ] + [
 
 field_title_name_only = ws field_name:full_label
                         ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                        '.' -> new_field(full_label,
+                                         short_label,
+                                         None,
+                                         None,
+                                         None,
+                                         None,
+                                         None,
+                                         False)
+
+field_title_variable = ws field_name:full_label
+                        ('(' short_field_name:short_label ')' -> short_label)?:short_label
+                        ': variable length'
                         '.' -> new_field(full_label,
                                          short_label,
                                          None,
@@ -158,7 +171,7 @@ field_title_array_constraint = ws field_name:full_label
                                                 is_present,
                                                 True)
 
-field_title = field_title_name_only | field_title_size | field_title_size_constraint | field_title_constraint | field_title_array | field_title_array_constraint
+field_title = field_title_name_only | field_title_variable | field_title_size | field_title_size_constraint | field_title_constraint | field_title_array | field_title_array_constraint
 
 # Preamble
 
@@ -168,7 +181,7 @@ preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name
 vsep = ws <'+-'+ '+'?>:unit -> unit
 vcontent = ws <(anything:x ?(x != '+') | ('+' ~'-'))>+:c  vsep -> "".join(c)
 diagram = ws (anything:x ?(x != '+'))+:hdr
-          vsep  vcontent*:vc -> [ _v.strip() for _v in vc]
+          vsep  vcontent*:vc anything*:x-> [ _v.strip() for _v in vc]
 
 fchar = anything:x ?(x not in ['|', ':', '.', '+' ]):field  ->  field
 dfield = <fchar*>:c <('|' | ':' | '...' | '+')>:delim  ->  (c.strip(' '), delim, int((len(c)+1)/2))
