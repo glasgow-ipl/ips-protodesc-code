@@ -10,6 +10,7 @@ pavlova = "*"
 ietfdata = "*"
 requests = "*"
 scapy = "*"
+mypy = "*"
 
 [dev-packages]
 mypy = "*"
