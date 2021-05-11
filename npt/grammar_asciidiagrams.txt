@@ -175,7 +175,7 @@ field_title = field_title_name_only | field_title_variable | field_title_size | 
 
 # Preamble
 
-preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name "is" ws "formatted" ws "as" ws "follows:" -> name
+preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name "is" ws "formatted" ws "as" ws "follows" anything*:x -> name
 
 # Diagram
 vsep = ws <'+-'+ '+'?>:unit -> unit

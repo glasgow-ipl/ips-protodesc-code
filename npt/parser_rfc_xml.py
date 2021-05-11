@@ -31,7 +31,7 @@
 from typing import List as ListType, Union, Optional, Tuple
 
 import sys
-import xml.etree.ElementTree as ET
+from lxml import etree as ET
 
 import npt.rfc as rfc
 

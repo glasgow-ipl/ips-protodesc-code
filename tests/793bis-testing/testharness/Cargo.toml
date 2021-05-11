@@ -1,0 +1,11 @@
+[package]
+name = "testharness"
+version = "0.1.0"
+authors = ["Stephen McQuistin <sm@smcquistin.uk>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+draft_ietf_tcpm_rfc793bis_21 = { path = "../../../examples/output/draft/draft-ietf-tcpm-rfc793bis/21/rust" }
+pcap = "*"

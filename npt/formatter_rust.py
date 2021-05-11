@@ -119,7 +119,6 @@ class RustFormatter(Formatter):
             return str(constant_value)
 
     def format_expression(self, expr:Expression):
-        print(expr)
         return ""
 
     def format_bitstring(self, bitstring:BitString, size: Any):
