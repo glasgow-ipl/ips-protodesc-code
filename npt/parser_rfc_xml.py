@@ -31,7 +31,7 @@
 from typing import List as ListType, Union, Optional, Tuple
 
 import sys
-from lxml import etree as ET
+from lxml import etree as ET # type: ignore
 
 import npt.rfc as rfc
 
@@ -257,7 +257,7 @@ def parse_vspace(xmlElement: ET.Element) -> rfc.VSpace:
 
 
 def parse_t(xmlElement: ET.Element) -> rfc.T:
-    content : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.List, rfc.RelRef, rfc.SpanX, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.VSpace, rfc.XRef]] = []
+    content : ListType[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.List, rfc.RelRef, rfc.SpanX, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.VSpace, rfc.XRef, rfc.T]] = []
     if xmlElement.text is not None:
         content.append(rfc.Text(xmlElement.text))
     for child in xmlElement:
@@ -982,7 +982,7 @@ def parse_blockquote(xmlElement: ET.Element) -> rfc.BlockQuote:
 
 def parse_section(xmlElement: ET.Element) -> rfc.Section:
     name = None
-    content : ListType[Union[rfc.Artwork, rfc.Aside, rfc.BlockQuote, rfc.DL, rfc.Figure, rfc.IRef, rfc.OL, rfc.SourceCode, rfc.T, rfc.Table, rfc.TextTable, rfc.UL]] = []
+    content : ListType[Union[rfc.Artwork, rfc.Aside, rfc.BlockQuote, rfc.DL, rfc.Figure, rfc.IRef, rfc.OL, rfc.SourceCode, rfc.T, rfc.Table, rfc.TextTable, rfc.UL, rfc.List]] = []
     sections = []
     for sectionChild in xmlElement:
         if sectionChild.tag == "artwork":

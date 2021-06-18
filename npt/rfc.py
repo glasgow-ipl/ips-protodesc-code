@@ -201,7 +201,7 @@ class T(Elem):
     """
     RFC 7991 Section 2.53
     """
-    content          : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, List, RelRef, SpanX, Strong, Sub, Sup, TT, VSpace, XRef]]
+    content          : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, List, RelRef, SpanX, Strong, Sub, Sup, TT, VSpace, XRef, 'T']]
     anchor           : Optional[str]
     hangText         : Optional[str]
     keepWithNext     : Optional[bool]
@@ -507,7 +507,7 @@ class Section(Elem):
     RFC 7991 Section 2.46
     """
     name        : Optional[Name]
-    content     : ListType[Union[Artwork, Aside, BlockQuote, DL, Figure, IRef, OL, SourceCode, T, Table, TextTable, UL]]
+    content     : ListType[Union[Artwork, Aside, BlockQuote, DL, Figure, IRef, OL, SourceCode, T, Table, TextTable, UL, List]]
     sections    : Optional[ListType["Section"]]
     anchor      : Optional[str]
     numbered    : Optional[bool]

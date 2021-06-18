@@ -1,0 +1,3 @@
+[console_scripts]
+npt = npt.__main__:main
+

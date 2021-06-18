@@ -182,20 +182,24 @@ class AsciiDiagramsParser(Parser):
                         where = section.content[i+2]
                         fields = {}
                         name_map = {}
-                        if len(section.content) >= i+2 and len(section.content[i+2].content) >= 2 and type(section.content[i+2].content[1]) == rfc.List:
-                            rfc_list = cast(rfc.List, section.content[i+2].content[1])
-                            desc_list = rfc_list.content[0].content
-                            for element in desc_list:
-                                if type(element) is rfc.T:
-                                    t_elem = cast(rfc.T, element)
-                                    if t_elem.hangText is not None:
-                                        field = parser(t_elem.hangText.strip()).field_title()
-                                        field["context_field"] = None
-                                        if field["short_label"] is not None:
-                                            name_map[field["short_label"]] = field["full_label"]
-                                        fields[field["full_label"]] = field
-                        else:
-                            desc_list = cast(rfc.DL, section.content[i+3])
+                        t_elem : Optional[rfc.T] = None
+                        if len(section.content) >= i+2 and type(section.content[i+2]) == rfc.T:
+                            t_elem = cast(rfc.T, section.content[i+2])
+                        if t_elem is not None and len(t_elem.content) >= 2 and type(t_elem.content[1]) == rfc.List:
+                                rfc_list = cast(rfc.List, t_elem.content[1])
+                                desc_list = rfc_list.content[0].content
+                                for element in desc_list:
+                                    if type(element) is rfc.T:
+                                        t_elem = cast(rfc.T, element)
+                                        if t_elem.hangText is not None:
+                                            field = parser(t_elem.hangText.strip()).field_title()
+                                            field["context_field"] = None
+                                            if field["short_label"] is not None:
+                                                name_map[field["short_label"]] = field["full_label"]
+                                            fields[field["full_label"]] = field
+                        elif len(section.content) >= i+3 and isinstance(section.content[i+3], rfc.DL):
+                            desc_list = section.content[i+3] # type: ignore
+                            assert isinstance(desc_list, rfc.DL)
                             for k in range(len(desc_list.content)):
                                 title, desc = desc_list.content[k]
                                 field = parser(cast(rfc.Text, title.content[0]).content.strip()).field_title()

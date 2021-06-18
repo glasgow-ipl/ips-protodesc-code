@@ -497,7 +497,7 @@ expr = "(" sp expr sp ")" /
       name / short-name "." short-name /
       constant
 op = "+" / "-" / "*" / "/" / "%" / "^"
-length = expr sp unit / "[" sp name sp "]"
+length = expr sp unit / "[" sp name sp "]" / "variable length"
 unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
                 """)
         # section-00 -- (sub) section-00 -- sourcecode anchor, numbered, removeInRFC, title, toc
@@ -2802,12 +2802,14 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
             return
         self.assertEqual( middle.content[3].sections[0].content[3].content[0].content, """
                   A PDU description is introduced by the exact phrase "A/An
-                  _______ is formatted as follows:" at the end of a paragraph.
+                  _______ is formatted as follows" within a paragraph.
                   This is followed by the PDU description itself, as a packet
-                  diagram within an <artwork> element in the XML representation,
+                  diagram within an <artwork> element (itself optionally
+                  within a <figure> element) in the XML representation,
                   starting with a header line to show the bit width of the diagram.
                   The description of the fields follows the diagram, as an XML
-                  <dl> list, after a paragraph containing the text "where:".
+                  list (either <dl> or hanging <list>), after a paragraph
+                  that begins with the text "where:".
                 """)
         # sec-03 sub-sec[0] content [3] <T> anchor, hangText, keepWithNext, keepWithPrevious
         self.assertIsNone( middle.content[3].sections[0].content[3].anchor)
@@ -2855,16 +2857,16 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
             return
         # sec-03 sub-sec[0] content [5] <T> content
         self.assertIsInstance( middle.content[3].sections[0].content[5].content, list)
-        self.assertEqual( len(middle.content[3].sections[0].content[5].content), 3)
+        self.assertEqual( len(middle.content[3].sections[0].content[5].content), 5)
         self.assertIsInstance( middle.content[3].sections[0].content[5].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[5].content[0], rfc.Text): # type-check
             return
         self.assertEqual( middle.content[3].sections[0].content[5].content[0].content, """
-                  Each field of the description starts with a <dt> tag
-                  comprising the field name and an optional short name in
-                  parenthesis. These are followed by a colon, the field
-                  length, an optional presence expression (described in
-                  """)
+                  Each field is defined by a structured text definition and a
+                  prose description. The structured text definition comprises
+                  the field name and an optional short name in parenthesis.
+                  These are followed by a colon, the field length, an optional
+                  presence expression (described in """)
         self.assertIsInstance( middle.content[3].sections[0].content[5].content[1], rfc.XRef)
         if not isinstance( middle.content[3].sections[0].content[5].content[1], rfc.XRef): # type-check
              return
@@ -2876,11 +2878,15 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[0].content[5].content[2], rfc.Text): # type-check
              return
         self.assertEqual( middle.content[3].sections[0].content[5].content[2].content,
-                """), and a terminating period. The following <dd>
-                  tag contains a prose description of the field. Field names
-                  cannot be the same as a previously defined PDU name, and must
-                  be unique within a given structure definition.
-                """)
+                """),
+                  and a terminating period. Field names cannot be the same as a
+                  previously defined PDU name, and must be unique within a given
+                  structure definition. The structured text definition is given
+                  either in a <dt> tag (if using a <dl>) or as the "hangText"
+                  (if using a hanging <list>) of a <t> element. The field's
+                  prose description is given in the following <dd> element or
+                  within the same <t> element. Prose descriptions may include
+                  structured text (e.g., as defined in """)
         # sec-03 sub-sec[0] content [5] <T> anchor, hangText, keepWithNext, keepWithPrevious
         self.assertIsNone( middle.content[3].sections[0].content[5].anchor)
         self.assertIsNone( middle.content[3].sections[0].content[5].hangText)
@@ -5567,7 +5573,7 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[2].content[4].content[0][1].content[0], rfc.Text): # type-check
             return
 
-        self.assertEqual( middle.content[3].sections[2].content[4].content[0][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[2].content[4].content[0][1].content[0].content,
 """  This field is comprised of
       multiple sub-fields (M0 through MB) as shown in the diagram.  That
       these sub-fields should be concatenated, after parsing, into a
@@ -5576,7 +5582,7 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
       least significant bit labelled with 0, and subsequent bits
       labelled in sequence.
 """)
-        # sec-03 sub-section[2] content [4] <DL> content [1] <Tuple<DL,DD>> [1] <DD> anchor 
+        # sec-03 sub-section[2] content [4] <DL> content [1] <Tuple<DL,DD>> [1] <DD> anchor
         self.assertIsNone( middle.content[3].sections[2].content[4].content[0][1].anchor)
 
 
@@ -5604,7 +5610,7 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[2].content[4].content[1][1].content[0], rfc.Text): # type-check
             return
 
-        self.assertEqual( middle.content[3].sections[2].content[4].content[1][1].content[0].content, 
+        self.assertEqual( middle.content[3].sections[2].content[4].content[1][1].content[0].content,
 """  This field follows the same format
       as M described above.
 """)

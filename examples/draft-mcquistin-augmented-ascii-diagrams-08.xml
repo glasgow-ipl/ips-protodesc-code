@@ -58,7 +58,7 @@
             </address>
         </author>
 
-        <?date year='2019' month='November' day='12'/?>
+        <?date year='2021' month='May' day='5'/?>
 
         <abstract>
             <t>
@@ -566,12 +566,14 @@
 
                 <t>
                   A PDU description is introduced by the exact phrase "A/An
-                  _______ is formatted as follows:" at the end of a paragraph.
+                  _______ is formatted as follows" within a paragraph.
                   This is followed by the PDU description itself, as a packet
-                  diagram within an &lt;artwork> element in the XML representation,
+                  diagram within an &lt;artwork> element (itself optionally
+                  within a &lt;figure> element) in the XML representation,
                   starting with a header line to show the bit width of the diagram.
                   The description of the fields follows the diagram, as an XML
-                  &lt;dl> list, after a paragraph containing the text "where:".
+                  list (either &lt;dl> or hanging &lt;list>), after a paragraph
+                  that begins with the text "where:".
                 </t>
 
                 <t>
@@ -581,14 +583,19 @@
                 </t>
 
                 <t>
-                  Each field of the description starts with a &lt;dt> tag
-                  comprising the field name and an optional short name in
-                  parenthesis. These are followed by a colon, the field
-                  length, an optional presence expression (described in
-                  <xref target="ascii-xref"/>), and a terminating period. The following &lt;dd>
-                  tag contains a prose description of the field. Field names
-                  cannot be the same as a previously defined PDU name, and must
-                  be unique within a given structure definition.
+                  Each field is defined by a structured text definition and a
+                  prose description. The structured text definition comprises
+                  the field name and an optional short name in parenthesis.
+                  These are followed by a colon, the field length, an optional
+                  presence expression (described in <xref target="ascii-xref" />),
+                  and a terminating period. Field names cannot be the same as a
+                  previously defined PDU name, and must be unique within a given
+                  structure definition. The structured text definition is given
+                  either in a &lt;dt> tag (if using a &lt;dl>) or as the "hangText"
+                  (if using a hanging &lt;list>) of a &lt;t> element. The field's
+                  prose description is given in the following &lt;dd> element or
+                  within the same &lt;t> element. Prose descriptions may include
+                  structured text (e.g., as defined in <xref target="ascii-store" />).
                 </t>
 
                 <t>
@@ -885,7 +892,7 @@
                         earlier.  Optional fields can be of any previously defined format (e.g.,
                         fixed- or variable-width).  Optional fields are indicated by the presence
                         of "; present only when [expr]." at the end of the definition term (i.e.,
-                        the text contained within the &lt;dt> tag).
+                        the text contained within the &lt;dt> tag or "hangText" attribute).
                       </t>
                       <t>
                         [Note that this example deviates from the format as described in
@@ -901,7 +908,9 @@
                       The length of the Payload is not specified, and hence needs to be
                       inferred from the total length of the packet and the lengths of
                       the known fields. There can only be one field of unspecified size
-                      in a PDU.
+                      in a PDU. Fields where the length is not specified may also denote
+                      this with the phrase "variable length" in place of the length
+                      definition.
                     </dd>
                     <dt>
                       Padding: PC bytes; present only when (P == 1) &amp;&amp;
@@ -1008,7 +1017,7 @@
                         Header Form (HF): 1 bit; HF == 1.
                     </dt>
                     <dd>
-                            This is a fixed-width field, constrained to be a of an known, exact value. At most one field value constraint may be given, and if provided, it must be given as a boolean expression, separated by a semi-colon in the field definition name (i.e., the text contained within the &lt;dt> tag). If present, a value constraint must follow the name, short name, and length of the field, but appear before any presence constraint, if applicable. The order of the field must be the same in both the diagram and description list.
+                            This is a fixed-width field, constrained to be a of an known, exact value. At most one field value constraint may be given, and if provided, it must be given as a boolean expression, separated by a semi-colon in the field definition name (i.e., the text contained within the &lt;dt> tag or "hangText" attribute). If present, a value constraint must follow the name, short name, and length of the field, but appear before any presence constraint, if applicable. The order of the field must be the same in both the diagram and description list.
                     </dd>
                     <dt>
                         Fixed Bit (FB): 1 bit; FB == 1.
@@ -1144,7 +1153,7 @@
                   identified.
                 </t>
                 <t>
-                  That the value of a particular field be stored upon parsing is indicated by the exact phrase "On receipt, the value of &lt;field name> is stored as &lt;stored name>." being present at the end of the description of a field (i.e., at the end of the &lt;dd> element.)
+                  That the value of a particular field be stored upon parsing is indicated by the exact phrase "On receipt, the value of &lt;field name> is stored as &lt;stored name>." being present at the end of the description of a field (i.e., at the end of the &lt;dd> or &lt;t> element.)
               </t>
                 <t>An Initial Packet is formatted as follows:</t>
                 <artwork>
@@ -1396,6 +1405,10 @@ func apply_protection(to: Unprotected Packet)
               the constraint syntax as given in <xref target="ABNF-constraints" />.
             </t>
             <t>
+              Wesley Eddy provided valuable feedback on the description format through
+              adopting it in <xref target="draft-ietf-tcpm-rfc793bis" />.
+            </t>
+            <t>
                 The authors would like to thank David Southgate for preparing
                 a prototype implementation of some of the ideas described here.
             </t>
@@ -1572,7 +1585,7 @@ func apply_protection(to: Unprotected Packet)
                 </front>
                 <refcontent>;login: -- December 2011, Volume 36, Number 6</refcontent>
             </reference>
-            <reference anchor="draft-mcquistin-augmented-udp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-udp-00.txt">
+            <reference anchor="draft-mcquistin-augmented-udp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-udp-01.txt">
                 <front>
                     <title>Describing UDP with Augmented Packet Header Diagrams</title>
 
@@ -1581,12 +1594,12 @@ func apply_protection(to: Unprotected Packet)
                     <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
                     <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
 
-                    <date month='November' day='2' year='2020' />
+                    <date month='May' day='5' year='2021' />
                 </front>
 
-                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-udp-example-00' />
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-udp-example-01' />
             </reference>
-            <reference anchor="draft-mcquistin-augmented-tcp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-tcp-example-00.txt">
+            <reference anchor="draft-mcquistin-augmented-tcp-example" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-tcp-example-01.txt">
                 <front>
                     <title>Describing TCP with Augmented Packet Header Diagrams</title>
 
@@ -1595,12 +1608,12 @@ func apply_protection(to: Unprotected Packet)
                     <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
                     <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
 
-                    <date month='November' day='2' year='2020' />
+                    <date month='May' day='5' year='2021' />
                 </front>
 
-                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-udp-example-00' />
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-tcp-example-01' />
             </reference>
-            <reference anchor="draft-mcquistin-quic-augmented-diagrams" target="http://www.ietf.org/internet-drafts/draft-mcquistin-quic-augmented-diagrams-03.txt">
+            <reference anchor="draft-mcquistin-quic-augmented-diagrams" target="http://www.ietf.org/internet-drafts/draft-mcquistin-quic-augmented-diagrams-04.txt">
                 <front>
                     <title>Describing QUIC's Protocol Data Units with Augmented Packet Header Diagrams</title>
 
@@ -1609,11 +1622,22 @@ func apply_protection(to: Unprotected Packet)
                     <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
                     <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
 
-                    <date month='November' day='2' year='2020' />
+                    <date month='May' day='5' year='2021' />
                 </front>
 
-                <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-03' />
+                <seriesInfo name='Internet-Draft' value='draft-mcquistin-quic-augmented-diagrams-04' />
             </reference>
+            <reference anchor="draft-ietf-tcpm-rfc793bis" target="http://www.ietf.org/internet-drafts/draft-ietf-tcpm-rfc793bis-21.txt">
+               <front>
+                   <title>Transmission Control Protocol (TCP) Specification</title>
+  
+                   <author initials='W' surname='Eddy' fullname='Wesley Eddy'><organization /></author>
+  
+                   <date month='May' day='3' year='2021' />
+               </front>
+  
+               <seriesInfo name='Internet-Draft' value='draft-ietf-tcpm-rfc793bis-21' />
+           </reference>
         </references>
 
         <section anchor='ABNF'>
@@ -1638,7 +1662,7 @@ expr = "(" sp expr sp ")" /
       name / short-name "." short-name /
       constant
 op = "+" / "-" / "*" / "/" / "%" / "^"
-length = expr sp unit / "[" sp name sp "]"
+length = expr sp unit / "[" sp name sp "]" / "variable length"
 unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
                 </sourcecode>
             </section>

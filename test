@@ -1,0 +1,2274 @@
+resolve /Users/lumisota/Repositories/glasgow-ipl/ips-protodesc-code/ietf_data_cache/draft/draft-ietf-tcpm-rfc793bis/21/draft-ietf-tcpm-rfc793bis-21.xml <lxml.etree._InputDocument object at 0x106596040>
+draft-ietf-tcpm-rfc793bis-21.xml
+resolve /Users/lumisota/Repositories/glasgow-ipl/ips-protodesc-code/ietf_data_cache/draft/draft-ietf-tcpm-rfc793bis/21/rfc2629.dtd <lxml.etree._InputDocument object at 0x106596040>
+rfc2629.dtd
+resolve npt/rfc2629-xhtml.ent <lxml.etree._InputDocument object at 0x106590cc0>
+rfc2629-xhtml.ent
+resolve npt/rfc2629-other.ent <lxml.etree._InputDocument object at 0x106590ea0>
+rfc2629-other.ent
+<lxml.etree._ElementTree object at 0x106611500>
+
+In 1981,
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'Text' object has no attribute 'strip'
+
+was released, documenting the Transmission Control Protocol (TCP), and replacing earlier specifications for TCP that had been published in the past.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Since then, TCP has been widely implemented, and has been used as a transport protocol for numerous applications on the Internet.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+For several decades, RFC 793 plus a number of other documents have combined to serve as the core specification for TCP
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.  Over time, a number of errata have been filed against RFC 793, as well as deficiencies in security, performance, and many other aspects.  The number of enhancements has grown over time across many separate documents.  These were never accumulated together into a comprehensive update to the base specification.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The purpose of this document is to bring together all of the IETF Standards Track changes that have been made to the base TCP functional specification and unify them into an update of RFC 793.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Some companion documents are referenced for important algorithms that are used by TCP (e.g. for congestion control), but have not been completely included in this document.  This is a conscious choice, as this base specification can be used with multiple additional algorithms that are developed and incorporated separately. This document focuses on the common basis all TCP implementations must support in order to interoperate.  Since some additional TCP features have become quite complicated themselves (e.g. advanced loss recovery and congestion control), future companion documents may attempt to similarly bring these together.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+In addition to the protocol specification that describes the TCP segment format, generation, and processing rules that are to be implemented in code, RFC 793 and other updates also contain informative and descriptive text for readers to understand aspects of the protocol design and operation.  This document does not attempt to alter or update this informative text, and is focused only on updating the normative protocol specification.  This document preserves references to the documentation containing the important explanations and rationale, where appropriate.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This document is intended to be useful both in checking existing TCP implementations for conformance purposes, as well as in writing new implementations.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 793 contains a discussion of the TCP design goals and provides examples of its operation, including examples of connection establishment, connection termination, packet retransmission to repair losses.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This document describes the basic functionality expected in modern TCP implementations, and replaces the protocol specification in RFC 793.  It does not replicate or attempt to update the introduction and philosophy content in Sections 1 and 2 of RFC 793.  Other documents are referenced to provide explanation of the theory of operation, rationale, and detailed discussion of design decisions.  This document only focuses on the normative behavior of the protocol.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The "TCP Roadmap"
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+provides a more extensive guide to the RFCs that define TCP and describe various important algorithms. The TCP Roadmap contains sections on strongly encouraged enhancements that improve performance and other aspects of TCP beyond the basic operation specified in this document.  As one example, implementing congestion control (e.g.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+) is a TCP requirement, but is a complex topic on its own, and not described in detail in this document, as there are many options and possibilities that do not impact basic interoperability.  Similarly, most TCP implementations today include the high-performance extensions in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+, but these are not strictly required or discussed in this document.  Multipath considerations for TCP are also specified separately in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A list of changes from RFC 793 is contained in
+                                  ^
+Parse error at line 1, column 34: expected the token 'formatted'. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+interpreted as described in BCP 14
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+'NoneType' object has no attribute 'strip'
+
+here.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+referenced in
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+requirements.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+referenced from
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+"RECOMMENDED" with "REC-X".
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+instances.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+TCP provides a reliable, in-order, byte-stream service to applications.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+with each TCP segment sent as an Internet Protocol (IP) datagram.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+via retransmission.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+instability due to changes of lower-layer forwarding behavior
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+detection capability.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+choose.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+distinct flows between hosts.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+protocols can be found in Section 3.1 of
+                                   ^
+Parse error at line 2, column 35: expected one of '-', '_', or token 'is'. trail: [digit letter number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+protocol stack can be found in Section 2 of
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+of the TCP specification.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  destination host addresses
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+  headers, supplying information specific to the TCP protocol.  This
+         ^
+Parse error at line 2, column 9: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+This document describes the TCP protocol.  The TCP protocol uses TCP Headers.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+TCP Header
+'NoneType' object has no attribute 'strip'
+
+:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+where:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP Option is one of: an End of Option List Option, a No-Operation Option, or a Maximum Segment Size Option.
+                ^
+Parse error at line 1, column 16: expected the token 'formatted'. trail: [preamble]
+
+End of Option List Option
+
+where:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+No-Operation Option
+
+where:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+Maximum Segment Size Option
+
+where:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Additional RFCs define some other commonly used options that are recommended to implement for high performance, but not necessary for basic TCP interoperability.  These are the TCP Selective Acknowledgement (SACK) option
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+'NoneType' object has no attribute 'strip'
+
+, TCP Timestamp (TS) option
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+, and TCP Window Scaling (WS) option
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Experimental TCP option values are defined in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+, and
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+describes the current recommended usage for these experimental values.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This section includes an overview of key terms needed to understand the detailed protocol operation in the rest of the document.  There is a traditional glossary of terms in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  of the connection (see
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+  sequence numbers are stored in the TCB.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  the sequence space.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The send window is the portion of the sequence space labeled 3 in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The receive window is the portion of the sequence space labeled 2 in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  take their values from the fields of the current segment.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Current Segment Variables:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  lifetime.  The states are:  LISTEN, SYN-SENT, SYN-RECEIVED,
+          ^
+Parse error at line 2, column 10: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'list' object has no attribute 'strip'
+
+  events.  The events are the user calls, OPEN, SEND, RECEIVE, CLOSE,
+        ^
+Parse error at line 2, column 8: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+The state diagram in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+  the reaction of the TCP implementation to events.  Some state names are abbreviated or hyphenated differently in the diagram from how they appear elsewhere in the document.
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  the total specification.  Many details are not included.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The following notes apply to
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+A fundamental notion in the design is that every octet of data sent
+                                      ^
+Parse error at line 1, column 38: expected the token 'formatted'. trail: [preamble]
+
+
+  (modulo 2**32).
+^
+Parse error at line 10, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  perform include:
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+  following comparisons are needed to process the acknowledgments.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+A new acknowledgment (called an "acceptable ack"), is one for which
+                     ^
+Parse error at line 1, column 21: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'list' object has no attribute 'strip'
+
+A segment on the retransmission queue is fully acknowledged if the sum
+                                          ^
+Parse error at line 1, column 42: expected the token 'formatted'. trail: [preamble]
+
+
+When data is received the following comparisons are needed:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+A segment is judged to occupy a portion of valid receive sequence
+             ^
+Parse error at line 1, column 13: expected the token 'formatted'. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+or
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+  either part of the test it contains data in the window.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  acceptability of an incoming segment:
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  process the RST and URG fields of all incoming segments, even when the receive window is zero (MUST-66).
+                     ^
+Parse error at line 5, column 21: expected one of '-', or '_'. trail: [letter digit number pdu_part]
+
+
+  sequence number of the SYN.
+^
+Parse error at line 16, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Initial Sequence Number Selection
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A connection is defined by a pair of
+                ^
+Parse error at line 1, column 16: expected the token 'formatted'. trail: [preamble]
+
+
+  attacker is able to predict or guess ISN values.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+than the MSL.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation MUST use the above type of "clock" for clock-driven selection of initial sequence numbers (MUST-8), and
+                                                ^
+Parse error at line 1, column 48: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+ISN = M + F(localip, localport, remoteip, remoteport, secretkey)
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+   function (PRF) of the connection's identifying parameters ("localip, localport, remoteip, remoteport") and a secret key ("secretkey") (SHLD-1).  F() MUST NOT be computable from the outside (MUST-9), or an attacker could still guess at sequence numbers from the ISN used for some other connection.  The PRF could be implemented as a cryptographic hash of the concatenation of the TCP connection parameters and some secret data.  For discussion of the selection of a specific hash algorithm and management of the secret key data, please see Section 3 of
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  learned during the connection establishing procedure.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  the ISNs.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  initial sequence number and send a confirming acknowledgment.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  called the three-way (or three message) handshake (3WHS).
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A 3WHS is necessary because sequence numbers are not
+          ^
+Parse error at line 1, column 10: expected the token 'formatted'. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Knowing When to Keep Quiet
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  between old segments in the network and new ones after a host reboots, if the
+                                         ^
+Parse error at line 2, column 41: expected one of '-', or '_'. trail: [letter digit number pdu_part]
+
+
+  numbers larger than those recently used.
+^
+Parse error at line 11, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The TCP Quiet Time Concept
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    system.
+^
+Parse error at line 11, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    as there are octets of data and SYN or FIN flags in the segment.
+^
+Parse error at line 14, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    within reason.
+^
+Parse error at line 14, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    system.
+^
+Parse error at line 15, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    number for each new connection incarnation).
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    the new incarnation of the connection.
+^
+Parse error at line 13, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    the system from earlier connection incarnations.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    necessary after the host has been "up" for at least MSL seconds.
+^
+Parse error at line 11, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    number overlap area that could cause confusion at the receiver.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  Proper use of "reset" segments can disambiguate these cases.
+^
+Parse error at line 10, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  information for this checking.
+^
+Parse error at line 10, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The simplest 3WHS is shown in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+  departure of a TCP segment from TCP peer A to TCP peer B, or arrival of a
+                                                          ^
+Parse error at line 4, column 58: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+In line 2 of
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+  number 100.  In line 3, TCP Peer B sends a SYN and acknowledges the SYN it
+            ^
+Parse error at line 3, column 12: expected one of '-', '_', or token 'is'. trail: [digit letter number alphanumhyp pdu_part preamble]
+
+
+  TCP Peer B's SYN; and in line 5, TCP Peer A sends some data.  Note that the
+            ^
+Parse error at line 2, column 12: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+Simultaneous initiation is only slightly more complex, as is shown in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.  Each TCP peer's connection state cycles from CLOSED to SYN-SENT to SYN-RECEIVED to ESTABLISHED.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation MUST support simultaneous open attempts (MUST-10).
+                                                             ^
+Parse error at line 1, column 61: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+passive OPEN or an active OPEN (MUST-11).
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  case under "half-open" connections below.
+^
+Parse error at line 10, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+As a simple example of recovery from old duplicates, consider
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+  (line 4).  TCP Peer A detects that the ACK field is incorrect and returns a
+                                                      ^
+Parse error at line 3, column 54: expected the token 'formatted'. trail: [preamble]
+
+
+Half-Open Connections and Other Anomalies
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+An established connection is said to be  "half-open" if one of the
+                             ^
+Parse error at line 1, column 29: expected the token 'formatted'. trail: [preamble]
+
+
+If at site A the connection no longer exists, then an attempt by the
+                                            ^
+Parse error at line 1, column 44: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+string index out of range
+'NoneType' object has no attribute 'strip'
+
+.  After TCP Peer A reboots, the user attempts to
+                           ^
+Parse error at line 1, column 27: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+  sent and, being unsynchronized, sends a reset (RST) because it has
+          ^
+Parse error at line 5, column 10: expected one of '-', or '_'. trail: [letter digit number pdu_part]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+An interesting alternative case occurs when TCP Peer A reboots and TCP Peer B
+                                                                  ^
+Parse error at line 1, column 66: expected one of '-', or '_'. trail: [letter digit number pdu_part]
+
+'NoneType' object has no attribute 'strip'
+
+  TCP Peer A from TCP Peer B (line 2) is unacceptable because no such connection
+                             ^
+Parse error at line 2, column 29: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+In
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+string index out of range
+
+A variety of other cases are possible, all of which are accounted for
+                                     ^
+Parse error at line 1, column 37: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+Reset Generation
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP user or application can issue a reset on a connection at any time, though reset events are also generated by the protocol itself when various error conditions occur, as described below.  The side of a connection issuing a reset should enter the TIME-WAIT state, as this generally helps to reduce the load on busy servers for reasons described in
+             ^
+Parse error at line 1, column 13: expected one of '-', or '_'. trail: [letter digit number pdu_part]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  must not be sent if it is not clear that this is the case.
+                            ^
+Parse error at line 3, column 28: expected the token 'formatted'. trail: [preamble]
+
+
+There are three groups of states:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+Reset Processing
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  by checking their SEQ-fields.  A reset is valid if its sequence number
+                                            ^
+Parse error at line 2, column 44: expected the token 'formatted'. trail: [preamble]
+
+
+  and goes to the CLOSED state.
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+TCP implementations SHOULD allow a received RST segment to include data (SHLD-2).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  TCP endpoint.  Users must keep reading connections they close for sending until
+              ^
+Parse error at line 15, column 14: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+There are essentially three cases:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+'list' object has no attribute 'strip'
+
+A TCP connection may terminate in two ways: (1) the normal
+                                          ^
+Parse error at line 1, column 42: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+            was aborted (MUST-12).
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            in the open direction on a half-closed connection.
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A host MAY implement a "half-duplex" TCP close sequence, so
+                       ^
+Parse error at line 1, column 23: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+section 2.17 for discussion.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            reopen the connection directly from TIME-WAIT state (MAY-2), if it:
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+described in
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+and using them to reduce TIME-WAIT provides benefits for busy Internet servers (SHLD-4).
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The term "segmentation" refers to the activity TCP performs when ingesting a stream of bytes from a sending application and packetizing that stream of bytes into TCP segments.  Individual TCP segments often do not correspond one-for-one to individual send (or socket write) calls from the application.  Applications may perform writes at the granularity of messages in the upper layer protocol, but TCP guarantees no boundary coherence between the TCP segments sent and received versus user application data read or write buffer boundaries.  In some specific protocols, such as Remote Direct Memory Access (RDMA) using Direct Data Placement (DDP) and Marker PDU Aligned Framing (MPA)
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+, there are performance optimizations possible when the relation between TCP segments and application data units can be controlled, and MPA includes a specific mechanism for detecting and verifying this relationship between TCP segments and application message data structures, but this is specific to applications like RDMA.  In general, multiple goals influence the sizing of TCP segments created by a TCP implementation.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Goals driving the sending of larger segments include:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Note that the performance benefits of sending larger segments may decrease as the size increases, and there may be boundaries where advantages are reversed.  For instance, on some implementation architectures, 1025 bytes within a segment could lead to worse performance than 1024 bytes, due purely to data alignment on copy operations.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Goals driving the sending of smaller segments include:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Towards meeting these competing sets of goals, TCP includes several mechanisms, including the Maximum Segment Size option, Path MTU Discovery, the Nagle algorithm, and support for IPv6 Jumbograms, as discussed in the following subsections.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+TCP endpoints MUST implement both sending and receiving the MSS option (MUST-14).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    default 536 for IPv4 or 1220 for IPv6 (SHLD-5), and MAY send it always (MAY-3).
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    MUST assume a default send MSS of 536 (576-40) for IPv4 or 1220 (1280 - 60) for IPv6 (MUST-15).
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    remote host, the EMTU_R
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+) and the largest transmission size permitted by the IP layer (EMTU_S
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+):
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+where:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+   sender must decrease the size of the TCP data accordingly.  RFC 6691
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+discusses this in greater detail.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    or equal to:
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+    GET_MAXSIZES in Section 3.4 of RFC 1122.  These are defined in terms of their IP MTU equivalents, EMTU_R and EMTU_S
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    options.  This has been a point of confusion historically, as explained in RFC 6691, Section 3.1.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation may be aware of the MTU on directly connected links, but will rarely have insight about MTUs across an entire network path.  For IPv4, RFC 1122 recommends an IP-layer default effective MTU of less than or equal to 576 for destinations not directly connected.  For IPv6, this would be 1280.  In all cases, however, implementation of Path MTU Discovery (PMTUD) and Packetization Layer Path MTU Discovery (PLPMTUD) is strongly recommended in order for TCP to improve segmentation decisions.  Both PMTUD and PLPMTUD help TCP choose segment sizes that avoid both on-path (for IPv4) and source fragmentation (IPv4 and IPv6).
+                                                                        ^
+Parse error at line 1, column 72: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+PMTUD for IPv4
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+or IPv6
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+is implemented in conjunction between TCP, IP, and ICMP protocols.  It relies both on avoiding source fragmentation and setting the IPv4 DF (don't fragment) flag, the latter to inhibit on-path fragmentation.  It relies on ICMP errors from routers along the path, whenever a segment is too large to traverse a link.  Several adjustments to a TCP implementation with PMTUD are described in RFC 2923 in order to deal with problems experienced in practice
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.  PLPMTUD
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+is a Standards Track improvement to PMTUD that relaxes the requirement for ICMP support across a path, and improves performance in cases where ICMP is not consistently conveyed, but still tries to avoid source fragmentation.  The mechanisms in all four of these RFCs are recommended to be included in TCP implementations.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+   path MTU.  RFC 1191 discusses this implication of many older TCP implementations setting MSS to 536 for non-local destinations, rather than deriving it from the MTUs of connected interfaces as recommended.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+   compression, e.g., RObust Header Compression (ROHC)
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+   retransmission may interfere with compressor resynchronization.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+   the value to advertise in the MSS option (SHLD-6).
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The "Nagle algorithm" was described in RFC 896
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+and was recommended in RFC 1122
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+for mitigation of an early problem of too many small packets being generated.  It has been implemented in most current TCP code bases, sometimes with minor variations (see
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+If there is unacknowledged data (i.e., SND.NXT > SND.UNA), then the sending TCP endpoint buffers all user data (regardless of the PSH bit), until the outstanding data has been acknowledged or until the TCP endpoint can send a full-sized segment (Eff.snd.MSS bytes).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation SHOULD implement the Nagle Algorithm to coalesce short segments (SHLD-7).  However, there MUST be a way for an application to disable the Nagle algorithm on an individual connection (MUST-17).  In all cases, sending data is also subject to the limitation imposed by the Slow Start algorithm
+                                                                                     ^
+Parse error at line 1, column 85: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Since there can be problematic interactions between the Nagle Algorithm and delayed acknowledgements, some implementations use minor variations of the Nagle algorithm, such as the one described in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+   be able to send TCP segments larger than the 64KB limit that the MSS option can convey.  RFC 2675
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+   MTU Discovery
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+is used to determine the actual MSS.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The Jumbo Payload option need not be implemented or understood by IPv6 nodes that do not support attachment to links with a MTU greater than 65,575
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+, and the present IPv6 Node Requirements does not include support for Jumbograms
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  segments to verify their acceptability.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  sent has been acknowledged then the three variables will be equal.
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  segments must carry current acknowledgment information.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  flag in an incoming segment.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  retransmission timeout (RTO) must be dynamically determined.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+      algorithm in
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+, including Karn's algorithm for taking RTT samples (MUST-18).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 793 contains an early example procedure for computing the RTO.  This was then replaced by the algorithm described in RFC 1122, and subsequently updated in RFC 2988, and then again in RFC 6298.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+datagram is fragmented
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+segments.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 2914
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+explains the importance of congestion control for the Internet.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 1122 required implementation of Van Jacobson's congestion control algorithms slow start and congestion avoidance together with exponential back-off for successive RTO values for the same segment.  RFC 2581 provided IETF Standards Track description of slow start and congestion avoidance, along with fast retransmit and fast recovery.  RFC 5681 is the current description of these algorithms and is the current Standards Track specification providing guidelines for TCP congestion control. RFC 6298 describes exponential back-off of RTO values, including keeping the backed-off value until a subsequent segment with new data has been sent and acknowledged without retransmission.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP endpoint MUST implement the basic congestion control algorithms slow start, congestion avoidance, and exponential back-off of RTO to avoid creating congestion collapse conditions (MUST-19).  RFC 5681 and RFC 6298 describe the basic algorithms on the IETF Standards Track that are broadly applicable.  Multiple other suitable algorithms exist and have been widely used.  Many TCP implementations support a set of alternative algorithms that can be configured for use on the endpoint.  An endpoint may implement such alternative algorithms provided that the algorithms are conformant with the TCP specifications from the IETF Standards Track as described in RFC 2914, RFC 5033
+                                                                                ^
+Parse error at line 1, column 80: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+, and RFC 8961
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+(MAY-18).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Explicit Congestion Notification (ECN) was defined in RFC 3168 and is an IETF Standards Track enhancement that has many benefits
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP endpoint SHOULD implement ECN as described in RFC 3168 (SHLD-8).
+                                                             ^
+Parse error at line 1, column 61: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+            retransmissions of data segments (MUST-20):
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+            correspond to at least 100 seconds (SHLD-11).
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            excessive retransmissions of the SYN segment or by receipt
+                                                           ^
+Parse error at line 2, column 59: expected one of '-', or '_'. trail: [letter digit number pdu_part]
+
+
+            course.
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP connection is said to be "idle" if for some long
+                    ^
+Parse error at line 1, column 20: expected the token 'formatted'. trail: [preamble]
+
+
+	    default to off (MUST-25).
+^
+Parse error at line 11, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            configurable (MUST-27) and MUST default to no less than two hours (MUST-28).
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            as a dead connection (MUST-29).
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            data (SHLD-12); however, it MAY be configurable to send a keep-alive
+                 ^
+Parse error at line 2, column 17: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+As a result of implementation differences and middlebox interactions, new applications SHOULD NOT employ the TCP urgent mechanism (SHLD-13).  However, TCP implementations MUST still include support for the urgent mechanism (MUST-30).  Details can be found in RFC 6093
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  the currently known urgent data has been received by the user.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  is in "urgent mode", the update will be invisible to the user.
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  no urgent data outstanding.
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  the urgent information to the destination process is enhanced.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation MUST support a sequence of urgent data of any length (MUST-31).
+                                                                          ^
+Parse error at line 1, column 74: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The urgent pointer MUST point to the sequence number of the octet following the urgent data (MUST-62).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation MUST (MUST-32) inform the application layer asynchronously whenever it receives an Urgent pointer and there was previously no pending urgent data, or whenever the Urgent pointer advances in the data stream.  The TCP implementation MUST (MUST-33) provide a way for the application to learn how much urgent data remains to be read from the connection, or at least to determine whether or not more urgent data remains to be read
+                          ^
+Parse error at line 1, column 26: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  connection.
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  helpful.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  the data receiver.  A refinement to avoid this problem is to act on
+                                                            ^
+Parse error at line 6, column 60: expected the token 'formatted'. trail: [preamble]
+
+
+  between each new segment transmitted.
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  discouraged.  The robustness principle
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+  on the part of other TCP peers.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP receiver SHOULD NOT shrink the window, i.e., move the
+                                           ^
+Parse error at line 1, column 43: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+) to become negative (MUST-34).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  MUST probe it in the standard way (described below) (MUST-35).
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  window will be reliably reported to the other.  This is referred to as Zero-Window Probing (ZWP) in other documents.
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Probing of zero (offered) windows MUST be supported (MUST-36).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  indefinitely (MAY-8).  As long as the receiving TCP peer continues to
+               ^
+Parse error at line 2, column 15: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  and current window (zero).
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+window has existed for the retransmission timeout period (SHLD-29) (
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+successive probes (SHLD-30).
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The "Silly Window Syndrome" (SWS) is a stable pattern of small incremental window movements resulting in extremely poor TCP performance.  Algorithms to avoid SWS are described below for both the sending side and the receiving side.  RFC 1122 contains more detailed discussion of the SWS problem.  Note that the Nagle algorithm and the sender SWS avoidance algorithm play complementary roles in improving performance.  The Nagle algorithm discourages sending tiny segments when the data to be sent increases in small increments, while the SWS avoidance algorithm discourages small segments resulting from the right window edge advancing in small increments.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation MUST include a SWS avoidance algorithm in the sender (MUST-38).
+                                                                          ^
+Parse error at line 1, column 74: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+The Nagle algorithm from
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+additionally describes how to coalesce short segments.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            the sender to calculate Max(SND.WND), the maximum send
+^
+Parse error at line 5, column -1: expected the token 'formatted'. trail: [preamble]
+
+
+The "usable window" is:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+            following set of rules is recommended.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Send data:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            (
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation MUST include a SWS avoidance algorithm in the receiver (MUST-39).
+                                                                            ^
+Parse error at line 1, column 76: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+            (
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+            the receiver.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            segments.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            RCV.BUFF and RCV.USER = 0.
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            RCV.BUFF is generally divided into three parts:
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+          satisfies:
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            connection (see
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+            is satisfied, RCV.WND is set to RCV.BUFF-RCV.USER.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            Eff.snd.MSS, assuming it is the same as the sender's.
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A host that is receiving a stream of TCP data segments can
+               ^
+Parse error at line 1, column 15: expected the token 'formatted'. trail: [preamble]
+
+
+A TCP endpoint SHOULD implement a delayed ACK (SHLD-18), but an ACK
+                                              ^
+Parse error at line 1, column 46: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+'NoneType' object has no attribute 'strip'
+
+	    generic receive offload (GRO), ACK compression, and ACK decimation
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  that TCP implementations might use.
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    required of all TCP implementations.
+^
+Parse error at line 9, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Section 3.1 of
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+also identifies primitives provided by TCP, and could be used as an additional reference for implementers.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+TCP User Commands
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+    receive information over a network.  The two current standard Internet Protocol (IP) versions layered below TCP are IPv4
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+and IPv6
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    for these parameters:
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+    of IP and to be used in the TCP checksum.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    layer, TCP implementations MUST ignore options that it does not understand (MUST-50).
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A TCP implementation MAY support the Time Stamp (MAY-10) and Record Route (MAY-11) options.
+                                                ^
+Parse error at line 1, column 48: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+    requests.
+^
+Parse error at line 8, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+    it actively opens a TCP connection (MUST-51), and this MUST take
+                                       ^
+Parse error at line 2, column 39: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+    definition SHOULD override the earlier one (SHLD-24).
+^
+Parse error at line 7, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            found in the IP header contained within the ICMP message.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This applies to ICMPv6 in addition to IPv4 ICMP.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+contains discussion of specific ICMP and ICMPv6 messages classified as either "soft" or "hard" errors that may bear different responses.  Treatment for classes of ICMP messages is described below:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Note that
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+section 4 describes widespread implementation behavior that treats soft errors as hard errors during connection establishment.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 1122 requires addresses to be validated in incoming SYN packets:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This prevents connection state and replies from being erroneously generated, and implementers should note that this guidance is applicable to all incoming segments, not just SYNs, as specifically indicated in RFC 1122.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  section only in detail, not in substance.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  cases the processing required depends on the state of the connection.
+^
+Parse error at line 6, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Events that occur:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  means cause a delayed response.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  connection not open".
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  equal to (modulo 2**32).
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A natural way to think about processing incoming segments is to
+                                                             ^
+Parse error at line 1, column 61: expected the token 'formatted'. trail: [preamble]
+
+
+  to be consistent.
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+  state.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+OPEN Call
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+SEND Call
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+RECEIVE Call
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+CLOSE Call
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+ABORT Call
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+STATUS Call
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+SEGMENT ARRIVES
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+USER TIMEOUT
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'VSpace' object has no attribute 'content'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This document obsoletes RFC 793 as well as RFC 6093 and 6528, which updated 793.  In all cases, only the normative protocol specification and requirements have been incorporated into this document, and some informational text with background and rationale may not have been carried in.  The informational content of those documents is still valuable in learning about and understanding TCP, and they are valid Informational references, even though their normative content has been incorporated into this document.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The main body of this document was adapted from RFC 793's Section 3, titled "FUNCTIONAL SPECIFICATION", with an attempt to keep formatting and layout as close as possible.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The collection of applicable RFC Errata that have been reported and either accepted or held for an update to RFC 793 were incorporated (Errata IDs: 573, 574, 700, 701, 1283, 1561, 1562, 1564, 1565, 1571, 1572, 2296, 2297, 2298, 2748, 2749, 2934, 3213, 3300, 3301, 6222).  Some errata were not applicable due to other changes (Errata IDs: 572, 575, 1569, 3305, 3602).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Changes to the specification of the Urgent Pointer described in RFC 1122 and 6093 were incorporated.  See RFC 6093 for detailed discussion of why these changes were necessary.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The discussion of the RTO from RFC 793 was updated to refer to RFC 6298.  The RFC 1122 text on the RTO originally replaced the 793 text, however, RFC 2988 should have updated 1122, and has subsequently been obsoleted by 6298.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 1122 contains a collection of other changes and clarifications to RFC 793.  The normative items impacting the protocol have been incorporated here, though some historically useful implementation advice and informative discussion from RFC 1122 is not included here.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 1122 contains more than just TCP requirements, so this document can't obsolete RFC 1122 entirely.  It is only marked as "updating" 1122, however, it should be understood to effectively obsolete all of the RFC 1122 material on TCP.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The more secure Initial Sequence Number generation algorithm from RFC 6528 was incorporated.  See RFC 6528 for discussion of the attacks that this mitigates, as well as advice on selecting PRF algorithms and managing secret key data.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+A note based on RFC 6429 was added to explicitly clarify that system resource management concerns allow connection resources to be reclaimed.  RFC 6429 is obsoleted in the sense that this clarification has been reflected in this update to the base TCP specification now.
+                                                                                                                                            ^
+Parse error at line 1, column 140: expected one of '-', '_', or token 'is'. trail: [letter digit number alphanumhyp pdu_part preamble]
+
+
+The description of congestion control implementation was added, based on the set of documents that are IETF BCP or Standards Track on the topic, and the current state of common implementations.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC EDITOR'S NOTE: the content below is for detailed change tracking and planning, and not to be included with the final revision of the document.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This document started as draft-eddy-rfc793bis-00, that was merely a proposal and rough plan for updating RFC 793.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -01 revision of this draft-eddy-rfc793bis incorporates the content of RFC 793 Section 3 titled "FUNCTIONAL SPECIFICATION".  Other content from RFC 793 has not been incorporated.  The -01 revision of this document makes some minor formatting changes to the RFC 793 content in order to convert the content into XML2RFC format and account for left-out parts of RFC 793.  For instance, figure numbering differs and some indentation is not exactly the same.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -02 revision of draft-eddy-rfc793bis incorporates errata that have been verified:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+Not related to RFC 793 content, this revision also makes small tweaks to the introductory text, fixes indentation of the pseudo header diagram, and notes that the Security Considerations should also include privacy, when this section is written.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -03 revision of draft-eddy-rfc793bis revises all discussion of the urgent pointer in order to comply with RFC 6093, 1122, and 1011.  Since 1122 held requirements on the urgent pointer, the full list of requirements was brought into an appendix of this document, so that it can be updated as-needed.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -04 revision of draft-eddy-rfc793bis includes the ISN generation changes from RFC 6528.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+            requirements from RFC 1122.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -00 revision of draft-ietf-tcpm-rfc793bis incorporates several additional clarifications and updates to the section on segmentation, many of which are based on feedback from Joe Touch improving from the initial text on this in the previous revision.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -01 revision incorporates the change to Reserved bits due to ECN, as well as many other changes that come from RFC 1122.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -02 revision has small formatting modifications in order to address xml2rfc warnings about long lines.  It was a quick update to avoid document expiration.  TCPM working group discussion in 2015 also indicated that that we should not try to add sections on implementation advice or similar non-normative information.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -03 revision incorporates more content from RFC 1122: Passive OPEN Calls, Time-To-Live, Multihoming, IP Options, ICMP messages, Data Communications, When to Send Data, When to Send a Window Update, Managing the Window, Probing Zero Windows, When to Send an ACK Segment.  The section on data communications was re-organized into clearer subsections (previously headings were embedded in the 793 text), and windows management advice from 793 was removed (as reviewed by TCPM working group) in favor of the 1122 additions on SWS, ZWP, and related topics.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -04 revision includes reference to RFC 6429 on the ZWP condition, RFC1122 material on TCP Connection Failures, TCP Keep-Alives, Acknowledging Queued Segments, and Remote Address Validation.  RTO computation is referenced from RFC 6298 rather than RFC 1122.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -05 revision includes the requirement to implement TCP congestion control with recommendation to implement ECN, the RFC 6633 update to 1122, which changed the requirement on responding to source quench ICMP messages, and discussion of ICMP (and ICMPv6) soft and hard errors per RFC 5461 (ICMPv6 handling for TCP doesn't seem to be mentioned elsewhere in standards track).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -06 revision includes an appendix on "Other Implementation Notes" to capture widely-deployed fundamental features that are not contained in the RFC series yet. It also added mention of RFC 6994 and the IANA TCP parameters registry as a reference.  It includes references to RFC 5961 in appropriate places.  The references to TOS were changed to DiffServ field, based on reflecting RFC 2474 as well as the IPv6 presence of traffic class (carrying DiffServ field) rather than TOS.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -07 revision includes reference to RFC 6191, updated security considerations, discussion of additional implementation considerations, and clarification of data on the SYN.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -08 revision includes changes based on:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -09 revision fixes section numbering problems.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -10 revision includes additions to the security considerations based on comments from Joe Touch, and suggested edits on RST/FIN notification, RFC 2525 reference, and other edits suggested by Yuchung Cheng, as well as modifications to DiffServ text from Yuchung Cheng and Gorry Fairhurst.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -11 revision includes a start at identifying all of the requirements text and referencing each instance in the common table at the end of the document.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -12 revision completes the requirement language indexing started in -11 and adds necessary description of the PUSH functionality that was missing.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -13 revision  contains only changes in the inline editor notes.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -14 revision includes updates with regard to several comments from the mailing list, including editorial fixes, adding IANA considerations for the header flags, improving figure title placement, and breaking up the "Terminology" section into more appropriately titled subsections.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -15 revision has many technical and editorial corrections from Gorry Fairhurst's review, and subsequent discussion on the TCPM list, as well as some other collected clarifications and improvements from mailing list discussion.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -16 revision addresses several discussions that rose from additional reviews and follow-up on some of Gorry Fairhurst's comments from revision 14.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -17 revision includes errata 6222 from Charles Deng, update to the key words boilerplate, updated description of the header flags registry changes, and clarification about connections rather than users in the discussion of OPEN calls.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -18 revision includes editorial changes to the IANA considerations, based on comments from Richard Scheffenegger at the IETF 108 TCPM virtual meeting.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -19 revision includes editorial changes from Errata 6281 and 6282 reported by Merlin Buge.  It also includes WGLC changes noted by Mohamed Boucadair, Rahul Jadhav, Praveen Balasubramanian, Matt Olson, Yi Huang, Joe Touch, and Juhamatti Kuusisaari.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -20 revision includes text on congestion control based on mailing list and meeting discussion, put together in its final form by Markku Kojo.  It also clarifies that SACK, WS, and TS options are recommended for high performance, but not needed for basic interoperability.  It also clarifies that the length field is required for new TCP options.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The -21 revision includes slight changes to the header diagram for compatibility with tooling, from Stephen McQuistin, clarification on the meaning of idle connections from Yuchung Cheng, Neal Cardwell, Michael Scharf, and Richard Scheffenegger, editorial improvements from Markku Kojo, notes that some stacks suppress extra acknowledgments of the SYN when SYN-ACK carries data from Richard Scheffenegger, and adds MAY-18 numbering based on note from Jonathan Morton.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Some other suggested changes that will not be incorporated in this 793 update unless TCPM consensus changes with regard to scope are:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Early in the process of updating RFC 793, Scott Brim mentioned that this should include a PERPASS/privacy review.  This may be something for the chairs or AD to request during WGLC or IETF LC.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+In the "Transmission Control Protocol (TCP) Header Flags" registry, IANA is asked to make several changes described in this section.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+RFC 3168 originally created this registry, but only populated it with the new bits defined in RFC 3168, neglecting the other bits that had previously been described in RFC 793 and other documents.  Bit 7 has since also been updated by RFC 8311.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The "Bit" column is renamed below as the "Bit Offset" column, since it references each header flag's offset within the 16-bit aligned view of the TCP header in
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.  The bits in offsets 0 through 4 are the TCP segment Data Offset field, and not header flags.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+IANA should add a column for "Assignment Notes".
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+IANA should assign values indicated below.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This TCP Header Flags registry should also be moved to a sub-registry under the global "Transmission Control Protocol (TCP) Parameters registry (https://www.iana.org/assignments/tcp-parameters/tcp-parameters.xhtml).
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The registry's Registration Procedure should remain Standards Action, but the Reference can be updated to this document, and the Note removed.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The TCP design includes only rudimentary security features that improve the robustness and reliability of connections and application data transfer, but there are no built-in cryptographic capabilities to support any form of privacy, authentication, or other typical security functions.  Non-cryptographic enhancements (e.g.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+) have been developed to improve robustness of TCP connections to particular types of attacks, but the applicability and protections of non-cryptographic enhancements are limited (e.g. see section 1.1 of
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+Applications typically utilize lower-layer (e.g. IPsec) and upper-layer (e.g. TLS) protocols to provide security and privacy for TCP connections and application data carried in TCP.  Methods based on TCP options have been developed as well, to support some security capabilities.
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+or the TCP Authentication Option (TCP-AO)
+^
+Parse error at line 3, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+the payload, but either only a subset of the fields (e.g. tcpcrypt
+^
+Parse error at line 4, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+hindering attacks.
+^
+Parse error at line 5, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Applications using long-lived TCP flows have been vulnerable to attacks that exploit the processing of control flags described in earlier TCP specifications
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.  TCP-MD5 was a commonly implemented TCP option to support authentication for some of these connections, but had flaws and is now deprecated.  TCP-AO provides a capability to protect long-lived TCP connections from attacks, and has superior properties to TCP-MD5.  It does not provide any privacy for application data, nor for the TCP headers.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The "tcpcrypt"
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+Experimental extension to TCP provides the ability to cryptographically protect connection data.  Metadata aspects of the TCP flow are still visible, but the application stream is well-protected.  Within the TCP header, only the urgent pointer and FIN flag are protected through tcpcrypt.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+The TCP Roadmap
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+includes notes about several RFCs related to TCP security.  Many of the enhancements provided by these RFCs have been integrated into the present document, including ISN generation, mitigating blind in-window attacks, and improving handling of soft errors and ICMP packets.  These are all discussed in greater detail in the referenced RFCs that originally described the changes needed to earlier TCP specifications.  Additionally, see RFC 6093
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+for discussion of security considerations related to the urgent pointer field, that has been deprecated.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Since TCP is often used for bulk transfer flows, some attacks are possible that abuse the TCP congestion control logic.  An example is "ACK-division" attacks. Updates that have been made to the TCP congestion control specifications include mechanisms like Appropriate Byte Counting (ABC)
+                                                                                                                                       ^
+Parse error at line 1, column 135: expected the token 'formatted'. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+that act as mitigations to these attacks.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Other attacks are focused on exhausting the resources of a TCP server.  Examples include SYN flooding
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+or wasting resources on non-progressing connections
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'NoneType' object has no attribute 'strip'
+
+.  Operating systems commonly implement mitigations for these attacks.  Some common defenses also utilize proxies, stateful firewalls, and other technologies outside of the end-host TCP implementation.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This document is largely a revision of RFC 793, which Jon Postel was the editor of.  Due to his excellent work, it was able to last for three decades before we felt the need to revise it.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Andre Oppermann was a contributor and helped to edit the first revision of this document.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+We are thankful for the assistance of the IETF TCPM working group chairs, over the course of work on this document:
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+'list' object has no attribute 'strip'
+
+
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+During the discussions of this work on the TCPM mailing list and in working group meetings, helpful comments, critiques, and reviews were received from (listed alphabetically by last name): Praveen Balasubramanian, David Borman, Mohamed Boucadair, Bob Briscoe, Neal Cardwell, Yuchung Cheng, Martin Duke, Ted Faber, Gorry Fairhurst, Fernando Gont, Rodney Grimes, Yi Huang, Rahul Jadhav, Markku Kojo, Mike Kosek, Juhamatti Kuusisaari, Kevin Lahey, Kevin Mason, Matt Mathis, Stephen McQuistin, Jonathan Morton, Matt Olson, Tommy Pauly, Tom Petch, Hagen Paul Pfeifer, Anthony Sabatini, Michael Scharf, Greg Skinner, Joe Touch, Michael Tuexen, Reji Varghese, Tim Wicinski, Lloyd Wood, and Alex Zimmermann.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+Joe Touch provided additional help in clarifying the description of segment size parameters and PMTUD/PLPMTUD recommendations.  Markku Kojo helped put together the text in the section on TCP Congestion Control.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+
+
+This document includes content from errata that were reported by (listed chronologically): Yin Shuming, Bob Braden, Morris M. Keesan, Pei-chun Cheng, Constantin Hagemeier, Vishwas Manral, Mykyta Yevstifeyev, EungJun Yi, Botong Huang, Charles Deng, Merlin Buge.
+^
+Parse error at line 2, column 0: expected one of end of input, token 'A ', or token 'An '. trail: [preamble]
+

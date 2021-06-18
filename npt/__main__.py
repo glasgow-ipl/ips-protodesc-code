@@ -32,10 +32,10 @@
 import sys
 from typing  import Optional, List, Any, cast
 from pathlib import Path
-from lxml import etree
+import lxml.etree # type: ignore
 from urllib.parse import urlparse
 
-import os 
+import os
 
 import npt.parser
 import npt.parser_rfc_txt
@@ -50,7 +50,7 @@ from npt.parser_asciidiagrams import AsciiDiagramsParser
 from npt.protocol             import *
 from npt.helpers              import *
 
-class DTDResolver(etree.Resolver):
+class DTDResolver(lxml.etree.Resolver):
     def resolve(self, system_url, public_id, context):
         if urlparse(system_url).netloc:
             return self.resolve_filename(system_url, context)
@@ -129,7 +129,7 @@ def parse_input_file( doc : npt.util.IETF_URI ) -> Optional[npt.rfc.RFC] :
     doc_filepath = doc.get_filepath_in()
     if doc.extn == '.xml' and doc_filepath is not None:
         with open(doc_filepath , 'r') as infile :
-            parser = etree.XMLParser(dtd_validation=False,
+            parser = lxml.etree.XMLParser(dtd_validation=False,
                   load_dtd=True,
                   attribute_defaults=True,
                   no_network=False,
@@ -139,7 +139,7 @@ def parse_input_file( doc : npt.util.IETF_URI ) -> Optional[npt.rfc.RFC] :
                   resolve_entities=False,
                   strip_cdata=True)
             parser.resolvers.add(DTDResolver())
-            xml_tree = etree.parse(str(doc_filepath), parser=parser)
+            xml_tree = lxml.etree.parse(str(doc_filepath), parser=parser)
             content = npt.parser_rfc_xml.parse_rfc(xml_tree.getroot())
     elif doc.extn == '.txt' and doc_filepath is not None:
         with open(doc_filepath, 'r') as infile :

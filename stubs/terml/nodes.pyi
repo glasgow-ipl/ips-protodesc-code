@@ -5,7 +5,7 @@ scalar_types: Any
 integer_types: Any
 basestring = str
 
-_Term = namedtuple('Term', 'tag data args span')
+_Term = namedtuple('_Term', 'tag data args span')
 
 class Term(_Term):
     def __new__(cls, tag: Any, data: Any, args: Any, span: Any): ...
