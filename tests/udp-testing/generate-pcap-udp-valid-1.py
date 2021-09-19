@@ -9,14 +9,8 @@ class Udp(Packet):
                  BitField("checksum", 0, 16),
                  StrField("payload", "Hello", fmt="c")]
 
-# Generate test pcaps
-
-# UDP - valid
+# Generate test pcaps: UDP - valid
 cap = PcapWriter("pcaps/udp-valid-1.pcap")
 packet = Udp()
 cap.write(packet)
 
-# UDP - bad length value
-cap = PcapWriter("pcaps/udp-invalid-badlength.pcap")
-packet = Udp(length=7)
-cap.write(packet)

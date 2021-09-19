@@ -1,11 +1,4 @@
 .mypy_cache/
 htmlcov/
-test-results/
 .DS_Store
 *.pyc
-tests/udp-testing/pcaps
-tests/udp-testing/testharness/target
-tests/tcp-testing/testharness/target
-tests/793bis-testing/testharness/target
-tmp*
-examples/output
