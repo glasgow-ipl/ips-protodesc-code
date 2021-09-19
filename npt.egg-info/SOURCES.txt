@@ -1,4 +1,6 @@
+LICENSE
 README.md
+pyproject.toml
 setup.py
 npt/__init__.py
 npt/__main__.py
