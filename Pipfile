@@ -12,6 +12,7 @@ requests = "*"
 scapy = "*"
 mypy = "*"
 jinja2 = "*"
+types-requests = "*"
 
 [dev-packages]
 mypy = "*"

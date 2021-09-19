@@ -186,11 +186,11 @@ class AsciiDiagramsParser(Parser):
                         if len(section.content) >= i+2 and type(section.content[i+2]) == rfc.T:
                             t_elem = cast(rfc.T, section.content[i+2])
                         if t_elem is not None and len(t_elem.content) >= 2 and type(t_elem.content[1]) == rfc.List:
-                                rfc_list = cast(rfc.List, t_elem.content[1])
+                                rfc_list = t_elem.content[1]
                                 desc_list = rfc_list.content[0].content
                                 for element in desc_list:
                                     if type(element) is rfc.T:
-                                        t_elem = cast(rfc.T, element)
+                                        t_elem = element
                                         if t_elem.hangText is not None:
                                             field = parser(t_elem.hangText.strip()).field_title()
                                             field["context_field"] = None
