@@ -7,7 +7,7 @@ name = "pypi"
 parsley = "*"
 lxml = "*"
 pavlova = "*"
-ietfdata = "*"
+ietfdata = ">=0.5.0"
 requests = "*"
 scapy = "*"
 mypy = "*"
@@ -22,7 +22,7 @@ coverage = "*"
 npt = {editable = true, path = "."}
 
 [requires]
-python_version = "3.7"
+python_version = "3.9"
 
 [scripts]
 tests = "make clean test"
