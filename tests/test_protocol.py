@@ -272,7 +272,7 @@ class TestProtocol(unittest.TestCase):
         with self.assertRaises(TypeError) as expr_abc_exception:
             expr = Expression() # type: ignore
 
-        self.assertEqual(str(expr_abc_exception.exception), "Can't instantiate abstract class Expression with abstract methods result_type")
+        self.assertEqual(str(expr_abc_exception.exception), "Can't instantiate abstract class Expression with abstract method result_type")
 
 
     def test_argument_expression(self):
