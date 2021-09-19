@@ -10,7 +10,7 @@ class Udp(Packet):
                  StrField("payload", "Hello", fmt="c")]
 
 # Generate test pcaps: UDP - valid
-cap = PcapWriter("pcaps/udp-valid-1.pcap")
+cap = PcapWriter("tests/udp-testing/pcaps/udp-valid-1.pcap")
 packet = Udp()
 cap.write(packet)
 

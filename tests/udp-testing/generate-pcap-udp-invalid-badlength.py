@@ -10,7 +10,7 @@ class Udp(Packet):
                  StrField("payload", "Hello", fmt="c")]
 
 # Generate test pcaps: UDP - bad length value
-cap = PcapWriter("pcaps/udp-invalid-badlength.pcap")
+cap = PcapWriter("tests/udp-testing/pcaps/udp-invalid-badlength.pcap")
 packet = Udp(length=7)
 cap.write(packet)
 

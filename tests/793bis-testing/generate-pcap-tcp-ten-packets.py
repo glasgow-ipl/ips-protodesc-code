@@ -96,6 +96,6 @@ packets.append(Ether() /
                    flags='A',
                    options=[('Timestamp', (2028223723, 1113284218)), ('NOP', 0), ('NOP', 0)]))
 
-cap = PcapWriter("pcaps/ten_tcp_packets.pcap")
+cap = PcapWriter("tests/793bis-testing/pcaps/tcp-ten-packets.pcap")
 for packet in packets:
     cap.write(packet)

@@ -386,7 +386,7 @@ fn test_parse_tcp_header_payload() {
 
 #[test]
 fn test_parse_tcp_header_10pcap() {
-    let mut cap = Capture::from_file("../pcaps/ten_tcp_packets.pcap").unwrap();
+    let mut cap = Capture::from_file("../pcaps/tcp-ten-packets.pcap").unwrap();
     let valid_seq_nums = [1134435089, 2154648496, 1134435090, 1134435090, 2154648497, 984389655, 2011523075, 1134435091, 984389656, 984389656];
     let mut count = 0;
     while let Ok(packet) = cap.next() {
@@ -408,7 +408,7 @@ fn test_parse_tcp_header_10pcap() {
 
 #[test]
 fn test_parse_pdu_10pcap() {
-    let mut cap = Capture::from_file("../pcaps/ten_tcp_packets.pcap").unwrap();
+    let mut cap = Capture::from_file("../pcaps/tcp-ten-packets.pcap").unwrap();
     while let Ok(packet) = cap.next() {
         let ip_packet = &packet.data[14..];
         let ip_hdr_len = ip_packet[0] & 0xF;

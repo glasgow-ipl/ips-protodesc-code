@@ -26,34 +26,39 @@
 PYTHON_SRC   = $(wildcard npt/*.py)
 PYTHON_TESTS = $(wildcard tests/*.py)
 
-UDP_GEN_PCAPS = tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
-				tests/udp-testing/pcaps/udp-valid-1.pcap
+# =================================================================================================
+# Test suite:
 
-TCP_GEN_PCAPS = tests/tcp-testing/pcaps/ten_tcp_packets.pcap
+test: unit-tests integration-tests
 
-793BIS_GEN_PCAPS = tests/793bis-testing/pcaps/ten_tcp_packets.pcap
-
-.PHONY: test unittests integrationtests
-
-test: unittests integrationtests
 
 test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
-unittests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
+
+unit-tests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
+	@echo "Running unit tests:"
 	@python3 -m unittest discover -s tests/ -v
+	@echo ""
 
-$(UDP_GEN_PCAPS): tests/udp-testing/generate-pcaps.py
-	mkdir -p tests/udp-testing/pcaps
-	cd tests/udp-testing && python generate-pcaps.py
 
-$(TCP_GEN_PCAPS): tests/tcp-testing/generate-pcaps.py
-	mkdir -p tests/tcp-testing/pcaps
-	cd tests/tcp-testing && python generate-pcaps.py
+tests/udp-testing/pcaps:
+	mkdir $@
 
-$(793BIS_GEN_PCAPS): tests/793bis-testing/generate-pcaps.py
-	mkdir -p tests/793bis-testing/pcaps
-	cd tests/793bis-testing && python generate-pcaps.py
+tests/udp-testing/pcaps/%.pcap: tests/udp-testing/generate-pcap-%.py | tests/udp-testing/pcaps
+	python $<
+
+tests/tcp-testing/pcaps:
+	mkdir $@
+
+tests/tcp-testing/pcaps/%.pcap: tests/tcp-testing/generate-pcap-%.py | tests/tcp-testing/pcaps
+	python $<
+
+tests/793bis-testing/pcaps:
+	mkdir $@
+
+tests/793bis-testing/pcaps/%.pcap: tests/793bis-testing/generate-pcap-%.py | tests/793bis-testing/pcaps
+	python $<
 
 examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 	python3 -m npt $< -of rust
@@ -61,22 +66,44 @@ examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust:
 	python3 -m npt draft-ietf-tcpm-rfc793bis-25 -d examples -of rust
 	
-integrationtests: $(UDP_GEN_PCAPS) $(TCP_GEN_PCAPS) $(793BIS_GEN_PCAPS) \
-	              examples/output/draft/draft-mcquistin-augmented-udp-example-00/rust \
-	              examples/output/draft/draft-mcquistin-augmented-tcp-example-00/rust \
-				  examples/output/draft/draft-mcquistin-augmented-ascii-diagrams-07/rust \
-				  examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust
+integration-tests: tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
+                   tests/udp-testing/pcaps/udp-valid-1.pcap \
+                   tests/tcp-testing/pcaps/tcp-ten-packets.pcap \
+                   tests/793bis-testing/pcaps/tcp-ten-packets.pcap \
+                   examples/output/draft/draft-mcquistin-augmented-udp-example-00/rust \
+                   examples/output/draft/draft-mcquistin-augmented-tcp-example-00/rust \
+                   examples/output/draft/draft-mcquistin-augmented-ascii-diagrams-07/rust \
+                   examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust
 	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 	cd tests/793bis-testing/testharness && cargo test
 
 # =================================================================================================
+# Configuration for make:
+
+# Warn if the Makefile references undefined variables and remove built-in rules:
+MAKEFLAGS += --output-sync --warn-undefined-variables --no-builtin-rules --no-builtin-variables
+
+# Remove output of failed commands, to avoid confusing later runs of make:
+.DELETE_ON_ERROR:
+
+# Remove obsolete old-style default suffix rules:
+.SUFFIXES:
+
+.PHONY: test unit-tests integration-tests clean 
+
+
+# =================================================================================================
 
 clean:
-	rm -rf $(UDP_GEN_PCAPS)
-	rm -rf $(TCP_GEN_PCAPS)
-	rm -rf $(793BIS_GEN_PCAPS)
 	rm -f  test-results/typecheck.xml
+	rm -f  tests/udp-testing/pcaps/udp-invalid-badlength.pcap
+	rm -f  tests/udp-testing/pcaps/udp-valid-1.pcap
+	rm -fr tests/udp-testing/pcaps
+	rm -f  tests/tcp-testing/pcaps/tcp-ten-packets.pcap
+	rm -fr tests/tcp-testing/pcaps
+	rm -f  tests/793bis-testing/pcaps/tcp-ten-packets.pcap
+	rm -fr tests/703bis-testing/pcaps
 	rm -fr examples/output
 	cd tests/udp-testing/testharness    && cargo clean
 	cd tests/tcp-testing/testharness    && cargo clean
