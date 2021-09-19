@@ -78,3 +78,7 @@ clean:
 	rm -rf $(793BIS_GEN_PCAPS)
 	rm -f  test-results/typecheck.xml
 	rm -fr examples/output
+	cd tests/udp-testing/testharness    && cargo clean
+	cd tests/tcp-testing/testharness    && cargo clean
+	cd tests/793bis-testing/testharness && cargo clean
+
