@@ -1,7 +1,7 @@
-extern crate draft_ietf_tcpm_rfc793bis_21;
+extern crate draft_ietf_tcpm_rfc793bis_25;
 extern crate pcap;
 
-use draft_ietf_tcpm_rfc793bis_21::*;
+use draft_ietf_tcpm_rfc793bis_25::*;
 use pcap::Capture;
 
 fn pretty_print_tcp_header(header: &TcpHeader) {

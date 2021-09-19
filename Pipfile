@@ -11,6 +11,7 @@ ietfdata = "*"
 requests = "*"
 scapy = "*"
 mypy = "*"
+jinja2 = "*"
 
 [dev-packages]
 mypy = "*"

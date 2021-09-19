@@ -29,7 +29,9 @@ PYTHON_TESTS = $(wildcard tests/*.py)
 UDP_GEN_PCAPS = tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
 				tests/udp-testing/pcaps/udp-valid-1.pcap
 
-TCP_PCAPS = tests/tcp-testing/pcaps/ten_tcp_packets.pcap
+TCP_GEN_PCAPS = tests/tcp-testing/pcaps/ten_tcp_packets.pcap
+
+793BIS_GEN_PCAPS = tests/793bis-testing/pcaps/ten_tcp_packets.pcap
 
 .PHONY: test unittests integrationtests
 
@@ -45,17 +47,25 @@ $(UDP_GEN_PCAPS): tests/udp-testing/generate-pcaps.py
 	mkdir -p tests/udp-testing/pcaps
 	cd tests/udp-testing && python generate-pcaps.py
 
+$(TCP_GEN_PCAPS): tests/tcp-testing/generate-pcaps.py
+	mkdir -p tests/tcp-testing/pcaps
+	cd tests/tcp-testing && python generate-pcaps.py
+
+$(793BIS_GEN_PCAPS): tests/793bis-testing/generate-pcaps.py
+	mkdir -p tests/793bis-testing/pcaps
+	cd tests/793bis-testing && python generate-pcaps.py
+
 examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
 	python3 -m npt $< -of rust
 
-examples/output/draft/draft-ietf-tcpm-rfc793bis/21/rust:
-	python3 -m npt draft-ietf-tcpm-rfc793bis-21 -d examples -of rust
+examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust:
+	python3 -m npt draft-ietf-tcpm-rfc793bis-25 -d examples -of rust
 	
-integrationtests: $(UDP_GEN_PCAPS) $(TCP_PCAPS) \
+integrationtests: $(UDP_GEN_PCAPS) $(TCP_GEN_PCAPS) $(793BIS_GEN_PCAPS) \
 	              examples/output/draft/draft-mcquistin-augmented-udp-example-00/rust \
 	              examples/output/draft/draft-mcquistin-augmented-tcp-example-00/rust \
 				  examples/output/draft/draft-mcquistin-augmented-ascii-diagrams-07/rust \
-				  examples/output/draft/draft-ietf-tcpm-rfc793bis/21/rust
+				  examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust
 	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 	cd tests/793bis-testing/testharness && cargo test
@@ -64,5 +74,7 @@ integrationtests: $(UDP_GEN_PCAPS) $(TCP_PCAPS) \
 
 clean:
 	rm -rf $(UDP_GEN_PCAPS)
+	rm -rf $(TCP_GEN_PCAPS)
+	rm -rf $(793BIS_GEN_PCAPS)
 	rm -f  test-results/typecheck.xml
 	rm -fr examples/output
