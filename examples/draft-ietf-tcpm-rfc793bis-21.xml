@@ -5,7 +5,7 @@
      for the reference element, and is used much later in the file.  This XML contains an
      anchor (also RFC2629) which can be used to cross-reference this item in the text.
      You can also use local file names instead of a URI.  The environment variable
-     XML_LIBRARY provides a search path of directories to look at to locate a
+     XML_LIBRARY provides a search path of directories to look at to locate a 
      relative path name for the file. There has to be one entity for each item to be
      referenced. -->
 <!ENTITY RFC0791 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.0791.xml">
@@ -64,14 +64,14 @@
 <!ENTITY RFC8961 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8961.xml">
 
 <!-- There is also a library of current Internet Draft citations.  It isn't a good idea to
-     actually use one for the template because it might have disappeared when you come to test
+     actually use one for the template because it might have disappeared when you come to test 
      this template.  This is the form of the entity definition
-     &lt;!ENTITY I-D.mrose-writing-rfcs SYSTEM
+     &lt;!ENTITY I-D.mrose-writing-rfcs SYSTEM 
      "http://xml.resource.org/public/rfc/bibxml3/reference.I-D.mrose-writing-rfcs.xml">
      corresponding to a draft filename draft-mrose-writing-rfcs-nn.txt. The citation will be
      to the most recent draft in the sequence, and is updated roughly hourly on the web site.
      For working group drafts, the same principle applies: file name starts draft-ietf-wgname-..
-     and entity file is reference.I-D.ietf-wgname-...  The corresponding entity name is
+     and entity file is reference.I-D.ietf-wgname-...  The corresponding entity name is 
      I-D.ietf-wgname-... (I-D.mrose-writing-rfcs for the other example).  Of course this doesn't
      change when the draft version changes.
      -->
@@ -80,6 +80,7 @@
 <!ENTITY I-D.gont-tcpm-tcp-seq-validation SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-gont-tcpm-tcp-seq-validation-02.xml">
 <!ENTITY I-D.ietf-tcpinc-tcpcrypt SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-tcpinc-tcpcrypt-09.xml">
 <!ENTITY I-D.ietf-tcpm-tcp-edo SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-tcpm-tcp-edo-10.xml">
+<!ENTITY I-D.mcquistin-augmented-ascii-diagrams SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-mcquistin-augmented-ascii-diagrams-07.xml">
 
 <!-- Fudge for XMLmind which doesn't have this built in -->
 <!ENTITY nbsp    "&#160;">
@@ -89,10 +90,10 @@
 <?xml-stylesheet type='text/xsl' href='rfc2629.xslt' ?>
 
 
-<!-- Processing Instructions can be placed here but if you are editing
+<!-- Processing Instructions can be placed here but if you are editing 
      with XMLmind (and maybe other XML editors) they are better placed
      after the rfc element start tag as shown below. -->
-
+     
 <!-- Information about the document.
      category values: std, bcp, info, exp, and historic
      For Internet-Drafts, specify attribute "ipr".
@@ -100,7 +101,7 @@
      Also for Internet-Drafts, can specify values for
      attributes "docName" and, if relevant, "iprExtract".  Note
      that the value for iprExtract is the anchor attribute
-     value of a section (such as a MIB specification) that can be
+     value of a section (such as a MIB specification) that can be 
      extracted for separate publication, and is only
      useful whenhe value of "ipr" is not "full3667". -->
 <rfc
@@ -108,12 +109,12 @@
     obsoletes="793, 879, 2873, 6093, 6429, 6528, 6691"
     updates="5961, 1122"
     ipr="pre5378Trust200902"
-    docName="draft-ietf-tcpm-rfc793bis-20" >
+    docName="draft-ietf-tcpm-rfc793bis-21" >
     <!-- Processing Instructions- PIs (for a complete list and description,
           see file http://xml.resource.org/authoring/README.html and below... -->
 
     <!-- Some of the more generally applicable PIs that most I-Ds might want to use -->
-
+    
     <!-- Try to enforce the ID-nits conventions and DTD validity -->
     <?rfc strict="yes" ?>
 
@@ -121,27 +122,27 @@
     <?rfc comments="no" ?>  <!-- Controls display of <cref> elements -->
     <?rfc inline="no" ?>    <!-- When no, put comments at end in comments section,
                                  otherwise, put inline -->
-    <?rfc editing="no" ?>   <!-- When yes, insert editing marks: editing marks consist of a
-                                 string such as <29> printed in the blank line at the
+    <?rfc editing="no" ?>   <!-- When yes, insert editing marks: editing marks consist of a 
+                                 string such as <29> printed in the blank line at the 
                                  beginning of each paragraph of text. -->
 
-    <!-- Create Table of Contents (ToC) and set some options for it.
-         Note the ToC may be omitted for very short documents,but idnits insists on a ToC
-         if the document has more than 15 pages. -->
+    <!-- Create Table of Contents (ToC) and set some options for it.  
+         Note the ToC may be omitted for very short documents,but idnits insists on a ToC 
+         if the document has more than 15 pages. --> 
    <?rfc toc="yes"?>
    <?rfc tocompact="yes"?> <!-- If "yes" eliminates blank lines before main section entries. -->
-   <?rfc tocdepth="3"?>    <!-- Sets the number of levels of sections/subsections... in ToC -->
+   <?rfc tocdepth="3"?>    <!-- Sets the number of levels of sections/subsections... in ToC --> 
 
-    <!-- Choose the options for the references.
-         Some like symbolic tags in the references (and citations) and others prefer
+    <!-- Choose the options for the references. 
+         Some like symbolic tags in the references (and citations) and others prefer 
          numbers. The RFC Editor always uses symbolic tags.
-         The tags used are the anchor attributes of the references. -->
+         The tags used are the anchor attributes of the references. --> 
     <?rfc symrefs="no"?>
     <?rfc sortrefs="yes" ?> <!-- If "yes", causes the references to be sorted in order of tags.
                                  This doesn't have any effect unless symrefs is "yes" also. -->
 
-    <!-- These two save paper: Just setting compact to "yes" makes savings by not starting each
-         main section on a new page but does not omit the blank lines between list items.
+    <!-- These two save paper: Just setting compact to "yes" makes savings by not starting each 
+         main section on a new page but does not omit the blank lines between list items. 
          If subcompact is also "yes" the blank lines between list items are also omitted. -->
     <?rfc compact="yes" ?>
     <?rfc subcompact="no" ?>
@@ -149,14 +150,14 @@
 
     <!-- ***** FRONT MATTER ***** -->
 <front>
-    <!-- The abbreviated title is used in the page header - it is only necessary if the
+    <!-- The abbreviated title is used in the page header - it is only necessary if the 
          full title is longer than 42 characters -->
     <title abbrev="TCP Specification">Transmission Control Protocol (TCP) Specification</title>
 
     <!-- add 'role="editor"' below for the editors if appropriate -->
     <author
-        fullname="Wesley M. Eddy"
-        initials="W."
+        fullname="Wesley M. Eddy" 
+        initials="W." 
         surname="Eddy"
         role="editor">
 
@@ -175,7 +176,7 @@
                 <region>MN</region>
                 <code>55403</code>
                 However, if I lived in France, the <code> comes before the city.  xml2rfc
-                preserves the order of <city>, <region>, <code> and <country> elements in
+                preserves the order of <city>, <region>, <code> and <country> elements in 
                 output so that they can reflect any possible the national scheme
                 -->
                 <!-- The country element is supposed to contain an ISO3166 two letter country
@@ -205,12 +206,12 @@
 
     <date year="2021"/> <!-- month="March" is no longer necessary
                                            note also, day="30" is optional -->
-    <!-- WARNING: If the month and year are the current ones, xml2rfc will fill in the day for
-         you. If only the year is specified, xml2rfc will fill in the current day and month
+    <!-- WARNING: If the month and year are the current ones, xml2rfc will fill in the day for 
+         you. If only the year is specified, xml2rfc will fill in the current day and month 
          irrespective of the day.  This silliness should be fixed in v1.31. -->
-
+         
     <!-- Meta-data Declarations -->
-
+    
     <!-- Notice the use of &amp; as an escape for & which would otherwise
          start an entity declaration, whereas we want a literal &. -->
     <area>Transport</area>
@@ -220,13 +221,13 @@
          omit this element in which case in defaults to "Network Working Group" -
          a hangover from the ancient history of the IETF! -->
     <workgroup>Internet Engineering Task Force</workgroup>
-
+    
     <!-- The DTD allows multiple area and workgroup elements but only the first one has any
          effect on output.  -->
     <!-- You can add <keyword/> elements here.  They will be incorporated into HTML output
          files in a meta tag but they have no effect on text or nroff output. -->
-
-
+    
+    
     <abstract>
         <t>This document specifies the Transmission Control Protocol (TCP).  TCP is an important transport layer protocol in the Internet protocol stack, and has continuously evolved over decades of use and growth of the Internet.  Over this time, a number of changes have been made to TCP as it was specified in RFC 793, though these have only been documented in a piecemeal fashion.  This document collects and brings those changes together with the protocol specification from RFC 793.  This document obsoletes RFC 793, as well as RFCs 879, 2873, 6093, 6429, 6528, and 6691 that updated parts of RFC 793.  It updates RFC 1122, and should be considered as a replacement for the portions of that document dealing with TCP requirements.  It also updates RFC 5961 by adding a small clarification in reset handling while in the SYN-RECEIVED state.  The TCP header control bits from RFC 793 have also been updated based on RFC 3168.</t>
 
@@ -364,11 +365,11 @@ of the TCP specification.</t>
 <t>
   This document describes the TCP protocol.  The TCP protocol uses TCP Headers.
 </t>
-<t>A TCP Header is formatted as follows:</t>
+<t>A TCP Header is formatted as follows, using the style from <xref target="I-D.mcquistin-augmented-ascii-diagrams"/>:</t>
 <figure anchor="header_format" title="TCP Header Format">
- <artwork>
-    0                   1                   2                   3
-    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ <artwork>                              
+    0                   1                   2                   3   
+    0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |          Source Port          |       Destination Port        |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -382,7 +383,7 @@ of the TCP specification.</t>
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |           Checksum            |         Urgent Pointer        |
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-   |                           [Options]                           |
+   |                           [Options]                           | 
    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
    |                                                               :
    :                             Data                              :
@@ -474,7 +475,7 @@ where:
     <vspace />
     No more data from sender.
   </t>
-  <t hangText="Window: 16 bits.">
+  <t hangText="Window: 16 bits."> 
     <vspace />
     <vspace />
     The number of data octets beginning with the one indicated in the
@@ -547,7 +548,7 @@ where:
     This field communicates the current value of the urgent pointer as a
     positive offset from the sequence number in this segment.  The
     urgent pointer points to the sequence number of the octet following the urgent data.  This field is only be interpreted in segments with
-    the URG control bit set.
+    the URG control bit set.  
 
   </t>
   <t hangText="Options: [TCP Option]; Options#Size == (DOffset-5)*32; present only when DOffset > 5.">
@@ -713,7 +714,7 @@ This section includes an overview of key terms needed to understand the detailed
   connection requires the remembering of several variables.  We conceive
   of these variables being stored in a connection record called a
   Transmission Control Block or TCB.  Among the variables stored in the
-  TCB are the local and remote IP addresses and port numbers, the IP security level and compartment
+  TCB are the local and remote IP addresses and port numbers, the IP security level and compartment 
   of the connection (see <xref target="seccomp"/>), pointers to the user's send and receive
   buffers, pointers to the retransmit queue and to the current segment.
   In addition several variables relating to the send and receive
@@ -744,16 +745,16 @@ This section includes an overview of key terms needed to understand the detailed
 </t>
 <figure anchor="send_seq_space" title="Send Sequence Space">
 <artwork>
-                   1         2          3          4
-              ----------|----------|----------|----------
-                     SND.UNA    SND.NXT    SND.UNA
-                                          +SND.WND
+                   1         2          3          4      
+              ----------|----------|----------|---------- 
+                     SND.UNA    SND.NXT    SND.UNA        
+                                          +SND.WND        
 
-        1 - old sequence numbers that have been acknowledged
-        2 - sequence numbers of unacknowledged data
-        3 - sequence numbers allowed for new data transmission
-        4 - future sequence numbers that are not yet allowed
- </artwork>
+        1 - old sequence numbers that have been acknowledged  
+        2 - sequence numbers of unacknowledged data            
+        3 - sequence numbers allowed for new data transmission 
+        4 - future sequence numbers that are not yet allowed  
+ </artwork>   
 </figure>
 <t>
   The send window is the portion of the sequence space labeled 3 in
@@ -762,16 +763,16 @@ This section includes an overview of key terms needed to understand the detailed
 <figure anchor="recv_seq_space" title="Receive Sequence Space">
 <artwork>
 
-                       1          2          3
-                   ----------|----------|----------
-                          RCV.NXT    RCV.NXT
-                                    +RCV.WND
+                       1          2          3      
+                   ----------|----------|---------- 
+                          RCV.NXT    RCV.NXT        
+                                    +RCV.WND        
 
-        1 - old sequence numbers that have been acknowledged
-        2 - sequence numbers allowed for new reception
-        3 - future sequence numbers that are not yet allowed
+        1 - old sequence numbers that have been acknowledged  
+        2 - sequence numbers allowed for new reception         
+        3 - future sequence numbers that are not yet allowed  
 </artwork>
-</figure>
+</figure> 
 <t>
   The receive window is the portion of the sequence space labeled 2 in
   <xref target="recv_seq_space" />.
@@ -850,7 +851,7 @@ This section includes an overview of key terms needed to understand the detailed
   with the causing events and resulting actions, but addresses neither
   error conditions nor actions that are not connected with state
   changes.  In a later section, more detail is offered with respect to
-  the reaction of the TCP implementation to events.  Some state names are abbreviated or hyphenated differently in the diagram from how they appear elsewhere in the document.
+  the reaction of the TCP implementation to events.  Some state names are abbreviated or hyphenated differently in the diagram from how they appear elsewhere in the document. 
 </t>
 <t>
   NOTA BENE:  This diagram is only a summary and must not be taken as
@@ -858,19 +859,19 @@ This section includes an overview of key terms needed to understand the detailed
 </t>
 <figure anchor="conn_states" title="TCP Connection State Diagram">
 <artwork>
-                            +---------+ ---------\      active OPEN
-                            |  CLOSED |            \    -----------
-                            +---------+&lt;---------\   \   create TCB
-                              |     ^              \   \  snd SYN
-                 passive OPEN |     |   CLOSE        \   \
-                 ------------ |     | ----------       \   \
-                  create TCB  |     | delete TCB         \   \
-                              V     |                      \   \
-          rcv RST (note 1)  +---------+            CLOSE    |    \
-       -------------------->|  LISTEN |          ---------- |     |
-      /                     +---------+          delete TCB |     |
-     /           rcv SYN      |     |     SEND              |     |
-    /           -----------   |     |    -------            |     V
+                            +---------+ ---------\      active OPEN  
+                            |  CLOSED |            \    -----------  
+                            +---------+&lt;---------\   \   create TCB  
+                              |     ^              \   \  snd SYN    
+                 passive OPEN |     |   CLOSE        \   \           
+                 ------------ |     | ----------       \   \         
+                  create TCB  |     | delete TCB         \   \       
+                              V     |                      \   \     
+          rcv RST (note 1)  +---------+            CLOSE    |    \   
+       -------------------->|  LISTEN |          ---------- |     |  
+      /                     +---------+          delete TCB |     |  
+     /           rcv SYN      |     |     SEND              |     |  
+    /           -----------   |     |    -------            |     V  
 +--------+      snd SYN,ACK  /       \   snd SYN          +--------+
 |        |&lt;-----------------           ------------------>|        |
 |  SYN   |                    rcv SYN                     |  SYN   |
@@ -878,27 +879,27 @@ This section includes an overview of key terms needed to understand the detailed
 |        |                  snd SYN,ACK                   |        |
 |        |------------------           -------------------|        |
 +--------+   rcv ACK of SYN  \       /  rcv SYN,ACK       +--------+
-   |         --------------   |     |   -----------
-   |                x         |     |     snd ACK
-   |                          V     V
-   |  CLOSE                 +---------+
-   | -------                |  ESTAB  |
-   | snd FIN                +---------+
-   |                 CLOSE    |     |    rcv FIN
-   V                -------   |     |    -------
+   |         --------------   |     |   -----------                  
+   |                x         |     |     snd ACK                    
+   |                          V     V                                
+   |  CLOSE                 +---------+                              
+   | -------                |  ESTAB  |                              
+   | snd FIN                +---------+                              
+   |                 CLOSE    |     |    rcv FIN                     
+   V                -------   |     |    -------                     
 +---------+         snd FIN  /       \   snd ACK         +---------+
 |  FIN    |&lt;----------------          ------------------>|  CLOSE  |
 | WAIT-1  |------------------                            |   WAIT  |
 +---------+          rcv FIN  \                          +---------+
-  | rcv ACK of FIN   -------   |                          CLOSE  |
-  | --------------   snd ACK   |                         ------- |
-  V        x                   V                         snd FIN V
+  | rcv ACK of FIN   -------   |                          CLOSE  |  
+  | --------------   snd ACK   |                         ------- |  
+  V        x                   V                         snd FIN V  
 +---------+               +---------+                    +---------+
 |FINWAIT-2|               | CLOSING |                    | LAST-ACK|
 +---------+               +---------+                    +---------+
-  |              rcv ACK of FIN |                 rcv ACK of FIN |
-  |  rcv FIN     -------------- |    Timeout=2MSL -------------- |
-  |  -------            x       V    ------------        x       V
+  |              rcv ACK of FIN |                 rcv ACK of FIN |  
+  |  rcv FIN     -------------- |    Timeout=2MSL -------------- |  
+  |  -------            x       V    ------------        x       V  
    \ snd ACK              +---------+delete TCB          +---------+
      -------------------->|TIME-WAIT|------------------->| CLOSED  |
                           +---------+                    +---------+
@@ -1048,7 +1049,7 @@ Note 3: A RST can be sent from any state with a corresponding transition to TIME
   Note that when the receive window is zero no segments should be
   acceptable except ACK segments.  Thus, it is possible for a TCP implementation to
   maintain a zero receive window while transmitting data and receiving
-  ACKs. A TCP receiver MUST
+  ACKs. A TCP receiver MUST 
   process the RST and URG fields of all incoming segments, even when the receive window is zero (MUST-66).
 </t>
 <t>
@@ -1423,7 +1424,7 @@ passive OPEN or an active OPEN (MUST-11).
 4.  SYN-SENT    &lt;-- &lt;SEQ=300>&lt;ACK=91>&lt;CTL=SYN,ACK>  &lt;-- SYN-RECEIVED
 
 5.  SYN-SENT    --> &lt;SEQ=91>&lt;CTL=RST>               --> LISTEN
-
+  
 6.              ... &lt;SEQ=100>&lt;CTL=SYN>               --> SYN-RECEIVED
 
 7.  ESTABLISHED &lt;-- &lt;SEQ=400>&lt;ACK=101>&lt;CTL=SYN,ACK>  &lt;-- SYN-RECEIVED
@@ -1717,7 +1718,7 @@ passive OPEN or an active OPEN (MUST-11).
 5.  TIME-WAIT   --&gt; &lt;SEQ=101&gt;&lt;ACK=301&gt;&lt;CTL=ACK&gt;      --&gt; CLOSED
 
 6.  (2 MSL)
-    CLOSED
+    CLOSED                                                      
 </artwork>
 </figure>
 <figure anchor="simul_close" title="Simultaneous Close Sequence">
@@ -1805,7 +1806,7 @@ and using them to reduce TIME-WAIT provides benefits for busy Internet servers (
 
 <section title="Segmentation">
     <t> The term &quot;segmentation&quot; refers to the activity TCP performs when ingesting a stream of bytes from a sending application and packetizing that stream of bytes into TCP segments.  Individual TCP segments often do not correspond one-for-one to individual send (or socket write) calls from the application.  Applications may perform writes at the granularity of messages in the upper layer protocol, but TCP guarantees no boundary coherence between the TCP segments sent and received versus user application data read or write buffer boundaries.  In some specific protocols, such as Remote Direct Memory Access (RDMA) using Direct Data Placement (DDP) and Marker PDU Aligned Framing (MPA) <xref target="RFC5044"/>, there are performance optimizations possible when the relation between TCP segments and application data units can be controlled, and MPA includes a specific mechanism for detecting and verifying this relationship between TCP segments and application message data structures, but this is specific to applications like RDMA.  In general, multiple goals influence the sizing of TCP segments created by a TCP implementation.</t>
-
+    
     <t>Goals driving the sending of larger segments include:
     <list style="symbols">
       <t>Reducing the number of packets in flight within the network.</t>
@@ -2006,9 +2007,9 @@ segments.
 <section title="TCP Congestion Control">
 <t>RFC 2914 <xref target="RFC2914"/> explains the importance of congestion control for the Internet.</t>
 
-<t>RFC 1122 required implementation of Van Jacobson's congestion control algorithms slow start with congestion avoidance together with exponential back-off for successive RTO values for the same segment.  RFC 2581 provided IETF Standards Track description of slow start and congestion avoidance, along with fast retransmit and fast recovery.  RFC 5681 is the current description of these algorithms and is the current Standards Track specification providing guidelines for TCP congestion control. RFC 6298 describes exponential back-off of RTO values, including keeping the backed-off value until a subsequent segment with new data has been sent and acknowledged.</t>
+<t>RFC 1122 required implementation of Van Jacobson's congestion control algorithms slow start and congestion avoidance together with exponential back-off for successive RTO values for the same segment.  RFC 2581 provided IETF Standards Track description of slow start and congestion avoidance, along with fast retransmit and fast recovery.  RFC 5681 is the current description of these algorithms and is the current Standards Track specification providing guidelines for TCP congestion control. RFC 6298 describes exponential back-off of RTO values, including keeping the backed-off value until a subsequent segment with new data has been sent and acknowledged without retransmission.</t>
 
-<t>A TCP endpoint MUST implement the basic congestion control algorithms slow start, congestion avoidance, and exponential back-off of RTO to avoid creating congestion collapse conditions (MUST-19).  RFC 5681 and RFC 6298 describe the basic algorithms on the IETF Standards Track that are broadly applicable.  Multiple other suitable algorithms exist and have been widely used.  Many TCP implementations support a set of alternative algorithms that can be configured for use on the endpoint.  An endpoint may implement such alternative algorithms provided that the algorithms are conformant with the TCP specifications from the IETF Standards Track as described in RFC 2914, RFC 5033 <xref target="RFC5033"/>, and RFC 8961 <xref target="RFC8961"/>.</t>
+<t>A TCP endpoint MUST implement the basic congestion control algorithms slow start, congestion avoidance, and exponential back-off of RTO to avoid creating congestion collapse conditions (MUST-19).  RFC 5681 and RFC 6298 describe the basic algorithms on the IETF Standards Track that are broadly applicable.  Multiple other suitable algorithms exist and have been widely used.  Many TCP implementations support a set of alternative algorithms that can be configured for use on the endpoint.  An endpoint may implement such alternative algorithms provided that the algorithms are conformant with the TCP specifications from the IETF Standards Track as described in RFC 2914, RFC 5033 <xref target="RFC5033"/>, and RFC 8961 <xref target="RFC8961"/> (MAY-18).</t>
 
 <t>Explicit Congestion Notification (ECN) was defined in RFC 3168 and is an IETF Standards Track enhancement that has many benefits <xref target="RFC8087"/>.</t>
 
@@ -2080,6 +2081,13 @@ segments.
 </t>
 </section>
 <section title="TCP Keep-Alives">
+<t>
+
+            A TCP connection is said to be &quot;idle&quot; if for some long
+            amount of time there have been no incoming segments received and
+            there is no new or unacknowledged data to be sent.
+
+</t>
 <t>
 	    Implementors MAY include "keep-alives" in their TCP implementations
 	    (MAY-5), although this practice is not universally accepted. Some
@@ -2335,7 +2343,7 @@ The Nagle algorithm from <xref target="nagle"/> additionally describes how to co
             algorithm combines with the delayed ACK algorithm
             (<xref target="delACK"/>) to determine when an ACK segment
             containing the current window will really be sent to
-            the receiver.
+            the receiver. 
 </t>
 <t>
             The solution to receiver SWS is to avoid advancing the
@@ -2419,7 +2427,7 @@ The Nagle algorithm from <xref target="nagle"/> additionally describes how to co
 	    that are not full-sized.  Note that there are several current
 	    practices that further lead to a reduced number of ACKs, including
 	    generic receive offload (GRO), ACK compression, and ACK decimation
-	    <xref target="RFC3449"/>.
+	    <xref target="RFC3449"/>. 
 </t>
 </section>
 </section>
@@ -2554,7 +2562,7 @@ The DiffServ field value indicated by the user only impacts outgoing packets, ma
 	The optional &quot;local IP address&quot; parameter MUST be supported
         to allow the specification of the local IP address (MUST-43).  This enables
         applications that need to select the local IP address used when
-        multihoming is present.
+        multihoming is present. 
 </t>
 
 <t>
@@ -2951,7 +2959,7 @@ assumes that passing the PUSH indication is supported.
     for these parameters:
     <list>
 <t>
-      DiffServ field: The IP header value for the DiffServ field is given by the user.  This includes the bits of the DiffServ Code Point (DSCP).
+      DiffServ field: The IP header value for the DiffServ field is given by the user.  This includes the bits of the DiffServ Code Point (DSCP).  
 </t>
 <t>
       Time to Live (TTL): The TTL value used to send TCP segments MUST be configurable (MUST-49).
@@ -3436,7 +3444,7 @@ TIME-WAIT STATE
       <list>
       <t>
       If the user should not have access to such a connection, return
-      "error:  connection illegal for this process".
+      "error:  connection illegal for this process". 
       </t>
       <t>
       Otherwise return "error:  connection does not exist".
@@ -3700,7 +3708,7 @@ TIME-WAIT STATE
           </t></list></t>
         </list></t>
       <t>
-      third check the security
+      third check the security 
         <list>
         <t>
         If the security/compartment in the segment does not exactly
@@ -3730,7 +3738,7 @@ TIME-WAIT STATE
         no ACK, and it the segment did not contain a RST.
         </t>
         <t>
-        If the SYN bit is on and the security/compartment
+        If the SYN bit is on and the security/compartment 
         is acceptable then, RCV.NXT is set to SEG.SEQ+1, IRS is set to
         SEG.SEQ.  SND.UNA should be advanced to equal SEG.ACK (if there
         is an ACK), and any segments on the retransmission queue that
@@ -3745,7 +3753,7 @@ TIME-WAIT STATE
           </t></list></t>
         <t>
         and send it.  Data or controls that were queued for
-        transmission may be included.  If there are other controls or
+        transmission MAY be included.  Some TCP implementations suppress sending this segment when the received segment contains data that will anyways generate an acknowledgement in the later processing steps, saving this extra acknowledgement of the SYN from being sent.  If there are other controls or
         text in the segment then continue processing at the sixth step
         below where the URG bit is checked, otherwise return.
         </t>
@@ -3765,7 +3773,7 @@ TIME-WAIT STATE
 
         If there are other controls or text in the
         segment, queue them for processing after the ESTABLISHED state
-        has been reached, return.
+        has been reached, return.  
         </t>
 	<t>
 	Note that it is legal to send and receive application data on SYN segments (this is the &quot;text in the segment&quot; mentioned above.  There has been significant misinformation and misunderstanding of this topic historically.  Some firewalls and security devices consider this suspicious.  However, the capability was used in T/TCP <xref target="RFC1644"/> and is used in TCP Fast Open (TFO) <xref target="RFC7413"/>, so is important for implementations and network devices to permit.
@@ -4697,6 +4705,10 @@ A note based on RFC 6429 was added to explicitly clarify that system resource ma
         The -20 revision includes text on congestion control based on mailing list and meeting discussion, put together in its final form by Markku Kojo.  It also clarifies that SACK, WS, and TS options are recommended for high performance, but not needed for basic interoperability.  It also clarifies that the length field is required for new TCP options.
 	</t>
 
+	<t>
+The -21 revision includes slight changes to the header diagram for compatibility with tooling, from Stephen McQuistin, clarification on the meaning of idle connections from Yuchung Cheng, Neal Cardwell, Michael Scharf, and Richard Scheffenegger, editorial improvements from Markku Kojo, notes that some stacks suppress extra acknowledgments of the SYN when SYN-ACK carries data from Richard Scheffenegger, and adds MAY-18 numbering based on note from Jonathan Morton.
+	</t>
+
         <t>Some other suggested changes that will not be incorporated in this 793 update unless TCPM consensus changes with regard to scope are:
         <list style="numbers">
             <t>Tony Sabatini's suggestion for describing DO field</t>
@@ -4797,7 +4809,7 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
     </list>
     </t>
     <t>
-    During the discussions of this work on the TCPM mailing list and in working group meetings, helpful comments, critiques, and reviews were received from (listed alphabetically by last name): Praveen Balasubramanian, David Borman, Mohamed Boucadair, Bob Briscoe, Neal Cardwell, Yuchung Cheng, Martin Duke, Ted Faber, Gorry Fairhurst, Fernando Gont, Rodney Grimes, Yi Huang, Rahul Jadhav, Markku Kojo, Mike Kosek, Juhamatti Kuusisaari, Kevin Lahey, Kevin Mason, Matt Mathis, Jonathan Morton, Matt Olson, Tommy Pauly, Tom Petch, Hagen Paul Pfeifer, Anthony Sabatini, Michael Scharf, Greg Skinner, Joe Touch, Michael Tuexen, Reji Varghese, Tim Wicinski, Lloyd Wood, and Alex Zimmermann.
+    During the discussions of this work on the TCPM mailing list and in working group meetings, helpful comments, critiques, and reviews were received from (listed alphabetically by last name): Praveen Balasubramanian, David Borman, Mohamed Boucadair, Bob Briscoe, Neal Cardwell, Yuchung Cheng, Martin Duke, Ted Faber, Gorry Fairhurst, Fernando Gont, Rodney Grimes, Yi Huang, Rahul Jadhav, Markku Kojo, Mike Kosek, Juhamatti Kuusisaari, Kevin Lahey, Kevin Mason, Matt Mathis, Stephen McQuistin, Jonathan Morton, Matt Olson, Tommy Pauly, Tom Petch, Hagen Paul Pfeifer, Anthony Sabatini, Michael Scharf, Greg Skinner, Joe Touch, Michael Tuexen, Reji Varghese, Tim Wicinski, Lloyd Wood, and Alex Zimmermann.
     </t>
     <t>
     Joe Touch provided additional help in clarifying the description of segment size parameters and PMTUD/PLPMTUD recommendations.  Markku Kojo helped put together the text in the section on TCP Congestion Control.
@@ -4812,13 +4824,13 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
 <back>
     <!-- References split to informative and normative -->
     <references title="Normative References">
-         <!-- A *really* full, totally OTT reference - Note, the "target" attribute of the
+         <!-- A *really* full, totally OTT reference - Note, the "target" attribute of the 
 	     "reference": if you want a URI printed in the reference, this is where it goes. -->
         <!--
         <reference anchor='RFC2119'
                    target='http://xml.resource.org/public/rfc/html/rfc2119.html'>
             <front>
-                <title abbrev='RFC Key Words'>Key words for use in RFCs to Indicate Requirement
+                <title abbrev='RFC Key Words'>Key words for use in RFCs to Indicate Requirement 
                 Levels</title>
                 <author initials='S.' surname='Bradner' fullname='Scott Bradner'>
                     <organization>Harvard University</organization>
@@ -4844,32 +4856,32 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
 
                         <list>
                             <t>
-                            The key words &quot;MUST&quot;, &quot;MUST NOT&quot;,
+                            The key words &quot;MUST&quot;, &quot;MUST NOT&quot;, 
                             &quot;REQUIRED&quot;, &quot;SHALL&quot;, &quot;SHALL NOT&quot;,
                             &quot;SHOULD&quot;, &quot;SHOULD NOT&quot;, &quot;RECOMMENDED&quot;,
-                            &quot;MAY&quot;, and &quot;OPTIONAL&quot; in this document are to be
+                            &quot;MAY&quot;, and &quot;OPTIONAL&quot; in this document are to be 
                             interpreted as described in RFC 2119.</t>
                         </list>
                     </t>
-                    <t>
-                    Note that the force of these words is modified by the requirement level of
+                    <t> 
+                    Note that the force of these words is modified by the requirement level of 
                     the document in which they are used.</t>
-                </abstract>
+                </abstract> 
             </front>
 
             <seriesInfo name='BCP' value='14' />
             <seriesInfo name='RFC' value='2119' />
             <format type='TXT' octets='4723' target='ftp://ftp.isi.edu/in-notes/rfc2119.txt' />
-            <format type='HTML' octets='14486'
+            <format type='HTML' octets='14486' 
                     target='http://xml.resource.org/public/rfc/html/rfc2119.html' />
-            <format type='XML' octets='5661'
+            <format type='XML' octets='5661' 
                     target='http://xml.resource.org/public/rfc/xml/rfc2119.xml' />
         </reference>
     -->
 
         <!-- Right back at the beginning we defined an entity which (we asserted) would contain
              XML needed for a reference... this is where we use it. -->
-        <!-- &RFC0791;
+        &RFC0791;
         &RFC1191;
         &RFC1981;
         &RFC2119;
@@ -4883,7 +4895,7 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
         &RFC6633;
         &RFC8174;
         &RFC8200;
-	&RFC8961; -->
+	&RFC8961;
     </references>
 
     <references title="Informative References">
@@ -4900,16 +4912,16 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
             </front>
         </reference>
         -->
-        <!-- &RFC0793;
+        &RFC0793;
         &RFC0896;
         &RFC1122;
         &RFC1349;
-        &RFC1644; -->
+        &RFC1644;
         <!--&RFC1191;-->
         <!--&RFC1981;-->
         <!--&RFC2675;-->
         <!--&RFC2923;-->
-        <!-- &RFC2018;
+        &RFC2018;
         &RFC2525;
         &RFC2873;
         &RFC2883;
@@ -4943,7 +4955,7 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
         &RFC8095;
         &RFC8303;
         &RFC8504;
-        &RFC8684; -->
+        &RFC8684;
 
         <reference anchor="TCP-parameters-registry">
          <front>
@@ -4967,10 +4979,11 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
          </front>
         </reference>
 
-	<!-- &I-D.gont-tcpm-tcp-seccomp-prec;
+	&I-D.gont-tcpm-tcp-seccomp-prec;
 	&I-D.gont-tcpm-tcp-seq-validation;
 	&I-D.ietf-tcpinc-tcpcrypt;
-	&I-D.ietf-tcpm-tcp-edo; -->
+	&I-D.ietf-tcpm-tcp-edo;
+	&I-D.mcquistin-augmented-ascii-diagrams;
 
         <reference anchor="draft-minshall-nagle">
 	 <front>
@@ -5164,7 +5177,7 @@ Urgent Data                                      |        | | | | | |
   Arbitrary length urgent data sequence          | MUST-31|x| | | | |
   Inform ALP asynchronously of urgent data       | MUST-32|x| | | | |1
   ALP can learn if/how much urgent data Q'd      | MUST-33|x| | | | |1
-  ALP employ the urgent mechanism                | SHLD-13| | | |x| |
+  ALP employ the urgent mechanism                | SHLD-13| | | |x| | 
                                                  |        | | | | | |
 TCP Options                                      |        | | | | | |
   Support the mandatory option set               | MUST-4 |x| | | | |
@@ -5293,6 +5306,9 @@ RFC 5961 Support:                                |        | | | | | |
                                                  |        | | | | | |
 Explicit Congestion Notification:                |        | | | | | |
   Support ECN                                    | SHLD-8 | |x| | | |
+                                                 |        | | | | | |
+Alternative Congestion Control:                  |        | | | | | |
+  Implement alternative conformant algorithm(s)  | MAY-18 | | |x| | |
 -------------------------------------------------|--------|-|-|-|-|-|-
 
 </artwork></figure>
