@@ -37,7 +37,7 @@ test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 
 
 unit-tests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
-	@echo "Running unit tests:"
+	@echo "*** Running unit tests:"
 	@python3 -m unittest discover -s tests/ -v
 	@echo ""
 
@@ -61,10 +61,10 @@ tests/793bis-testing/pcaps/%.pcap: tests/793bis-testing/generate-pcap-%.py | tes
 	python $<
 
 examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
-	python3 -m npt $< -of rust
+	python3 -m npt -f rust -d $(dir $@) $<
 
 examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust:
-	python3 -m npt draft-ietf-tcpm-rfc793bis-25 -d examples -of rust
+	python3 -m npt -f rust -d $(dir $@) draft-ietf-tcpm-rfc793bis-25 
 	
 integration-tests: tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
                    tests/udp-testing/pcaps/udp-valid-1.pcap \
