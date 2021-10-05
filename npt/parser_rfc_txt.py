@@ -37,7 +37,7 @@ import npt.parser_rfc_postprocess as domProcess
 
 from typing import Dict, List
 
-def depaginate(lines):
+def depaginate(lines : List[str]) -> List[str]:
     depaginated_lines = []
     for i in range(len(lines)):
         line_no = i - (56 * int(i/56))
@@ -99,7 +99,7 @@ def generate_parser(grammarFilename):
                                      "infer_toc"             : infer_toc,
                                    })
 
-def parse_rfc(rfcTxt):
+def parse_rfc(rfcTxt: List[str]):
     rfcTxt = depaginate(rfcTxt)
     rfcTxt = trim_blank_lines(rfcTxt)
     parser = generate_parser("npt/grammar_rfc.txt")
