@@ -30,9 +30,9 @@
 
 from abc         import ABC, abstractmethod
 from dataclasses import dataclass
-from copy        import copy, deepcopy
 from typing      import Dict, List, Any, Optional, cast, Union
 
+import copy
 import unittest
 import re
 
@@ -364,9 +364,9 @@ class ConstructableType(ProtocolType):
             name            - the name of the new type
             also_implements - additional traits that the new type implements
         """
-        new_type = copy(self)
+        new_type = copy.copy(self)
         new_type.name = name
-        new_type.methods = copy(self.methods)
+        new_type.methods = copy.copy(self.methods)
         for trait in also_implements:
             new_type.implement_trait(trait)
         return new_type
