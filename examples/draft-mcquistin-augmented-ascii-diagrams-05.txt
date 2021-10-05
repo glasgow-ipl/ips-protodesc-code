@@ -5,9 +5,9 @@
 Network Working Group                                       S. McQuistin
 Internet-Draft                                                   V. Band
 Intended status: Experimental                                   D. Jacob
-Expires: 18 December 2020                                  C. S. Perkins
+Expires: 19 December 2020                                  C. S. Perkins
                                                    University of Glasgow
-                                                            16 June 2020
+                                                            17 June 2020
 
 
   Describing Protocol Data Units with Augmented Packet Header Diagrams
@@ -38,7 +38,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 18 December 2020.
+   This Internet-Draft will expire on 19 December 2020.
 
 Copyright Notice
 
@@ -53,7 +53,7 @@ Copyright Notice
 
 
 
-McQuistin, et al.       Expires 18 December 2020                [Page 1]
+McQuistin, et al.       Expires 19 December 2020                [Page 1]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -69,11 +69,11 @@ Table of Contents
      2.1.  Limitations of Current Packet Format Diagrams . . . . . .   4
      2.2.  Formal languages in standards documents . . . . . . . . .   7
    3.  Design Principles . . . . . . . . . . . . . . . . . . . . . .   7
-   4.  Augmented Packet Header Diagrams  . . . . . . . . . . . . . .   9
+   4.  Augmented Packet Header Diagrams  . . . . . . . . . . . . . .  10
      4.1.  PDUs with Fixed and Variable-Width Fields . . . . . . . .  10
-     4.2.  PDUs That Cross-Reference Previously Defined Fields . . .  12
+     4.2.  PDUs That Cross-Reference Previously Defined Fields . . .  13
      4.3.  PDUs with Non-Contiguous Fields . . . . . . . . . . . . .  15
-     4.4.  PDUs with Constraints on Field Values . . . . . . . . . .  15
+     4.4.  PDUs with Constraints on Field Values . . . . . . . . . .  16
      4.5.  PDUs That Extend Sub-Structures . . . . . . . . . . . . .  17
      4.6.  Storing Data for Parsing  . . . . . . . . . . . . . . . .  18
      4.7.  Connecting Structures with Functions  . . . . . . . . . .  19
@@ -109,7 +109,7 @@ Table of Contents
 
 
 
-McQuistin, et al.       Expires 18 December 2020                [Page 2]
+McQuistin, et al.       Expires 19 December 2020                [Page 2]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -160,16 +160,18 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    line; this prevents them from being parsed by the accompanying
    tooling.
 
-   This draft describes early work.  As consensus builds around the
-   particular syntax of the format described, both a formal ABNF
 
 
 
-McQuistin, et al.       Expires 18 December 2020                [Page 3]
+
+
+McQuistin, et al.       Expires 19 December 2020                [Page 3]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
+   This draft describes early work.  As consensus builds around the
+   particular syntax of the format described, both a formal ABNF
    specification (Appendix A) and code (Appendix B) that parses it (and,
    as described above, this document) will be provided.
 
@@ -214,18 +216,20 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
      Figure 2: QUIC's RESET_STREAM frame format (from [QUIC-TRANSPORT])
 
-   Packet header diagrams are frequently used in IETF standards to
-   describe the format of binary protocols.  While there is no standard
-   for how these diagrams should be formatted, they have a broadly
-   similar structure, where the layout of a protocol data unit (PDU) or
 
 
 
-McQuistin, et al.       Expires 18 December 2020                [Page 4]
+
+
+McQuistin, et al.       Expires 19 December 2020                [Page 4]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
+   Packet header diagrams are frequently used in IETF standards to
+   describe the format of binary protocols.  While there is no standard
+   for how these diagrams should be formatted, they have a broadly
+   similar structure, where the layout of a protocol data unit (PDU) or
    structure is shown in diagrammatic form, followed by a description
    list of the fields that it contains.  An example of this format,
    taken from the QUIC specification, is given in Figure 2.
@@ -263,6 +267,21 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       structured consistently.
 
    Ambiguous constraints:  The constraints that are enforced on a
+
+
+
+
+
+
+
+
+
+
+McQuistin, et al.       Expires 19 December 2020                [Page 5]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
       particular field are often described ambiguously, or in a way that
       cannot be parsed easily.  In Figure 3, each of the three fields in
       the structure is constrained.  The first two fields ("Option-Code"
@@ -274,14 +293,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
    Poor linking between sub-structures:  Protocol data units and other
       structures are often comprised of sub-structures that are defined
-
-
-
-McQuistin, et al.       Expires 18 December 2020                [Page 5]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
-
       elsewhere, either in the same document, or within another
       document.  Chaining these structures together is essential for
       machine parsing: the parsing process for a protocol data unit is
@@ -303,6 +314,29 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       result, it is essential that syntax be provided to allow for a
       complete definition of a protocol's parsing process to be
       constructed across multiple documents.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+McQuistin, et al.       Expires 19 December 2020                [Page 6]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
 
    :   The format of the "Relay Source Port Option" is shown below:
    :
@@ -326,17 +360,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    :      agent uses the non-DHCP UDP port (not 547).
 
         Figure 3: DHCPv6's Relay Source Port Option (from [RFC8357])
-
-
-
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020                [Page 6]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
 2.2.  Formal languages in standards documents
 
@@ -364,6 +387,13 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    apply more generally to any approach that introduces structured and
    formal languages into standards documents.
 
+
+
+McQuistin, et al.       Expires 19 December 2020                [Page 7]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
    It should be noted that these are design principles: they expose the
    trade-offs that are inherent within any given approach.  Violating
    these principles is sometimes necessary and beneficial, and this
@@ -385,15 +415,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
       Any approach that shifts this balance -- that is, that primarily
       targets machine readers -- is likely to be disruptive to the
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020                [Page 7]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
-
       standardisation process, which relies upon discussion centered
       around documents written in prose.
 
@@ -419,6 +440,16 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       parallel to the existing human readable text, is undesirable
       because it creates the potential for inconsistency.
 
+
+
+
+
+
+McQuistin, et al.       Expires 19 December 2020                [Page 8]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
       As an example, program code that describes how a protocol data
       unit can be parsed might be provided as an appendix within a
       standards document.  This code would provide a specification of
@@ -442,14 +473,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
       It may be desirable to restrict expressiveness, however, to
       guarantee intrinsic safety, security, and computability properties
-
-
-
-McQuistin, et al.       Expires 18 December 2020                [Page 8]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
-
       of both the generated parser code for the protocol, and the parser
       of the description language itself.  In much the same way as the
       language-theoretic security ([LANGSEC]) community advocates for
@@ -476,6 +499,13 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       there are very few components of standards documents that are non-
       optional.
 
+
+
+McQuistin, et al.       Expires 19 December 2020                [Page 9]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
 4.  Augmented Packet Header Diagrams
 
    The design principles described in Section 3 can largely be met by
@@ -495,16 +525,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    examples will be parsable using provided tools, and a formal
    specification of the augmented packet diagrams will be given in
    Appendix A.
-
-
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020                [Page 9]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
 4.1.  PDUs with Fixed and Variable-Width Fields
 
@@ -534,6 +554,14 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    documents that are linked together (i.e., using the structured
    language defined in Section 4.10).
 
+
+
+
+McQuistin, et al.       Expires 19 December 2020               [Page 10]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
    Each field of the description starts with a <dt> tag comprising the
    field name and an optional short name in parenthesis.  These are
    followed by a colon, the field length, an optional presence
@@ -544,23 +572,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
    For example, this can be illustrated using the IPv4 Header Format
    [RFC791].  An IPv4 Header is formatted as follows:
-
-
-
-
-
-
-
-
-
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 10]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
         0                   1                   2                   3
         0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -600,6 +611,13 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    Explicit Congestion Notification (ECN): 2 bits.  This is a fixed-
       width field, as previously discussed.
 
+
+
+McQuistin, et al.       Expires 19 December 2020               [Page 11]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
    Total Length (TL): 2 bytes.  This is a fixed-width field, as
       previously discussed.  Where fields are an integral number of
       bytes in size, the field length can be given in bytes rather than
@@ -609,14 +627,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       discussed.
 
    Flags: 3 bits.  This is a fixed-width field, as previously discussed.
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 11]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
    Fragment Offset: 13 bits.  This is a fixed-width field, as previously
       discussed.
@@ -653,6 +663,17 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       However, semantically, there is no difference: these different
       notations are for the benefit of human readers.
 
+
+
+
+
+
+
+McQuistin, et al.       Expires 19 December 2020               [Page 12]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
 4.2.  PDUs That Cross-Reference Previously Defined Fields
 
    Binary formats often reference sub-structures that have been defined
@@ -666,13 +687,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
        |                               SSRC                            |
        +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 12]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
    where:
 
@@ -708,6 +722,14 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    where:
 
    Version (V): 2 bits.  This is a fixed-width field, as described
+
+
+
+McQuistin, et al.       Expires 19 December 2020               [Page 13]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
       previously.
 
    Padding (P): 1 bit.  This is a fixed-width field, as described
@@ -721,14 +743,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
    Marker (M): 1 bit.  This is a fixed-width field, as described
       previously.
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 13]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
    Payload Type (PT): 7 bits.  This is a fixed-width field, as described
       previously.
@@ -764,6 +778,14 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       whose presence is predicated on an expression given using the
       constraint expression grammar described earlier.  Optional fields
       can be of any previously defined format (e.g., fixed- or variable-
+
+
+
+McQuistin, et al.       Expires 19 December 2020               [Page 14]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
       width).  Optional fields are indicated by the presence of ";
       present only when [expr]." at the end of the definition term
       (i.e., the text contained within the <dt> tag).
@@ -777,14 +799,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       to be inferred from the total length of the packet and the lengths
       of the known fields.  There can only be one field of unspecified
       size in a PDU.
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 14]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
    Padding: PC bytes; present only when (P == 1) && (PC > 0).  This is a
       variable size field, with size dependent on a later field in the
@@ -816,6 +830,18 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    where:
 
    Method (M): 12 bits.  This field is comprised of multiple sub-fields
+
+
+
+
+
+
+
+McQuistin, et al.       Expires 19 December 2020               [Page 15]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
       (M0 through MB) as shown in the diagram.  That these sub-fields
       should be concatenated, after parsing, into a single field is
       indicated by their being labelled using the 'M' short field name
@@ -833,14 +859,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
    More generally, our format enables a boolean expression to be
    attached to a field, which must be true for the PDU to be parsed
    successfully.
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 15]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
 
    This format is illustrated using the QUIC Long Header Packet format
    [QUIC-TRANSPORT].  A Long Header is formatted as follows:
@@ -873,6 +891,13 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
       constraint, if applicable.  The order of the field must be the
       same in both the diagram and description list.
 
+
+
+McQuistin, et al.       Expires 19 December 2020               [Page 16]
+
+Internet-Draft          Augmented Packet Diagrams              June 2020
+
+
    Fixed Bit (FB): 1 bit; FB == 1.  This is a fixed-width field, with a
       value constraint, as previously described.
 
@@ -890,14 +915,6 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
    DCID Len (DLen): 1 byte; DLen <= 20.  This is a fixed-width field,
       with a value constraint, as previously described.  Note that the
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 16]
-
-Internet-Draft          Augmented Packet Diagrams              June 2020
-
-
       constraint language is not limited to equality; it is defined
       fully in Appendix A.1.
 
@@ -932,24 +949,7 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-McQuistin, et al.       Expires 18 December 2020               [Page 17]
+McQuistin, et al.       Expires 19 December 2020               [Page 17]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1005,7 +1005,7 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 18]
+McQuistin, et al.       Expires 19 December 2020               [Page 18]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1061,7 +1061,7 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 19]
+McQuistin, et al.       Expires 19 December 2020               [Page 19]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1117,7 +1117,7 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 20]
+McQuistin, et al.       Expires 19 December 2020               [Page 20]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1173,7 +1173,7 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 21]
+McQuistin, et al.       Expires 19 December 2020               [Page 21]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1229,7 +1229,7 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 22]
+McQuistin, et al.       Expires 19 December 2020               [Page 22]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1280,16 +1280,17 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
               Version 1.3", RFC 8446, August 2018,
               <https://www.rfc-editor.org/info/rfc8446>.
 
-   [RFC5234]  Crocker, D. and P. Overell, "Augmented BNF for Syntax
 
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 23]
+
+McQuistin, et al.       Expires 19 December 2020               [Page 23]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
+   [RFC5234]  Crocker, D. and P. Overell, "Augmented BNF for Syntax
               Specifications: ABNF", RFC 5234, January 2008,
               <https://www.rfc-editor.org/info/rfc5234>.
 
@@ -1340,8 +1341,7 @@ A.1.  Constraint Expressions
 
 
 
-
-McQuistin, et al.       Expires 18 December 2020               [Page 24]
+McQuistin, et al.       Expires 19 December 2020               [Page 24]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1397,7 +1397,7 @@ Authors' Addresses
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 25]
+McQuistin, et al.       Expires 19 December 2020               [Page 25]
 
 Internet-Draft          Augmented Packet Diagrams              June 2020
 
@@ -1453,4 +1453,4 @@ Internet-Draft          Augmented Packet Diagrams              June 2020
 
 
 
-McQuistin, et al.       Expires 18 December 2020               [Page 26]
+McQuistin, et al.       Expires 19 December 2020               [Page 26]
