@@ -189,8 +189,7 @@ def main():
     formatter.format_protocol(protocol)
 
     output_dir = Path(args.outdir)
-    if not output_dir.exists():
-        output_dir.mkdir()
+    output_dir.mkdir(parents=True, exist_ok=True)
 
     for output_file, output_string in formatter.generate_output(args.document).items():
         output_filepath = output_dir / Path(output_file)
