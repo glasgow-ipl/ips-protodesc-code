@@ -15,7 +15,6 @@
 <!ENTITY RFC1191 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.1191.xml">
 <!ENTITY RFC1349 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.1349.xml">
 <!ENTITY RFC1644 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.1644.xml">
-<!ENTITY RFC1981 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.1981.xml">
 <!ENTITY RFC2018 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2018.xml">
 <!ENTITY RFC2119 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2119.xml">
 <!ENTITY RFC2474 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.2474.xml">
@@ -58,10 +57,16 @@
 <!ENTITY RFC8095 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8095.xml">
 <!ENTITY RFC8174 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8174.xml">
 <!ENTITY RFC8200 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8200.xml">
+<!ENTITY RFC8201 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8201.xml">
 <!ENTITY RFC8303 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8303.xml">
 <!ENTITY RFC8504 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8504.xml">
+<!ENTITY RFC8546 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8546.xml">
+<!ENTITY RFC8548 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8548.xml">
+<!ENTITY RFC8558 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8558.xml">
 <!ENTITY RFC8684 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8684.xml">
 <!ENTITY RFC8961 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.8961.xml">
+<!ENTITY RFC9000 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.9000.xml">
+<!ENTITY RFC9065 SYSTEM "http://xml.resource.org/public/rfc/bibxml/reference.RFC.9065.xml">
 
 <!-- There is also a library of current Internet Draft citations.  It isn't a good idea to
      actually use one for the template because it might have disappeared when you come to test 
@@ -77,10 +82,10 @@
      -->
 
 <!ENTITY I-D.gont-tcpm-tcp-seccomp-prec SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-gont-tcpm-tcp-seccomp-prec-00.xml">
-<!ENTITY I-D.gont-tcpm-tcp-seq-validation SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-gont-tcpm-tcp-seq-validation-02.xml">
-<!ENTITY I-D.ietf-tcpinc-tcpcrypt SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-tcpinc-tcpcrypt-09.xml">
+<!ENTITY I-D.gont-tcpm-tcp-seq-validation SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-gont-tcpm-tcp-seq-validation-04.xml">
 <!ENTITY I-D.ietf-tcpm-tcp-edo SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-ietf-tcpm-tcp-edo-10.xml">
-<!ENTITY I-D.mcquistin-augmented-ascii-diagrams SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-mcquistin-augmented-ascii-diagrams-07.xml">
+<!ENTITY I-D.mcquistin-augmented-ascii-diagrams SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-mcquistin-augmented-ascii-diagrams-08.xml">
+<!ENTITY I-D.iab-use-it-or-lose-it SYSTEM "https://xml2rfc.tools.ietf.org/public/rfc/bibxml3/reference.I-D.draft-iab-use-it-or-lose-it-02.xml">
 
 <!-- Fudge for XMLmind which doesn't have this built in -->
 <!ENTITY nbsp    "&#160;">
@@ -109,7 +114,7 @@
     obsoletes="793, 879, 2873, 6093, 6429, 6528, 6691"
     updates="5961, 1122"
     ipr="pre5378Trust200902"
-    docName="draft-ietf-tcpm-rfc793bis-21" >
+    docName="draft-ietf-tcpm-rfc793bis-25" >
     <!-- Processing Instructions- PIs (for a complete list and description,
           see file http://xml.resource.org/authoring/README.html and below... -->
 
@@ -425,7 +430,7 @@ where:
     <vspace />
     The number of 32 bit words in the TCP Header.  This indicates where
     the data begins.  The TCP header (even one including options) is an
-    integral number of 32 bits long.
+    integer multiple of 32 bits long.
   </t>
   <t hangText="Reserved (Rsrvd): 4 bits.">
     <vspace />
@@ -448,12 +453,12 @@ where:
   <t hangText="URG: 1 bit.">
     <vspace />
     <vspace />
-    Urgent Pointer field significant.
+    Urgent Pointer field is significant.
   </t>
   <t hangText="ACK: 1 bit.">
     <vspace />
     <vspace />
-    Acknowledgment field significant.
+    Acknowledgment field is significant.
   </t>
   <t hangText="PSH: 1 bit.">
     <vspace />
@@ -480,7 +485,8 @@ where:
     <vspace />
     The number of data octets beginning with the one indicated in the
     acknowledgment field that the sender of this segment is willing to
-    accept.
+    accept.  The value is shifted when the Window Scaling extension is used
+    <xref target="RFC7323"/>.
     <vspace />
     <vspace />
     The window size MUST be treated as an unsigned number, or else
@@ -517,7 +523,7 @@ where:
                 +--------+--------+--------+--------+
    </artwork></figure>
    <list style="hanging" hangIndent="2">
-   <t hangText="Pseudo header components:">
+   <t hangText="Pseudo header components for IPv4:">
      <vspace />
      <vspace />
     <list>
@@ -1232,7 +1238,7 @@ than the MSL.
     to use up 2**32 octets of sequence space.  Since the maximum segment
     lifetime in the net is not likely to exceed a few tens of seconds,
     this is deemed ample protection for foreseeable nets, even if data
-    rates escalate to l0's of megabits/sec.  At 100 megabits/sec, the
+    rates escalate to 10's of megabits/sec.  At 100 megabits/sec, the
     cycle time is 5.4 minutes, which may be a little short, but still
     within reason.
 </t>
@@ -1861,10 +1867,10 @@ and using them to reduce TIME-WAIT provides benefits for busy Internet servers (
         that TCP may send.
         </t>
         <t>
-        TCPhdrsize is the size of the fixed TCP header and any options.  This is 20 in the (rare) case that no options are present, but may be larger if TCP options are to be sent.  Note that some options may not be included on all segments, but that for each segment sent, the sender should adjust the data length accordingly, within the Eff.snd.MSS.
+        TCPhdrsize is the size of the fixed TCP header and any options.  This is 20 in the (rare) case that no options are present, but may be larger if TCP options are to be sent.  Note that some options might not be included on all segments, but that for each segment sent, the sender should adjust the data length accordingly, within the Eff.snd.MSS.
         </t>
         <t>
-        IPoptionsize is the size of any IP options associated with a TCP connection.  Note that some options may not be included on all packets, but that for each segment sent, the sender should adjust the data length accordingly, within the Eff.snd.MSS.
+        IPoptionsize is the size of any IPv4 options or IPv6 extension headers associated with a TCP connection.  Note that some options or extension headers might not be included on all packets, but that for each segment sent, the sender should adjust the data length accordingly, within the Eff.snd.MSS.
         </t>
     </list>
     </t>
@@ -1896,15 +1902,15 @@ and using them to reduce TIME-WAIT provides benefits for busy Internet servers (
    </section>
    <section title="Path MTU Discovery" anchor="pmtud">
 
-   <t>A TCP implementation may be aware of the MTU on directly connected links, but will rarely have insight about MTUs across an entire network path.  For IPv4, RFC 1122 recommends an IP-layer default effective MTU of less than or equal to 576 for destinations not directly connected.  For IPv6, this would be 1280.  In all cases, however, implementation of Path MTU Discovery (PMTUD) and Packetization Layer Path MTU Discovery (PLPMTUD) is strongly recommended in order for TCP to improve segmentation decisions.  Both PMTUD and PLPMTUD help TCP choose segment sizes that avoid both on-path (for IPv4) and source fragmentation (IPv4 and IPv6).</t>
+   <t>A TCP implementation may be aware of the MTU on directly connected links, but will rarely have insight about MTUs across an entire network path.  For IPv4, RFC 1122 recommends an IP-layer default effective MTU of less than or equal to 576 for destinations not directly connected, and for IPv6 this would be 1280.  Using these fixed values limits TCP connection performance and efficiency.  Instead, implementation of Path MTU Discovery (PMTUD) and Packetization Layer Path MTU Discovery (PLPMTUD) is strongly recommended in order for TCP to improve segmentation decisions.  Both PMTUD and PLPMTUD help TCP choose segment sizes that avoid both on-path (for IPv4) and source fragmentation (IPv4 and IPv6).</t>
 
-   <t>PMTUD for IPv4 <xref target="RFC1191"/> or IPv6 <xref target="RFC1981"/> is implemented in conjunction between TCP, IP, and ICMP protocols.  It relies both on avoiding source fragmentation and setting the IPv4 DF (don't fragment) flag, the latter to inhibit on-path fragmentation.  It relies on ICMP errors from routers along the path, whenever a segment is too large to traverse a link.  Several adjustments to a TCP implementation with PMTUD are described in RFC 2923 in order to deal with problems experienced in practice <xref target="RFC2923"/>.  PLPMTUD <xref target="RFC4821"/> is a Standards Track improvement to PMTUD that relaxes the requirement for ICMP support across a path, and improves performance in cases where ICMP is not consistently conveyed, but still tries to avoid source fragmentation.  The mechanisms in all four of these RFCs are recommended to be included in TCP implementations.</t>
+   <t>PMTUD for IPv4 <xref target="RFC1191"/> or IPv6 <xref target="RFC8201"/> is implemented in conjunction between TCP, IP, and ICMP protocols.  It relies both on avoiding source fragmentation and setting the IPv4 DF (don't fragment) flag, the latter to inhibit on-path fragmentation.  It relies on ICMP errors from routers along the path, whenever a segment is too large to traverse a link.  Several adjustments to a TCP implementation with PMTUD are described in RFC 2923 in order to deal with problems experienced in practice <xref target="RFC2923"/>.  PLPMTUD <xref target="RFC4821"/> is a Standards Track improvement to PMTUD that relaxes the requirement for ICMP support across a path, and improves performance in cases where ICMP is not consistently conveyed, but still tries to avoid source fragmentation.  The mechanisms in all four of these RFCs are recommended to be included in TCP implementations.</t>
 
    <t>
    The TCP MSS option specifies an upper bound for the size of packets
-   that can be received.  Hence, setting the value in the MSS option too
+   that can be received (see <xref target="RFC6691"/>).  Hence, setting the value in the MSS option too
    small can impact the ability for PMTUD or PLPMTUD to find a larger
-   path MTU.  RFC 1191 discusses this implication of many older TCP implementations setting MSS to 536 for non-local destinations, rather than deriving it from the MTUs of connected interfaces as recommended.
+   path MTU.  RFC 1191 discusses this implication of many older TCP implementations setting the TCP MSS to 536 (corresponding to the IPv4 576 byte default MTU) for non-local destinations, rather than deriving it from the MTUs of connected interfaces as recommended.
    </t>
 
    </section>
@@ -1939,7 +1945,7 @@ and using them to reduce TIME-WAIT provides benefits for busy Internet servers (
    In order to support TCP over IPv6 Jumbograms, implementations need to
    be able to send TCP segments larger than the 64KB limit that the MSS option can convey.  RFC 2675 <xref target="RFC2675"/>
    defines that an MSS value of 65,535 bytes is to be treated as infinity, and Path
-   MTU Discovery <xref target="RFC1981"/> is used to determine the actual MSS.
+   MTU Discovery <xref target="RFC8201"/> is used to determine the actual MSS.
    </t>
    <t>
    The Jumbo Payload option need not be implemented or understood by IPv6 nodes that do not support attachment to links with a MTU greater than 65,575 <xref target="RFC2675"/>, and the present IPv6 Node Requirements does not include support for Jumbograms <xref target="RFC8504"/>.
@@ -1976,7 +1982,7 @@ and using them to reduce TIME-WAIT provides benefits for busy Internet servers (
   segments must carry current acknowledgment information.
 </t>
 <t>
-  The CLOSE user call implies a push function, as does the FIN control
+  The CLOSE user call implies a push function (see <xref target="user-api"/>), as does the FIN control
   flag in an incoming segment.
 </t>
 <section title="Retransmission Timeout" anchor="RTO">
@@ -2009,7 +2015,7 @@ segments.
 
 <t>RFC 1122 required implementation of Van Jacobson's congestion control algorithms slow start and congestion avoidance together with exponential back-off for successive RTO values for the same segment.  RFC 2581 provided IETF Standards Track description of slow start and congestion avoidance, along with fast retransmit and fast recovery.  RFC 5681 is the current description of these algorithms and is the current Standards Track specification providing guidelines for TCP congestion control. RFC 6298 describes exponential back-off of RTO values, including keeping the backed-off value until a subsequent segment with new data has been sent and acknowledged without retransmission.</t>
 
-<t>A TCP endpoint MUST implement the basic congestion control algorithms slow start, congestion avoidance, and exponential back-off of RTO to avoid creating congestion collapse conditions (MUST-19).  RFC 5681 and RFC 6298 describe the basic algorithms on the IETF Standards Track that are broadly applicable.  Multiple other suitable algorithms exist and have been widely used.  Many TCP implementations support a set of alternative algorithms that can be configured for use on the endpoint.  An endpoint may implement such alternative algorithms provided that the algorithms are conformant with the TCP specifications from the IETF Standards Track as described in RFC 2914, RFC 5033 <xref target="RFC5033"/>, and RFC 8961 <xref target="RFC8961"/> (MAY-18).</t>
+<t>A TCP endpoint MUST implement the basic congestion control algorithms slow start, congestion avoidance, and exponential back-off of RTO to avoid creating congestion collapse conditions (MUST-19).  RFC 5681 and RFC 6298 describe the basic algorithms on the IETF Standards Track that are broadly applicable.  Multiple other suitable algorithms exist and have been widely used.  Many TCP implementations support a set of alternative algorithms that can be configured for use on the endpoint.  An endpoint MAY implement such alternative algorithms provided that the algorithms are conformant with the TCP specifications from the IETF Standards Track as described in RFC 2914, RFC 5033 <xref target="RFC5033"/>, and RFC 8961 <xref target="RFC8961"/> (MAY-18).</t>
 
 <t>Explicit Congestion Notification (ECN) was defined in RFC 3168 and is an IETF Standards Track enhancement that has many benefits <xref target="RFC8087"/>.</t>
 
@@ -2030,7 +2036,8 @@ segments.
             (a)  There are two thresholds R1 and R2 measuring the amount
                  of retransmission that has occurred for the same
                  segment.  R1 and R2 might be measured in time units or
-                 as a count of retransmissions.
+                 as a count of retransmissions (with the current RTO and
+		 corresponding backoffs as a conversion factor, if needed).
 </t>
 <t>
             (b)  When the number of transmissions of the same segment
@@ -2150,7 +2157,7 @@ segments.
 <t>
   To send an urgent indication the user must also send at least one data
   octet.  If the sending user also indicates a push, timely delivery of
-  the urgent information to the destination process is enhanced.
+  the urgent information to the destination process is enhanced.  Note that because changes in the urgent pointer correspond to data being written by a sending application, the urgent pointer can not &quot;recede&quot; in the sequence space, but a TCP receiver should be robust to invalid urgent pointer values.
 </t>
 <t>
   A TCP implementation MUST support a sequence of urgent data of any length (MUST-31). <xref target="RFC1122"/>
@@ -2220,13 +2227,14 @@ The urgent pointer MUST point to the sequence number of the octet following the 
 </t>
 <section title="Zero Window Probing" anchor="zwp">
 <t>
-  The sending TCP peer must be prepared to accept from the user and send at
-  least one octet of new data even if the send window is zero.  The
-  sending TCP peer must regularly retransmit to the receiving TCP peer even when
-  the window is zero, in order to &quot;probe&quot; the window.  Two minutes is recommended for the retransmission
-  interval when the window is zero.  This retransmission is essential to
-  guarantee that when either TCP peer has a zero window the re-opening of the
-  window will be reliably reported to the other.  This is referred to as Zero-Window Probing (ZWP) in other documents.
+
+  The sending TCP peer must regularly transmit at least one octet of new data
+  (if available) or retransmit to the receiving TCP peer even if the send
+  window is zero, in order to &quot;probe&quot; the window.  This
+  retransmission is essential to guarantee that when either TCP peer has a zero
+  window the re-opening of the window will be reliably reported to the other.
+  This is referred to as Zero-Window Probing (ZWP) in other documents.
+
 </t>
 <t>
   Probing of zero (offered) windows MUST be supported (MUST-36).
@@ -2296,7 +2304,7 @@ The Nagle algorithm from <xref target="nagle"/> additionally describes how to co
             Send data:<list style="hanging" hangIndent="5">
 
             <t hangText="(1)">
-             if a maximum-sized segment can be sent, i.e, if:<list><t>
+             if a maximum-sized segment can be sent, i.e., if:<list><t>
 
                   min(D,U) >= Eff.snd.MSS;</t></list>
             </t>
@@ -2315,11 +2323,11 @@ The Nagle algorithm from <xref target="nagle"/> additionally describes how to co
 
                  [SND.NXT = SND.UNA and]<list><t>
 
-                         min(D.U) >= Fs * Max(SND.WND);</t></list></t></list>
+                         min(D,U) >= Fs * Max(SND.WND);</t></list></t></list>
 
             </t>
             <t hangText="(4)">
-             or if data is PUSHed and the override timeout
+             or if the override timeout
              occurs.
             </t></list>
 </t>
@@ -2418,13 +2426,20 @@ The Nagle algorithm from <xref target="nagle"/> additionally describes how to co
 <t>
 	    A TCP endpoint SHOULD implement a delayed ACK (SHLD-18), but an ACK
 	    should not be excessively delayed; in particular, the delay MUST be
-	    less than 0.5 seconds (MUST-40), and in a stream of full-sized
-	    segments there SHOULD be an ACK for at least every second segment
+	    less than 0.5 seconds (MUST-40).  An ACK SHOULD be generated for at
+	    least every second full-sized segment or 2*RMSS bytes of new data
+	    (where RMSS is the MSS specified by the TCP endpoint receiving the
+	    segments to be acknowledged, or the default value if not specified)
 	    (SHLD-19). Excessive delays on ACKs can disturb the round-trip
 	    timing and packet &quot;clocking&quot; algorithms.  More complete
 	    discussion of delayed ACK behavior is in Section 4.2 of RFC 5681
-	    <xref target="RFC5681"/>, including rules for streams of segments
-	    that are not full-sized.  Note that there are several current
+	    <xref target="RFC5681"/>, including recomendations to immediately
+	    acknowledge out-of-order segments, segments above a gap in sequence
+	    space, or segments that fill all or part of a gap, in order to
+	    accelerate loss recovery.
+</t>
+<t>
+	    Note that there are several current
 	    practices that further lead to a reduced number of ACKs, including
 	    generic receive offload (GRO), ACK compression, and ACK decimation
 	    <xref target="RFC3449"/>. 
@@ -3042,7 +3057,7 @@ delivered by the internet system within one minute.  RFC 1122 changed this speci
 </t>
 <t hangText="Soft Errors"><vspace />
                  For ICMP these include: Destination Unreachable -- codes 0, 1, 5, Time Exceeded -- codes 0, 1, and Parameter Problem.<vspace />
-                 For ICMPv6 these include: Destination Unreachable -- codes 0 and 3, Time Exceeded -- codes 0, 1, and Parameter Problem  -- codes 0, 1, 2<vspace />
+                 For ICMPv6 these include: Destination Unreachable -- codes 0 and 3, Time Exceeded -- codes 0, 1, and Parameter Problem  -- codes 0, 1, 2.<vspace />
 
                  Since these Unreachable messages indicate soft error
                  conditions, TCP implementations MUST NOT abort the connection (MUST-56), and it
@@ -3050,7 +3065,7 @@ delivered by the internet system within one minute.  RFC 1122 changed this speci
                  application (SHLD-25).
 </t>
 <t hangText="Hard Errors"><vspace />
-                 For ICMP these include Destination Unreachable -- codes 2-4"><vspace />
+                 For ICMP these include Destination Unreachable -- codes 2-4.<vspace />
 
                  These are hard error conditions, so TCP implementations SHOULD abort
                  the connection (SHLD-26).  <xref target="RFC5461"/> notes that
@@ -3157,9 +3172,8 @@ RFC 1122 requires addresses to be validated in incoming SYN packets:
   Note that if no state change is mentioned the TCP connection stays in the same
   state.
 </t>
-<t><vspace blankLines="999"/></t>
+<section title="OPEN Call">
 <t>
-  OPEN Call
 <list>
 <t>CLOSED STATE (i.e., TCB does not exist)
   <list>
@@ -3191,7 +3205,7 @@ RFC 1122 requires addresses to be validated in incoming SYN packets:
 <t>LISTEN STATE
   <list>
     <t>
-      If active and the remote socket is specified, then change the
+      If the OPEN call is active and the remote socket is specified, then change the
       connection from passive to active, select an ISS.  Send a SYN
       segment, set SND.UNA to ISS, SND.NXT to ISS+1.  Enter SYN-SENT
       state.  Data associated with SEND may be sent with SYN segment or
@@ -3220,9 +3234,9 @@ TIME-WAIT STATE
 </t>
 </list>
 </t>
-<t><vspace blankLines="999"/></t>
+</section>
+<section title="SEND Call">
 <t>
-  SEND Call
   <list>
     <t>
     CLOSED STATE (i.e., TCB does not exist)
@@ -3281,16 +3295,16 @@ TIME-WAIT STATE
     FIN-WAIT-2 STATE<vspace />
     CLOSING STATE<vspace />
     LAST-ACK STATE<vspace />
-    TIME-WAIT STATE<vspace />
+    TIME-WAIT STATE
       <list><t>
       Return "error:  connection closing" and do not service request.
       </t></list>
     </t>
   </list>
 </t>
-<t><vspace blankLines="999"/></t>
+</section>
+<section title="RECEIVE Call">
 <t>
-  RECEIVE Call
   <list>
     <t>
     CLOSED STATE (i.e., TCB does not exist)
@@ -3346,7 +3360,7 @@ TIME-WAIT STATE
     <list>
       <t>
       Since the remote side has already sent FIN, RECEIVEs must be
-      satisfied by text already on hand, but not yet delivered to the
+      satisfied by data already on hand, but not yet delivered to the
       user.  If no text is awaiting delivery, the RECEIVE will get a
       "error:  connection closing" response.  Otherwise, any remaining
       text can be used to satisfy the RECEIVE.
@@ -3363,9 +3377,9 @@ TIME-WAIT STATE
     </list></t>
   </list>
 </t>
-<t><vspace blankLines="999"/></t>
+</section>
+<section title="CLOSE Call">
 <t>
-  CLOSE Call
   <list>
     <t>
     CLOSED STATE (i.e., TCB does not exist)
@@ -3435,9 +3449,9 @@ TIME-WAIT STATE
       </t></list></t>
   </list>
 </t>
-<t><vspace blankLines="999"/></t>
+</section>
+<section title="ABORT Call">
 <t>
-  ABORT Call
   <list>
     <t>
     CLOSED STATE (i.e., TCB does not exist)
@@ -3495,9 +3509,9 @@ TIME-WAIT STATE
       </t></list></t>
   </list>
 </t>
-<t><vspace blankLines="999"/></t>
+</section>
+<section title="STATUS Call">
 <t>
-  STATUS Call
   <list>
     <t>
     CLOSED STATE (i.e., TCB does not exist)
@@ -3571,10 +3585,10 @@ TIME-WAIT STATE
     </t></list></t>
   </list>
 </t>
-<t><vspace blankLines="999"/></t>
-<t>
-  SEGMENT ARRIVES
-  <list>
+</section>
+<section title="SEGMENT ARRIVES">
+
+ <section title="CLOSED State">
     <t>
     If the state is CLOSED (i.e., TCB does not exist) then
     <list>
@@ -3603,6 +3617,8 @@ TIME-WAIT STATE
       Return.
       </t>
     </list></t>
+ </section>
+ <section title="LISTEN State">
     <t>
     If the state is LISTEN then
       <list>
@@ -3610,6 +3626,9 @@ TIME-WAIT STATE
       first check for an RST
         <list>
         <t>
+	An incoming RST segment could not be valid, since
+        it could not have been sent in response to anything sent by this
+        incarnation of the connection.
         An incoming RST should be ignored.  Return.
         </t></list></t>
       <t>
@@ -3657,17 +3676,17 @@ TIME-WAIT STATE
         unspecified fields should be filled in now.
         </t></list></t>
       <t>
-      fourth other text or control
+      fourth other data or control
         <list>
         <t>
-        Any other control or text-bearing segment (not containing SYN)
-        must have an ACK and thus would be discarded by the ACK
-        processing.  An incoming RST segment could not be valid, since
-        it could not have been sent in response to anything sent by this
-        incarnation of the connection.  So, if this unlikely condition is
-	reached, the correct behavior is to drop the segment and return.
+        This should not be reached.  Drop the segment and return.  Any other control or data-bearing segment (not containing SYN)
+        must have an ACK and thus would have been discarded by the ACK
+        processing in the second step, unless it was first discarded by
+	RST checking in the first step.
         </t></list></t>
     </list></t>
+ </section>
+ <section title="SYN-SENT State">
     <t>
     If the state is SYN-SENT then
       <list>
@@ -3735,7 +3754,7 @@ TIME-WAIT STATE
         <list>
         <t>
         This step should be reached only if the ACK is ok, or there is
-        no ACK, and it the segment did not contain a RST.
+        no ACK, and the segment did not contain a RST.
         </t>
         <t>
         If the SYN bit is on and the security/compartment 
@@ -3753,9 +3772,13 @@ TIME-WAIT STATE
           </t></list></t>
         <t>
         and send it.  Data or controls that were queued for
-        transmission MAY be included.  Some TCP implementations suppress sending this segment when the received segment contains data that will anyways generate an acknowledgement in the later processing steps, saving this extra acknowledgement of the SYN from being sent.  If there are other controls or
-        text in the segment then continue processing at the sixth step
-        below where the URG bit is checked, otherwise return.
+	transmission MAY be included.  Some TCP implementations suppress
+	sending this segment when the received segment contains data that will
+	anyways generate an acknowledgement in the later processing steps,
+	saving this extra acknowledgement of the SYN from being sent.  If there
+	are other controls or text in the segment then continue processing at
+	the sixth step under <xref target="other-states"/> where the URG
+	bit is checked, otherwise return.
         </t>
         <t>
         Otherwise enter SYN-RECEIVED, form a SYN,ACK segment
@@ -3782,9 +3805,11 @@ TIME-WAIT STATE
       fifth, if neither of the SYN or RST bits is set then drop the
       segment and return.
       </t></list></t>
-    <t>
+ </section>
+ <section title="Other States" anchor="other-states">
+ <t>
     Otherwise,
-    </t>
+    <list>
     <t>
     first check sequence number
       <list>
@@ -4012,27 +4037,28 @@ RFC 5961 <xref target="RFC5961"/> section 5 describes a potential blind data inj
         </t>
         <t>
         SYN-RECEIVED STATE
-          <list>
+         <list>
           <t>
           If SND.UNA &lt; SEG.ACK =&lt; SND.NXT then enter ESTABLISHED state
           and continue processing with variables below set to:
-          <list>
-          <t>SND.WND &lt;- SEG.WND<vspace />
-          SND.WL1 &lt;- SEG.SEQ<vspace />
-          SND.WL2 &lt;- SEG.ACK</t>
-          </list>
+           <list>
+           <t>SND.WND &lt;- SEG.WND<vspace />
+           SND.WL1 &lt;- SEG.SEQ<vspace />
+           SND.WL2 &lt;- SEG.ACK</t>
+           </list>
+	  </t>
+          <t>
+          If the segment acknowledgment is not acceptable, form a
+          reset segment,
             <list>
             <t>
-            If the segment acknowledgment is not acceptable, form a
-            reset segment,
-              <list>
-              <t>
-              &lt;SEQ=SEG.ACK>&lt;CTL=RST>
-              </t></list></t>
-            <t>
-            and send it.
-            </t>
-            </list></t></list></t>
+            &lt;SEQ=SEG.ACK>&lt;CTL=RST>
+            </t></list>
+	  </t>
+          <t>
+          and send it.
+          </t>
+         </list></t>
         <t>
         ESTABLISHED STATE
           <list>
@@ -4264,9 +4290,12 @@ RFC 5961 <xref target="RFC5961"/> section 5 describes a potential blind data inj
   </t>
   </list>
 </t>
-<t><vspace blankLines="999"/></t>
+</section> 
+
+</section>
+
+<section title="Timeouts">
 <t>
-USER TIMEOUT
 <list>
 <t>
   USER TIMEOUT
@@ -4301,7 +4330,8 @@ USER TIMEOUT
 </t>
 </list>
 </t>
-<t><vspace blankLines="999"/></t>
+</section>
+</section>
 </section>
 
 <section title="Glossary" anchor="glossary">
@@ -4528,8 +4558,7 @@ USER TIMEOUT
           Type of Service, an obsoleted IPv4 field.  The same header bits currently are used for the Differentiated Services field <xref target="RFC2474"/> containing the Differentiated Services Code Point (DSCP) value and the 2-bit ECN codepoint <xref target="RFC3168"/>.</t>
 
 <t hangText="Type of Service"><vspace />
-          An Internet Protocol field that indicates the type of service
-          for this internet fragment.</t>
+          See &quot;TOS&quot;.</t>
 
 <t hangText="URG"><vspace />
           A control bit (urgent), occupying no sequence space, used to
@@ -4548,8 +4577,8 @@ USER TIMEOUT
 
 </section>
 
-    </section>
-    <section anchor="changes" title="Changes from RFC 793">
+
+<section anchor="changes" title="Changes from RFC 793">
         <?rfc subcompact="yes" ?>
         <t>
             This document obsoletes RFC 793 as well as RFC 6093 and 6528, which updated 793.  In all cases, only the normative protocol specification and requirements have been incorporated into this document, and some informational text with background and rationale may not have been carried in.  The informational content of those documents is still valuable in learning about and understanding TCP, and they are valid Informational references, even though their normative content has been incorporated into this document.
@@ -4709,6 +4738,22 @@ A note based on RFC 6429 was added to explicitly clarify that system resource ma
 The -21 revision includes slight changes to the header diagram for compatibility with tooling, from Stephen McQuistin, clarification on the meaning of idle connections from Yuchung Cheng, Neal Cardwell, Michael Scharf, and Richard Scheffenegger, editorial improvements from Markku Kojo, notes that some stacks suppress extra acknowledgments of the SYN when SYN-ACK carries data from Richard Scheffenegger, and adds MAY-18 numbering based on note from Jonathan Morton.
 	</t>
 
+	<t>
+The -22 revision includes small clarifications on terminology (might versus may) and IPv6 extension headers versus IPv4 options, based on comments from Gorry Fairhurst.
+	</t>
+
+        <t>
+The -23 revision has a fix to indentation from Michael Tuexen and idnits issues addressed from Michael Scharf.
+	</t>
+
+	<t>
+The -24 revision incorporates changes after Martin Duke's AD review, including further feedback on those comments from Yuchung Cheng and Joe Touch.  Important changes for review include (1) removal of the need to check for the PUSH flag when evaluating the SWS override timer expiration, (2) clarification about receding urgent pointer, and (3) de-duplicating handling of the RST checking between step 4 and step 1.
+	</t>
+
+	<t>
+The -25 revision incorporates changes based on the GENART review from Francis Dupont, SECDIR review from Kyle Rose, and OPSDIR review from Sarah Banks.
+	</t>
+
         <t>Some other suggested changes that will not be incorporated in this 793 update unless TCPM consensus changes with regard to scope are:
         <list style="numbers">
             <t>Tony Sabatini's suggestion for describing DO field</t>
@@ -4735,21 +4780,21 @@ The -21 revision includes slight changes to the header diagram for compatibility
     <artwork>
    TCP Header Flags
 
-   Bit      Name                                    Reference       Assignment Notes
+   Bit      Name                                       Reference       Assignment Notes
   Offset
-   ---      ----                                    ---------       ----------------
-   4        Reserved for future use                 (this document)
-   5        Reserved for future use                 (this document)
-   6        Reserved for future use                 (this document)
-   7        Reserved for future use                 [RFC8311]       Previously used by Historic [RFC3540] as NS (Nonce Sum)
-   8        CWR (Congestion Window Reduced)         [RFC3168]
-   9        ECE (ECN-Echo)                          [RFC3168]
-   10       Urgent Pointer field significant (URG)  (this document)
-   11       Acknowledgment field significant (ACK)  (this document)
-   12       Push Function (PSH)                     (this document)
-   13       Reset the connection (RST)              (this document)
-   14       Synchronize sequence numbers (SYN)      (this document)
-   15       No more data from sender (FIN)          (this document)
+   ---      ----                                       ---------       ----------------
+   4        Reserved for future use                    (this document)
+   5        Reserved for future use                    (this document)
+   6        Reserved for future use                    (this document)
+   7        Reserved for future use                    [RFC8311]       Previously used by Historic [RFC3540] as NS (Nonce Sum)
+   8        CWR (Congestion Window Reduced)            [RFC3168]
+   9        ECE (ECN-Echo)                             [RFC3168]
+   10       Urgent Pointer field is significant (URG)  (this document)
+   11       Acknowledgment field is significant (ACK)  (this document)
+   12       Push Function (PSH)                        (this document)
+   13       Reset the connection (RST)                 (this document)
+   14       Synchronize sequence numbers (SYN)         (this document)
+   15       No more data from sender (FIN)             (this document)
     </artwork>
     </figure>
 
@@ -4767,7 +4812,7 @@ Applications typically utilize lower-layer (e.g. IPsec) and upper-layer (e.g. TL
 In order to fully protect TCP connections (including their control flags) IPsec
 or the TCP Authentication Option (TCP-AO) <xref target="RFC5925"/> are the only
 current effective methods.  Other methods discussed in this section may protect
-the payload, but either only a subset of the fields (e.g. tcpcrypt <xref target="I-D.ietf-tcpinc-tcpcrypt"/>) or none at
+the payload, but either only a subset of the fields (e.g. tcpcrypt <xref target="RFC8548"/>) or none at
 all (e.g. TLS).  Other security features that have been added to TCP (e.g. ISN
 generation, sequence number checks, and others) are only capable of partially
 hindering attacks.
@@ -4777,7 +4822,7 @@ hindering attacks.
 Applications using long-lived TCP flows have been vulnerable to attacks that exploit the processing of control flags described in earlier TCP specifications <xref target="RFC4953"/>.  TCP-MD5 was a commonly implemented TCP option to support authentication for some of these connections, but had flaws and is now deprecated.  TCP-AO provides a capability to protect long-lived TCP connections from attacks, and has superior properties to TCP-MD5.  It does not provide any privacy for application data, nor for the TCP headers.
 	</t>
 	<t>
-The &quot;tcpcrypt&quot; <xref target="I-D.ietf-tcpinc-tcpcrypt"/> Experimental extension to TCP provides the ability to cryptographically protect connection data.  Metadata aspects of the TCP flow are still visible, but the application stream is well-protected.  Within the TCP header, only the urgent pointer and FIN flag are protected through tcpcrypt.
+The &quot;tcpcrypt&quot; <xref target="RFC8548"/> Experimental extension to TCP provides the ability to cryptographically protect connection data.  Metadata aspects of the TCP flow are still visible, but the application stream is well-protected.  Within the TCP header, only the urgent pointer and FIN flag are protected through tcpcrypt.
 	</t>
         <t>
 The TCP Roadmap <xref target="RFC7414"/> includes notes about several RFCs related to TCP security.  Many of the enhancements provided by these RFCs have been integrated into the present document, including ISN generation, mitigating blind in-window attacks, and improving handling of soft errors and ICMP packets.  These are all discussed in greater detail in the referenced RFCs that originally described the changes needed to earlier TCP specifications.  Additionally, see RFC 6093 <xref target="RFC6093"/> for discussion of security considerations related to the urgent pointer field, that has been deprecated.
@@ -4789,7 +4834,7 @@ Since TCP is often used for bulk transfer flows, some attacks are possible that 
 Other attacks are focused on exhausting the resources of a TCP server.  Examples include SYN flooding <xref target="RFC4987"/> or wasting resources on non-progressing connections <xref target="RFC6429"/>.  Operating systems commonly implement mitigations for these attacks.  Some common defenses also utilize proxies, stateful firewalls, and other technologies outside of the end-host TCP implementation.
 </t>
         <t>
-
+The concept of a protocol's &quot;wire image&quot; is described in RFC 8546 <xref target="RFC8546"/>, which describes how TCP's cleartext headers expose more metadata to nodes on the path than is strictly required to route the packets to their destination.  On-path adversaries may be able to leverage this metadata.  Lessons learned in this respect from TCP have been applied in the design of newer transports like QUIC <xref target="RFC9000"/>.  Additionally, based partly on experiences with TCP and its extensions, there are considerations that might be applicable for future TCP extensions and other transports that the IETF has documented in RFC 9065 <xref target="RFC9065"/>, along with IAB recommendations in RFC 8558 <xref target="RFC8558"/> and <xref target="I-D.iab-use-it-or-lose-it"/>.
         </t>
     </section>
     <section title="Acknowledgements">
@@ -4809,7 +4854,7 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
     </list>
     </t>
     <t>
-    During the discussions of this work on the TCPM mailing list and in working group meetings, helpful comments, critiques, and reviews were received from (listed alphabetically by last name): Praveen Balasubramanian, David Borman, Mohamed Boucadair, Bob Briscoe, Neal Cardwell, Yuchung Cheng, Martin Duke, Ted Faber, Gorry Fairhurst, Fernando Gont, Rodney Grimes, Yi Huang, Rahul Jadhav, Markku Kojo, Mike Kosek, Juhamatti Kuusisaari, Kevin Lahey, Kevin Mason, Matt Mathis, Stephen McQuistin, Jonathan Morton, Matt Olson, Tommy Pauly, Tom Petch, Hagen Paul Pfeifer, Anthony Sabatini, Michael Scharf, Greg Skinner, Joe Touch, Michael Tuexen, Reji Varghese, Tim Wicinski, Lloyd Wood, and Alex Zimmermann.
+    During the discussions of this work on the TCPM mailing list, in working group meetings, and via area reviews, helpful comments, critiques, and reviews were received from (listed alphabetically by last name): Praveen Balasubramanian, David Borman, Mohamed Boucadair, Bob Briscoe, Neal Cardwell, Yuchung Cheng, Martin Duke, Francis Dupont, Ted Faber, Gorry Fairhurst, Fernando Gont, Rodney Grimes, Yi Huang, Rahul Jadhav, Markku Kojo, Mike Kosek, Juhamatti Kuusisaari, Kevin Lahey, Kevin Mason, Matt Mathis, Stephen McQuistin, Jonathan Morton, Matt Olson, Tommy Pauly, Tom Petch, Hagen Paul Pfeifer, Kyle Rose, Anthony Sabatini, Michael Scharf, Greg Skinner, Joe Touch, Michael Tuexen, Reji Varghese, Tim Wicinski, Lloyd Wood, and Alex Zimmermann.
     </t>
     <t>
     Joe Touch provided additional help in clarifying the description of segment size parameters and PMTUD/PLPMTUD recommendations.  Markku Kojo helped put together the text in the section on TCP Congestion Control.
@@ -4883,18 +4928,18 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
              XML needed for a reference... this is where we use it. -->
         &RFC0791;
         &RFC1191;
-        &RFC1981;
         &RFC2119;
         &RFC2474;
         &RFC2675;
         &RFC2914;
-        &RFC2923;
         &RFC3168;
 	&RFC5033;
+	&RFC5681;
         &RFC6298;
         &RFC6633;
         &RFC8174;
         &RFC8200;
+        &RFC8201;
 	&RFC8961;
     </references>
 
@@ -4918,13 +4963,12 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
         &RFC1349;
         &RFC1644;
         <!--&RFC1191;-->
-        <!--&RFC1981;-->
         <!--&RFC2675;-->
-        <!--&RFC2923;-->
         &RFC2018;
         &RFC2525;
         &RFC2873;
         &RFC2883;
+        &RFC2923;
 	&RFC3449;
 	&RFC3465;
 	&RFC4727;
@@ -4934,7 +4978,6 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
         &RFC5044;
         &RFC5461;
         &RFC5570;
-        &RFC5681;
         &RFC5795;
         &RFC5925;
         &RFC5961;
@@ -4955,7 +4998,12 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
         &RFC8095;
         &RFC8303;
         &RFC8504;
+	&RFC8546;
+        &RFC8548;
+	&RFC8558;
         &RFC8684;
+	&RFC9000;
+	&RFC9065;
 
         <reference anchor="TCP-parameters-registry">
          <front>
@@ -4981,9 +5029,9 @@ Other attacks are focused on exhausting the resources of a TCP server.  Examples
 
 	&I-D.gont-tcpm-tcp-seccomp-prec;
 	&I-D.gont-tcpm-tcp-seq-validation;
-	&I-D.ietf-tcpinc-tcpcrypt;
 	&I-D.ietf-tcpm-tcp-edo;
 	&I-D.mcquistin-augmented-ascii-diagrams;
+	&I-D.iab-use-it-or-lose-it;
 
         <reference anchor="draft-minshall-nagle">
 	 <front>
@@ -5238,7 +5286,7 @@ Generating ACKs:                                 |        | | | | | |
   Send ACK for out-of-order segment              | MAY-13 | | |x| | |
   Delayed ACKs                                   | SHLD-18| |x| | | |
     Delay &lt; 0.5 seconds                          | MUST-40|x| | | | |
-    Every 2nd full-sized segment ACK'd           | SHLD-19|x| | | | |
+    Every 2nd full-sized segment or 2*RMSS ACK'd | SHLD-19|x| | | | |
   Receiver SWS-Avoidance Algorithm               | MUST-39|x| | | | |
                                                  |        | | | | | |
 Sending data                                     |        | | | | | |
