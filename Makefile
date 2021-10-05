@@ -31,49 +31,51 @@ PYTHON_TESTS = $(wildcard tests/*.py)
 
 test: unit-tests integration-tests
 
+# -------------------------------------------------------------------------------------------------
+# Unit tests
 
 test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
 	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
-
-unit-tests: test-results/typecheck.xml $(PYTHON_SRC) $(PYTHON_TESTS)
+unit-tests: test-results/typecheck.xml
 	@echo "*** Running unit tests:"
 	@python3 -m unittest discover -s tests/ -v
-	@echo ""
+
+# -------------------------------------------------------------------------------------------------
+# Integration tests
+
+# This rule uses a grouped explicit target (an "&:" rule), so needs GNU make v4.3 or later.
+test-results/%/Cargo.toml test-results/%/src/lib.rs &: examples/%.xml $(PYTHON_SRC)
+	python -m npt -f rust -d $(dir $@) $<
 
 
 tests/udp-testing/pcaps:
-	mkdir $@
+	mkdir  $@
 
 tests/udp-testing/pcaps/%.pcap: tests/udp-testing/generate-pcap-%.py | tests/udp-testing/pcaps
 	python $<
 
 tests/tcp-testing/pcaps:
-	mkdir $@
+	mkdir  $@
 
 tests/tcp-testing/pcaps/%.pcap: tests/tcp-testing/generate-pcap-%.py | tests/tcp-testing/pcaps
 	python $<
 
 tests/793bis-testing/pcaps:
-	mkdir $@
+	mkdir  $@
 
 tests/793bis-testing/pcaps/%.pcap: tests/793bis-testing/generate-pcap-%.py | tests/793bis-testing/pcaps
 	python $<
 
-examples/output/draft/%/rust: examples/%.xml $(PYTHON_SRC)
-	python3 -m npt -f rust -d $(dir $@) $<
 
-examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust:
-	python3 -m npt -f rust -d $(dir $@) draft-ietf-tcpm-rfc793bis-25 
-	
-integration-tests: tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
-                   tests/udp-testing/pcaps/udp-valid-1.pcap \
+integration-tests: tests/udp-testing/pcaps/udp-valid-1.pcap \
+                   tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
                    tests/tcp-testing/pcaps/tcp-ten-packets.pcap \
                    tests/793bis-testing/pcaps/tcp-ten-packets.pcap \
-                   examples/output/draft/draft-mcquistin-augmented-udp-example-00/rust \
-                   examples/output/draft/draft-mcquistin-augmented-tcp-example-00/rust \
-                   examples/output/draft/draft-mcquistin-augmented-ascii-diagrams-07/rust \
-                   examples/output/draft/draft-ietf-tcpm-rfc793bis/25/rust
+                   test-results/draft-mcquistin-augmented-udp-example-00/Cargo.toml \
+                   test-results/draft-mcquistin-augmented-tcp-example-00/Cargo.toml \
+                   test-results/draft-ietf-tcpm-rfc793bis-25/Cargo.toml \
+                   test-results/draft-mcquistin-augmented-ascii-diagrams-07/Cargo.toml
 	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 	cd tests/793bis-testing/testharness && cargo test

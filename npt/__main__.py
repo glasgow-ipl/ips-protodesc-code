@@ -191,7 +191,7 @@ def main():
     output_dir = Path(args.outdir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    for output_file, output_string in formatter.generate_output(args.document).items():
+    for output_file, output_string in formatter.generate_output(Path(args.document).stem).items():
         output_filepath = output_dir / Path(output_file)
         output_filepath.parent.mkdir(mode=0o755, parents=True, exist_ok=True)
         with open(output_filepath, "w") as outf:
