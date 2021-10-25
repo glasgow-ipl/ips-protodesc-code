@@ -1,7 +1,7 @@
 extern crate draft_mcquistin_augmented_tcp_example_02;
 extern crate pcap;
 
-use draft_mcquistin_augmented_tcp_example_00::*;
+use draft_mcquistin_augmented_tcp_example_02::*;
 use pcap::Capture;
 
 fn pretty_print_tcp_header(header: &TcpHeader) {
