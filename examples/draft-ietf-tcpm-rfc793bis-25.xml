@@ -557,7 +557,7 @@ where:
     the URG control bit set.  
 
   </t>
-  <t hangText="Options: [TCP Option]; Options#Size == (DOffset-5)*32; present only when DOffset > 5.">
+  <t hangText="Options: [TCP Option]; size(Options) == (DOffset-5)*32; present only when DOffset > 5.">
     <vspace />
     <vspace />
     Options may occupy space at the end of the TCP header and are a
