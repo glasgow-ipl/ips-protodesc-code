@@ -60,7 +60,7 @@ addsub_expr   = muldiv_expr:left addsub*:rights   -> build_tree(left, rights, ""
 muldiv_expr   = pow_expr:left    muldiv*:rights   -> build_tree(left, rights, "")
 pow_expr      = value:left       pow*:rights      -> build_tree(left, rights, "")
 
-method_call = short_field_name:name '#' 'Size' -> new_methodinvocation(new_fieldaccess(new_this(), name), "size", [])
+method_call = 'size(' short_field_name:name ')' -> new_methodinvocation(new_fieldaccess(new_this(), name), "size", [])
 field_access = short_field_name:name '.' short_field_name:field -> new_methodinvocation(new_fieldaccess(new_fieldaccess(new_this(), name), field), "to_number", [])
 
 field_name = <(alphanum:w ' '?)*>:name -> name.strip()
