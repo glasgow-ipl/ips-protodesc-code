@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='US-ASCII'?>
-<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-augmented-tcp-example-00' category='exp'>
+<rfc version='3' ipr='trust200902' submissionType='IETF' docName='draft-mcquistin-augmented-tcp-example-02' category='exp'>
  <front>
      <title abbrev='TCP APHD Example'>
          Describing TCP with Augmented Packet Header Diagrams
      </title>
-     <seriesInfo name='Internet-Draft' value='drdraft-mcquistin-augmented-tcp-example-00' status="experimental" />
+     <seriesInfo name='Internet-Draft' value='drdraft-mcquistin-augmented-tcp-example-02' status="experimental" />
 
      <author fullname='Stephen McQuistin' initials='S.' surname='McQuistin'>
          <organization>University of Glasgow</organization>
@@ -58,7 +58,7 @@
          </address>
      </author>
 
-     <?date year='2020' month='October' day='12'/?>
+     <?date year='2021' month='May' day='5'/?>
 
      <abstract>
          <t>
@@ -89,8 +89,8 @@
                   A TCP Header is formatted as follows:
                  </t>
                  <artwork>
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |          Source Port          |       Destination Port        |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -156,7 +156,7 @@
                          </t>
                      </dd>
                      <dt>
-                         Data Offset (DOffset): 4 bits.
+                         Data Offset (DOffset): 4 bits; DOffset >= 5.
                      </dt>
                      <dd>
                          <t>
@@ -167,7 +167,7 @@
                          </t>
                      </dd>
                      <dt>
-                         Reserved (Rsrvd): 4 bits.
+                         Reserved (Rsrvd): 4 bits; Rsrvd == 0.
                      </dt>
                      <dd>
                          <t>
@@ -235,7 +235,7 @@
                          </t>
                      </dd>
                      <dt>
-                         FIN: 1 bit.
+                         FIN: 1 bit; (FIN == 0) || (SYN == 0).
                      </dt>
                      <dd>
                          <t>
@@ -289,7 +289,7 @@
                          </t>
                      </dd>
                      <dt>
-                         Options: [TCP Option]; Options#Size == (DOffset-5)*32; present only when DOffset > 5.
+                         Options: [TCP Option]; size(Options) == (DOffset-5)*32; present only when DOffset > 5.
                      </dt>
                      <dd>
                          <t>
@@ -310,17 +310,17 @@
              <section anchor="tcpoptions">
                  <name>TCP Options</name>
                      <t>
-                         A TCP Option is one of: a EOL Option, a NOOP Option, a Maximum Segment Size Option, a Window Scale Factor Option, a Timestamp Option, or a SACK Permitted Option.
+                         A TCP Option is one of: a EOL Option, a NOOP Option, a Maximum Segment Size Option, a Window Scale Factor Option, a Timestamp Option, a SACK Permitted Option, or a SACK Range Option.
                      </t>
                      <t>
                       An EOL Option is formatted as follows:
                      </t>
                      <artwork>
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ 0
+ 0 1 2 3 4 5 6 7
++-+-+-+-+-+-+-+-+
 |       0       |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++-+-+-+-+-+-+-+-+
                      </artwork>
                      <t>
                          where:
@@ -339,11 +339,11 @@
                       A NOOP Option is formatted as follows:
                      </t>
                      <artwork>
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ 0
+ 0 1 2 3 4 5 6 7
++-+-+-+-+-+-+-+-+
 |       1       |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++-+-+-+-+-+-+-+-+
                      </artwork>
                      <t>
                          where:
@@ -363,8 +363,8 @@
                       A Maximum Segment Size Option is formatted as follows:
                      </t>
                      <artwork>
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |       2       |     Length    |   Maximum Segment Size (MSS)  |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -403,8 +403,8 @@
                       A Window Scale Factor Option is formatted as follows:
                      </t>
                      <artwork>
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |       3       |     Length    |       Window Scale Factor     |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -442,8 +442,8 @@
                       A Timestamp Option is formatted as follows:
                      </t>
                      <artwork>
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |       8       |     Length    |
 +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -493,11 +493,11 @@
                       A SACK Permitted Option is formatted as follows:
                      </t>
                      <artwork>
-0                   1                   2                   3
-0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ 0                   1
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 |       4       |     Length    |
-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
                      </artwork>
                      <t>
                          where:
@@ -520,56 +520,102 @@
                              </t>
                          </dd>
                      </dl>
+                     <t>
+                      A SACK Range Option is formatted as follows:
+                     </t>
+                     <artwork>
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|       5       |     Length    |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                            [Blocks]                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                     </artwork>
+                     <t>
+                         where:
+                     </t>
+                     <dl>
+                         <dt>
+                             Option Kind (Kind): 1 byte; Kind == 5.
+                         </dt>
+                         <dd>
+                             <t>
+                                If present, this option contains one or more SACK blocks.
+                             </t>
+                         </dd>
+                         <dt>
+                             Option Length (Length): 1 byte.
+                         </dt>
+                         <dd>
+                             <t>
+                                 Option length.
+                             </t>
+                         </dd>
+                         <dt>
+                            Blocks: (Length-2)/8 SACK Blocks.
+                         </dt>
+                         <dd>
+                             <t>
+                                 SACK blocks.
+                             </t>
+                         </dd>
+                     </dl>
+                     <t>
+                      A SACK Block is formatted as follows:
+                     </t>
+                     <artwork>
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                           Left Edge                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+|                          Right Edge                           |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+                     </artwork>
+                     <t>
+                         where:
+                     </t>
+                     <dl>
+                         <dt>
+                             Left Edge: 4 bytes.
+                         </dt>
+                         <dd>
+                             <t>
+                                This is the first sequence number of this block.
+                             </t>
+                         </dd>
+                         <dt>
+                             Right Edge: 4 bytes.
+                         </dt>
+                         <dd>
+                             <t>
+                               This is the sequence number immediately following the last
+      sequence number of this block.
+                             </t>
+                         </dd>
+                     </dl>
                  </section>
 
      <section anchor='aphd-comparison'>
          <name>Comparison with draft-ietf-tcpm-rfc793bis</name>
              <t>
-                While the purpose of this document is to give an example use of the Augmented
-                Packet Header Diagrams, and not to contribute to ongoing or future TCP
-                standardisation efforts, it is instructive to draw comparisons with documents
-                that describe the same protocol. In particular, the descriptions of the TCP
-                header (<xref target="tcpheader" />) and TCP options (<xref target="tcpoptions"/>)
-                from this document can be compared with Section 3.1 of <xref
-                target="draft-ietf-tcpm-rfc793bis" />. We have adopted the same field
-                descriptions to help with this comparison.
+                  The Augmented Packet Header Diagram format used in this example has also
+                  been adopted within <xref target="draft-ietf-tcpm-rfc793bis" />. This
+                  example goes beyond <xref target="draft-ietf-tcpm-rfc793bis" />, and
+                  includes a number of TCP options that are not defined as part of that
+                  document, including the Window Scale Factor, Timestamp, SACK permitted,
+                  and SACK block options. In addition, the definition of the TCP header
+                  (<xref target="tcpheader" />) in this document includes a number of
+                  field constraints that are not specified in <xref target="draft-ietf-tcpm-rfc793bis" />.
              </t>
-            <t>
-                Beyond the broad similarities, there are a number of elements where this
-                document describes the protocol differently. For example, the TCP header
-                as defined in <xref target="draft-ietf-tcpm-rfc793bis" /> contains a
-                variable-length padding field which is not present in the description contained
-                in this document. The Padding field is used to pad the TCP header to a 32-bit
-                boundary, and to ensure that the Payload begins on a 32-bit boundary. The length of
-                the Padding field is the difference between the value of the Data Offset field and
-                the length of the Options field. However, the length of the Options field is itself
-                dependent on the value of the Data Offset field and the particular set of options
-                contained within an instance of the TCP header. The Augmented Packet Header Diagram
-                format cannot express this logic: the lengths of both the Padding and Payload fields
-                would be variable. To overcome this, as shown in <xref target="tcpheader" />, the
-                description of TCP given in this document relies upon End of List options being
-                syntactically identical to Padding (i.e., being all zeroes). This highlights the
-                limitations of the Augmented Packet Header Diagram format: prose text is much more
-                expressive.
-            </t>
-            <t>
-                However, the precision required by the Augmented Packet Header Diagram can be
-                beneficial. For example, the description of the Options field in this document
-                sets out an explicit length and presence constraint, where <xref target="draft-ietf-tcpm-rfc793bis" />
-                indicates that it is "variable". Similar constraints exist in the description given in
-                <xref target="draft-ietf-tcpm-rfc793bis" />, but they are contained with the prose description of
-                the field.
-            </t>
-            <t>
-               In summary, the most striking comparison to be made is that the description of TCP given
-               in this document is largely similar to that given in <xref
-               target="draft-ietf-tcpm-rfc793bis" />. By retaining the overall structure of a
-               packet header diagram and an accommpanying list of descriptions for each field,
-               the Augmented Packet Header Diagram format is close to that already in use. This
-               is encouraging: it indicates that the Augmented Packet Header Diagram language
-               can be used to describe realistic protocols, without introducing a format that
-               is unfamiliar or difficult to write.
-           </t>
+             <t>
+                  The purpose of this document is to give an example use of the Augmented
+                  Packet Header Diagrams, and not to contribute to ongoing or future TCP 
+                  standardisation efforts. We include additional constraints and TCP options
+                  to demonstrate the ease with which these can be expressed in our format, and
+                  that these are then supported by the generated parser code.
+             </t>
      </section>
 
      <section anchor='IANA'>
@@ -599,7 +645,7 @@
  <back>
      <references>
          <name>Informative References</name>
-         <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-07.txt">
+         <reference anchor="AUGMENTED-DIAGRAMS" target="http://www.ietf.org/internet-drafts/draft-mcquistin-augmented-ascii-diagrams-09.txt">
              <front>
                  <title>Describing Protocol Data Units with Augmented Packet Header Diagrams</title>
 
@@ -608,10 +654,10 @@
                  <author initials='D' surname='Jacob' fullname='Dejice Jacob'><organization /></author>
                  <author initials='C. S.' surname='Perkins' fullname='Colin Perkins'><organization /></author>
 
-                 <date month='November' day='2' year='2020' />
+                 <date month='October' day='25' year='2021' />
              </front>
 
-             <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-07' />
+             <seriesInfo name='Internet-Draft' value='draft-mcquistin-augmented-ascii-diagrams-09' />
          </reference>
          <reference anchor="RFC793" target="https://www.rfc-editor.org/info/rfc793">
              <front>
@@ -623,16 +669,16 @@
              </front>
              <seriesInfo name='RFC' value='793'/>
          </reference>
-         <reference anchor="draft-ietf-tcpm-rfc793bis" target="http://www.ietf.org/internet-drafts/draft-ietf-tcpm-rfc793bis-19.txt">
+         <reference anchor="draft-ietf-tcpm-rfc793bis" target="http://www.ietf.org/internet-drafts/draft-ietf-tcpm-rfc793bis-25.txt">
              <front>
                  <title>Transmission Control Protocol (TCP) Specification</title>
 
                  <author initials='W' surname='Eddy' fullname='Wesley Eddy'><organization /></author>
 
-                 <date month='October' day='27' year='2020' />
+                 <date month='September' day='7' year='2021' />
              </front>
 
-             <seriesInfo name='Internet-Draft' value='draft-ietf-tcpm-rfc793bis-19' />
+             <seriesInfo name='Internet-Draft' value='draft-ietf-tcpm-rfc793bis-25' />
          </reference>
      </references>
 
