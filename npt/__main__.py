@@ -1,6 +1,6 @@
-#!/usr/bin/env python3.7
+#!/usr/bin/env python3.9
 # =================================================================================================
-# Copyright (C) 2018-2020 University of Glasgow
+# Copyright (C) 2018-2021 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
