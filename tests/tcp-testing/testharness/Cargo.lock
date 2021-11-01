@@ -21,7 +21,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
 
 [[package]]
-name = "draft_mcquistin_augmented_tcp_example_00"
+name = "draft_mcquistin_augmented_tcp_example_02"
 version = "0.1.0"
 dependencies = [
  "lexical-core",
@@ -89,7 +89,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 name = "testharness"
 version = "0.1.0"
 dependencies = [
- "draft_mcquistin_augmented_tcp_example_00",
+ "draft_mcquistin_augmented_tcp_example_02",
  "pcap",
 ]
 
