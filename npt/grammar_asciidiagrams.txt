@@ -113,7 +113,7 @@ field_title_size = ws field_name:full_label
                    ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units
                    ws ('(' field_opts:opts ')' -> opts)?:opts
                    ('; present only when ' equality_expr:is_present -> is_present)?:is_present
-                   '.' -> new_field(full_label,
+                   '.' anything*:x -> new_field(full_label,
                                     short_label,
                                     opts,
                                     size,
@@ -132,7 +132,7 @@ field_title_size_constraint = ws field_name:full_label
                               '; '
                               equality_expr:value_constraint
                               ('; present only when ' equality_expr:is_present -> is_present)?:is_present
-                              '.' -> new_field(full_label,
+                              '.' anything*:x -> new_field(full_label,
                                                short_label,
                                                opts,
                                                size,
@@ -148,6 +148,7 @@ field_title_constraint = ws field_name:full_label
                          ws ('(' field_opts:opts ')' -> opts )?:opts
                          '.'
                          ('; present only when ' equality_expr:is_present -> is_present)?:is_present
+                         '.' anything*:x
                          -> new_field(full_label,
                                       short_label,
                                       opts,
@@ -162,7 +163,7 @@ field_title_array_constraint = ws field_name:full_label
                                ': [' pdu_name:element_type_name ']' '; '
                                equality_expr:value_constraint
                                ('; present only when ' equality_expr:is_present -> is_present)?:is_present
-                               '.' -> new_field(full_label,
+                               '.' anything*:x -> new_field(full_label,
                                                 short_label,
                                                 None,
                                                 None,
@@ -175,7 +176,7 @@ field_title = field_title_name_only | field_title_variable | field_title_size | 
 
 # Preamble
 
-preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name "is" ws "formatted" ws "as" ws "follows" anything*:x -> name
+preamble = <(word:w ?(w != "An" and w != "A") ws?)+>? ("An "|"A ") pdu_name:name ws ("," (anything:x ?(x != ','))+ ",")? "is" ws "formatted" ws "as" ws "follows" anything*:x -> name
 
 # Diagram
 vsep = ws <'+-'+ '+'?>:unit -> unit
@@ -193,7 +194,7 @@ multi_line_split = one_line+:m -> m
 
 # Enums
 variant_list = ("an " | "a ") pdu_name:name (', ' ('or ')? ("an " | "a ") pdu_name:names)*:names -> [name] + names
-enum_more_than_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is one of: " variant_list:names "." -> (name, names)
+enum_more_than_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name ("," (anything:x ?(x != ','))+ ",")? ws "is one of: " variant_list:names "." -> (name, names)
 enum_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is either " ("an " | "a ") pdu_name:var1 'or ' ("an " | "a ") pdu_name:var2 "." -> (name, [var1, var2])
 
 enum = enum_two | enum_more_than_two
