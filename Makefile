@@ -29,7 +29,11 @@ PYTHON_TESTS = $(wildcard tests/*.py)
 # =================================================================================================
 # Test suite:
 
-test: unit-tests integration-tests
+test: pipenv-active unit-tests integration-tests
+
+pipenv-active:
+	@if [ ! $$PIPENV_ACTIVE ]; then echo "Activate pipenv before running make"; exit 1; fi
+
 
 # -------------------------------------------------------------------------------------------------
 # Unit tests
@@ -92,7 +96,7 @@ MAKEFLAGS += --output-sync --warn-undefined-variables --no-builtin-rules --no-bu
 # Remove obsolete old-style default suffix rules:
 .SUFFIXES:
 
-.PHONY: test unit-tests integration-tests clean 
+.PHONY: test unit-tests integration-tests clean pipenv-active
 
 
 # =================================================================================================
