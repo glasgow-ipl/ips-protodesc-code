@@ -78,7 +78,7 @@ integration-tests: tests/udp-testing/pcaps/udp-valid-1.pcap \
                    tests/793bis-testing/pcaps/tcp-ten-packets.pcap \
                    test-results/draft-mcquistin-augmented-udp-example-00/Cargo.toml \
                    test-results/draft-mcquistin-augmented-tcp-example-02/Cargo.toml \
-                   test-results/draft-ietf-tcpm-rfc793bis-25/Cargo.toml \
+                   test-results/draft-ietf-tcpm-rfc793bis-27/Cargo.toml \
                    test-results/draft-mcquistin-augmented-ascii-diagrams-07/Cargo.toml
 	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
