@@ -1,6 +1,5 @@
-#!/usr/bin/env python3.7
 # =================================================================================================
-# Copyright (C) 2018-2019 University of Glasgow
+# Copyright (C) 2018-2022 University of Glasgow
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -70,12 +69,14 @@ class BCP14(Elem):
 # EM element
 # =================================================================================================
 
+EmContent = Union[Text, BCP14, "CRef", "IRef", "RelRef", "Strong", "Sub", "Sup", "TT", "XRef"]
+
 @dataclass
 class EM(Elem):
     """
     RFC 7991 Section 2.22
     """
-    content : ListType[Union[Text, BCP14, "CRef", "IRef", "RelRef", "Strong", "Sub", "Sup", "TT", "XRef"]]
+    content : ListType[EmContent]
 
 # =================================================================================================
 # {C, X, I, E, Rel}Ref elements
@@ -119,12 +120,15 @@ class XRef(Elem):
     pageno  : Optional[bool]
     target  : str
 
+
+CRefContent = Union[Text, EM, ERef, RelRef, "Strong", "Sub", "Sup", "TT", XRef]
+
 @dataclass
 class CRef(Elem):
     """
     RFC 7991 Section 2.16
     """
-    content : ListType[Union[Text, EM, ERef, RelRef, "Strong", "Sub", "Sup", "TT", XRef]]
+    content : ListType[CRefContent]
     anchor  : Optional[str]
     display : Optional[bool]
     source  : Optional[str]
@@ -133,33 +137,45 @@ class CRef(Elem):
 # Sub and Sup elements
 # =================================================================================================
 
+StrongContent = Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, "Sub", "Sup", "TT", XRef]
+
 @dataclass
 class Strong(Elem):
     """
     RFC 7991 Section 2.50
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, "Sub", "Sup", "TT", XRef]]
+    content : ListType[StrongContent]
+
+
+TTContent = Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, "Sub", "Sup", XRef]
 
 @dataclass
 class TT(Elem):
     """
     RFC 7991 Section 2.62
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, "Sub", "Sup", XRef]]
+    content : ListType[TTContent]
+
+
+SubContent = Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, TT, XRef]
 
 @dataclass
 class Sub(Elem):
     """
     RFC 7991 Section 2.51
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, TT, XRef]]
+    content : ListType[SubContent]
+
+
+SupContent = Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, TT, XRef]
 
 @dataclass
 class Sup(Elem):
     """
     RFC 7991 Section 2.52
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, TT, XRef]]
+    content : ListType[SupContent]
+
 
 # =================================================================================================
 # SpanX element
@@ -196,12 +212,15 @@ class VSpace(Elem):
     """
     blankLines : Optional[str]
 
+
+TContent = Union[Text, BCP14, CRef, EM, ERef, IRef, List, RelRef, SpanX, Strong, Sub, Sup, TT, VSpace, XRef, 'T']
+
 @dataclass
 class T(Elem):
     """
     RFC 7991 Section 2.53
     """
-    content          : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, List, RelRef, SpanX, Strong, Sub, Sup, TT, VSpace, XRef, 'T']]
+    content          : ListType[TContent]
     anchor           : Optional[str]
     hangText         : Optional[str]
     keepWithNext     : Optional[bool]
@@ -231,30 +250,38 @@ class Artwork(Elem):
 # Pre and Postamble elements
 # =================================================================================================
 
+PostambleContent = Union[Text, BCP14, CRef, EM, ERef, IRef, SpanX, Strong, Sub, Sup, TT, XRef]
+
 @dataclass
 class Postamble(Elem):
     """
     RFC 7991 Section 3.5
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, SpanX, Strong, Sub, Sup, TT, XRef]]
+    content : ListType[PostambleContent]
+
+
+PreambleContent = Union[Text, BCP14, CRef, EM, ERef, IRef, SpanX, Strong, Sub, Sup, TT, XRef]
 
 @dataclass
 class Preamble(Elem):
     """
     RFC 7991 Section 3.6
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, SpanX, Strong, Sub, Sup, TT, XRef]]
+    content : ListType[PreambleContent]
+
 
 # =================================================================================================
 # Name element
 # =================================================================================================
+
+NameContent = Union[Text, CRef, ERef, RelRef, TT, XRef]
 
 @dataclass
 class Name(Elem):
     """
     RFC 7991 Section 2.32
     """
-    content : ListType[Union[Text, CRef, ERef, RelRef, TT, XRef]]
+    content : ListType[NameContent]
 
 # =================================================================================================
 # SourceCode element
@@ -298,13 +325,15 @@ class Figure(Elem):
 # OL elements
 # =================================================================================================
 
+LIContent = Union[Artwork, "DL", Figure, "OL", SourceCode, T, "UL", 
+                  Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]
+
 @dataclass
 class LI(Elem):
     """
     RFC 7991 Section 2.29
     """
-    content : Union[ListType[Union[Artwork, "DL", Figure, "OL", SourceCode, T, "UL"]],
-                    ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
+    content : ListType[LIContent]
     anchor  : Optional[str]
 
 @dataclass
@@ -333,22 +362,28 @@ class OL(Elem):
 # DL elements
 # =================================================================================================
 
+DDContent = Union[Artwork, "DL", Figure, OL, SourceCode, T, UL,
+                  Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]
+
 @dataclass
 class DD(Elem):
     """
     RFC 7991 Section 2.18
     """
-    content : Union[ListType[Union[Artwork, "DL", Figure, OL, SourceCode, T, UL]],
-                    ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
+    content : ListType[DDContent]
     anchor  : Optional[str]
+
+
+DTContent = Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]
 
 @dataclass
 class DT(Elem):
     """
     RFC 7991 Section 2.21
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]
+    content : ListType[DTContent]
     anchor  : Optional[str]
+
 
 @dataclass
 class DL(Elem):
@@ -373,12 +408,16 @@ class TTCol(Elem):
     align   : Optional[str]
     width   : Optional[str]
 
+
+CContent = Union[Text, BCP14, CRef, EM, ERef, IRef, SpanX, Strong, Sub, Sup, TT, XRef]
+
 @dataclass
 class C(Elem):
     """
     RFC 7991 Section 3.1
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, SpanX, Strong, Sub, Sup, TT, XRef]]
+    content : ListType[CContent]
+
 
 @dataclass
 class TextTable(Elem):
@@ -406,29 +445,35 @@ class BR(Elem):
     RFC 7991 Section 2.12
     """
 
+THContent = Union[Artwork, DL, Figure, OL, SourceCode, T, UL,
+                  Text, BCP14, BR, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]
+
 @dataclass
 class TH(Elem):
     """
     RFC 7991 Section 2.58
     """
-    content : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]],
-                    ListType[Union[Text, BCP14, BR, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
+    content : ListType[THContent]
     align   : Optional[str]
     anchor  : Optional[str]
     colspan : Optional[str]
     rowspan : Optional[str]
+
+
+TDContent = Union[Artwork, DL, Figure, OL, SourceCode, T, UL,
+                  Text, BCP14, BR, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]
 
 @dataclass
 class TD(Elem):
     """
     RFC 7991 Section 2.56
     """
-    content : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]],
-                    ListType[Union[Text, BCP14, BR, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
+    content : ListType[TDContent]
     align   : Optional[str]
     anchor  : Optional[str]
     colspan : Optional[str]
     rowspan : Optional[str]
+
 
 @dataclass
 class TR(Elem):
@@ -490,16 +535,20 @@ class Aside(Elem):
     content : ListType[Union[Artwork, DL, Figure, IRef, List, OL, T, Table, UL]]
     anchor  : Optional[str]
 
+
+BlockQuoteContent = Union[Artwork, DL, Figure, OL, SourceCode, T, UL,
+                          Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]
+
 @dataclass
 class BlockQuote(Elem):
     """
     RFC 7991 Section 2.10
     """
-    content    : Union[ListType[Union[Artwork, DL, Figure, OL, SourceCode, T, UL]],
-                       ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, Strong, Sub, Sup, TT, XRef]]]
+    content    : ListType[BlockQuoteContent]
     anchor     : Optional[str]
     cite       : Optional[str]
     quotedFrom : Optional[str]
+
 
 @dataclass
 class Section(Elem):
@@ -578,13 +627,16 @@ class Country(Elem):
     content : Text
     ascii   : Optional[str]
 
+
+PostalContent = Union[City, Code, Country, Region, Street, PostalLine]
+
 @dataclass
 class Postal(Elem):
     """
     RFC 7991 Section 2.37
     """
-    content : Union[ListType[Union[City, Code, Country, Region, Street]],
-                    ListType[PostalLine]]
+    content : ListType[PostalContent]
+
 
 # =================================================================================================
 # Address elements
@@ -767,19 +819,25 @@ class Format(Elem):
     target : Optional[str]
     type   : str
 
+AnnotationContent = Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, SpanX, Strong, Sub, Sup, TT, XRef]
+
 @dataclass
 class Annotation(Elem):
     """
     RFC 7991 Section 2.3
     """
-    content : ListType[Union[Text, BCP14, CRef, EM, ERef, IRef, RelRef, SpanX, Strong, Sub, Sup, TT, XRef]]
+    content : ListType[AnnotationContent]
+
+
+RefContentContent = Union[Text, BCP14, EM, Strong, Sub, Sup, TT]
 
 @dataclass
 class RefContent(Elem):
     """
     RFC 7991 Section 2.39
     """
-    content : ListType[Union[Text, BCP14, EM, Strong, Sub, Sup, TT]]
+    content : ListType[RefContentContent]
+
 
 @dataclass
 class Reference(Elem):
@@ -873,3 +931,4 @@ class RFC(Elem):
     tocInclude     : Optional[bool]
     updates        : Optional[str]
     version        : Optional[str]
+

@@ -270,7 +270,7 @@ class Test_Parse_Draft_McQuistin_Augmented_Ascii_Diagrams(unittest.TestCase):
         city: rfc.City       = rfc.City(content=rfc.Text("Glasgow"), ascii=None)
         code: rfc.Code       = rfc.Code(content=rfc.Text("G12 8QQ"), ascii=None)
         country: rfc.Country = rfc.Country(content=rfc.Text("UK"), ascii=None)
-        postal_address : List[Union[rfc.City, rfc.Code, rfc.Country, rfc.Region, rfc.Street]] = [ street, city, code, country ]
+        postal_address : List[rfc.PostalContent] = [ street, city, code, country ]
 
         self.assertIsInstance( front.authors[0].address.postal, rfc.Postal)
         self.assertEqual     ( front.authors[0].address.postal, rfc.Postal(postal_address))

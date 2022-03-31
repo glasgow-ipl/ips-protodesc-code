@@ -180,12 +180,10 @@ class TraverseRFC(NodeVisitor):
 
                     #print(f"0.2 > text = {text}")
 
-                    dt_content = cast( List[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]], [rfc.Text( text[:delim+1])])
-                    dd_content = cast(Union[List[Union[rfc.Artwork, rfc.DL, rfc.Figure, rfc.OL, rfc.SourceCode, rfc.T, rfc.UL]], 
-                                            List[Union[rfc.Text, rfc.BCP14, rfc.CRef, rfc.EM, rfc.ERef, rfc.IRef, rfc.RelRef, rfc.Strong, rfc.Sub, rfc.Sup, rfc.TT, rfc.XRef]]] , 
-                                            [rfc.Text( text[delim+1:])])
-                    field_desc.append( (rfc.DT(dt_content, None), 
-                                        rfc.DD(dd_content, None)) ) 
+                    dt_content = cast(List[rfc.DTContent], [rfc.Text( text[:delim+1])])
+                    dd_content = cast(List[rfc.DDContent], [rfc.Text( text[delim+1:])])
+                    field_desc.append( (rfc.DT(dt_content, None), rfc.DD(dd_content, None)))
+
                 elif len(field_desc) > 0 :
                     if isinstance(field_desc[-1][1].content[0], rfc.Text): 
                         # convert to list of <t> elements
