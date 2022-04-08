@@ -48,6 +48,24 @@ class ProtocolTypeError(Exception):
         self.reason = reason
 
 # =================================================================================================
+# States and Transitions:
+
+@dataclass(frozen=True)
+class ProtocolState:
+    name        : str
+
+@dataclass(frozen=True)
+class ProtocolEvent:
+	name : str
+
+@dataclass(frozen=True)
+class StateTransition:
+	event     : ProtocolEvent
+	in_state  : ProtocolState
+	out_state : ProtocolState
+	actions   : List[ProtocolEvent]
+
+# =================================================================================================
 # Traits:
 
 @dataclass(frozen=True)
@@ -625,10 +643,11 @@ class Context(InternalType, ConstructableType):
 
 
 class Protocol(InternalType, ConstructableType):
-    _types   : Dict[str, ConstructableType]
-    _funcs   : List[str]
-    _context : Context
-    _pdus    : List[str]
+    _types         : Dict[str, ConstructableType]
+    _funcs         : List[str]
+    _context       : Context
+    _pdus          : List[str]
+    _state_machine : Optional[ProtocolState]
 
     def __init__(self):
         super().__init__(name="Protocol")
