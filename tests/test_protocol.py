@@ -1194,26 +1194,26 @@ class TestProtocol(unittest.TestCase):
     # ---------------------------------------------------------------------------------------------
     # Test cases for Function:
 
-	def test_protocol_state(self):
-		# states
-		listen = ProtocolState("LISTEN")
-		syn_sent = ProtocolState("SYN-SENT")
-		syn_received = ProtocolState("SYN-RECEIVED")
-		established = ProtocolState("ESTABLISHED")
-		fin_wait_1 = ProtocolState("FIN-WAIT-1")
-		fin_wait_2 = ProtocolState("FIN-WAIT-2")
-		close_wait = ProtocolState("CLOSE-WAIT")
-		closing = ProtocolState("CLOSING")
-		last_ack = ProtocolState("LAST-ACK")
-		time_wait = ProtocolState("TIME-WAIT") 
-		closed = ProtocolState("CLOSED")
+    def test_protocol_state(self):
+        # states
+        listen = ProtocolState("LISTEN")
+        syn_sent = ProtocolState("SYN-SENT")
+        syn_received = ProtocolState("SYN-RECEIVED")
+        established = ProtocolState("ESTABLISHED")
+        fin_wait_1 = ProtocolState("FIN-WAIT-1")
+        fin_wait_2 = ProtocolState("FIN-WAIT-2")
+        close_wait = ProtocolState("CLOSE-WAIT")
+        closing = ProtocolState("CLOSING")
+        last_ack = ProtocolState("LAST-ACK")
+        time_wait = ProtocolState("TIME-WAIT") 
+        closed = ProtocolState("CLOSED")
 
-		# events
-		passive_open = ProtocolEvent("Passive OPEN")
-		create_tcb = ProtocolEvent("Create TCB")
-		
-		# transitions
-		closed_to_listen = StateTransition(passive_open, closed, listen, create_tcb)
+        # events
+        passive_open = ProtocolEvent("Passive OPEN")
+        create_tcb = ProtocolEvent("Create TCB")
+        
+        # transitions
+        closed_to_listen = StateTransition(passive_open, closed, listen, create_tcb)
 
 
 # =================================================================================================

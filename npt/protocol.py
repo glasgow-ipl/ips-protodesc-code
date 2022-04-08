@@ -56,14 +56,14 @@ class ProtocolState:
 
 @dataclass(frozen=True)
 class ProtocolEvent:
-	name : str
+    name : str
 
 @dataclass(frozen=True)
 class StateTransition:
-	event     : ProtocolEvent
-	in_state  : ProtocolState
-	out_state : ProtocolState
-	actions   : List[ProtocolEvent]
+    event     : ProtocolEvent
+    in_state  : ProtocolState
+    out_state : ProtocolState
+    actions   : List[ProtocolEvent]
 
 # =================================================================================================
 # Traits:
