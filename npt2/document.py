@@ -29,14 +29,16 @@
 # =================================================================================================
 
 from __future__ import annotations
-from typing     import Dict, List, Optional
+from typing     import Dict, List, Iterator, Optional
 
 class Node:
+    _depth      : int
     _parent     : Optional[Node]
     _tag        : str
     _attributes : Dict[str,str]
     _text       : Optional[str]    # It is guaranteed that a node will either
     _children   : List[Node]       # have _text or _children, but never both.
+
 
     def __init__(self, parent: Optional[Node], tag: str) -> None:
         self._parent     = parent
@@ -44,16 +46,15 @@ class Node:
         self._attributes = {}
         self._text       = None
         self._children   = []
+        if parent is None:
+            self._depth = 0
+        else:
+            self._depth = parent._depth + 1
 
 
-    def add_attribute(self, key: str, value: str) -> None:
-        assert key not in self._attributes
-        self._attributes[key] = value
-
-
-    def add_child(self, child: Node) -> None:
-        assert self._text is None
-        self._children.append(child)
+    def add_attribute(self, attribute: str, value: str) -> None:
+        assert attribute not in self._attributes
+        self._attributes[attribute] = value
 
 
     def add_text(self, text: str) -> None:
@@ -62,25 +63,104 @@ class Node:
         self._text = text
 
 
+    def add_child(self, child: Node) -> None:
+        assert self._text is None
+        self._children.append(child)
+
+
+    def add_child_after(self, new_child: Node, after: Node) -> None:
+        children = []
+        for child in self._children:
+            children.append(child)
+            if child.id() == after.id():
+                children.append(new_child)
+        self._children = children
+
+
+    def remove_attribute(self, attribute: str) -> None:
+        assert attribute in self._attributes
+        del self._attributes[attribute]
+
+
+    def remove_text(self) -> None:
+        assert self._text is not None
+        self._text = None
+
+
+    def remove_child(self, remove: Node) -> None:
+        children = []
+        for child in self._children:
+            if child.id() != remove.id():
+                children.append(new_child)
+        self._children = children
+
+
+    def replace_child(self, old_child: Node, new_child: Node) -> None:
+        children = []
+        for child in self._children:
+            if child.id() == new_child.id():
+                children.append(new_child)
+            else:
+                children.append(child)
+        self._children = children
+
+
+    def atttribute(self, attribute:str) -> Optional[str]:
+        return self._attributes[attribute]
+
+
+    def text(self) -> str:
+        assert self._text is not None
+        return self._text
+
+
+    def children(self) -> Iterator[Node]:
+        for child in self._children:
+            yield child
+
+
+    def nodes(self) -> Iterator[Nodes]:
+        yield self
+        for node in self._children:
+            yield node.nodes()
+
+
     def __str__(self) -> str:
-        s = f"<{self._tag}"
+        s = ""
+        for d in range(self._depth):
+            s = f"{s}  "
+        s = f"{s}<{self._tag}"
         for k,v in self._attributes.items():
             s = f"{s} {k}={v}"
-        s = f"{s}>"
+        s = f"{s}>\n"
         if self._text is None:
             for child in self._children:
-                s = f"{s}\n{child}"
+                s = f"{s}{child}\n"
         else:
-            s = f"{s}{self._text}"
-        s = f"{s}\n</{self._tag}>"
+            for line in self._text.splitlines():
+                for d in range(self._depth + 1):
+                    s = f"{s}  "
+                s = f"{s}{line}\n"
+        for d in range(self._depth):
+            s = f"{s}  "
+        s = f"{s}</{self._tag}>"
         return s
 
 
 
 class Document:
-    root : Node
+    _root : Node
 
     def __init__(self, root: Node) -> None:
-        self.root = root
+        self._root = root
+
+
+    def root(self) -> Node:
+        return self._root
+
+
+    def nodes(self) -> Iterator[Node]:
+        yield self._root.nodes()
+
 
 
