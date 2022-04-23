@@ -8,7 +8,7 @@ _NEWLINE              : "\n" | "\r\n"
 _BLANKLINE            : _WS+ _NEWLINE
                       | _NEWLINE
 
-AUTHOR_OR_AFFILIATION : ("a".."z" | "A".."Z" | "." | "," | "-" | "(" | ")" | " ")+
+AUTHOR_OR_AFFILIATION : "A".."Z" ("a".."z" | "A".."Z" | "." | "," | "-" | "(" | ")" | " ")+
 
 ORGANISATION          : "Internet Engineering Task Force (IETF)"
 
