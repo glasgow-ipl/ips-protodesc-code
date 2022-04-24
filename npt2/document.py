@@ -109,6 +109,11 @@ class Node:
         return self._attributes[attribute]
 
 
+    def tag(self) -> str:
+        assert self._tag is not None
+        return self._tag
+
+
     def text(self) -> str:
         assert self._text is not None
         return self._text
@@ -121,8 +126,9 @@ class Node:
 
     def nodes(self) -> Iterator[Nodes]:
         yield self
-        for node in self._children:
-            yield node.nodes()
+        for child in self._children:
+            for node in child.nodes():
+                yield node
 
 
     def __str__(self) -> str:
@@ -160,7 +166,8 @@ class Document:
 
 
     def nodes(self) -> Iterator[Node]:
-        yield self._root.nodes()
+        for node in self._root.nodes():
+            yield node
 
 
 
