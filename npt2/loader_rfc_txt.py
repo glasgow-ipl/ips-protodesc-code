@@ -28,7 +28,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-from typing        import List, Union, Optional, Tuple, Dict
+from typing        import List, Union, Optional, Tuple, Dict, Iterator
 from pathlib       import Path
 from lark          import Lark, Tree, Token
 
@@ -54,10 +54,52 @@ def _load_tree(tree: Tree, parent: Optional[Node]) -> List[Node]:
                 for child in _load_tree(elem, node):
                     node.add_child(child)
             if isinstance(elem, Token):
-                text = Node(node, "text")
+                text = Node("text", node)
                 text.add_text(elem)
                 node.add_child(text)
     return [node]
+
+
+def _extract_authors(doc: Document) -> Iterator[Node]:
+    # Are these useful?
+    aa_list = []
+    for aa in doc.find_nodes("author_or_affiliation"):
+        aa_list.append(aa.text)
+
+    for a in doc.find_nodes("author"):
+        name        = list(a.find_nodes("author_name"))[0].text()
+        affiliation = list(a.find_nodes("author_affiliation"))[0].text()
+        email_addr  = list(a.find_nodes("author_email"))[0].text()
+
+        organisation = Node("organization")
+        organisation.add_attribute("showOnFrontPage", "true")
+        organisation.add_text(affiliation)
+
+        email = Node("email")
+        email.add_text(email_addr)
+
+        address = Node("address")
+        address.add_child(email)
+
+        author = Node("author")
+        author.add_attribute("fullname", name.strip())
+        author.add_child(organisation)
+        author.add_child(address)
+
+        role = list(a.find_nodes("author_role"))
+        if len(role) > 0:
+            author.add_attribute("role", role[0].text())
+
+        yield author
+
+
+def _rewrite_front(doc: Document) -> None:
+    front = Node("front")
+    for author in _extract_authors(doc):
+        front.add_child(author)
+    print(front)
+    # FIXME: remove old front element from the document
+    # FIXME: add new front element to the document
 
 
 def load_rfc_txt(rfc_txt_file : Path) -> Document:
@@ -70,6 +112,7 @@ def load_rfc_txt(rfc_txt_file : Path) -> Document:
             nodes = _load_tree(tree, None)
     assert len(nodes) == 1
     doc = Document(nodes[0])
+    _rewrite_front(doc)
     return doc
 
 

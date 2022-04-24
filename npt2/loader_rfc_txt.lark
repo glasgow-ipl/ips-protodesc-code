@@ -8,7 +8,15 @@ _NEWLINE              : "\n" | "\r\n"
 _BLANKLINE            : _WS+ _NEWLINE
                       | _NEWLINE
 
-AUTHOR_OR_AFFILIATION : "A".."Z" ("a".."z" | "A".."Z" | "." | "," | "-" | "(" | ")" | " ")+
+ALPHANUM               : /\w/+
+
+NUMBER                : ("0".."9")+
+
+PUNCTUATION           : ("." | "," | ":" | ";" | "+" | "-" | "(" | ")" | "{" | "}" | "^" | "/" | "*" | "?" | "@" | "|" | ">" | "<" | "'" | "\"" | "_" | "[" | "]" | "=" | "!" | "~" | "&")+
+
+TEXT                  : (ALPHANUM | PUNCTUATION | " ")+ 
+
+AUTHOR_OR_AFFILIATION : ALPHANUM (ALPHANUM | "." | "," | "-" | " ")+
 
 ORGANISATION          : "Internet Engineering Task Force (IETF)"
 
@@ -67,14 +75,6 @@ header_block          : header_rfc _BLANKLINE+
 TITLE                 : ("a".."z" | "A".."Z" | ":" | "-" | " ")+
 
 title                 : _WS+ TITLE _NEWLINE _BLANKLINE+
-
-ALPHANUM               : /\w/+
-
-NUMBER                : ("0".."9")+
-
-PUNCTUATION           : ("." | "," | ":" | ";" | "+" | "-" | "(" | ")" | "{" | "}" | "^" | "/" | "*" | "?" | "@" | "|" | ">" | "<" | "'" | "\"" | "_" | "[" | "]" | "=" | "!" | "~" | "&")+
-
-TEXT                  : (ALPHANUM | PUNCTUATION | " ")+ 
 
 TEXTLINE              : "   " TEXT _NEWLINE
 
@@ -152,19 +152,19 @@ contributors_header   : "Contributors" _NEWLINE _BLANKLINE
 contributors          : contributors_header section_body
 
 
-authors_header        : "Authors' Addresses" _NEWLINE _BLANKLINE
+_AUTHORS_HEADER       : "Authors' Addresses" _NEWLINE _BLANKLINE
 
-author_name           : _WS+ TEXT
+author_name           : _WS+ AUTHOR_OR_AFFILIATION
 
-author_role           : " (" TEXT ")"
+author_role           : "(" ALPHANUM ")"
 
-author_affiliation    : _WS+ TEXT _NEWLINE
+author_affiliation    : _WS+ AUTHOR_OR_AFFILIATION _NEWLINE
 
 author_email          : _WS+ "Email: " TEXT _NEWLINE
 
-authors_body          : author_name author_role? _NEWLINE author_affiliation _BLANKLINE? author_email _BLANKLINE*
+author                : author_name author_role? _NEWLINE author_affiliation _BLANKLINE? author_email _BLANKLINE*
 
-authors               : authors_header authors_body+
+authors               : _AUTHORS_HEADER author+
 
 
 back                  : references appendix* contributors? authors
