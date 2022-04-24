@@ -40,7 +40,7 @@ class Node:
     _children   : List[Node]       # have _text or _children, but never both.
 
 
-    def __init__(self, parent: Optional[Node], tag: str) -> None:
+    def __init__(self, tag: str, parent: Optional[Node] = None) -> None:
         self._parent     = parent
         self._tag        = tag
         self._attributes = {}

@@ -36,7 +36,7 @@ from npt2.document import Node, Document
 
 
 def _load_tree(tree: Tree, parent: Optional[Node]) -> List[Node]:
-    node = Node(parent, tree.data)
+    node = Node(tree.data, parent)
 
     only_has_text = True
     combined_text = ""
