@@ -131,13 +131,19 @@ class Node:
                 yield node
 
 
+    def find_nodes(self, tag: str) -> Iterator[Node]:
+        for node in self.nodes():
+            if node.tag() == tag:
+                yield node
+
+
     def __str__(self) -> str:
         s = ""
         for d in range(self._depth):
             s = f"{s}  "
         s = f"{s}<{self._tag}"
         for k,v in self._attributes.items():
-            s = f"{s} {k}={v}"
+            s = f'{s} {k}="{v}"'
         s = f"{s}>\n"
         if self._text is None:
             for child in self._children:
@@ -169,5 +175,10 @@ class Document:
         for node in self._root.nodes():
             yield node
 
+
+    def find_nodes(self, tag: str) -> Iterator[Node]:
+        for node in self.nodes():
+            if node.tag() == tag:
+                yield node
 
 
