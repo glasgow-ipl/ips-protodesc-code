@@ -34,7 +34,7 @@ from pathlib       import Path
 
 from npt2.document import Node, Document
 
-def _load_xml(xmlElement: ET.Element, parent: Optional[Node]) -> List[Node]:
+def _load_xml(xmlElement:ET.Element, parent:Optional[Node] = None) -> List[Node]:
     node = Node(xmlElement.tag, parent)
 
     for k, v in xmlElement.attrib.items():
@@ -50,10 +50,11 @@ def _load_xml(xmlElement: ET.Element, parent: Optional[Node]) -> List[Node]:
 
     for elem in xmlElement:
         for child in _load_xml(elem, node):
+            assert child.parent() == node
             node.add_child(child)
 
     if xmlElement.tail is not None and len(xmlElement.tail.strip()) > 0:
-        tail = Node("text", node)
+        tail = Node("text", parent)
         tail.add_text(xmlElement.tail)
         return [node, tail]
     else:
@@ -63,7 +64,7 @@ def _load_xml(xmlElement: ET.Element, parent: Optional[Node]) -> List[Node]:
 
 def load_rfc_xml(rfc_xml_file : Path) -> Document:
     xml   = ET.parse(rfc_xml_file).getroot()
-    nodes = _load_xml(xml, None)
+    nodes = _load_xml(xml)
     assert len(nodes) == 1
     return Document(nodes[0])
 

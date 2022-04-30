@@ -63,13 +63,13 @@ def _load_tree(tree: Tree, parent: Optional[Node]) -> List[Node]:
 def _extract_authors(doc: Document) -> Iterator[Node]:
     # Are these useful?
     aa_list = []
-    for aa in doc.find_nodes("author_or_affiliation"):
+    for aa in doc.root().children(tag="author_or_affiliation", recursive=True):
         aa_list.append(aa.text)
 
-    for a in doc.find_nodes("author"):
-        name        = list(a.find_nodes("author_name"))[0].text()
-        affiliation = list(a.find_nodes("author_affiliation"))[0].text()
-        email_addr  = list(a.find_nodes("author_email"))[0].text()
+    for a in doc.root().children(tag="author", recursive=True):
+        name        = a.child("author_name").text()
+        affiliation = a.child("author_affiliation").text()
+        email_addr  = a.child("author_email").text()
 
         organisation = Node("organization")
         organisation.add_attribute("showOnFrontPage", "true")
@@ -97,7 +97,6 @@ def _rewrite_front(doc: Document) -> None:
     front = Node("front")
     for author in _extract_authors(doc):
         front.add_child(author)
-    print(front)
     # FIXME: remove old front element from the document
     # FIXME: add new front element to the document
 
