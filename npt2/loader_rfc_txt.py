@@ -35,8 +35,8 @@ from lark          import Lark, Tree, Token
 from npt2.document import Node, Document
 
 
-def _load_tree(tree: Tree, parent: Optional[Node]) -> List[Node]:
-    node = Node(tree.data, parent)
+def _load_tree(tree: Tree) -> List[Node]:
+    node = Node(tree.data)
 
     only_has_text = True
     combined_text = ""
@@ -51,7 +51,7 @@ def _load_tree(tree: Tree, parent: Optional[Node]) -> List[Node]:
     else:
         for elem in tree.children:
             if isinstance(elem, Tree):
-                for child in _load_tree(elem, node):
+                for child in _load_tree(elem):
                     node.add_child(child)
             if isinstance(elem, Token):
                 text = Node("text", node)
@@ -86,7 +86,7 @@ def _extract_authors(doc: Document) -> Iterator[Node]:
         author.add_child(organisation)
         author.add_child(address)
 
-        role = list(a.find_nodes("author_role"))
+        role = list(a.children(tag="author_role", recursive=True))
         if len(role) > 0:
             author.add_attribute("role", role[0].text())
 
@@ -108,7 +108,7 @@ def load_rfc_txt(rfc_txt_file : Path) -> Document:
         with open(rfc_txt_file, "r") as inf:
             lines = inf.read()
             tree  = parser.parse(lines)
-            nodes = _load_tree(tree, None)
+            nodes = _load_tree(tree)
     assert len(nodes) == 1
     doc = Document(nodes[0])
     _rewrite_front(doc)

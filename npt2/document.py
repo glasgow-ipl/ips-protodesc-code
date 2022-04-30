@@ -41,9 +41,9 @@ class Node:
     # ---------------------------------------------------------------------------------------------
     # Methods to initialise and modify a Node:
 
-    def __init__(self, tag: str, parent: Optional[Node] = None) -> None:
+    def __init__(self, tag) -> None:
         self._tag        = tag
-        self._parent     = parent
+        self._parent     = None
         self._attributes = {}
         self._text       = None
         self._children   = []
@@ -62,7 +62,7 @@ class Node:
 
     def add_child(self, child: Node) -> None:
         assert self._text is None
-        assert child._parent is None or child._parent == self
+        assert child._parent is None
         child._parent = self
         self._children.append(child)
 
@@ -146,10 +146,11 @@ class Node:
         children = []
         for child in self._children:
             if tag is None or child.tag() == tag:
+                assert child.parent() == self
                 children.append(child)
             if recursive:
                 for node in child.children(recursive = True, tag = tag):
-                    if tag is None or child.tag() == tag:
+                    if tag is None or node.tag() == tag:
                         children.append(node)
         return children
 

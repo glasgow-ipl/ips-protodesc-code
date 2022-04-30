@@ -35,7 +35,7 @@ from pathlib       import Path
 from npt2.document import Node, Document
 
 def _load_xml(xmlElement:ET.Element, parent:Optional[Node] = None) -> List[Node]:
-    node = Node(xmlElement.tag, parent)
+    node = Node(xmlElement.tag)
 
     for k, v in xmlElement.attrib.items():
         node.add_attribute(k, v)
@@ -44,17 +44,17 @@ def _load_xml(xmlElement:ET.Element, parent:Optional[Node] = None) -> List[Node]
         if len(xmlElement) == 0:
             node.add_text(xmlElement.text)
         else:
-            text = Node("text", node)
+            text = Node("text")
             text.add_text(xmlElement.text)
             node.add_child(text)
 
     for elem in xmlElement:
         for child in _load_xml(elem, node):
-            assert child.parent() == node
+            assert child.parent() == None
             node.add_child(child)
 
     if xmlElement.tail is not None and len(xmlElement.tail.strip()) > 0:
-        tail = Node("text", parent)
+        tail = Node("text")
         tail.add_text(xmlElement.tail)
         return [node, tail]
     else:

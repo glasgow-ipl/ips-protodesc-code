@@ -40,19 +40,12 @@ from npt2.document       import Node
 
 class TestNode(unittest.TestCase):
     def test_node___init__(self) -> None:
-        p = Node("test")
-        self.assertEqual(p.tag(),        "test")
-        self.assertEqual(p.parent(),     None)
-        self.assertEqual(p.attributes(), {})
-        self.assertEqual(p.text(),       None)
-        self.assertEqual(p.children(),   [])
-
-        c = Node("test", parent = p)
-        self.assertEqual(c.tag(),        "test")
-        self.assertEqual(c.parent(),     p)
-        self.assertEqual(c.attributes(), {})
-        self.assertEqual(c.text(),       None)
-        self.assertEqual(c.children(),   [])
+        n = Node("test")
+        self.assertEqual(n.tag(),        "test")
+        self.assertEqual(n.parent(),     None)
+        self.assertEqual(n.attributes(), {})
+        self.assertEqual(n.text(),       None)
+        self.assertEqual(n.children(),   [])
 
 
     def test_node_attributes(self) -> None:
