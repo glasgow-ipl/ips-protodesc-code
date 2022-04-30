@@ -32,24 +32,21 @@ from __future__ import annotations
 from typing     import Dict, List, Iterator, Optional
 
 class Node:
-    _depth      : int
     _parent     : Optional[Node]
     _tag        : str
     _attributes : Dict[str,str]
     _text       : Optional[str]    # It is guaranteed that a node will either
     _children   : List[Node]       # have _text or _children, but never both.
 
+    # ---------------------------------------------------------------------------------------------
+    # Methods to initialise and modify a Node:
 
     def __init__(self, tag: str, parent: Optional[Node] = None) -> None:
-        self._parent     = parent
         self._tag        = tag
+        self._parent     = parent
         self._attributes = {}
         self._text       = None
         self._children   = []
-        if parent is None:
-            self._depth = 0
-        else:
-            self._depth = parent._depth + 1
 
 
     def add_attribute(self, attribute: str, value: str) -> None:
@@ -65,14 +62,19 @@ class Node:
 
     def add_child(self, child: Node) -> None:
         assert self._text is None
+        assert child._parent is None or child._parent == self
+        child._parent = self
         self._children.append(child)
 
 
     def add_child_after(self, new_child: Node, after: Node) -> None:
+        assert self._text is None
+        assert new_child._parent is None
         children = []
         for child in self._children:
             children.append(child)
-            if child.id() == after.id():
+            if id(child) == id(after):
+                new_child._parent = self
                 children.append(new_child)
         self._children = children
 
@@ -87,26 +89,48 @@ class Node:
         self._text = None
 
 
-    def remove_child(self, remove: Node) -> None:
+    def remove_child(self, remove: Node) -> Node:
+        removed  = None
         children = []
         for child in self._children:
-            if child.id() != remove.id():
-                children.append(new_child)
+            if id(child) != id(remove):
+                children.append(child)
+            else:
+                removed = child
+                removed._parent = None
         self._children = children
+        assert removed is not None
+        return removed
 
 
-    def replace_child(self, old_child: Node, new_child: Node) -> None:
+    def replace_child(self, old_child: Node, new_child: Node) -> Node:
+        removed  = None
         children = []
         for child in self._children:
-            if child.id() == new_child.id():
+            if id(child) == id(old_child):
+                new_child._parent = self
                 children.append(new_child)
+                removed = child
+                removed._parent = None
             else:
                 children.append(child)
         self._children = children
+        assert removed is not None
+        return removed
+
+    # ---------------------------------------------------------------------------------------------
+    # Methods to query the contents of a Node:
+
+    def has_attribute(self, attribute:str) -> bool:
+        return attribute in self._attributes
 
 
-    def atttribute(self, attribute:str) -> Optional[str]:
+    def attribute(self, attribute:str) -> str:
         return self._attributes[attribute]
+
+
+    def attributes(self) -> Dict[str,str]:
+        return self._attributes
 
 
     def tag(self) -> str:
@@ -118,58 +142,29 @@ class Node:
         return self._text
 
 
-    def children(self) -> Iterator[Node]:
+    def children(self, recursive:bool = False, tag:Optional[str] = None) -> List[Node]:
+        children = []
         for child in self._children:
-            yield child
+            if tag is None or child.tag() == tag:
+                children.append(child)
+            if recursive:
+                for node in child.children(recursive = True, tag = tag):
+                    if tag is None or child.tag() == tag:
+                        children.append(node)
+        return children
 
 
-    def children_recursive(self) -> Iterator[Nodes]:
-        yield self
-        for child in self._children:
-            for node in child.children_recursive():
-                yield node
-
-
-    def find_children(self, tag: str) -> Iterator[Node]:
-        for node in self.children():
-            if node.tag() == tag:
-                yield node
-
-
-    def find_children_recursive(self, tag: str) -> Iterator[Node]:
-        for node in self.children_recursive():
-            if node.tag() == tag:
-                yield node
-
-
-    def find_child(self, tag: str) -> Node:
-        nlist = list(self.find_children(tag))
+    def child(self, tag: str) -> Node:
+        nlist = self.children(recursive=False, tag=tag)
         assert len(nlist) == 1
         return nlist[0]
 
 
-    def __str__(self) -> str:
-        s = ""
-        for d in range(self._depth):
-            s = f"{s}  "
-        s = f"{s}<{self._tag}"
-        for k,v in self._attributes.items():
-            s = f'{s} {k}="{v}"'
-        s = f"{s}>\n"
-        if self._text is None:
-            for child in self._children:
-                s = f"{s}{child}\n"
-        else:
-            for line in self._text.splitlines():
-                for d in range(self._depth + 1):
-                    s = f"{s}  "
-                s = f"{s}{line}\n"
-        for d in range(self._depth):
-            s = f"{s}  "
-        s = f"{s}</{self._tag}>"
-        return s
+    def parent(self) -> Optional[Node]:
+        return self._parent
 
 
+# =================================================================================================
 
 class Document:
     _root : Node

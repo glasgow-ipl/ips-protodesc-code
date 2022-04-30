@@ -39,7 +39,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from npt2.loader_rfc_xml import load_rfc_xml
 from npt2.document       import Document, Node
 
-class TestParsers(unittest.TestCase):
+class TestDocument(unittest.TestCase):
     doc : Document
 
     @classmethod
@@ -67,13 +67,13 @@ class TestParsers(unittest.TestCase):
 
     def test_children_recursive(self) -> None:
         root  = self.doc.root()
-        nodes = list(root.children_recursive())
-        self.assertEqual(len(nodes), 7670)
+        nodes = root.children(recursive=True)
+        self.assertEqual(len(nodes), 7669)
 
 
     def test_find_child(self) -> None:
         root  = self.doc.root()
-        front = root.find_child("front")
+        front = root.child("front")
         self.assertEqual(front.tag(), "front")
 
 
