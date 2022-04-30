@@ -114,8 +114,7 @@ class Node:
         return self._tag
 
 
-    def text(self) -> str:
-        assert self._text is not None
+    def text(self) -> Optional[str]:
         return self._text
 
 
