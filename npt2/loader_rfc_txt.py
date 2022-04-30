@@ -54,7 +54,7 @@ def _load_tree(tree: Tree) -> List[Node]:
                 for child in _load_tree(elem):
                     node.add_child(child)
             if isinstance(elem, Token):
-                text = Node("text", node)
+                text = Node("text")
                 text.add_text(elem)
                 node.add_child(text)
     return [node]
@@ -73,22 +73,27 @@ def _extract_authors(doc: Document) -> Iterator[Node]:
 
         organisation = Node("organization")
         organisation.add_attribute("showOnFrontPage", "true")
-        organisation.add_text(affiliation)
+        if affiliation is not None:
+            organisation.add_text(affiliation)
 
         email = Node("email")
+        assert email_addr is not None
         email.add_text(email_addr)
 
         address = Node("address")
         address.add_child(email)
 
         author = Node("author")
-        author.add_attribute("fullname", name.strip())
+        if name is not None:
+            author.add_attribute("fullname", name.strip())
         author.add_child(organisation)
         author.add_child(address)
 
-        role = list(a.children(tag="author_role", recursive=True))
+        role = a.children(tag="author_role", recursive=False)
         if len(role) > 0:
-            author.add_attribute("role", role[0].text())
+            role_text = role[0].text()
+            if role_text is not None:
+                author.add_attribute("role", role_text)
 
         yield author
 
