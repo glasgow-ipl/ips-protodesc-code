@@ -123,17 +123,29 @@ class Node:
             yield child
 
 
-    def nodes(self) -> Iterator[Nodes]:
+    def children_recursive(self) -> Iterator[Nodes]:
         yield self
         for child in self._children:
-            for node in child.nodes():
+            for node in child.children_recursive():
                 yield node
 
 
-    def find_nodes(self, tag: str) -> Iterator[Node]:
-        for node in self.nodes():
+    def find_children(self, tag: str) -> Iterator[Node]:
+        for node in self.children():
             if node.tag() == tag:
                 yield node
+
+
+    def find_children_recursive(self, tag: str) -> Iterator[Node]:
+        for node in self.children_recursive():
+            if node.tag() == tag:
+                yield node
+
+
+    def find_child(self, tag: str) -> Node:
+        nlist = list(self.find_children(tag))
+        assert len(nlist) == 1
+        return nlist[0]
 
 
     def __str__(self) -> str:
@@ -168,16 +180,5 @@ class Document:
 
     def root(self) -> Node:
         return self._root
-
-
-    def nodes(self) -> Iterator[Node]:
-        for node in self._root.nodes():
-            yield node
-
-
-    def find_nodes(self, tag: str) -> Iterator[Node]:
-        for node in self.nodes():
-            if node.tag() == tag:
-                yield node
 
 
