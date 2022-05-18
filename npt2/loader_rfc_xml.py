@@ -62,8 +62,8 @@ def _load_xml(xmlElement:ET.Element, parent:Optional[Node] = None) -> List[Node]
 
 
 
-def load_rfc_xml(rfc_xml_file : Path) -> Document:
-    xml   = ET.parse(rfc_xml_file).getroot()
+def load_rfc_xml(content : str) -> Document:
+    xml   = ET.fromstring(content)
     nodes = _load_xml(xml)
     assert len(nodes) == 1
     return Document(nodes[0])

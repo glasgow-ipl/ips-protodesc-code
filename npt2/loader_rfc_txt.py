@@ -130,7 +130,7 @@ copyright             : "Copyright Notice"    _NEWLINE _BLANKLINE t+
 
 table_of_contents     : "Table of Contents"   _NEWLINE _BLANKLINE t+
 
-front                 : _BOM _BLANKLINE+ header_block title abstract status_of_this_memo copyright table_of_contents
+front                 : _BOM? _BLANKLINE+ header_block title abstract status_of_this_memo copyright table_of_contents
 
 
 
@@ -292,14 +292,11 @@ def _rewrite_front(doc: Document) -> None:
     # FIXME: add new front element to the document
 
 
-def load_rfc_txt(rfc_txt_file : Path) -> Document:
-    #with open("npt2/loader_rfc_txt.lark") as grammar:
+def load_rfc_txt(content: str) -> Document:
     parser = Lark(grammar, start = "rfc")
 
-    with open(rfc_txt_file, "r") as inf:
-        lines = inf.read()
-        tree  = parser.parse(lines)
-        nodes = _load_tree(tree)
+    tree  = parser.parse(content)
+    nodes = _load_tree(tree)
     assert len(nodes) == 1
     doc = Document(nodes[0])
     _rewrite_front(doc)
