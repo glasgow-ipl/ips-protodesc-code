@@ -32,7 +32,8 @@ import os
 import sys
 import unittest
 
-from pathlib import Path
+from npt2.loader import Loader
+from pathlib     import Path
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -44,8 +45,7 @@ class TestDocument(unittest.TestCase):
 
     @classmethod
     def setUp(self) -> None:
-        xml = Path("/Users/csp/Documents/IETF/RFC/rfc9000.xml")
-        self.doc = load_rfc_xml(xml)
+        self.doc = Loader("/Users/csp/Documents/IETF/RFC/rfc9000.xml").load()
 
 
     def test_root(self) -> None:
@@ -75,8 +75,5 @@ class TestDocument(unittest.TestCase):
         root  = self.doc.root()
         front = root.child("front")
         self.assertEqual(front.tag(), "front")
-
-
-
 
 

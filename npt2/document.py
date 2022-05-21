@@ -35,8 +35,8 @@ class Node:
     _parent     : Optional[Node]
     _tag        : str
     _attributes : Dict[str,str]
-    _text       : Optional[str]    # It is guaranteed that a node will either
-    _children   : List[Node]       # have _text or _children, but never both.
+    _text       : str              # If self._text != "", len(self._children) == 0
+    _children   : List[Node]       # if len(self._children) > 0, self._text == ""
 
     # ---------------------------------------------------------------------------------------------
     # Methods to initialise and modify a Node:
@@ -45,7 +45,7 @@ class Node:
         self._tag        = tag
         self._parent     = None
         self._attributes = {}
-        self._text       = None
+        self._text       = ""
         self._children   = []
 
 
@@ -56,19 +56,19 @@ class Node:
 
     def add_text(self, text: str) -> None:
         assert self._children == []
-        assert self._text is None
+        assert self._text == ""
         self._text = text
 
 
     def add_child(self, child: Node) -> None:
-        assert self._text is None
+        assert self._text == ""
         assert child._parent is None
         child._parent = self
         self._children.append(child)
 
 
     def add_child_after(self, new_child: Node, after: Node) -> None:
-        assert self._text is None
+        assert self._text == ""
         assert new_child._parent is None
         children = []
         for child in self._children:
@@ -85,8 +85,8 @@ class Node:
 
 
     def remove_text(self) -> None:
-        assert self._text is not None
-        self._text = None
+        assert self._text != ""
+        self._text = ""
 
 
     def remove_child(self, remove: Node) -> Node:
@@ -138,25 +138,33 @@ class Node:
         return self._tag
 
 
-    def text(self) -> Optional[str]:
-        return self._text
+    def has_text(self) -> bool:
+        return self._text != ""
 
 
-    def children(self, recursive:bool = False, tag:Optional[str] = None) -> List[Node]:
+    def text(self, recursive:bool=False) -> str:
+        text = self._text
+        if recursive:
+            for child in self.children(recursive=True):
+                text += child.text(recursive=True)
+        return text
+
+
+    def children(self, recursive:bool = False, with_tag:Optional[str] = None) -> List[Node]:
         children = []
         for child in self._children:
-            if tag is None or child.tag() == tag:
+            if with_tag is None or child.tag() == with_tag:
                 assert child.parent() == self
                 children.append(child)
             if recursive:
-                for node in child.children(recursive = True, tag = tag):
-                    if tag is None or node.tag() == tag:
+                for node in child.children(recursive = True, with_tag = with_tag):
+                    if with_tag is None or node.tag() == with_tag:
                         children.append(node)
         return children
 
 
     def child(self, tag: str) -> Node:
-        nlist = self.children(recursive=False, tag=tag)
+        nlist = self.children(recursive=False, with_tag=tag)
         assert len(nlist) == 1
         return nlist[0]
 
