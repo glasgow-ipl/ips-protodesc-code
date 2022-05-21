@@ -115,38 +115,26 @@ class Loader:
 
 
     def load(self) -> Document:
-        if   Path(self.docname).exists() and self.docname.endswith(".txt"):
-            # Load local TXT file
-            with open(self.docname, "r") as inf:
-                data = inf.read()
-            return load_rfc_txt(data)
-        elif Path(self.docname).exists() and self.docname.endswith(".xml"):
-            # Load local XML file
-            with open(self.docname, "rb") as inf:
-                data = inf.read()
-            return load_rfc_xml(data)
-        elif self.docname.lower().startswith("draft-"):
-            # Load remote Internet-Draft
-            url = url_for_draft(self.docname)
-            with requests.Session() as session:
-                response = session.get(url, verify=True)
-                if response.status_code == 200:
-                    if url.endswith(".txt"):
-                        return load_rfc_txt(response.text)
-                    if url.endswith(".xml"):
-                        return load_rfc_xml(response.content)
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), self.docname)
-        elif self.docname.lower().startswith("rfc"):
-            # Load remote RFC
-            url = url_for_rfc(self.docname)
-            with requests.Session() as session:
-                response = session.get(url, verify=True)
-                if response.status_code == 200:
-                    if url.endswith(".txt"):
-                        return load_rfc_txt(response.text)
-                    if url.endswith(".xml"):
-                        return load_rfc_xml(response.content)
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), self.docname)
+        if Path(self.docname).exists():
+            if self.docname.endswith(".txt"):
+                with open(self.docname, "r") as inf:
+                    return load_rfc_txt(inf.read())
+            if self.docname.endswith(".xml"):
+                with open(self.docname, "rb") as inf:
+                    return load_rfc_xml(inf.read())
         else:
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), draftname)
+            url = None
+            if self.docname.lower().startswith("draft-"):
+                url = url_for_draft(self.docname)
+            if self.docname.lower().startswith("rfc"):
+                url = url_for_rfc(self.docname)
+            if url is not None:
+                with requests.Session() as session:
+                    response = session.get(url, verify=True)
+                    if response.status_code == 200:
+                        if url.endswith(".txt"):
+                            return load_rfc_txt(response.text)
+                        if url.endswith(".xml"):
+                            return load_rfc_xml(response.content)
+        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), self.docname)
 
