@@ -131,7 +131,8 @@ class Loader:
             if self.docname.lower().startswith("rfc"):
                 url = url_for_rfc(self.docname)
             if url is not None:
-                print(f"Loading {url}")
+                if verbose:
+                    print(f"Loading {url}")
                 with requests.Session() as session:
                     response = session.get(url, verify=True)
                     if response.status_code == 200:
