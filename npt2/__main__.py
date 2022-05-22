@@ -33,15 +33,16 @@ import argparse
 from npt2.loader import Loader
 
 def main():
-    print("*** Network Protocol Tool v2")
-    print("")
-
     ap = argparse.ArgumentParser(description=f"Network Protocol Tool v2")
     #ap.add_argument("-d", dest="outdir", required=True,  help="directory for output files")
     #ap.add_argument("-f", dest="format",  required=True,  help="output format")
     ap.add_argument("-v", dest="verbose", required=False, type=bool, help="verbose")
     ap.add_argument("document", help="document to process")
     args = ap.parse_args()
+
+    if args.verbose:
+        print("*** Network Protocol Tool v2")
+        print("")
 
     doc = Loader(args.document).load(verbose=args.verbose)
 
