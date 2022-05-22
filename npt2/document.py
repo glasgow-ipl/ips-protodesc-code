@@ -89,6 +89,11 @@ class Node:
         self._text = ""
 
 
+    def replace_text(self, text:str) -> None:
+        assert self._text != ""
+        self._text = text
+
+
     def remove_child(self, remove: Node) -> Node:
         removed  = None
         children = []
