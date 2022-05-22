@@ -114,8 +114,10 @@ class Loader:
         self.docname = docname
 
 
-    def load(self) -> Document:
+    def load(self, verbose:Optional[bool] = False) -> Document:
         if Path(self.docname).exists():
+            if verbose:
+                print(f"Loading {self.docname}")
             if self.docname.endswith(".txt"):
                 with open(self.docname, "r") as inf:
                     return load_rfc_txt(inf.read())
@@ -129,6 +131,7 @@ class Loader:
             if self.docname.lower().startswith("rfc"):
                 url = url_for_rfc(self.docname)
             if url is not None:
+                print(f"Loading {url}")
                 with requests.Session() as session:
                     response = session.get(url, verify=True)
                     if response.status_code == 200:
