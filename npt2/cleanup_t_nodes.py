@@ -28,37 +28,21 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-import argparse
+from npt2.document import Document, Node
 
-from npt2.loader          import Loader
-from npt2.cleanup_t_nodes import cleanup_t_nodes
-
-def main():
-    ap = argparse.ArgumentParser(description=f"Network Protocol Tool v2")
-    #ap.add_argument("-d", dest="outdir", required=True,  help="directory for output files")
-    #ap.add_argument("-f", dest="format",  required=True,  help="output format")
-    ap.add_argument("-v", dest="verbose", action="store_true", help="verbose")
-    ap.add_argument("document", help="document to process")
-    args = ap.parse_args()
-
-    if args.verbose:
-        print("*** Network Protocol Tool v2")
-        print("")
-
-    doc = Loader(args.document).load(verbose=args.verbose)
-    cleanup_t_nodes(doc, args.verbose)
-
-    # Print out the documents
-    for node in doc.root().children(recursive=True):
-        print(f"# {node.tag()}", end="")
-        for n, v in node.attributes().items():
-            print(f' {n}="{v}"', end="")
-        print("")
+def cleanup_t_nodes(doc: Document, verbose:bool=False) -> None:
+    """
+    Find <t> elements that only contain text, and replace that text with an
+    equivalent <text> element. This ensures that all <t> elements contain a
+    list of child elements, rather than having some with text and some with
+    child elements.
+    """
+    if verbose:
+        print("Cleaning up <t> nodes")
+    for node in doc.root().children(recursive=True, with_tag="t"):
         if node.has_text():
-            print(f'   "{node.text()}"')
-
-
-
-if __name__ == "__main__":
-    main()
+            text = Node("text")
+            text.add_text(node.text().replace("\n", " ").strip())
+            node.remove_text()
+            node.add_child(text)
 
