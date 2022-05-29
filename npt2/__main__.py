@@ -43,7 +43,6 @@ def main():
 
     if args.verbose:
         print("*** Network Protocol Tool v2")
-        print("")
 
     doc = Loader(args.document).load(verbose=args.verbose)
     cleanup_text_nodes(doc, args.verbose)
