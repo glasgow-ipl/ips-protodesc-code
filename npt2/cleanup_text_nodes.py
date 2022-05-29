@@ -31,14 +31,12 @@
 from npt2.document import Document, Node
 
 def cleanup_text_nodes(doc: Document, verbose:bool=False) -> None:
-    """
-    In the RFC 7991 format, a number of elements have a content model that
-    contains either text or child elements. Find such elements that only
-    contain text, and replace that text with an equivalent <text> element.
-    This ensures that all such elements contain a list of child elements,
-    rather than having some with text and some with child elements.
-    """
-    for tag in [
+    # In the RFC 7991 format, a number of elements have a content model that
+    # contains either text or child elements. Find such elements that only
+    # contain text, and replace that text with an equivalent <text> element.
+    # This ensures that all such elements contain a list of child elements,
+    # rather than having some with text and some with child elements.
+    cleanup_tags = [
             "annotation",
             "blockquote",
             "xref",
@@ -55,7 +53,9 @@ def cleanup_text_nodes(doc: Document, verbose:bool=False) -> None:
             "td",
             "th",
             "tt"
-        ]:
+        ]
+
+    for tag in cleanup_tags:
         if verbose:
             print(f"Cleaning up <{tag}> nodes")
         for node in doc.root().children(recursive=True, with_tag=tag):
@@ -64,4 +64,25 @@ def cleanup_text_nodes(doc: Document, verbose:bool=False) -> None:
                 text.add_text(node.text().replace("\n", " ").strip())
                 node.remove_text()
                 node.add_child(text)
+
+    # Find the <text> nodes, and collapse unnecessary white space
+    if verbose:
+        print(f"Cleaning up <text> nodes")
+    for tag in cleanup_tags:
+        for node in doc.root().children(recursive=True, with_tag=tag):
+            first = True
+            for child in node.children():
+                if child.tag() == "text":
+                    if child.text()[0].isspace() and not first:
+                        head = " "
+                    else:
+                        head = ""
+                    main = " ".join(child.text().split())
+                    if child.text()[-1].isspace():
+                        tail = " "
+                    else:
+                        tail = ""
+                    child.replace_text(head + main + tail)
+                first = False
+
 
