@@ -32,13 +32,13 @@ import os
 import sys
 import unittest
 
-from npt2.loader import Loader
-from pathlib     import Path
-
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from npt2.loader_rfc_xml import load_rfc_xml
-from npt2.document       import Document, Node
+from pathlib       import Path
+
+from npt2.loader   import Loader
+from npt2.document import Document, Node
+
 
 class TestDocument(unittest.TestCase):
     doc : Document
