@@ -249,10 +249,10 @@ def _load_tree(tree: Tree) -> List[Node]:
 def _extract_authors(doc: Document) -> Iterator[Node]:
     # Are these useful?
     aa_list = []
-    for aa in doc.root().children(tag="author_or_affiliation", recursive=True):
+    for aa in doc.root().children(with_tag="author_or_affiliation", recursive=True):
         aa_list.append(aa.text)
 
-    for a in doc.root().children(tag="author", recursive=True):
+    for a in doc.root().children(with_tag="author", recursive=True):
         name        = a.child("author_name").text()
         affiliation = a.child("author_affiliation").text()
         email_addr  = a.child("author_email").text()
@@ -275,7 +275,7 @@ def _extract_authors(doc: Document) -> Iterator[Node]:
         author.add_child(organisation)
         author.add_child(address)
 
-        role = a.children(tag="author_role", recursive=False)
+        role = a.children(with_tag="author_role", recursive=False)
         if len(role) > 0:
             role_text = role[0].text()
             if role_text is not None:
