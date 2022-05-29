@@ -73,8 +73,7 @@ def url_for_draft(draftname: str) -> str:
                         return f"https://www.ietf.org/archive/id/{submission.name}-{submission.rev}.txt"
                     else:
                         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), draftname)
-        else:
-            return f"https://www.ietf.org/archive/id/{doc.name}-{rev}.txt"
+        return f"https://www.ietf.org/archive/id/{doc.name}-{rev}.txt"
 
 
 def url_for_rfc(rfc: str) -> str:
