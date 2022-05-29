@@ -30,9 +30,8 @@
 
 import argparse
 
-from npt2.loader           import Loader
-from npt2.cleanup_t_nodes  import cleanup_t_nodes
-from npt2.cleanup_li_nodes import cleanup_li_nodes
+from npt2.loader             import Loader
+from npt2.cleanup_text_nodes import cleanup_text_nodes
 
 def main():
     ap = argparse.ArgumentParser(description=f"Network Protocol Tool v2")
@@ -47,8 +46,7 @@ def main():
         print("")
 
     doc = Loader(args.document).load(verbose=args.verbose)
-    cleanup_t_nodes(doc, args.verbose)
-    cleanup_li_nodes(doc, args.verbose)
+    cleanup_text_nodes(doc, args.verbose)
 
     # Print out the documents
     for node in doc.root().children(recursive=True):

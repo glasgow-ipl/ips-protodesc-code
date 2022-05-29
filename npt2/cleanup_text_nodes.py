@@ -30,19 +30,38 @@
 
 from npt2.document import Document, Node
 
-def cleanup_li_nodes(doc: Document, verbose:bool=False) -> None:
+def cleanup_text_nodes(doc: Document, verbose:bool=False) -> None:
     """
-    Find <li> elements that only contain text, and replace that text with an
-    equivalent <text> element. This ensures that all <li> elements contain a
-    list of child elements, rather than having some with text and some with
-    child elements.
+    In the RFC 7991 format, a number of elements have a content model that
+    contains either text or child elements. Find such elements that only
+    contain text, and replace that text with an equivalent <text> element.
+    This ensures that all such elements contain a list of child elements,
+    rather than having some with text and some with child elements.
     """
-    if verbose:
-        print("Cleaning up <li> nodes")
-    for node in doc.root().children(recursive=True, with_tag="li"):
-        if node.has_text():
-            text = Node("text")
-            text.add_text(node.text().replace("\n", " ").strip())
-            node.remove_text()
-            node.add_child(text)
+    for tag in [
+            "annotation",
+            "blockquote",
+            "xref",
+            "dd",
+            "dt",
+            "em",
+            "li",
+            "name",
+            "refcontent",
+            "strong",
+            "sub",
+            "sup",
+            "t",
+            "td",
+            "th",
+            "tt"
+        ]:
+        if verbose:
+            print(f"Cleaning up <{tag}> nodes")
+        for node in doc.root().children(recursive=True, with_tag=tag):
+            if node.has_text():
+                text = Node("text")
+                text.add_text(node.text().replace("\n", " ").strip())
+                node.remove_text()
+                node.add_child(text)
 
