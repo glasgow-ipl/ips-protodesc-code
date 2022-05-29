@@ -62,7 +62,7 @@ def _load_xml(xmlElement:ET.Element, parent:Optional[Node] = None) -> List[Node]
 
 
 
-def load_xml(content : str) -> Document:
+def load_xml(content : bytes) -> Document:
     xml   = ET.fromstring(content)
     nodes = _load_xml(xml)
     assert len(nodes) == 1
