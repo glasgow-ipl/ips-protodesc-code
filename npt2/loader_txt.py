@@ -292,7 +292,7 @@ def _rewrite_front(doc: Document) -> None:
     # FIXME: add new front element to the document
 
 
-def load_rfc_txt(content: str) -> Document:
+def load_txt(content: str) -> Document:
     parser = Lark(grammar, start = "rfc")
 
     tree  = parser.parse(content)

@@ -38,8 +38,8 @@ from pathlib              import Path
 from typing               import List, Union, Optional, Tuple, Dict, Iterator
 
 from npt2.document        import Node, Document
-from npt2.loader_rfc_txt  import load_rfc_txt
-from npt2.loader_rfc_xml  import load_rfc_xml
+from npt2.loader_txt      import load_txt
+from npt2.loader_xml      import load_xml
 
 # =================================================================================================
 # Supporting functions:
@@ -120,10 +120,10 @@ class Loader:
                 print(f"Loading {self.docname}")
             if self.docname.endswith(".txt"):
                 with open(self.docname, "r") as inf:
-                    return load_rfc_txt(inf.read())
+                    return load_txt(inf.read())
             if self.docname.endswith(".xml"):
                 with open(self.docname, "rb") as inf:
-                    return load_rfc_xml(inf.read())
+                    return load_xml(inf.read())
         else:
             url = None
             if self.docname.lower().startswith("draft-"):
@@ -137,8 +137,8 @@ class Loader:
                     response = session.get(url, verify=True)
                     if response.status_code == 200:
                         if url.endswith(".txt"):
-                            return load_rfc_txt(response.text)
+                            return load_txt(response.text)
                         if url.endswith(".xml"):
-                            return load_rfc_xml(response.content)
+                            return load_xml(response.content)
         raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), self.docname)
 
