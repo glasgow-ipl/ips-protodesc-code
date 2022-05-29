@@ -123,8 +123,8 @@ class TestNode(unittest.TestCase):
         self.assertEqual(c1.children(), [c3])
         self.assertEqual(c3.children(), [c4])
 
-        self.assertEqual(p.children(recursive = False, tag = "child"), [c1])
-        self.assertEqual(p.children(recursive =  True, tag = "child"), [c1, c3])
+        self.assertEqual(p.children(recursive = False, with_tag = "child"), [c1])
+        self.assertEqual(p.children(recursive =  True, with_tag = "child"), [c1, c3])
 
 
 
