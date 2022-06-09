@@ -37,6 +37,7 @@ class Node:
     _attributes : Dict[str,str]
     _text       : str              # If self._text != "", len(self._children) == 0
     _children   : List[Node]       # if len(self._children) > 0, self._text == ""
+    _meta       : Dict[str,any]
 
     # ---------------------------------------------------------------------------------------------
     # Methods to initialise and modify a Node:
@@ -47,6 +48,7 @@ class Node:
         self._attributes = {}
         self._text       = ""
         self._children   = []
+        self._meta       = {}
 
 
     def add_attribute(self, attribute: str, value: str) -> None:
@@ -77,6 +79,11 @@ class Node:
                 new_child._parent = self
                 children.append(new_child)
         self._children = children
+
+
+    def add_metadata(self, name:str, value:any) -> None:
+        assert name not in self._meta
+        self._meta[name] = value
 
 
     def remove_attribute(self, attribute: str) -> None:
