@@ -28,42 +28,23 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
-import argparse
 import spacy
-import en_core_web_sm
+import spacy.lang.en
 
-from npt2.loader             import Loader
-from npt2.cleanup_text_nodes import cleanup_text_nodes
-from npt2.core_nlp           import core_nlp
+from npt2.document import Document, Node
 
-def main():
-    ap = argparse.ArgumentParser(description=f"Network Protocol Tool v2")
-    #ap.add_argument("-d", dest="outdir", required=True,  help="directory for output files")
-    #ap.add_argument("-f", dest="format",  required=True,  help="output format")
-    ap.add_argument("-v", dest="verbose", action="store_true", help="verbose")
-    ap.add_argument("document", help="document to process")
-    args = ap.parse_args()
-
-    if args.verbose:
-        print("*** Network Protocol Tool v2")
-
-    nlp = en_core_web_sm.load()
-    doc = Loader(args.document).load(verbose=args.verbose)
-    cleanup_text_nodes(doc, args.verbose)
-    core_nlp(doc.root().child("middle"), nlp, args.verbose)
-
-
-    # Print out the documents
-    for node in doc.root().children(recursive=True):
-        print(f"# {node.tag()}", end="")
-        for n, v in node.attributes().items():
-            print(f' {n}="{v}"', end="")
-        print("")
-        if node.has_text():
-            print(f'   "{node.text()}"')
-
-
-
-if __name__ == "__main__":
-    main()
+def core_nlp(base: Node, nlp: spacy.lang.en.English, verbose:bool=False):
+    if verbose:
+        print(f"Generating linguistic annotations")
+    for node in base.children():
+        if node.tag() == "section":
+            core_nlp(node, nlp)
+        elif node.tag() in ["t", "name"]:
+            doc = nlp(node.text(recursive=True))
+            node.add_metadata("spacy-doc", doc)
+        elif node.tag() in ["figure", "artwork"]:
+            # Don't try to process text in these nodes
+            pass 
+        else:
+            print(f"  cannot process <{node.tag()}>")
 
