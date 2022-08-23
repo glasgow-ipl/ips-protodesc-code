@@ -44,7 +44,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual(n.tag(),        "test")
         self.assertEqual(n.parent(),     None)
         self.assertEqual(n.attributes(), {})
-        self.assertEqual(n.text(),       None)
+        self.assertEqual(n.text(),       "")
         self.assertEqual(n.children(),   [])
 
 
@@ -62,13 +62,13 @@ class TestNode(unittest.TestCase):
 
     def test_node_text(self) -> None:
         n = Node("test")
-        self.assertIsNone(n.text())
+        self.assertEqual(n.text(), "")
 
         n.add_text("Sample text")
         self.assertEqual(n.text(), "Sample text")
 
         n.remove_text()
-        self.assertIsNone(n.text())
+        self.assertEqual(n.text(), "")
 
 
     def test_node_children(self) -> None:

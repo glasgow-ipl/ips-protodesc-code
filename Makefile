@@ -36,23 +36,20 @@ MAKEFLAGS += --output-sync --warn-undefined-variables --no-builtin-rules --no-bu
 # Remove obsolete old-style default suffix rules:
 .SUFFIXES:
 
-.PHONY: all pipenv-active test unit-tests integration-tests clean 
+.PHONY: all pipenv-active test test-v2 unit-tests integration-tests clean
 
 
-all:
-
+all: test test-v2
 
 pipenv-active:
 	@if [ ! $$PIPENV_ACTIVE ]; then echo "Activate pipenv before running make"; exit 1; fi
 
 
-
+# =================================================================================================
+# Test suite for `npt` library:
 
 PYTHON_SRC   = $(wildcard npt/*.py)
 PYTHON_TESTS = $(wildcard tests/*.py)
-
-# =================================================================================================
-# Test suite:
 
 test: pipenv-active unit-tests integration-tests
 
@@ -63,10 +60,11 @@ test-results:
 	mkdir $@
 
 test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS) | test-results
-	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
+	@echo "*** Type checking npt library"
+	@mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
 unit-tests: test-results/typecheck.xml
-	@echo "*** Running unit tests:"
+	@echo "*** Running unit tests for npt library"
 	@python3 -m unittest discover -s tests/ -v
 
 # -------------------------------------------------------------------------------------------------
@@ -107,6 +105,15 @@ integration-tests: tests/udp-testing/pcaps/udp-valid-1.pcap \
 	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 	cd tests/793bis-testing/testharness && cargo test
+
+# =================================================================================================
+# Tests suite for `npt2` library
+
+test-v2: pipenv-active
+	@echo "*** Type checking npt2 library"
+	@mypy npt2/*.py tests-npt2/*.py
+	@echo "*** Running unit tests for npt2 library"
+	@python3 -m unittest discover -s tests-npt2/ -v
 
 # =================================================================================================
 

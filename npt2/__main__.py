@@ -30,7 +30,7 @@
 
 import argparse
 import spacy
-import en_core_web_sm
+import en_core_web_sm        # type: ignore
 
 from npt2.loader             import Loader
 from npt2.cleanup_text_nodes import cleanup_text_nodes
