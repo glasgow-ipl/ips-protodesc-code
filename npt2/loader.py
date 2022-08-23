@@ -52,16 +52,16 @@ def url_for_draft(draftname: str) -> str:
         return f"https://www.ietf.org/archive/id/{draftname}"
     else:
         dt = DataTracker()
-        prefix = draftname[:-3]
-        suffix = draftname[-3:]
-        if suffix[0] == "-" and suffix[1].isdecimal() and suffix[2].isdecimal():
-            doc = dt.document_from_draft(prefix)
-            rev = suffix[1:]
+        if draftname[-3] == "-" and draftname[-2].isdecimal() and draftname[-1].isdecimal():
+            doc = dt.document_from_draft(draftname[:-3])
+            rev = draftname[-2:]
         else:
             doc = dt.document_from_draft(draftname)
-            rev = doc.rev
+            rev = None
         if doc is None:
             raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT) ,draftname)
+        if rev == None:
+            rev = doc.rev
         if doc.submissions != []:
             for submission_uri in doc.submissions:
                 submission = dt.submission(submission_uri)
