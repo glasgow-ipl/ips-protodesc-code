@@ -59,7 +59,10 @@ test: pipenv-active unit-tests integration-tests
 # -------------------------------------------------------------------------------------------------
 # Unit tests
 
-test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
+test-results:
+	mkdir $@
+
+test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS) | test-results
 	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
 unit-tests: test-results/typecheck.xml
@@ -120,4 +123,6 @@ clean:
 	cd tests/udp-testing/testharness    && cargo clean
 	cd tests/tcp-testing/testharness    && cargo clean
 	cd tests/793bis-testing/testharness && cargo clean
+	rm -fr test-results
+	rm -fr build
 
