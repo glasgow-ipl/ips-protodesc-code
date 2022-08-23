@@ -39,7 +39,7 @@ pipenv-active:
 # Unit tests
 
 test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS)
-	mypy npt2/*.py npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
+	mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
 unit-tests: test-results/typecheck.xml
 	@echo "*** Running unit tests:"
