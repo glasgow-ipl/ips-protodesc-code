@@ -1,4 +1,5 @@
-# Copyright (C) 2020 University of Glasgow
+#
+# Copyright (C) 2020-2022 University of Glasgow
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -22,6 +23,30 @@
 # CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
+#
+# =================================================================================================
+# Configuration for make:
+
+# Warn if the Makefile references undefined variables and remove built-in rules:
+MAKEFLAGS += --output-sync --warn-undefined-variables --no-builtin-rules --no-builtin-variables
+
+# Remove output of failed commands, to avoid confusing later runs of make:
+.DELETE_ON_ERROR:
+
+# Remove obsolete old-style default suffix rules:
+.SUFFIXES:
+
+.PHONY: all pipenv-active test unit-tests integration-tests clean 
+
+
+all:
+
+
+pipenv-active:
+	@if [ ! $$PIPENV_ACTIVE ]; then echo "Activate pipenv before running make"; exit 1; fi
+
+
+
 
 PYTHON_SRC   = $(wildcard npt/*.py)
 PYTHON_TESTS = $(wildcard tests/*.py)
@@ -30,10 +55,6 @@ PYTHON_TESTS = $(wildcard tests/*.py)
 # Test suite:
 
 test: pipenv-active unit-tests integration-tests
-
-pipenv-active:
-	@if [ ! $$PIPENV_ACTIVE ]; then echo "Activate pipenv before running make"; exit 1; fi
-
 
 # -------------------------------------------------------------------------------------------------
 # Unit tests
@@ -83,21 +104,6 @@ integration-tests: tests/udp-testing/pcaps/udp-valid-1.pcap \
 	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 	cd tests/793bis-testing/testharness && cargo test
-
-# =================================================================================================
-# Configuration for make:
-
-# Warn if the Makefile references undefined variables and remove built-in rules:
-MAKEFLAGS += --output-sync --warn-undefined-variables --no-builtin-rules --no-builtin-variables
-
-# Remove output of failed commands, to avoid confusing later runs of make:
-.DELETE_ON_ERROR:
-
-# Remove obsolete old-style default suffix rules:
-.SUFFIXES:
-
-.PHONY: test unit-tests integration-tests clean pipenv-active
-
 
 # =================================================================================================
 
