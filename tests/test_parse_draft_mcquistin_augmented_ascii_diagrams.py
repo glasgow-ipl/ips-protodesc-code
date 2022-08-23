@@ -2366,8 +2366,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[2].content[4].content[2][1].content[0], rfc.T): # type-check
              return
         self.assertIsInstance( middle.content[2].content[4].content[2][1].content[0].content, list)
-        if not isinstance( middle.content[2].content[4].content[2][1].content[0].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[2].content[4].content[2][1].content[0].content), 1)
         self.assertIsInstance( middle.content[2].content[4].content[2][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[2].content[4].content[2][1].content[0].content[0], rfc.Text): # type-check
@@ -4495,8 +4493,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[0], rfc.T):
             return
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content, list)
-        if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[0].content[0], rfc.Text):
@@ -4509,8 +4505,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[1], rfc.T):
             return
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content, list)
-        if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[0][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[0][1].content[1].content[0], rfc.Text):
@@ -4888,8 +4882,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[0], rfc.T):
             return
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content, list)
-        if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[13][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[0].content[0], rfc.Text):
@@ -4906,8 +4898,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[1], rfc.T):
             return
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content, list)
-        if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[0].content[9].content[13][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[0].content[9].content[13][1].content[1].content[0], rfc.Text):
@@ -5270,8 +5260,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[0], rfc.T):
             return
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content, list)
-        if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[8][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[0].content[0], rfc.Text):
@@ -5284,8 +5272,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
         if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[1], rfc.T):
             return
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content, list)
-        if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[8][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[8][1].content[1].content[0], rfc.Text):
@@ -5327,8 +5313,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
             return
 
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[9][1].content[0].content, list)
-        if not isinstance( middle.content[3].sections[1].content[8].content[9][1].content[0].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[9][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[9][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[9][1].content[0].content[0], rfc.Text): # type-check
@@ -5355,8 +5339,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
             return
 
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[9][1].content[1].content, list)
-        if not isinstance( middle.content[3].sections[1].content[8].content[9][1].content[1].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[9][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[9][1].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[9][1].content[1].content[0], rfc.Text): # type-check
@@ -5400,8 +5382,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
             return
 
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[10][1].content[0].content, list)
-        if not isinstance( middle.content[3].sections[1].content[8].content[10][1].content[0].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[10][1].content[0].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[10][1].content[0].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[10][1].content[0].content[0], rfc.Text): # type-check
@@ -5428,8 +5408,6 @@ unit = %s"bit" / %s"bits" / %s"byte" / %s"bytes" / name
             return
 
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[10][1].content[1].content, list)
-        if not isinstance( middle.content[3].sections[1].content[8].content[10][1].content[1].content, list): # type-check
-            return
         self.assertEqual( len(middle.content[3].sections[1].content[8].content[10][1].content[1].content), 1)
         self.assertIsInstance( middle.content[3].sections[1].content[8].content[10][1].content[1].content[0], rfc.Text)
         if not isinstance( middle.content[3].sections[1].content[8].content[10][1].content[1].content[0], rfc.Text): #type-check
