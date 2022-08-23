@@ -29,7 +29,7 @@
 # =================================================================================================
 
 from __future__ import annotations
-from typing     import Dict, List, Iterator, Optional
+from typing     import Any, Dict, List, Iterator, Optional
 
 class Node:
     _parent     : Optional[Node]
@@ -37,7 +37,7 @@ class Node:
     _attributes : Dict[str,str]
     _text       : str              # If self._text != "", len(self._children) == 0
     _children   : List[Node]       # if len(self._children) > 0, self._text == ""
-    _meta       : Dict[str,any]
+    _meta       : Dict[str,Any]
 
     # ---------------------------------------------------------------------------------------------
     # Methods to initialise and modify a Node:
@@ -81,7 +81,7 @@ class Node:
         self._children = children
 
 
-    def add_metadata(self, name:str, value:any) -> None:
+    def add_metadata(self, name:str, value:Any) -> None:
         assert name not in self._meta
         self._meta[name] = value
 
