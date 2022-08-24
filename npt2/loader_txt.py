@@ -33,7 +33,7 @@ from pathlib       import Path
 from lark          import Lark, Tree, Token
 
 from npt2.document import Node, Document
-
+from slugify       import slugify
 
 # =================================================================================================
 # The Lark grammar for a textual format RFC or Internet-draft:
@@ -142,7 +142,13 @@ li                    : li_head li_cont* _BLANKLINE+
 
 ul                    : li+
 
-section_header        : (NUMBER ".")+ _WS+ TEXT _NEWLINE _BLANKLINE
+SECTION_NUMBER        : ("0".."9")+ ("." ("0".."9")+)*
+
+section_number        : SECTION_NUMBER "." _WS+
+
+section_title         : TEXT _NEWLINE _BLANKLINE
+
+section_header        : section_number section_title
 
 section_body          : (t | ul)+
 
@@ -292,6 +298,48 @@ def _rewrite_front(doc: Document) -> None:
     # FIXME: add new front element to the document
 
 
+def _rewrite_sections(doc: Document) -> None:
+    # Rewrite "section" nodes to better match the structure of XML RFCs. This turns:
+    #
+    #   <section>
+    #     <section_header>
+    #       <section_number>...</section_number>
+    #       <section_title>...</section_title>
+    #     </section_header>
+    #     <section_body>
+    #       <t>...</t>
+    #       <t>...</t>
+    #     </section_body>
+    #   </section>
+    #
+    # into:
+    #
+    #   <section>
+    #     <name>...</name>
+    #     <t>...</t>
+    #     <t>...</t>
+    #   </section>
+    for section in filter(lambda node : node.tag() == "section", doc.root().children(recursive=True)):
+        head   = section.child("section_header")
+        body   = section.child("section_body")
+        number = head.child("section_number")
+        title  = head.child("section_title")
+        # Replace the "section_header" node with a "name" node
+        name = Node("name")
+        name.add_text(title.text())
+        name.add_attribute("slugifiedName", f"name-{slugify(title.text())}")
+        section.replace_child(head, name)
+        section.add_attribute("numbered", "true")
+        section.add_attribute("toc", "include")
+        section.add_attribute("removeInRFC", "false")
+        section.add_attribute("pn", f"section-{number.text()}")
+        # Lift the contents of the "section_body" node into the section
+        section.remove_child(body)
+        for child in body.children():
+            section.add_child(body.remove_child(child))
+
+
+
 def load_txt(content: str) -> Document:
     parser = Lark(grammar, start = "rfc")
 
@@ -300,6 +348,7 @@ def load_txt(content: str) -> Document:
     assert len(nodes) == 1
     doc = Document(nodes[0])
     _rewrite_front(doc)
+    _rewrite_sections(doc)
     return doc
 
 
