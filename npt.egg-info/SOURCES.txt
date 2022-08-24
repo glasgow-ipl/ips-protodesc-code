@@ -10,6 +10,7 @@ npt/formatter_simple.py
 npt/grammar_asciidiagrams.txt
 npt/grammar_rfc.txt
 npt/helpers.py
+npt/loader.py
 npt/parser.py
 npt/parser_asciidiagrams.py
 npt/parser_rfc_postprocess.py
@@ -18,7 +19,6 @@ npt/parser_rfc_xml.py
 npt/protocol.py
 npt/py.typed
 npt/rfc.py
-npt/util.py
 npt.egg-info/PKG-INFO
 npt.egg-info/SOURCES.txt
 npt.egg-info/dependency_links.txt
