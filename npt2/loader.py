@@ -41,80 +41,86 @@ from npt2.document        import Node, Document
 from npt2.loader_txt      import load_txt
 from npt2.loader_xml      import load_xml
 
-# =================================================================================================
-# Supporting functions:
-
-def url_for_draft(draftname: str) -> str:
-    assert draftname.startswith("draft-")
-    if draftname.endswith(".txt"):
-        return f"https://www.ietf.org/archive/id/{draftname}"
-    elif draftname.endswith(".xml"):
-        return f"https://www.ietf.org/archive/id/{draftname}"
-    else:
-        dt = DataTracker()
-        if draftname[-3] == "-" and draftname[-2].isdecimal() and draftname[-1].isdecimal():
-            doc = dt.document_from_draft(draftname[:-3])
-            rev = draftname[-2:]
-        else:
-            doc = dt.document_from_draft(draftname)
-            rev = None
-        if doc is None:
-            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT) ,draftname)
-        if rev == None:
-            rev = doc.rev
-        if doc.submissions != []:
-            for submission_uri in doc.submissions:
-                submission = dt.submission(submission_uri)
-                assert submission is not None
-                if submission.rev == rev:
-                    if ".xml" in submission.file_types.split(","):
-                        return f"https://www.ietf.org/archive/id/{submission.name}-{submission.rev}.xml"
-                    elif ".txt" in submission.file_types.split(","):
-                        return f"https://www.ietf.org/archive/id/{submission.name}-{submission.rev}.txt"
-                    else:
-                        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), draftname)
-        return f"https://www.ietf.org/archive/id/{doc.name}-{rev}.txt"
-
-
-def url_for_rfc(rfc: str) -> str:
-    assert rfc.lower().startswith("rfc")
-    if rfc.endswith(".txt"):
-        return f"https://www.rfc-editor.org/rfc/{rfc}"
-    elif rfc.endswith(".xml"):
-        return f"https://www.rfc-editor.org/rfc/{rfc}"
-    else:
-        with requests.Session() as session:
-            response = session.get(f"https://www.rfc-editor.org/rfc/{rfc}.json", verify=True)
-            if response.status_code == 200:
-                meta = json.loads(response.text)
-                if "XML" in meta['format']:
-                    return f"https://www.rfc-editor.org/rfc/{rfc}.xml"
-                elif "TXT" in meta['format']:
-                    # Text derived from XML source
-                    return f"https://www.rfc-editor.org/rfc/{rfc}.txt"
-                elif "ASCII" in meta['format']:
-                    # Text derived from non-XML source
-                    return f"https://www.rfc-editor.org/rfc/{rfc}.txt"
-                else:
-                    print(meta)
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), rfc)
-            else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), rfc)
-
-
-
-# =================================================================================================
-# The Loader class:
 
 class Loader:
     docname : str
 
     def __init__(self, docname:str) -> None:
+        """
+        A loader for an RFC or Internet draft.
+
+        The `docname` is either a local filename representing an RFC or internet-draft,
+        an RFC name with an optional extension, such as "rfc9293" or "rfc9293.xml", or
+        an internet-draft name with an optional version number and extension, such as
+        "draft-ietf-quic-transport", "draft-ietf-quic-transport-15", or
+        "draft-ietf-quic-transport-15.txt". If the extension or version number are not
+        specified, they will default to the most recent version and most semantically
+        rich format available. If the document does not exist as a local file, it will
+        be fetched.
+        """
         self.docname = docname
 
 
+    def is_local_file(self) -> bool:
+        return Path(self.docname).exists()
+
+
+    def url(self) -> Optional[str]:
+        assert not self.is_local_file()
+        if self.docname.lower().startswith("draft-"):
+            if self.docname.endswith(".txt"):
+                return f"https://www.ietf.org/archive/id/{self.docname}"
+            elif self.docname.endswith(".xml"):
+                return f"https://www.ietf.org/archive/id/{self.docname}"
+            else:
+                dt = DataTracker()
+                if self.docname[-3] == "-" and self.docname[-2].isdecimal() and self.docname[-1].isdecimal():
+                    doc = dt.document_from_draft(self.docname[:-3])
+                    rev = self.docname[-2:]
+                else:
+                    doc = dt.document_from_draft(self.docname)
+                    rev = None
+                if doc is None:
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT) ,self.docname)
+                if rev == None:
+                    rev = doc.rev
+                if doc.submissions != []:
+                    for submission_uri in doc.submissions:
+                        submission = dt.submission(submission_uri)
+                        assert submission is not None
+                        if submission.rev == rev:
+                            if ".xml" in submission.file_types.split(","):
+                                return f"https://www.ietf.org/archive/id/{submission.name}-{submission.rev}.xml"
+                            elif ".txt" in submission.file_types.split(","):
+                                return f"https://www.ietf.org/archive/id/{submission.name}-{submission.rev}.txt"
+                            else:
+                                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), self.docname)
+                return f"https://www.ietf.org/archive/id/{doc.name}-{rev}.txt"
+        if self.docname.lower().startswith("rfc"):
+            if self.docname.endswith(".txt"):
+                return f"https://www.rfc-editor.org/rfc/{self.docname}"
+            elif self.docname.endswith(".xml"):
+                return f"https://www.rfc-editor.org/rfc/{self.docname}"
+            else:
+                with requests.Session() as session:
+                    response = session.get(f"https://www.rfc-editor.org/rfc/{self.docname}.json", verify=True)
+                    if response.status_code == 200:
+                        meta = json.loads(response.text)
+                        if "XML" in meta['format']:
+                            return f"https://www.rfc-editor.org/rfc/{self.docname}.xml"
+                        elif "TXT" in meta['format']:
+                            return f"https://www.rfc-editor.org/rfc/{self.docname}.txt"
+                        elif "ASCII" in meta['format']:
+                            return f"https://www.rfc-editor.org/rfc/{self.docname}.txt"
+                        else:
+                            raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), self.docname)
+                    else:
+                        raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), self.docname)
+        return None
+
+
     def load(self, verbose:Optional[bool] = False) -> Document:
-        if Path(self.docname).exists():
+        if self.is_local_file():
             if verbose:
                 print(f"Loading {self.docname}")
             if self.docname.endswith(".txt"):
@@ -124,11 +130,7 @@ class Loader:
                 with open(self.docname, "rb") as inf:
                     return load_xml(inf.read())
         else:
-            url = None
-            if self.docname.lower().startswith("draft-"):
-                url = url_for_draft(self.docname)
-            if self.docname.lower().startswith("rfc"):
-                url = url_for_rfc(self.docname)
+            url = self.url()
             if url is not None:
                 if verbose:
                     print(f"Loading {url}")
