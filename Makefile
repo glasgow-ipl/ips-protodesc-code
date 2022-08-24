@@ -60,11 +60,11 @@ test-results:
 	mkdir $@
 
 test-results/typecheck.xml: $(PYTHON_SRC) $(PYTHON_TESTS) | test-results
-	@echo "*** Type checking npt library"
+	@echo "*** Type checking: npt"
 	@mypy npt/*.py tests/*.py --junit-xml test-results/typecheck.xml
 
 unit-tests: test-results/typecheck.xml
-	@echo "*** Running unit tests for npt library"
+	@echo "*** Running tests: npt"
 	@python3 -m unittest discover -s tests/ -v
 
 # -------------------------------------------------------------------------------------------------
@@ -110,9 +110,9 @@ integration-tests: tests/udp-testing/pcaps/udp-valid-1.pcap \
 # Tests suite for `npt2` library
 
 test-v2: pipenv-active
-	@echo "*** Type checking npt2 library"
+	@echo "*** Type checking: npt2"
 	@mypy npt2/*.py tests-npt2/*.py
-	@echo "*** Running unit tests for npt2 library"
+	@echo "*** Running tests: npt2"
 	@python3 -m unittest discover -s tests-npt2/ -v
 
 # =================================================================================================
