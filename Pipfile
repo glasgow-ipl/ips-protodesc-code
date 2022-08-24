@@ -4,6 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
+python-slugify="*"
 lark = "*"
 parsley = "*"
 lxml = "*"
@@ -13,16 +14,18 @@ requests = "*"
 scapy = "*"
 mypy = "*"
 jinja2 = "*"
-types-requests = "*"
-typed-ast = "*"
 spacy = "3.3.0"
 en_core_web_sm = { file = 'https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.3.0/en_core_web_sm-3.3.0.tar.gz' }
 
 [dev-packages]
+npt  = {editable = true, path = "."}
+npt2 = {editable = true, path = "."}
 mypy = "*"
 pytest = "*"
 coverage = "*"
-npt = {editable = true, path = "."}
+types-python-slugify="*"
+types-requests = "*"
+typed-ast = "*"
 
 [requires]
 python_version = "3.9"
