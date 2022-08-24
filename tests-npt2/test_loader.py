@@ -39,40 +39,81 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from npt2.loader import Loader
 
 class TestLoader(unittest.TestCase):
-    def test_loader_is_local_file(self) -> None:
-        loader_local = Loader("examples/rfc/rfc9293/rfc9293.xml")
-        self.assertTrue(loader_local.is_local_file())
-        loader_remote = Loader("rfc9293.xml")
-        self.assertFalse(loader_remote.is_local_file())
+    def test_loader__is_local_file(self) -> None:
+        loader = Loader("examples/rfc/rfc9293/rfc9293.xml")
+        self.assertTrue(loader._is_local_file())
+        loader = Loader("rfc9293.xml")
+        self.assertFalse(loader._is_local_file())
 
 
-    def test_loader_url(self) -> None:
+    def test_loader__url_rfc_xml(self) -> None:
         # Test URL for an XML format RFC:
         loader = Loader("rfc9293.xml")
-        self.assertEqual(loader.url(), "https://www.rfc-editor.org/rfc/rfc9293.xml")
+        self.assertEqual(loader._url(), "https://www.rfc-editor.org/rfc/rfc9293.xml")
+
+
+    def test_loader__url_rfc_txt(self) -> None:
         # Test URL for a text format RFC:
         loader = Loader("rfc9293.txt")
-        self.assertEqual(loader.url(), "https://www.rfc-editor.org/rfc/rfc9293.txt")
+        self.assertEqual(loader._url(), "https://www.rfc-editor.org/rfc/rfc9293.txt")
+
+
+    def test_loader__url_rfc_inferred_xml(self) -> None:
         # Test URL for an RFC with no format specified, that's recent enough to have XML available:
         loader = Loader("rfc9293")
-        self.assertEqual(loader.url(), "https://www.rfc-editor.org/rfc/rfc9293.xml")
+        self.assertEqual(loader._url(), "https://www.rfc-editor.org/rfc/rfc9293.xml")
+
+
+    def test_loader__url_rfc_inferred_txt(self) -> None:
         # Test URL for an RFC with no format specified, that's too old to have XML available
         loader = Loader("rfc3550")
-        self.assertEqual(loader.url(), "https://www.rfc-editor.org/rfc/rfc3550.txt")
+        self.assertEqual(loader._url(), "https://www.rfc-editor.org/rfc/rfc3550.txt")
+
+
+    def test_loader__url_draft_version_xml(self) -> None:
         # Test URL for an XML format Internet-draft with version number:
         loader = Loader("draft-ietf-quic-transport-29.xml")
-        self.assertEqual(loader.url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-29.xml")
+        self.assertEqual(loader._url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-29.xml")
+
+
+    def test_loader__url_draft_version_txt(self) -> None:
         # Test URL for a text format Internet-draft with version number:
         loader = Loader("draft-ietf-quic-transport-29.txt")
-        self.assertEqual(loader.url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-29.txt")
+        self.assertEqual(loader._url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-29.txt")
+
+
+    def test_loader__url_draft_version(self) -> None:
         # Test URL for an Internet-draft with version number but no format:
         loader = Loader("draft-ietf-quic-transport-29")
-        self.assertEqual(loader.url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-29.xml")
+        self.assertEqual(loader._url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-29.xml")
+
+
+    def test_loader__url_draft_noversion_xml(self) -> None:
         # Test URL for an Internet-draft no version number or format:
         loader = Loader("draft-ietf-quic-transport")
-        self.assertEqual(loader.url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-34.xml")
+        self.assertEqual(loader._url(), "https://www.ietf.org/archive/id/draft-ietf-quic-transport-34.xml")
+
+
+    def test_loader__url_draft_noversion_txt(self) -> None:
         # Test URL for an Internet-draft no version number or format, that's old enough to only have text available:
         loader = Loader("draft-ietf-avt-rtp-new")
-        self.assertEqual(loader.url(), "https://www.ietf.org/archive/id/draft-ietf-avt-rtp-new-12.txt")
+        self.assertEqual(loader._url(), "https://www.ietf.org/archive/id/draft-ietf-avt-rtp-new-12.txt")
 
+
+    def test_loader_load_local(self) -> None:
+        # Trivial test for the Loader, to demonstrate that it can read from
+        # a local file. See test_loader_xml.py and text_loader_txt.py for a
+        # more extensive set of tests.
+        d = Loader("examples/rfc/rfc9293/rfc9293.xml").load()
+        r = d.root()
+        self.assertEqual(r.tag(), "rfc")
+
+
+    def test_loader_load_remote(self) -> None:
+        # Trivial test for the Loader, to demonstrate that it can read from
+        # a remote URL. See test_loader_xml.py and text_loader_txt.py for a
+        # more extensive set of tests.
+        d = Loader("rfc9293.xml").load()
+        r = d.root()
+        self.assertEqual(r.tag(), "rfc")
 
