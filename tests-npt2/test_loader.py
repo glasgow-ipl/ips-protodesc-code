@@ -102,8 +102,7 @@ class TestLoader(unittest.TestCase):
 
     def test_loader__load_local(self) -> None:
         # Trivial test for the Loader, to demonstrate that it can read from
-        # a local file. See test_loader_xml.py and text_loader_txt.py for a
-        # more extensive set of tests.
+        # a local file. See test_loader_rfcXXX.py for more extensive tests.
         d = Loader("examples/rfc/rfc9293/rfc9293.xml").load()
         r = d.root()
         self.assertEqual(r.tag(), "rfc")
@@ -111,8 +110,7 @@ class TestLoader(unittest.TestCase):
 
     def test_loader__load_remote(self) -> None:
         # Trivial test for the Loader, to demonstrate that it can read from
-        # a remote URL. See test_loader_xml.py and text_loader_txt.py for a
-        # more extensive set of tests.
+        # a remote URL.  See test_loader_rfcXXX.py for more extensive tests.
         d = Loader("rfc9293.xml").load()
         r = d.root()
         self.assertEqual(r.tag(), "rfc")

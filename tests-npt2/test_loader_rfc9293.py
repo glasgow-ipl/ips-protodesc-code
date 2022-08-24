@@ -36,10 +36,11 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from npt2.loader import Loader
+from npt2.document import Node
+from npt2.loader   import Loader
 
 class TestLoaderXml(unittest.TestCase):
-    def test_loader_xml__basic_structure(self) -> None:
+    def test_loader__rfc9263_xml(self) -> None:
         d = Loader("examples/rfc/rfc9293/rfc9293.xml").load()
         r = d.root()
         c = r.children()
@@ -52,10 +53,14 @@ class TestLoaderXml(unittest.TestCase):
         self.assertEqual(c[5].tag(), "back")
 
 
-    def test_loader_xml__middle(self) -> None:
+    def test_loader__rfc9263_xml_middle(self) -> None:
         d = Loader("examples/rfc/rfc9293/rfc9293.xml").load()
         r = d.root()
         m = r.children()[4]
+        self._validate_middle(m)
+
+
+    def _validate_middle(self, m: Node) -> None:
         self.assertEqual(m.tag(), "middle")
         c = m.children(recursive=True)
         self.assertEqual(c.pop(0).tag(), "section")
