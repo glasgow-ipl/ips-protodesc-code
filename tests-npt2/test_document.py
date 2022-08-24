@@ -48,12 +48,12 @@ class TestDocument(unittest.TestCase):
         self.doc = Loader("/Users/csp/Documents/IETF/RFC/rfc9000.xml").load()
 
 
-    def test_root(self) -> None:
+    def test_document__root(self) -> None:
         root = self.doc.root()
         self.assertEqual(root.tag(), "rfc")
 
 
-    def test_children(self) -> None:
+    def test_document__children(self) -> None:
         root  = self.doc.root()
         nodes = list(root.children())
         self.assertEqual(len(nodes), 6)
@@ -65,13 +65,13 @@ class TestDocument(unittest.TestCase):
         self.assertEqual(nodes[5].tag(), "back")
 
 
-    def test_children_recursive(self) -> None:
+    def test_document__children_recursive(self) -> None:
         root  = self.doc.root()
         nodes = root.children(recursive=True)
         self.assertEqual(len(nodes), 7669)
 
 
-    def test_find_child(self) -> None:
+    def test_document__find_child(self) -> None:
         root  = self.doc.root()
         front = root.child("front")
         self.assertEqual(front.tag(), "front")

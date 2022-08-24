@@ -39,7 +39,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from npt2.document       import Node
 
 class TestNode(unittest.TestCase):
-    def test_node___init__(self) -> None:
+    def test_node____init__(self) -> None:
         n = Node("test")
         self.assertEqual(n.tag(),        "test")
         self.assertEqual(n.parent(),     None)
@@ -48,7 +48,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual(n.children(),   [])
 
 
-    def test_node_attributes(self) -> None:
+    def test_node__attributes(self) -> None:
         n = Node("test")
         self.assertEqual(n.has_attribute("category"), False)
 
@@ -60,7 +60,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual(n.has_attribute("category"), False)
 
 
-    def test_node_text(self) -> None:
+    def test_node__text(self) -> None:
         n = Node("test")
         self.assertEqual(n.text(), "")
 
@@ -71,7 +71,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual(n.text(), "")
 
 
-    def test_node_children(self) -> None:
+    def test_node__children(self) -> None:
         p = Node("test")
         self.assertEqual(p.children(), [])
 
@@ -98,7 +98,7 @@ class TestNode(unittest.TestCase):
         self.assertEqual(c3.parent(), p)
 
 
-    def test_node_children_recursive(self) -> None:
+    def test_node__children_recursive(self) -> None:
         p = Node("test")
         self.assertEqual(p.children(), [])
 
