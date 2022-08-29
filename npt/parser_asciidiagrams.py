@@ -202,15 +202,59 @@ class AsciiDiagramsParser(Parser):
                             assert isinstance(desc_list, rfc.DL)
                             for k in range(len(desc_list.content)):
                                 title, desc = desc_list.content[k]
-                                field = parser(cast(rfc.Text, title.content[0]).content.strip()).field_title()
-                                try:
-                                    context_field = parser(cast(rfc.Text, desc.content[-1]).content.strip()).context_use()
-                                except:
-                                    context_field = None
-                                field["context_field"] = context_field
-                                if field["short_label"] is not None:
-                                    name_map[field["short_label"]] = field["full_label"]
-                                fields[field["full_label"]] = field
+                                subfields = [type(desc_elem) is rfc.DL for desc_elem in desc.content]
+                                if subfields[-1] is True:
+                                    sub_desc_list = desc.content[len(subfields)-1]
+                                    assert isinstance(sub_desc_list, rfc.DL)
+                                    for j in range(len(sub_desc_list.content)):
+                                        sub_title, sub_desc = sub_desc_list.content[j]
+                                        sub_field = parser(cast(rfc.Text, sub_title.content[0]).content.strip()).field_title()
+                                        if len(sub_desc.content) >= 2:
+                                            sub_field_details = parser(cast(rfc.Text, cast(rfc.T, sub_desc.content[0]).content[0]).content.strip()).field_details()
+                                            sub_field["size"] = sub_field_details[0]
+                                            sub_field["units"] = sub_field_details[1]
+                                            sub_field["is_present"] = sub_field_details[2]
+                                            try:
+                                                sub_context_field = parser(cast(rfc.Text, cast(rfc.Text, sub_desc.content[1]).content[0]).content.strip()).context_use()
+                                            except:
+                                                sub_context_field = None
+                                        else:
+                                            try:
+                                                sub_context_field = parser(cast(rfc.Text, sub_desc.content[-1]).content.strip()).context_use()
+                                            except:
+                                                sub_context_field = None
+                                        sub_field["context_field"] = sub_context_field
+                                        if sub_field["short_label"] is not None:
+                                            name_map[sub_field["short_label"]] = sub_field["full_label"]
+                                        fields[sub_field["full_label"]] = sub_field
+                                else:
+                                    field = parser(cast(rfc.Text, title.content[0]).content.strip()).field_title()
+                                    if len(desc.content) >= 2 and field["size"] is None and field["units"] is None:
+                                        field_details = parser(cast(rfc.Text, cast(rfc.Text, desc.content[0]).content[0]).content.strip()).field_details()
+                                        if len(field_details) == 5 and field_details[0] == "array":
+                                            field["size"] = None
+                                            field["units"] = field_details[1]
+                                            field["is_present"] = field_details[3]
+                                            field["value_constraint"] = field_details[2]
+                                            field["is_array"] = True
+                                        else:
+                                            field["size"] = field_details[0]
+                                            field["units"] = field_details[1]
+                                            field["value_constraint"] = field_details[2]
+                                            field["is_present"] = field_details[3]
+                                        try:
+                                            context_field = parser(cast(rfc.Text, cast(rfc.Text, desc.content[1]).content[0]).content.strip()).context_use()
+                                        except:
+                                            context_field = None
+                                    else:
+                                        try:
+                                            context_field = parser(cast(rfc.Text, desc.content[-1]).content.strip()).context_use()
+                                        except:
+                                            context_field = None
+                                    field["context_field"] = context_field
+                                    if field["short_label"] is not None:
+                                        name_map[field["short_label"]] = field["full_label"]
+                                    fields[field["full_label"]] = field
                         self.structs[valid_type_name_convertor(pdu_name)] = {}
                         self.structs[valid_type_name_convertor(pdu_name)]["name_map"] = name_map
                         self.structs[valid_type_name_convertor(pdu_name)]["fields"] = fields

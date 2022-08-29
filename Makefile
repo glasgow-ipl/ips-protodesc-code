@@ -74,7 +74,6 @@ unit-tests: test-results/typecheck.xml
 test-results/%/Cargo.toml test-results/%/src/lib.rs &: examples/%.xml $(PYTHON_SRC)
 	python -m npt -f rust -d $(dir $@) $<
 
-
 tests/udp-testing/pcaps:
 	mkdir  $@
 
@@ -92,19 +91,27 @@ tests/793bis-testing/pcaps:
 
 tests/793bis-testing/pcaps/%.pcap: tests/793bis-testing/generate-pcap-%.py | tests/793bis-testing/pcaps
 	python $<
-
+	
+tests/rfc9293-testing/pcaps:
+	mkdir  $@
+	
+tests/rfc9293-testing/pcaps/%.pcap: tests/rfc9293-testing/generate-pcap-%.py | tests/rfc9293-testing/pcaps
+	python $<
 
 integration-tests: tests/udp-testing/pcaps/udp-valid-1.pcap \
                    tests/udp-testing/pcaps/udp-invalid-badlength.pcap \
                    tests/tcp-testing/pcaps/tcp-ten-packets.pcap \
                    tests/793bis-testing/pcaps/tcp-ten-packets.pcap \
+				   tests/rfc9293-testing/pcaps/tcp-ten-packets.pcap \
                    test-results/draft-mcquistin-augmented-udp-example-00/Cargo.toml \
                    test-results/draft-mcquistin-augmented-tcp-example-02/Cargo.toml \
                    test-results/draft-ietf-tcpm-rfc793bis-27/Cargo.toml \
+				   test-results/rfc9293/Cargo.toml \
                    test-results/draft-mcquistin-augmented-ascii-diagrams-07/Cargo.toml
 	cd tests/udp-testing/testharness && cargo test
 	cd tests/tcp-testing/testharness && cargo test
 	cd tests/793bis-testing/testharness && cargo test
+	cd tests/rfc9293-testing/testharness && cargo test
 
 # =================================================================================================
 # Tests suite for `npt2` library

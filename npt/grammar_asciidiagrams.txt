@@ -72,7 +72,7 @@ field_opts = words:start (',' ws words)*:rest  -> [" ".join(start.split()) ] + [
 
 field_title_name_only = ws field_name:full_label
                         ('(' short_field_name:short_label ')' -> short_label)?:short_label
-                        '.' -> new_field(full_label,
+                        ('.'|':')? -> new_field(full_label,
                                          short_label,
                                          None,
                                          None,
@@ -105,15 +105,42 @@ field_title_array = ws field_name:full_label
                                      None,
                                      True)
 
+field_details_array_constraint = '[' pdu_name:element_type_name ']' '; '
+                                 equality_expr:value_constraint
+                                 ('; present only when ' equality_expr:is_present -> is_present)?:is_present
+                                 '.' anything*:x -> ("array",
+                                                     element_type_name,
+                                                     value_constraint,
+                                                     is_present,
+                                                     True)
+
+field_details_constraint = equality_expr:size
+                ' '
+                ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units
+                ws ('(' field_opts:opts ')' -> opts)?:opts
+                ('; present only when ' equality_expr:is_present -> is_present)?:is_present anything*:x -> (size, units, opts, is_present)
+
+field_details_variable = 'variable length' -> (None, None, None, None)
+
+field_details_value_constraint = equality_expr:size
+  ' '
+  ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units
+  ws ('(' field_opts:opts ')' -> opts)?:opts
+  '; '
+  equality_expr:value_constraint
+  ('; present only when ' equality_expr:is_present -> is_present)?:is_present anything*:x -> (size, units, value_constraint, is_present)
+
+field_details = field_details_variable | field_details_value_constraint | field_details_constraint | field_details_array_constraint
+         
 field_title_size = ws field_name:full_label
                    ('(' short_field_name:short_label ')' -> short_label)?:short_label
-                   ': '
+                   ': ' ws
                    equality_expr:size
                    ' '
                    ('bits'|'bytes'|'bit'|'byte'|(pdu_name:name)->name):units
                    ws ('(' field_opts:opts ')' -> opts)?:opts
                    ('; present only when ' equality_expr:is_present -> is_present)?:is_present
-                   '.' anything*:x -> new_field(full_label,
+                   anything*:x -> new_field(full_label,
                                     short_label,
                                     opts,
                                     size,
@@ -172,7 +199,7 @@ field_title_array_constraint = ws field_name:full_label
                                                 is_present,
                                                 True)
 
-field_title = field_title_name_only | field_title_variable | field_title_size | field_title_size_constraint | field_title_constraint | field_title_array | field_title_array_constraint
+field_title = field_title_variable | field_title_size_constraint | field_title_size | field_title_constraint | field_title_array | field_title_array_constraint | field_title_name_only
 
 # Preamble
 
@@ -194,7 +221,7 @@ multi_line_split = one_line+:m -> m
 
 # Enums
 variant_list = ("an " | "a ") pdu_name:name (', ' ('or ')? ("an " | "a ") pdu_name:names)*:names -> [name] + names
-enum_more_than_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name ("," (anything:x ?(x != ','))+ ",")? ws "is one of: " variant_list:names "." -> (name, names)
+enum_more_than_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name ("," (anything:x ?(x != ','))+ ",")? ws "is one of" ": "? ws variant_list:names "." -> (name, names)
 enum_two = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_name:name "is either " ("an " | "a ") pdu_name:var1 'or ' ("an " | "a ") pdu_name:var2 "." -> (name, [var1, var2])
 
 enum = enum_two | enum_more_than_two
@@ -215,4 +242,6 @@ parsed_from_func = <(word:w ?(w != "An" and w != "A")' '?)+>? ("An "|"A ") pdu_n
 
 # Protocol Definition
 pdu_list = pdu_name:name (',' ws ('and ')? pdu_name:names)*:names -> [name] + names
-protocol_definition = <(word:w ?(w != 'The' and w != "This") ws)+>? 'This' ws 'document' ws 'describes' ws 'the' ws pdu_name:p_name_1 ws 'protocol.' ws 'The' ws pdu_name:p_name_2 ws 'protocol' ws 'uses' ws pdu_list:names '.' -> (p_name_1, names)
+protocol_definition1 = <(word:w ?(w != 'The' and w != "This") ws)+>? 'This' ws 'document' ws 'describes' ws 'the' ws pdu_name:p_name_1 ws 'protocol.' ws 'The' ws pdu_name:p_name_2 ws 'protocol' ws 'uses' ws pdu_list:names '.' -> (p_name_1, names)
+protocol_definition2 = <(word:w ?(w != 'The' and w != "This") ws)+>? 'This' ws 'document' ws 'describes' ws pdu_name:p_name_1 ws ', which' ws 'uses' ws pdu_list:names '.' -> (p_name_1, names)
+protocol_definition = protocol_definition1 | protocol_definition2
