@@ -185,6 +185,25 @@ class Node:
         return self._parent
 
 
+    # ---------------------------------------------------------------------------------------------
+    # Method to print a Node
+
+    def __str__(self):
+        s  = f"<{self._tag}"
+        for k, v in self._meta.items():
+            s += f"[meta {k}={v}] "
+        for k, v in self.attributes().items():
+            s += f"{k}={v} "
+        s += ">\n"
+        if self.has_text():
+            s += f"  {self.text()}\n"
+        for c in self.children():
+            for l in str(c).splitlines():
+                s += f"  {l}\n"
+        s += f"</{self._tag}>\n"
+        return s
+
+
 # =================================================================================================
 
 class Document:
