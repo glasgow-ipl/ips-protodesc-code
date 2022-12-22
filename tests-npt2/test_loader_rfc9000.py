@@ -40,6 +40,8 @@ from npt2.document import Node
 from npt2.loader   import Loader
 
 class TestLoaderRFC9000(unittest.TestCase):
+    # Tests for the XML version:
+
     def test_loader__rfc9000_xml(self) -> None:
         d = Loader("examples/rfc/rfc9000/rfc9000.xml").load()
         r = d.root()
@@ -53,11 +55,74 @@ class TestLoaderRFC9000(unittest.TestCase):
         self.assertEqual(c[5].tag(), "back")
 
 
+    def test_loader__rfc9000_xml_front(self) -> None:
+        d = Loader("examples/rfc/rfc9000/rfc9000.xml").load()
+        r = d.root()
+        m = r.children()[3]
+        self._validate_front(m)
+
+
     def test_loader__rfc9000_xml_middle(self) -> None:
         d = Loader("examples/rfc/rfc9000/rfc9000.xml").load()
         r = d.root()
         m = r.children()[4]
         self._validate_middle(m)
+
+
+    # Tests for the TXT version:
+
+    #def test_loader__rfc9000_txt_front(self) -> None:
+    #    d = Loader("examples/rfc/rfc9000/rfc9000.txt").load()
+    #    r = d.root()
+    #    m = r.children()[3]
+    #    self._validate_front(m)
+
+
+    #def test_loader__rfc9000_txt_middle(self) -> None:
+    #    d = Loader("examples/rfc/rfc9000/rfc9000.txt").load()
+    #    r = d.root()
+    #    m = r.children()[1]
+    #    self._validate_middle(m)
+
+
+    # Common tests:
+
+    def _validate_front(self, front: Node) -> None:
+        self.assertEqual(front.tag(), "front")
+        self.assertEqual(front.child("title").text(), "QUIC: A UDP-Based Multiplexed and Secure Transport")
+        self.assertEqual(front.child("title").attribute("abbrev"), "QUIC Transport Protocol")
+        self.assertEqual(front.child("seriesInfo").attribute("name"),   "RFC")
+        self.assertEqual(front.child("seriesInfo").attribute("value"),  "9000")
+        self.assertEqual(front.child("seriesInfo").attribute("stream"), "IETF")
+        self.assertEqual(front.children(with_tag="author")[0].attribute("initials"), "J.")
+        self.assertEqual(front.children(with_tag="author")[0].attribute("surname"),  "Iyengar")
+        self.assertEqual(front.children(with_tag="author")[0].attribute("fullname"), "Jana Iyengar")
+        self.assertEqual(front.children(with_tag="author")[0].attribute("role"),     "editor")
+        self.assertEqual(front.children(with_tag="author")[0].child("organization").text(), "Fastly")
+        self.assertEqual(front.children(with_tag="author")[0].child("address").child("email").text(), "jri.ietf@gmail.com")
+        self.assertEqual(front.children(with_tag="author")[1].attribute("initials"), "M.")
+        self.assertEqual(front.children(with_tag="author")[1].attribute("surname"),  "Thomson")
+        self.assertEqual(front.children(with_tag="author")[1].attribute("fullname"), "Martin Thomson")
+        self.assertEqual(front.children(with_tag="author")[1].attribute("role"),     "editor")
+        self.assertEqual(front.children(with_tag="author")[1].child("organization").text(), "Mozilla")
+        self.assertEqual(front.children(with_tag="author")[1].child("address").child("email").text(), "mt@lowentropy.net")
+        self.assertEqual(front.child("date").attribute("year"),  "2021")
+        self.assertEqual(front.child("date").attribute("month"), "05")
+        self.assertEqual(front.child("area").text(), "Transport")
+        self.assertEqual(front.child("workgroup").text(), "QUIC")
+        self.assertEqual(front.children(with_tag="keyword")[0].text(), "multipath")
+        self.assertEqual(front.children(with_tag="keyword")[1].text(), "next generations")
+        self.assertEqual(front.children(with_tag="keyword")[2].text(), "protocol")
+        self.assertEqual(front.children(with_tag="keyword")[3].text(), "sctp++")
+        self.assertEqual(front.children(with_tag="keyword")[4].text(), "secure")
+        self.assertEqual(front.children(with_tag="keyword")[5].text(), "smart")
+        self.assertEqual(front.children(with_tag="keyword")[6].text(), "tcp/2")
+        self.assertEqual(front.children(with_tag="keyword")[7].text(), "tcpng")
+        self.assertEqual(front.children(with_tag="keyword")[8].text(), "transport")
+        self.assertEqual(front.children(with_tag="keyword")[9].text(), "transport-ng")
+        # FIXME: check the abstract
+        # FIXME: check the boilerplate
+        # FIXME: check the table of contents
 
 
     def _validate_middle(self, m: Node) -> None:
