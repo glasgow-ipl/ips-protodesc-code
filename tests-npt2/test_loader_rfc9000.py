@@ -71,6 +71,21 @@ class TestLoaderRFC9000(unittest.TestCase):
 
     # Tests for the TXT version:
 
+    def test_loader__rfc9000_txt(self) -> None:
+        d = Loader("examples/rfc/rfc9000/rfc9000.txt").load()
+        r = d.root()
+        c = r.children()
+        for node in c:
+            print(node.tag())
+        self.assertEqual(r.tag(), "rfc")
+        self.assertEqual(c[0].tag(), "link")
+        self.assertEqual(c[1].tag(), "link")
+        self.assertEqual(c[2].tag(), "link")
+        self.assertEqual(c[3].tag(), "front")
+        self.assertEqual(c[4].tag(), "middle")
+        self.assertEqual(c[5].tag(), "back")
+
+
     #def test_loader__rfc9000_txt_front(self) -> None:
     #    d = Loader("examples/rfc/rfc9000/rfc9000.txt").load()
     #    r = d.root()
