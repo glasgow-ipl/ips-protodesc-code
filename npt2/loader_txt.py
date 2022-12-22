@@ -28,6 +28,8 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # =================================================================================================
 
+import sys
+
 from typing        import List, Union, Optional, Tuple, Dict, Iterator
 from pathlib       import Path
 from lark          import Lark, Tree, Token
@@ -89,15 +91,15 @@ grammar = r"""
   // ==============================================================================================
   // Rules relating to parsing the front of an RFC:
 
-  front                 : header title abstract status_of_this_memo copyright table_of_contents
+  front                 : header_block title abstract status_of_this_memo copyright table_of_contents
 
-  header                : _BOM? _BLANKLINE+ rfc_header _BLANKLINE+
+  header_block          : _BOM? _BLANKLINE+ headers _BLANKLINE+
 
   _BOM                  : "\uFFFE" | "\uFEFF"
 
-  rfc_header            : header_group header_rfc_num header_category header_issn header_date_author
+  headers               : header_stream header_rfc_num header_category header_issn header_date_author
 
-  header_group          : organisation _WS+ author_or_affiliation _NEWLINE
+  header_stream         : organisation _WS+ author_or_affiliation _NEWLINE
 
   organisation          : ORGANISATION
 
@@ -117,6 +119,7 @@ grammar = r"""
                         | header_author header_date_author
 
   header_date           : _WS+ (header_day _WS)? header_month _WS header_year _NEWLINE
+
   header_author         : _WS+ author_or_affiliation _NEWLINE
 
   header_day            : DAY
@@ -314,16 +317,58 @@ def _extract_authors(doc: Document) -> Iterator[Node]:
         yield author
 
 
-def _rewrite_front(doc: Document) -> None:
+def _update_front(doc: Document) -> None:
+    # Rewrite the <front> node to better match the structure of XML RFCs.
+    
     front = Node("front")
+
+    # Add the <title> node to the new <front>:
+    title = Node("title")
+    title.add_text(doc.root().child("front").child("title").text())
+    front.add_child(title)
+
+    # Add the <seriesInfo> node to the new <front>:
+    rfc_num = doc.root().child("front").child("header_block").child("headers").child("header_rfc_num").child("rfc_num").text()
+    stream  = doc.root().child("front").child("header_block").child("headers").child("header_stream").child("organisation").text()
+    seriesInfo = Node("seriesInfo")
+    seriesInfo.add_attribute("name", "RFC")
+    seriesInfo.add_attribute("value", rfc_num)
+    if stream == "Internet Engineering Task Force (IETF)":
+        seriesInfo.add_attribute("stream", "IETF")
+    else:
+        print(f"ERROR: unknwon stream: {stream}")
+        sys.exit()
+    front.add_child(seriesInfo)
+
+    # Add the <author> nodes to the new <front>:
     for author in _extract_authors(doc):
         front.add_child(author)
-    # FIXME: remove old front element from the document
-    # FIXME: add new front element to the document
+    print(front)
+
+    # FIXME: add <date> node
+    # FIXME: add <area> node
+    # FIXME: add <workgroup> node
+    # FIXME: add <keyword>> nodes
+    # FIXME: add <abstract> node
+    # FIXME: add <boilerplate> node
+    # FIXME: add <toc> node
+
+    # Replace the old <front> node with the new:
+    doc.root().replace_child(doc.root().child("front"), front)
+    # print(doc.root().child("front"))
 
 
-def _rewrite_sections(doc: Document) -> None:
-    # Rewrite "section" nodes to better match the structure of XML RFCs. This turns:
+def _update_links(doc: Document) -> None:
+    # Add <link> node to the document, before the <front> node. These
+    # include information similar to the following:
+    #   <link href="https://dx.doi.org/10.17487/rfc9000" rel="alternate"/>
+    #   <link href="urn:issn:2070-1721" rel="alternate"/>
+    #   <link href="https://datatracker.ietf.org/doc/draft-ietf-quic-transport-34" rel="prev"/>
+    pass
+
+
+def _update_sections(doc: Document) -> None:
+    # Rewrite <section> nodes to better match the structure of XML RFCs. This turns:
     #
     #   <section>
     #     <section_header>
@@ -371,8 +416,9 @@ def load_txt(content: str) -> Document:
     nodes = _load_tree(tree)
     assert len(nodes) == 1
     doc = Document(nodes[0])
-    _rewrite_front(doc)
-    _rewrite_sections(doc)
+    _update_links(doc)
+    _update_front(doc)
+    _update_sections(doc)
     return doc
 
 
