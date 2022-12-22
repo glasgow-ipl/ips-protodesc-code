@@ -191,9 +191,9 @@ class Node:
     def __str__(self):
         s  = f"<{self._tag}"
         for k, v in self._meta.items():
-            s += f"[meta {k}={v}] "
+            s += f" [meta {k}={v}]"
         for k, v in self.attributes().items():
-            s += f"{k}={v} "
+            s += f" {k}={v}"
         s += ">\n"
         if self.has_text():
             s += f"  {self.text()}\n"
