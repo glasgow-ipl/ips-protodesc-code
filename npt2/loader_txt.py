@@ -39,190 +39,214 @@ from slugify       import slugify
 # The Lark grammar for a textual format RFC or Internet-draft:
 
 grammar = r"""
-_BOM                  : "\uFFFE" | "\uFEFF"
+  // ==============================================================================================
+  // Generic Terminals
+  _WS                   : "\t" | " "
 
-_WS                   : "\t" | " "
+  _NEWLINE              : "\n" | "\r\n"
 
-_NEWLINE              : "\n" | "\r\n"
+  _BLANKLINE            : _WS+ _NEWLINE
+                        | _NEWLINE
 
-_BLANKLINE            : _WS+ _NEWLINE
-                      | _NEWLINE
+  ALPHANUM               : /\w/+
 
-ALPHANUM               : /\w/+
+  NUMBER                : ("0".."9")+
 
-NUMBER                : ("0".."9")+
-
-PUNCTUATION           : ( "." | "," | ":" | ";" | "+" | "-" | "(" | ")" | "{" | "}" | "^" 
-                        | "/" | "*" | "?" | "@" | "|" | ">" | "<" | "'" | "\"" | "_" 
+  PUNCTUATION           : ( "." | "," | ":" | ";" | "+" | "-" | "(" | ")" | "{" | "}" | "^"
+                        | "/" | "*" | "?" | "@" | "|" | ">" | "<" | "'" | "\"" | "_"
                         | "[" | "]" | "=" | "!" | "~" | "&" )+
 
-TEXT                  : (ALPHANUM | PUNCTUATION | " ")+ 
+  TEXT                  : (ALPHANUM | PUNCTUATION | " ")+
 
-AUTHOR_OR_AFFILIATION : ALPHANUM (ALPHANUM | "." | "," | "-" | " ")+
+  AUTHOR_OR_AFFILIATION : ALPHANUM (ALPHANUM | "." | "," | "-" | " ")+
 
-ORGANISATION          : "Internet Engineering Task Force (IETF)"
+  ORGANISATION          : "Internet Engineering Task Force (IETF)"
 
-CATEGORY              : "Standards Track"
+  CATEGORY              : "Standards Track"
 
-DAY                   : "1"
+  DAY                   : "1"
 
-MONTH                 : "January"
-                      | "February"
-                      | "March"
-                      | "April"
-                      | "May"
-                      | "June"
-                      | "July"
-                      | "August"
-                      | "September"
-                      | "October"
-                      | "November"
-                      | "December"
+  MONTH                 : "January"
+                        | "February"
+                        | "March"
+                        | "April"
+                        | "May"
+                        | "June"
+                        | "July"
+                        | "August"
+                        | "September"
+                        | "October"
+                        | "November"
+                        | "December"
 
-YEAR                  : ("0".."9")+
+  YEAR                  : ("0".."9")+
 
-author_or_affiliation : AUTHOR_OR_AFFILIATION
+  // ==============================================================================================
+  // Rules relating to the RFC as a whole:
 
-organisation          : ORGANISATION 
+  rfc                   : front middle back
 
-header_group          : organisation _WS+ author_or_affiliation _NEWLINE
+  // ==============================================================================================
+  // Rules relating to parsing the front of an RFC:
 
-rfc_num               : "Request for Comments:" _WS INT
+  front                 : header title abstract status_of_this_memo copyright table_of_contents
 
-header_rfc_num        : rfc_num  _WS+ author_or_affiliation _NEWLINE
+  header                : _BOM? _BLANKLINE+ rfc_header _BLANKLINE+
 
-category              : "Category:" _WS CATEGORY
+  _BOM                  : "\uFFFE" | "\uFEFF"
 
-header_category       : category _WS+ author_or_affiliation _NEWLINE
+  rfc_header            : header_group header_rfc_num header_category header_issn header_date_author
 
-header_issn           : "ISSN: 2070-1721" _WS+ author_or_affiliation _NEWLINE
+  header_group          : organisation _WS+ author_or_affiliation _NEWLINE
 
-header_author         : _WS+ author_or_affiliation _NEWLINE
+  organisation          : ORGANISATION
 
-header_day            : DAY
+  author_or_affiliation : AUTHOR_OR_AFFILIATION
 
-header_month          : MONTH
+  header_rfc_num        : rfc_num  _WS+ author_or_affiliation _NEWLINE
 
-header_year           : YEAR 
+  rfc_num               : "Request for Comments:" _WS INT
 
-header_date           : _WS+ (header_day _WS)? header_month _WS header_year _NEWLINE
+  header_category       : category _WS+ author_or_affiliation _NEWLINE
 
-header_date_author    : header_date
-                      | header_author header_date_author
+  category              : "Category:" _WS CATEGORY
 
-header_rfc            : header_group header_rfc_num header_category header_issn header_date_author
+  header_issn           : "ISSN: 2070-1721" _WS+ author_or_affiliation _NEWLINE
 
-header_block          : header_rfc _BLANKLINE+
+  header_date_author    : header_date
+                        | header_author header_date_author
 
-TITLE                 : ("a".."z" | "A".."Z" | ":" | "-" | " ")+
+  header_date           : _WS+ (header_day _WS)? header_month _WS header_year _NEWLINE
+  header_author         : _WS+ author_or_affiliation _NEWLINE
 
-title                 : _WS+ TITLE _NEWLINE _BLANKLINE+
+  header_day            : DAY
 
-TEXTLINE              : "   " TEXT _NEWLINE
+  header_month          : MONTH
 
-t                     : TEXTLINE+ _BLANKLINE+
+  header_year           : YEAR
 
-abstract              : "Abstract"            _NEWLINE _BLANKLINE t+
 
-status_of_this_memo   : "Status of This Memo" _NEWLINE _BLANKLINE t+
+  // The RFC Title
 
-copyright             : "Copyright Notice"    _NEWLINE _BLANKLINE t+
+  title                 : _WS+ TITLE _NEWLINE _BLANKLINE+
 
-table_of_contents     : "Table of Contents"   _NEWLINE _BLANKLINE t+
+  TITLE                 : ("a".."z" | "A".."Z" | ":" | "-" | " ")+
 
-front                 : _BOM? _BLANKLINE+ header_block title abstract status_of_this_memo copyright table_of_contents
 
+  // The remaining textual blocks in the front matter:
 
+  abstract              : "Abstract"            _NEWLINE _BLANKLINE t+
 
-li_head               : "   *" _WS+ TEXT _NEWLINE
+  status_of_this_memo   : "Status of This Memo" _NEWLINE _BLANKLINE t+
 
-li_cont               : TEXTLINE+ 
+  copyright             : "Copyright Notice"    _NEWLINE _BLANKLINE t+
 
-li                    : li_head li_cont* _BLANKLINE+
+  table_of_contents     : "Table of Contents"   _NEWLINE _BLANKLINE t+
 
-ul                    : li+
+  t                     : TEXTLINE+ _BLANKLINE+
 
-SECTION_NUMBER        : ("0".."9")+ ("." ("0".."9")+)*
+  TEXTLINE              : "   " TEXT _NEWLINE
 
-section_number        : SECTION_NUMBER "." _WS+
+  // ==============================================================================================
+  // Rules relating to parsing the middle of an RFC:
 
-section_title         : TEXT _NEWLINE _BLANKLINE
+  middle                : section+
 
-section_header        : section_number section_title
+  section               : section_header section_body
 
-section_body          : (t | ul)+
+  section_header        : section_number section_title
 
-section               : section_header section_body
+  section_number        : SECTION_NUMBER "." _WS+
 
-middle                : section+
+  SECTION_NUMBER        : ("0".."9")+ ("." ("0".."9")+)*
 
+  section_title         : TEXT _NEWLINE _BLANKLINE
 
+  section_body          : (t | ul)+
 
-ref_header            : NUMBER "." _WS+ "References" _NEWLINE _BLANKLINE
+  ul                    : li+
 
-REF_ID                : (ALPHANUM | "-")+
+  li                    : li_head li_cont* _BLANKLINE+
 
-ref_label             : "[" REF_ID "]" _NEWLINE?
+  li_head               : "   *" _WS+ TEXT _NEWLINE
 
-REF_TEXT              : /[^[]/ (ALPHANUM | PUNCTUATION | " ")+ 
+  li_cont               : TEXTLINE+
 
-ref_line              : _WS+ REF_TEXT _NEWLINE 
 
-ref_text              : ref_line+ (_BLANKLINE ref_line)? _BLANKLINE
 
-ref                   : _WS+ ref_label ref_text
 
-nref_header           : (NUMBER ".")+ _WS+ "Normative References" _NEWLINE _BLANKLINE
 
-nrefs                 : nref_header ref+
+  // ==============================================================================================
+  // Rules relating to parsing the back of an RFC:
 
-iref_header           : (NUMBER ".")+ _WS+ "Informative References" _NEWLINE _BLANKLINE
+  back                  : references appendix* contributors? authors
 
-irefs                 : iref_header ref+
+  // References
 
-references            : ref_header nrefs* irefs*
+  references            : ref_header nrefs* irefs*
 
+  ref_header            : NUMBER "." _WS+ "References" _NEWLINE _BLANKLINE
 
+  nrefs                 : nref_header ref+
 
-appendix_header_top   : "Appendix " "A".."Z" "." _WS+ TEXT _NEWLINE
+  nref_header           : (NUMBER ".")+ _WS+ "Normative References" _NEWLINE _BLANKLINE
 
-appendix_header_sub   : "A".."Z" "." (NUMBER ".")+  _WS+ TEXT _NEWLINE
+  irefs                 : iref_header ref+
 
-appendix_header       : appendix_header_top _BLANKLINE
-                      | appendix_header_sub _BLANKLINE
+  iref_header           : (NUMBER ".")+ _WS+ "Informative References" _NEWLINE _BLANKLINE
 
-appendix              : appendix_header section_body
+  ref                   : _WS+ ref_label ref_text
 
+  REF_ID                : (ALPHANUM | "-")+
 
+  ref_label             : "[" REF_ID "]" _NEWLINE?
 
-contributors_header   : "Contributors" _NEWLINE _BLANKLINE
+  ref_text              : ref_line+ (_BLANKLINE ref_line)? _BLANKLINE
 
-contributors          : contributors_header section_body
+  ref_line              : _WS+ REF_TEXT _NEWLINE
 
+  REF_TEXT              : /[^[]/ (ALPHANUM | PUNCTUATION | " ")+
 
-_AUTHORS_HEADER       : "Authors' Addresses" _NEWLINE _BLANKLINE
 
-author_name           : _WS+ AUTHOR_OR_AFFILIATION
+  // Appendices
 
-author_role           : "(" ALPHANUM ")"
+  appendix              : appendix_header section_body
 
-author_affiliation    : _WS+ AUTHOR_OR_AFFILIATION _NEWLINE
+  appendix_header       : appendix_header_top _BLANKLINE
+                        | appendix_header_sub _BLANKLINE
 
-author_email          : _WS+ "Email: " TEXT _NEWLINE
+  appendix_header_top   : "Appendix " "A".."Z" "." _WS+ TEXT _NEWLINE
 
-author                : author_name author_role? _NEWLINE author_affiliation _BLANKLINE? author_email _BLANKLINE*
+  appendix_header_sub   : "A".."Z" "." (NUMBER ".")+  _WS+ TEXT _NEWLINE
 
-authors               : _AUTHORS_HEADER author+
 
+  // Contributors
 
-back                  : references appendix* contributors? authors
+  contributors          : contributors_header section_body
 
+  contributors_header   : "Contributors" _NEWLINE _BLANKLINE
 
-ANYTHING              : (/./ | _NEWLINE)+ 
 
-rfc                   : front middle back
+  // Authors
 
-%import common.INT
+  authors               : _AUTHORS_HEADER author+
+
+  _AUTHORS_HEADER       : "Authors' Addresses" _NEWLINE _BLANKLINE
+
+  author                : author_name author_role? _NEWLINE author_affiliation _BLANKLINE? author_email _BLANKLINE*
+
+  author_name           : _WS+ AUTHOR_OR_AFFILIATION
+
+  author_role           : "(" ALPHANUM ")"
+
+  author_affiliation    : _WS+ AUTHOR_OR_AFFILIATION _NEWLINE
+
+  author_email          : _WS+ "Email: " TEXT _NEWLINE
+
+
+
+  // ==============================================================================================
+  %import common.INT
 """
 
 # =================================================================================================
