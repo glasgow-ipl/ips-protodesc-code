@@ -39,7 +39,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from npt2.document import Node
 from npt2.loader   import Loader
 
-class TestLoaderXml(unittest.TestCase):
+class TestLoaderRFC9293(unittest.TestCase):
     def test_loader__rfc9263_xml(self) -> None:
         d = Loader("examples/rfc/rfc9293/rfc9293.xml").load()
         r = d.root()
