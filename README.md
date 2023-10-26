@@ -49,7 +49,7 @@ Overview
  npt can be executed as follows:
 
 ```
-python npt -d <output-dir> -of <output-format> <document>
+python npt -d <output-dir> -f <output-format> <document>
 ```
 
 where:
@@ -71,10 +71,6 @@ where:
     Currently supported output formats are :
     - *simple*  : a textual representation of the parsed IETF specification
     - *rust* : a rust protocol parser.
-
-```
-                        formats are simple,rust
-```
 
 *Example Usage*
 ```
