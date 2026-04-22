@@ -190,7 +190,7 @@ func apply_protection(to: Unprotected Packet)
                     The next bit (0x40) of byte 0 is set to 1. Packets containing a zero value for this bit are not valid packets in this version and MUST be discarded.
                 </dd>
                 <dt>
-                    Unpredictable Bits (UB): UB#Size > 38.
+                    Unpredictable Bits (UB): size(UB) >= 38 bits.
                 </dt>
                 <dd>
                     The remainder of the first byte and an arbitrary number of bytes following it that are set to unpredictable values.
@@ -1611,9 +1611,9 @@ func apply_protection(to: Unprotected Packet)
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  |                         Retire Prior To                     ...
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
- |     Length    |                                               |
- +-+-+-+-+-+-+-+-+            Connection ID                      +
- |                                                             ...
+ |     Length    |
+ +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+ |                            Connection ID                    ...
  +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  |                                                               |
  +                                                               +
